@@ -37,12 +37,21 @@ class User(AbstractUser):
     
     rol = models.CharField(max_length=10, choices=ROL_CHOICES, default='user')
     number_id = models.CharField(max_length=20, unique=True)
-    skills = models.TextField(help_text="Lista de habilidades separadas por coma")
-    experience = models.TextField(help_text="Descripción libre de experiencia")
-    resume = models.FileField(upload_to="resumes/", null=True, blank=True)
     create_at = models.DateTimeField(auto_now_add=True)
     
     objects = UserManager()
 
     def __str__(self):
         return f"{self.username} - {self.number_id}"
+    
+
+class UserProfile(models.Model):
+    user = models.OneToOneField("users.User", on_delete=models.CASCADE, related_name="profile")
+    skills = models.TextField(help_text="Lista de habilidades separadas por coma")
+    experience = models.TextField(help_text="Descripción libre de experiencia")
+    resume = models.FileField(upload_to="resumes/", null=True, blank=True)
+    linkedin_url = models.URLField(null=True, blank=True)
+    portfolio_url = models.URLField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"Peril de {self.user.username}"

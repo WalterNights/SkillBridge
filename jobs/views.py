@@ -11,9 +11,6 @@ from .utils.scraper import run_scraper_and_store_results
 class JobScrapingView(APIView):
     def get(self, request):
         query = request.GET.get('q', 'desarrollador')
-        
         new_offers = run_scraper_and_store_results(query)
-        
         serializer = JobOfferSerializer(new_offers, many=True)
-        
         return Response(serializer.data, status=status.HTTP_200_OK)
