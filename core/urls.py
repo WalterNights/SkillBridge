@@ -1,10 +1,8 @@
-from django.urls import path
+from django.urls import path, include
 from django.contrib import admin
-from jobs.views import JobScrapingView
-from users.views import UserProfileCreateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/user-profiles/', UserProfileCreateView.as_view()),
-    path('api/scrap-jobs/', JobScrapingView.as_view()),
+    path('api/users/', include('users.urls')),
+    path('api/jobs/', include('jobs.urls')),
 ]

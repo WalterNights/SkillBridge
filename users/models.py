@@ -47,11 +47,17 @@ class User(AbstractUser):
 
 class UserProfile(models.Model):
     user = models.OneToOneField("users.User", on_delete=models.CASCADE, related_name="profile")
+    first_name  = models.CharField(max_length=50)
+    last_name  = models.CharField(max_length=50)
+    phone = models.CharField(max_length=30)
+    city = models.CharField(max_length=100)
+    education = models.TextField(blank=True)
     skills = models.TextField(help_text="Lista de habilidades separadas por coma")
     experience = models.TextField(help_text="Descripción libre de experiencia")
     resume = models.FileField(upload_to="resumes/", null=True, blank=True)
     linkedin_url = models.URLField(null=True, blank=True)
     portfolio_url = models.URLField(null=True, blank=True)
+    create_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return f"Peril de {self.user.username}"
