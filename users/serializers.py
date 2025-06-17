@@ -22,17 +22,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = UserProfile
-        fields = [
-            'first_name',
-            'last_name',
-            'phone',
-            'city',
-            'education',
-            'skills',
-            'experience',
-            'resume',
-            'linkedin_url',
-            'portfolio_url'
+        fields = ['first_name', 'last_name', 'phone', 'city', 'education', 'skills', 'experience', 'resume', 'linkedin_url', 'portfolio_url'
         ]
         read_only_fields = ['phone']
         
