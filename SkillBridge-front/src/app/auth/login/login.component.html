@@ -1,0 +1,12 @@
+<h2>Inicia Sesión</h2>
+<form [formGroup]="loginForm" (ngSubmint)="loginUser()">
+    <div>
+        <label for="username">Usuraio</label>
+        <input type="text" id="username" formControlName="username">
+    </div>
+    <div>
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" formControlName="password">
+    </div>
+    <button type="submit" [disabled]="loginForm.invalid">Ingresar</button>
+</form>

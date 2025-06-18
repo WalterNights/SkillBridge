@@ -4,17 +4,30 @@
         Usuario:
         <input formControlName="username" />
     </label>
+    <div *ngIf="registerForm.get('username')?.invalid && registerForm.get('username')?.touched">
+        Usuario es Requerido
+    </div>
     <label>
-        Usuario:
+        Correo:
         <input formControlName="email" type="email" />
     </label>
+    <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+        Correo es Requerido
+    </div>
     <label>
-        Usuario:
+        Contraseña:
         <input formControlName="password" type="password" />
     </label>
+    <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+        La contraseña debe tener mínimo 8 caracteres, incluir letras, números y un símbolo especial.
+    </div>
     <label>
-        Usuario:
+        Confirmar Contraseña:
         <input formControlName="confirmPassword" type="password" />
     </label>
+    <div *ngIf="registerForm.errors?.['passwordsDoNotMatch'] && registerForm.get('confirmPassword')?.touched">
+        Las contraseñas no coinciden
+    </div>
+    <div *ngIf="errorMessage" style="color:red">{{ errorMessage }}</div>
     <button type="submit" [disabled]="registerForm.invalid">Registrarse</button>
 </form>

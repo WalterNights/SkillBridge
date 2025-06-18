@@ -36,7 +36,7 @@ class User(AbstractUser):
     ]
     
     rol = models.CharField(max_length=10, choices=ROL_CHOICES, default='user')
-    number_id = models.CharField(max_length=20, unique=True)
+    number_id = models.CharField(max_length=20, unique=True, null=True, blank=True)
     create_at = models.DateTimeField(auto_now_add=True)
     
     objects = UserManager()
