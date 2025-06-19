@@ -5,6 +5,8 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class UserRegisterView(APIView):
@@ -40,3 +42,19 @@ class UserProfileCheckView(APIView):
         if not profile.full_name or not profile.city or not profile.phone:
             return Response({"profile_complete": False})
         return Response({"profile_complete": True})
+    
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        user = self.user
+        data['user_id'] = user.id
+        data['username'] = user.username
+        data['email'] = user.email
+        data['rol'] = user.rol
+        data['is_profile_complete'] = user.userprofile.number_id is not None
+        return data
+    
+    
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer

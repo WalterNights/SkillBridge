@@ -25,7 +25,11 @@ export class LoginComponent {
     this.http.post(`${environment.apiUrl}/users/login/`, this.loginForm.value).subscribe({
       next: (res: any) => {
         console.log('Login Exitoso:', res);
-        this.router.navigate(['/']);
+        if(!res.is_profile_complete) {
+          this.router.navigate(['/profile']);
+        } else {
+          this.router.navigate(['/']);
+        }
       },
       error: (err) => {
         console.error('Error al iniciar sesión:', err);
