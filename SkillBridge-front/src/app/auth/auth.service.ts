@@ -19,7 +19,6 @@ export class AuthService {
   register(data: RegisterData): Observable<any> {
     return this.http.post(this.apiUrl, data);
   }
-
   login(credentials: {email: string, password: string}) {
     return this.http.post(`${environment.apiUrl}/token/login/`, credentials).pipe(
       tap((res: any) => {

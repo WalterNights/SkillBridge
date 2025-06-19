@@ -36,19 +36,19 @@ class User(AbstractUser):
     ]
     
     rol = models.CharField(max_length=10, choices=ROL_CHOICES, default='user')
-    number_id = models.CharField(max_length=20, unique=True, null=True, blank=True)
     create_at = models.DateTimeField(auto_now_add=True)
     
     objects = UserManager()
 
     def __str__(self):
-        return f"{self.username} - {self.number_id}"
+        return f"{self.username}"
     
 
 class UserProfile(models.Model):
     user = models.OneToOneField("users.User", on_delete=models.CASCADE, related_name="profile")
     first_name  = models.CharField(max_length=50)
     last_name  = models.CharField(max_length=50)
+    number_id = models.CharField(max_length=20, unique=True, null=True, blank=True)
     phone = models.CharField(max_length=30)
     city = models.CharField(max_length=100)
     education = models.TextField(blank=True)

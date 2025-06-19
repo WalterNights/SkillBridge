@@ -6,7 +6,7 @@ from django.contrib.auth.forms import UserCreationForm
 class CustomUserCreationFom(UserCreationForm):
     class Meta:
         model = User
-        fields = ('username', 'number_id', 'email')
+        fields = ('username', 'email')
         
 class CustomUserAdmin(UserAdmin):
     add_form = CustomUserCreationFom
@@ -16,7 +16,6 @@ class CustomUserAdmin(UserAdmin):
             'classes': ('wide',),
                 'fields': (
                     'username',
-                    'number_id',
                     'email',
                     'password1',
                     'password2',
@@ -27,11 +26,8 @@ class CustomUserAdmin(UserAdmin):
             }
         ),
     )
-    fieldsets = UserAdmin.fieldsets + (
-        ('Aditional Infortmation', {'fields': ('number_id',)}),
-    )
-    list_display = ('username', 'email', 'number_id', 'is_staff', 'is_superuser', 'is_active')
-    search_fields = ('username', 'number_id', 'email')
+    list_display = ('username', 'email', 'is_staff', 'is_superuser', 'is_active')
+    search_fields = ('username', 'email')
     
     
 admin.site.register(User, CustomUserAdmin)

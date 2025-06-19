@@ -1,5 +1,5 @@
 <h2>Inicia Sesión</h2>
-<form [formGroup]="loginForm" (ngSubmint)="loginUser()">
+<form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
     <div>
         <label for="username">Usuraio</label>
         <input type="text" id="username" formControlName="username">
@@ -9,4 +9,5 @@
         <input type="password" id="password" formControlName="password">
     </div>
     <button type="submit" [disabled]="loginForm.invalid">Ingresar</button>
+    <div *ngIf="errorMessage" style="color:red;">{{ errorMessage }}</div>
 </form>

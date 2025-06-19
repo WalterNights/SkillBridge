@@ -52,7 +52,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['username'] = user.username
         data['email'] = user.email
         data['rol'] = user.rol
-        data['is_profile_complete'] = user.userprofile.number_id is not None
+        data['is_profile_complete'] = user.profile.number_id is not None
         return data
     
     

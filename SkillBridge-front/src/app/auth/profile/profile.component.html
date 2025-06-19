@@ -1,1 +1,43 @@
-<p>profile works!</p>
+<h2>Bienvenido a tu perfil</h2>
+<form [formGroup]="profileForm" (ngSubmit)="onSubmit()" enctype="multipart/form-data">
+
+    <label>Nombre:</label>
+    <input formControlName="first_name" type="text" required>
+
+    <label>Apellido:</label>
+    <input formControlName="last_name" type="text" required>
+
+    <label>Cédula:</label>
+    <input formControlName="number_id" type="number" required>
+
+    <label>Código de País:</label>
+    <input formControlName="phone_code" type="number" required>
+    
+    <label>Teléfono:</label>
+    <input formControlName="phone_number" type="number" required>
+    
+    <label>Ciudad:</label>
+    <input formControlName="city" type="number" required>
+    
+    <label>Educación:</label>
+    <textarea formControlName="education"></textarea>
+    
+    <label>Habilidades (separadas por coma):</label>
+    <textarea formControlName="skills"></textarea>
+    
+    <label>Experiencia:</label>
+    <textarea formControlName="experience"></textarea>
+
+    <label>LinkedIn:</label>
+    <input formControlName="linkedin_url" type="url" required>
+    
+    <label>Portafolio:</label>
+    <input formControlName="portfolio_url" type="url" required>
+    
+    <label>Hoja de Vida (CV):</label>
+    <input type="file" (change)="onFileChange($event)">
+
+    <button type="submit" [disabled]="profileForm.invalid">Actualizar perfil</button>
+    <p *ngIf="successMessage">{{ successMessage }}</p>
+    <p *ngIf="errorMessage" style="color: red;">{{ errorMessage }}</p>
+</form>

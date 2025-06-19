@@ -1,7 +1,7 @@
 import { Router } from '@angular/router';
 import { Component } from '@angular/core';
+import { AuthService } from '../auth.service';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environment/environment';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validator, Validators } from '@angular/forms';
 
@@ -14,26 +14,23 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validator, Validators } fr
 })
 export class LoginComponent {
   loginForm: FormGroup;
-  constructor(private fb: FormBuilder, private http: HttpClient, private router: Router) {
+  errorMessage = '';
+  constructor(private fb: FormBuilder, private authService: AuthService, private router: Router) {
     this,this.loginForm = this.fb.group({
       username: ['', Validators.required],
       password: ['', Validators.required]
     });
   }
-  loginUser() {
-    if(this,this.loginForm.invalid) return;
-    this.http.post(`${environment.apiUrl}/users/login/`, this.loginForm.value).subscribe({
-      next: (res: any) => {
-        console.log('Login Exitoso:', res);
-        if(!res.is_profile_complete) {
-          this.router.navigate(['/profile']);
-        } else {
-          this.router.navigate(['/']);
-        }
+  onSubmit() {
+    if (this.loginForm.invalid) return;
+    this.authService.login(this.loginForm.value).subscribe({
+      next: () => {
+        const isProfileComplete = sessionStorage.getItem('is_profile_complete') === 'true';
+        this.router.navigate([isProfileComplete ? '/' : '/profile']);
       },
-      error: (err) => {
-        console.error('Error al iniciar sesión:', err);
+      error: () => {
+        this.errorMessage = 'Credenciales inválidas. Intentalo nievamente.';
       }
-    })
+    });
   }
 }
