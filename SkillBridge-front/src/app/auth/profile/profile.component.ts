@@ -1,8 +1,7 @@
 import { Router } from '@angular/router';
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../environment/environment';
 import { FormBuilder, FormGroup, Validator, ReactiveFormsModule, Validators } from '@angular/forms';
 
 
@@ -15,6 +14,7 @@ import { FormBuilder, FormGroup, Validator, ReactiveFormsModule, Validators } fr
 })
 export class ProfileComponent implements OnInit {
   profileForm!: FormGroup;
+  selectedFile: File | null = null;
   errorMessage = "";
   successMessage = "";
 
@@ -36,30 +36,50 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  onFileChange(event: any) {
-    if (event.target.files.length > 0) {
-      this.profileForm.patchValue({ resume: event.target.files[0]});
-    }
+  onFileSelected(event:any) {
+    this.onFileSelected = event.target.files[0];
+  }
+
+  uploadCV() {
+    if (!this.selectedFile) return;
+
+    const formData = new FormData();
+    formData.append('resume', this.selectedFile);
+
+    this.http.post<any>('http://localhost:8000/api/users/resume/analyzer/', formData).subscribe({
+      next: (data) => {
+        this.profileForm.patchValue({
+          first_name: data.first_name,
+          last_name: data.last_name,
+          edutacion: data.edutacion,
+          skills: data.skills,
+          linkedin_url: data.linkedin_url
+        });
+      },
+      error: () => {
+        this.errorMessage = "Error al analizar hoja de vida"
+      }
+    });
   }
   onSubmit() {
     if (this.profileForm.invalid) return;
     const formData = new FormData();
-    for (const key in this.profileForm.value) {
-      formData.append(key, this.profileForm.value[key]);
-    }
-    this.http.post(`${environment.apiUrl}/api/users/profile/`, formData, {
-      headers: {
-        Authorization: `Bearer ${sessionStorage.getItem('access_token') || ''}`
+    Object.entries(this.profileForm.value).forEach(([key, value]) => {
+      if (value instanceof File) {
+        formData.append(key, value);
+      }else if (value !== null && value !== undefined) {
+        formData.append(key, String(value));
       }
-    }).subscribe({
+    });
+    if (this.selectedFile) {
+      formData.append('resume', this.selectedFile);
+    }
+    this.http.post('http://localhost:8000/api/users/profile/', formData).subscribe({
       next: () => {
-        this.successMessage = 'Perfil completado con éxito';
-        sessionStorage.setItem('is_profile_complete', 'true');
-        this.router.navigate(['/']);
+        this,this.router.navigate(['/']);
       },
-      error: err => {
-        this.errorMessage = 'Error al guardar el perfil';
-        console.error(err);
+      error: () => {
+        this.errorMessage = 'Error al completar perfil';
       }
     });
   }

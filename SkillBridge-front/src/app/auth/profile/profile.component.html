@@ -1,43 +1,42 @@
-<h2>Bienvenido a tu perfil</h2>
-<form [formGroup]="profileForm" (ngSubmit)="onSubmit()" enctype="multipart/form-data">
+<h2>Completar Perfil</h2>
 
-    <label>Nombre:</label>
-    <input formControlName="first_name" type="text" required>
+<form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
 
-    <label>Apellido:</label>
-    <input formControlName="last_name" type="text" required>
+  <label>Hoja de Vida (PDF o DOCX):</label>
+  <input type="file" (change)="onFileSelected($event)">
+  <button type="button" (click)="uploadCV()">Analizar Hoja de Vida</button>
 
-    <label>Cédula:</label>
-    <input formControlName="number_id" type="number" required>
+  <label>Nombre:</label>
+  <input type="text" formControlName="first_name" />
 
-    <label>Código de País:</label>
-    <input formControlName="phone_code" type="number" required>
-    
-    <label>Teléfono:</label>
-    <input formControlName="phone_number" type="number" required>
-    
-    <label>Ciudad:</label>
-    <input formControlName="city" type="number" required>
-    
-    <label>Educación:</label>
-    <textarea formControlName="education"></textarea>
-    
-    <label>Habilidades (separadas por coma):</label>
-    <textarea formControlName="skills"></textarea>
-    
-    <label>Experiencia:</label>
-    <textarea formControlName="experience"></textarea>
+  <label>Apellido:</label>
+  <input type="text" formControlName="last_name" />
 
-    <label>LinkedIn:</label>
-    <input formControlName="linkedin_url" type="url" required>
-    
-    <label>Portafolio:</label>
-    <input formControlName="portfolio_url" type="url" required>
-    
-    <label>Hoja de Vida (CV):</label>
-    <input type="file" (change)="onFileChange($event)">
+  <label>Código País:</label>
+  <input type="text" formControlName="phone_code" />
 
-    <button type="submit" [disabled]="profileForm.invalid">Actualizar perfil</button>
-    <p *ngIf="successMessage">{{ successMessage }}</p>
-    <p *ngIf="errorMessage" style="color: red;">{{ errorMessage }}</p>
+  <label>Teléfono:</label>
+  <input type="text" formControlName="phone_number" />
+
+  <label>Ciudad:</label>
+  <input type="text" formControlName="city" />
+
+  <label>Educación:</label>
+  <textarea formControlName="education"></textarea>
+
+  <label>Habilidades:</label>
+  <textarea formControlName="skills"></textarea>
+
+  <label>Experiencia:</label>
+  <textarea formControlName="experience"></textarea>
+
+  <label>LinkedIn:</label>
+  <input type="url" formControlName="linkedin_url" />
+
+  <label>Portafolio:</label>
+  <input type="url" formControlName="portfolio_url" />
+
+  <button type="submit">Guardar Perfil</button>
+
+  <p *ngIf="errorMessage">{{ errorMessage }}</p>
 </form>
