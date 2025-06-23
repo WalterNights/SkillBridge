@@ -15,11 +15,11 @@ def extract_text_from_docx(file):
     return "\n".join([para.text for para in doc.paragraphs])
 
 
-def extrac_text_from_resume(file):
+def extract_text_from_resume(file):
     filename = file.name.lower()
     if filename.endswith(".pdf"):
-        return extract_text_from_pdf
+        return extract_text_from_pdf(file)
     elif filename.endswith(".docx"):
-        return extract_text_from_docx
+        return extract_text_from_docx(file)
     else:
         return ""

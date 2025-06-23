@@ -2,28 +2,28 @@
 <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
     <label>
         Usuario:
-        <input formControlName="username" />
+        <input type="text" formControlName="username" />
     </label>
     <div *ngIf="registerForm.get('username')?.invalid && registerForm.get('username')?.touched">
         Usuario es Requerido
     </div>
     <label>
         Correo:
-        <input formControlName="email" type="email" />
+        <input type="email" formControlName="email" />
     </label>
     <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
         Correo es Requerido
     </div>
     <label>
         Contraseña:
-        <input formControlName="password" type="password" />
+        <input type="password" formControlName="password" />
     </label>
     <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
         La contraseña debe tener mínimo 8 caracteres, incluir letras, números y un símbolo especial.
     </div>
     <label>
         Confirmar Contraseña:
-        <input formControlName="confirmPassword" type="password" />
+        <input type="password" formControlName="confirmPassword" />
     </label>
     <div *ngIf="registerForm.errors?.['passwordsDoNotMatch'] && registerForm.get('confirmPassword')?.touched">
         Las contraseñas no coinciden

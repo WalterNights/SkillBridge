@@ -43,9 +43,11 @@ export class RegisterComponent {
     if (password === username || password === email) {
       this.errorMessage = 'La contraseña no puede ser igual al nombre de usuario o correo'
     }
-    this,this.authService.register({ username, email, password }).subscribe({
-      next: () => this.router.navigate(['/login']),
-      error: err => {
+    this.authService.register({ username, email, password }).subscribe({
+      next: (res) => {
+        this.router.navigate(['/auth/login'])
+      },
+      error: (err) => {
         this.errorMessage = 'Error al registrar usuario. Intentelo nuevamente';
         console.error(err)
       }

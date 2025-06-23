@@ -7,15 +7,15 @@ EDUCATION_KEYWORDS = [
 
 SKILL_KEYWORDS = [
     # Tecnologías
-    "python", "java", "javascript", "typescript", "angular", "react",
-    "vue", "node", "django", "flask", "spring", "git", "html", "css",
+    "python", "java", "javascript", "typescript", "fetch", "jquery", "angular", "react",
+    "vue", "node", "excpress", "django", "api rest", "flask", "spring", "git", "html", "css",
     "sql", "mysql", "postgresql", "mongodb", "docker", "kubernetes",
-    "aws", "azure", "linux", "bash", "api", "graphql",
+    "aws", "azure", "linux", "bash", "graphql",
 
     # Habilidades blandas
     "liderazgo", "comunicación", "trabajo en equipo", "resolución de problemas",
     "adaptabilidad", "pensamiento crítico", "proactividad", "gestión del tiempo",
 
     # Herramientas
-    "jira", "trello", "figma", "adobe xd", "photoshop"
+    "jira", "trello", "figma", "adobe xd", "photoshop", "postman"
 ]

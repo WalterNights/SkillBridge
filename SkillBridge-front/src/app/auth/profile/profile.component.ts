@@ -17,9 +17,13 @@ export class ProfileComponent implements OnInit {
   selectedFile: File | null = null;
   errorMessage = "";
   successMessage = "";
+  countryCodes: any[] = []
 
   constructor(private fb: FormBuilder, private http: HttpClient, private router: Router) {}
   ngOnInit(): void {
+    this.http.get<any[]>('/data/country-code.json').subscribe(data => {
+      this.countryCodes = data;
+    });
     this.profileForm = this.fb.group({
       first_name: ['', Validators.required],
       last_name: ['', Validators.required],
@@ -27,33 +31,39 @@ export class ProfileComponent implements OnInit {
       phone_code: ['', Validators.required],
       phone_number: ['', Validators.required],
       city: ['', Validators.required],
-      education: [''],
-      skills: [''],
-      experience: [''],
-      linkedin_url: [''],
+      education: ['', Validators.required],
+      skills: ['', Validators.required],
+      experience: ['', Validators.required],
+      linkedin_url: ['', [Validators.required, Validators.pattern(/^https?:\/\/(www\.)?linkedin\.com\/in\/[^\s]+$/)]],
       portfolio_url: [''],
       resume: [null],
     });
   }
 
   onFileSelected(event:any) {
-    this.onFileSelected = event.target.files[0];
-  }
-
-  uploadCV() {
+    this.selectedFile = event.target.files[0];
     if (!this.selectedFile) return;
-
     const formData = new FormData();
     formData.append('resume', this.selectedFile);
-
     this.http.post<any>('http://localhost:8000/api/users/resume/analyzer/', formData).subscribe({
       next: (data) => {
         this.profileForm.patchValue({
           first_name: data.first_name,
           last_name: data.last_name,
-          edutacion: data.edutacion,
+          phone_code: data.phone_code,
+          phone_number: data.phone_number,
+          city: data.city,
+          education: data.education,
           skills: data.skills,
-          linkedin_url: data.linkedin_url
+          experience: data.experience,
+          linkedin_url: data.linkedin_url,
+          portfolio_url: data.portfolio_url
+        });
+        this.successMessage = "Hoja de vida analizada correctamente";
+        Object.keys(this.profileForm.controls).forEach(field => {
+          const control = this.profileForm.get(field);
+          control?.markAsTouched();
+          control?.updateValueAndValidity();
         });
       },
       error: () => {
@@ -61,11 +71,16 @@ export class ProfileComponent implements OnInit {
       }
     });
   }
+
   onSubmit() {
-    if (this.profileForm.invalid) return;
+    console.log(this.profileForm.value)
+    if (this.profileForm.invalid) {
+      console.warn('⚠️ Formulario inválido', this.profileForm.errors);
+      return
+    };
     const formData = new FormData();
     Object.entries(this.profileForm.value).forEach(([key, value]) => {
-      if (value instanceof File) {
+      if (value instanceof File && value instanceof File) {
         formData.append(key, value);
       }else if (value !== null && value !== undefined) {
         formData.append(key, String(value));
@@ -74,12 +89,19 @@ export class ProfileComponent implements OnInit {
     if (this.selectedFile) {
       formData.append('resume', this.selectedFile);
     }
-    this.http.post('http://localhost:8000/api/users/profile/', formData).subscribe({
+
+    const token = localStorage.getItem('access_token');
+    const headers = {Authorization: `Bearer ${token}`};
+
+    this.http.post('http://localhost:8000/api/users/profile/', formData, { headers }).subscribe({
       next: () => {
-        this,this.router.navigate(['/']);
+        console.log("✅ Perfil guardado correctamente");
+
+        this.router.navigate(['/']);
       },
-      error: () => {
+      error: (err) => {
         this.errorMessage = 'Error al completar perfil';
+        console.error("❌ Error al guardar el perfil:", err);
       }
     });
   }

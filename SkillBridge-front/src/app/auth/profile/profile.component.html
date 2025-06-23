@@ -1,42 +1,55 @@
-<h2>Completar Perfil</h2>
+<div class="full-width">
+  <h2>Completar Perfil</h2>
+  <div>
+    <form class="display-column" [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+    
+      <label>Hoja de Vida (PDF o DOCX):</label>
+      <input type="file" (change)="onFileSelected($event)">
+    
+      <label>Nombre *:</label>
+      <input type="text" formControlName="first_name" />
+    
+      <label>Apellido *:</label>
+      <input type="text" formControlName="last_name" />
 
-<form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
-
-  <label>Hoja de Vida (PDF o DOCX):</label>
-  <input type="file" (change)="onFileSelected($event)">
-  <button type="button" (click)="uploadCV()">Analizar Hoja de Vida</button>
-
-  <label>Nombre:</label>
-  <input type="text" formControlName="first_name" />
-
-  <label>Apellido:</label>
-  <input type="text" formControlName="last_name" />
-
-  <label>Código País:</label>
-  <input type="text" formControlName="phone_code" />
-
-  <label>Teléfono:</label>
-  <input type="text" formControlName="phone_number" />
-
-  <label>Ciudad:</label>
-  <input type="text" formControlName="city" />
-
-  <label>Educación:</label>
-  <textarea formControlName="education"></textarea>
-
-  <label>Habilidades:</label>
-  <textarea formControlName="skills"></textarea>
-
-  <label>Experiencia:</label>
-  <textarea formControlName="experience"></textarea>
-
-  <label>LinkedIn:</label>
-  <input type="url" formControlName="linkedin_url" />
-
-  <label>Portafolio:</label>
-  <input type="url" formControlName="portfolio_url" />
-
-  <button type="submit">Guardar Perfil</button>
-
-  <p *ngIf="errorMessage">{{ errorMessage }}</p>
-</form>
+      <label>Documento de Identidad *:</label>
+      <input type="number" formControlName="number_id" />
+    
+      <label>Código País:</label>
+      <select formControlName="phone_code">
+        <option value="">Seleccione el código de país</option>
+        <option *ngFor="let country of countryCodes" [value]="country.code">
+          {{ country.name }} ({{ country.code }})
+        </option>
+      </select>
+    
+      <label>Teléfono *:</label>
+      <input type="text" formControlName="phone_number" />
+    
+      <label>Ciudad:</label>
+      <input type="text" formControlName="city" />
+    
+      <label>Educación *:</label>
+      <textarea formControlName="education"></textarea>
+    
+      <label>Habilidades *:</label>
+      <textarea formControlName="skills"></textarea>
+    
+      <label>Experiencia *:</label>
+      <textarea formControlName="experience"></textarea>
+    
+      <label>LinkedIn *:</label>
+      <input type="url" formControlName="linkedin_url" />
+    
+      <label>Portafolio:</label>
+      <input type="url" formControlName="portfolio_url" />
+    
+      <button type="submit">Guardar Perfil</button>
+    
+      <p *ngIf="errorMessage">{{ errorMessage }}</p>
+      <div *ngIf="profileForm.invalid && profileForm.touched">
+        <p>⚠️ Revisa que todos los campos obligatorios estén completos.</p>
+      </div>
+    </form>
+  </div>
+</div>
