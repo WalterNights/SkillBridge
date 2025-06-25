@@ -1,13 +1,49 @@
-<h2>Inicia Sesión</h2>
-<form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-    <div>
-        <label for="username">Usuraio</label>
-        <input type="text" id="username" formControlName="username">
-    </div>
-    <div>
-        <label for="password">Contraseña</label>
-        <input type="password" id="password" formControlName="password">
-    </div>
-    <button type="submit" [disabled]="loginForm.invalid">Ingresar</button>
-    <div *ngIf="errorMessage" style="color:red;">{{ errorMessage }}</div>
-</form>
+<div class="min-h-screen flex items-center justify-center bg-grey-100 px-4">
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="bg-white p-8 rounded-2xl shadow-xl space-y-6 w-full lg:w-2/4 2xl:w-1/4 max-w-mod">
+        <h2 class="text-2xl font-bold text-center text-grey-800">Inicia Sesión</h2>
+        <div class="space-y-4">
+            <div>
+                <label for="username" class="block text-sm font-medium text-grey-700">
+                    Usuraio
+                </label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    formControlName="username"
+                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                    placeholder="Escribe tu nombre de usuario"
+                >
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-grey-700">
+                    Contraseña
+                </label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    formControlName="password"
+                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                    placeholder="Escribe tu contraseña"
+                >
+            </div>
+            <div>
+                <button 
+                    type="submit" 
+                    [disabled]="loginForm.invalid"
+                    class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition"
+                >
+                    Ingresar
+                </button>
+                <div *ngIf="errorMessage" class="block text-sm font-medium text-red-700">
+                    {{ errorMessage }}
+                </div>
+            </div>
+            <div>
+                ¿No tienes una cuenta?
+                <a [routerLink]="['/auth/register']" class="text-indigo-600 hover:text-indigo-800 cursor-pointer">
+                    Registrate aquí
+                </a>
+            </div>
+        </div>
+    </form>
+</div>

@@ -1,55 +1,154 @@
-<div class="full-width">
-  <h2>Completar Perfil</h2>
-  <div>
-    <form class="display-column" [formGroup]="profileForm" (ngSubmit)="onSubmit()">
-    
-      <label>Hoja de Vida (PDF o DOCX):</label>
-      <input type="file" (change)="onFileSelected($event)">
-    
-      <label>Nombre *:</label>
-      <input type="text" formControlName="first_name" />
-    
-      <label>Apellido *:</label>
-      <input type="text" formControlName="last_name" />
-
-      <label>Documento de Identidad *:</label>
-      <input type="number" formControlName="number_id" />
-    
-      <label>Código País:</label>
-      <select formControlName="phone_code">
-        <option value="">Seleccione el código de país</option>
-        <option *ngFor="let country of countryCodes" [value]="country.code">
-          {{ country.name }} ({{ country.code }})
-        </option>
-      </select>
-    
-      <label>Teléfono *:</label>
-      <input type="text" formControlName="phone_number" />
-    
-      <label>Ciudad:</label>
-      <input type="text" formControlName="city" />
-    
-      <label>Educación *:</label>
-      <textarea formControlName="education"></textarea>
-    
-      <label>Habilidades *:</label>
-      <textarea formControlName="skills"></textarea>
-    
-      <label>Experiencia *:</label>
-      <textarea formControlName="experience"></textarea>
-    
-      <label>LinkedIn *:</label>
-      <input type="url" formControlName="linkedin_url" />
-    
-      <label>Portafolio:</label>
-      <input type="url" formControlName="portfolio_url" />
-    
-      <button type="submit">Guardar Perfil</button>
-    
-      <p *ngIf="errorMessage">{{ errorMessage }}</p>
-      <div *ngIf="profileForm.invalid && profileForm.touched">
-        <p>⚠️ Revisa que todos los campos obligatorios estén completos.</p>
-      </div>
+<div class="min-h-screen flex items-center justify-center bg-grey-100 px-4">
+    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="bg-white p-8 rounded-2xl shadow-xl space-y-6 w-full lg:w-2/4 max-w-mod">
+        <h2 class="text-2xl font-bold text-center text-grey-800">
+            Completar Perfil
+        </h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    Carga tu hoja de vida (PDF o DOCX):
+                </label>
+                <input 
+                    type="file" 
+                    (change)="onFileSelected($event)"
+                    class="mt-1 block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                >
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * Nombre:
+                </label>
+                <input 
+                    type="text" 
+                    formControlName="first_name"
+                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Escribe tu nombre"
+                />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * Apellido:
+                </label>
+                <input 
+                    type="text" 
+                    formControlName="last_name"
+                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Escribe tu apellido"
+                />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * Documento de Identidad:
+                </label>
+                <input 
+                    type="number" 
+                    formControlName="number_id"
+                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Escribe tu documento de identidad"
+                />
+            </div>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="w-full lg:w-2/4">
+                    <label class="block text-sm font-medium text-grey-700">
+                        Código País:
+                    </label>
+                    <select 
+                        formControlName="phone_code" 
+                        class="w-full mt-1 px-4 py-2 rounded-xl border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                        <option value="">Seleccione el código de país</option>
+                        <option *ngFor="let country of countryCodes" [value]="country.code">
+                            {{ country.name }} ({{ country.code }})
+                        </option>
+                    </select>
+                </div>
+                <div class="w-full lg:w-2/4">
+                    <label class="block text-sm font-medium text-grey-700">
+                        * Teléfono:
+                    </label>
+                    <input 
+                        type="text" 
+                        formControlName="phone_number"
+                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Escribe tu número de teléfono"
+                    />
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    Ciudad:
+                </label>
+                <input 
+                    type="text" 
+                    formControlName="city"
+                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Escribe tu ciudad"
+                />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * Educación:
+                </label>
+                <textarea 
+                    formControlName="education"
+                    rows="2"
+                    class="w-full h-20 mt-1 px-4 py-2 rounded-xl border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                ></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * Habilidades:
+                </label>
+                <textarea 
+                    formControlName="skills"
+                    rows="2"
+                    class="w-full h-20 mt-1 px-4 py-2 rounded-xl border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                ></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * Experiencia:
+                </label>
+                <textarea 
+                    formControlName="experience"
+                    rows="2"
+                    class="w-full h-20 mt-1 px-4 py-2 rounded-xl border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                ></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * LinkedIn :
+                </label>
+                <input 
+                    type="url" 
+                    formControlName="linkedin_url"
+                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Escribe tu enlace de LinkedIn"
+                />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * Portafolio :
+                </label>
+                <input 
+                    type="url" 
+                    formControlName="portfolio_url"
+                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Escribe el enlace de tu portafolio"
+                />
+            </div>
+            <div>
+                <button 
+                    type="submit"
+                    class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition"
+                >
+                    Guardar Perfil
+                </button>
+                <p *ngIf="errorMessage">{{ errorMessage }}</p>
+                <div *ngIf="profileForm.invalid && profileForm.touched">
+                    <p>⚠️ Revisa que todos los campos obligatorios estén completos.</p>
+                </div>
+            </div>
+        </div>
     </form>
-  </div>
 </div>

@@ -1,33 +1,84 @@
-<h2>Registro de Uusario</h2>
-<form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-    <label>
-        Usuario:
-        <input type="text" formControlName="username" />
-    </label>
-    <div *ngIf="registerForm.get('username')?.invalid && registerForm.get('username')?.touched">
-        Usuario es Requerido
-    </div>
-    <label>
-        Correo:
-        <input type="email" formControlName="email" />
-    </label>
-    <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
-        Correo es Requerido
-    </div>
-    <label>
-        Contraseña:
-        <input type="password" formControlName="password" />
-    </label>
-    <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
-        La contraseña debe tener mínimo 8 caracteres, incluir letras, números y un símbolo especial.
-    </div>
-    <label>
-        Confirmar Contraseña:
-        <input type="password" formControlName="confirmPassword" />
-    </label>
-    <div *ngIf="registerForm.errors?.['passwordsDoNotMatch'] && registerForm.get('confirmPassword')?.touched">
-        Las contraseñas no coinciden
-    </div>
-    <div *ngIf="errorMessage" style="color:red">{{ errorMessage }}</div>
-    <button type="submit" [disabled]="registerForm.invalid">Registrarse</button>
-</form>
+<div class="min-h-screen flex items-center justify-center bg-grey-100 px-4">
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="bg-white p-8 rounded-2xl shadow-xl space-y-6 w-full lg:w-2/4 2xl:w-1/4 max-w-mod">
+        <h2 class="text-2xl font-bold text-center text-grey-800">
+            Registro de Uusario
+        </h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    Usuario:
+                    <input 
+                        type="text" 
+                        formControlName="username" 
+                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                        placeholder="Escribe el nombre de usuario de tu prteferencia"
+                    />
+                </label>
+                <div *ngIf="registerForm.get('username')?.invalid && registerForm.get('username')?.touched" class="block text-sm font-medium text-red-700">
+                    Usuario es Requerido
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    Correo:
+                    <input 
+                        type="email" 
+                        formControlName="email" 
+                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                        placeholder="Escribe tu correo electrónico"
+                    />
+                </label>
+                <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="block text-sm font-medium text-red-700">
+                    Correo es Requerido
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    Contraseña:
+                    <input 
+                        type="password" 
+                        formControlName="password" 
+                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                        placeholder="Escribe una contraseña segura"
+                    />
+                </label>
+                <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="block text-sm font-medium text-red-700">
+                    La contraseña debe tener mínimo 8 caracteres, incluir letras, números y un símbolo especial.
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    Confirmar Contraseña:
+                    <input 
+                        type="password" 
+                        formControlName="confirmPassword" 
+                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                        placeholder="Vuelve a escribir tu contraseña para confirmarla
+                        "
+                    />
+                </label>
+                <div *ngIf="registerForm.errors?.['passwordsDoNotMatch'] && registerForm.get('confirmPassword')?.touched" class="block text-sm font-medium text-red-700">
+                    Las contraseñas no coinciden
+                </div>
+            </div>
+            <div>
+                <div *ngIf="errorMessage" class="block text-sm font-medium text-red-700">
+                    {{ errorMessage }}
+                </div>
+                <button 
+                    type="submit" 
+                    [disabled]="registerForm.invalid"
+                    class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition"
+                >
+                    Registrarse
+                </button>
+            </div>
+            <div>
+                ¿Ya tienes una cuenta?
+                <a [routerLink]="['/auth/login']" class="text-indigo-600 hover:text-indigo-800 cursor-pointer">
+                    Inicia sesión aquí
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
