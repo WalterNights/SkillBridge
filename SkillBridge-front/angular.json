@@ -32,7 +32,7 @@
               }
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles/tailwind.css"
             ],
             "scripts": []
           },
@@ -91,7 +91,7 @@
               }
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles/tailwind.css"
             ],
             "scripts": []
           }
