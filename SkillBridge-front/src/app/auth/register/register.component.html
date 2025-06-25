@@ -1,5 +1,20 @@
+<!--Modal Window-->
+<div *ngIf="isLoading" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-72 text-center">
+        <div class="flex flex-col items-center">
+            <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <p class="mt-4 text-grey-700 font-semibold">Registrando tu cuenta...</p>
+        </div>
+    </div>
+</div>
+<!--Register Form-->
 <div class="min-h-screen flex items-center justify-center bg-grey-100 px-4">
-    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="bg-white p-8 rounded-2xl shadow-xl space-y-6 w-full lg:w-2/4 2xl:w-1/4 max-w-mod">
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()"
+        class="bg-white p-8 rounded-2xl shadow-xl space-y-6 w-full lg:w-2/4 2xl:w-1/4 max-w-mod">
         <h2 class="text-2xl font-bold text-center text-grey-800">
             Registro de Uusario
         </h2>
@@ -7,57 +22,49 @@
             <div>
                 <label class="block text-sm font-medium text-grey-700">
                     Usuario:
-                    <input 
-                        type="text" 
-                        formControlName="username" 
-                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
-                        placeholder="Escribe el nombre de usuario de tu prteferencia"
-                    />
+                    <input type="text" formControlName="username"
+                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Escribe el nombre de usuario de tu prteferencia" />
                 </label>
-                <div *ngIf="registerForm.get('username')?.invalid && registerForm.get('username')?.touched" class="block text-sm font-medium text-red-700">
+                <div *ngIf="registerForm.get('username')?.invalid && registerForm.get('username')?.touched"
+                    class="block text-sm font-medium text-red-700">
                     Usuario es Requerido
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-grey-700">
                     Correo:
-                    <input 
-                        type="email" 
-                        formControlName="email" 
-                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
-                        placeholder="Escribe tu correo electrónico"
-                    />
+                    <input type="email" formControlName="email"
+                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Escribe tu correo electrónico" />
                 </label>
-                <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="block text-sm font-medium text-red-700">
+                <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
+                    class="block text-sm font-medium text-red-700">
                     Correo es Requerido
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-grey-700">
                     Contraseña:
-                    <input 
-                        type="password" 
-                        formControlName="password" 
-                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
-                        placeholder="Escribe una contraseña segura"
-                    />
+                    <input type="password" formControlName="password"
+                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Escribe una contraseña segura" />
                 </label>
-                <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="block text-sm font-medium text-red-700">
+                <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
+                    class="block text-sm font-medium text-red-700">
                     La contraseña debe tener mínimo 8 caracteres, incluir letras, números y un símbolo especial.
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-grey-700">
                     Confirmar Contraseña:
-                    <input 
-                        type="password" 
-                        formControlName="confirmPassword" 
-                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                    <input type="password" formControlName="confirmPassword"
+                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Vuelve a escribir tu contraseña para confirmarla
-                        "
-                    />
+                        " />
                 </label>
-                <div *ngIf="registerForm.errors?.['passwordsDoNotMatch'] && registerForm.get('confirmPassword')?.touched" class="block text-sm font-medium text-red-700">
+                <div *ngIf="registerForm.errors?.['passwordsDoNotMatch'] && registerForm.get('confirmPassword')?.touched"
+                    class="block text-sm font-medium text-red-700">
                     Las contraseñas no coinciden
                 </div>
             </div>
@@ -65,11 +72,8 @@
                 <div *ngIf="errorMessage" class="block text-sm font-medium text-red-700">
                     {{ errorMessage }}
                 </div>
-                <button 
-                    type="submit" 
-                    [disabled]="registerForm.invalid"
-                    class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition"
-                >
+                <button type="submit" [disabled]="registerForm.invalid || isLoading"
+                    class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed">
                     Registrarse
                 </button>
             </div>

@@ -15,6 +15,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractContro
 
 export class RegisterComponent {
   registerForm: FormGroup
+  isLoading = false;
   errorMessage: string = '';
   constructor(private fb: FormBuilder, private authService: AuthService, private router: Router) {
     this.registerForm = this.fb.group({
@@ -43,11 +44,16 @@ export class RegisterComponent {
     if (password === username || password === email) {
       this.errorMessage = 'La contraseña no puede ser igual al nombre de usuario o correo'
     }
+    this.isLoading = true;
     this.authService.register({ username, email, password }).subscribe({
-      next: (res) => {
-        this.router.navigate(['/auth/login'])
+      next: () => {
+        setTimeout(() => {
+          this.isLoading = false;
+          this.router.navigate(['/auth/login'])
+        }, 1500);
       },
       error: (err) => {
+        this.isLoading = false;
         this.errorMessage = 'Error al registrar usuario. Intentelo nuevamente';
         console.error(err)
       }

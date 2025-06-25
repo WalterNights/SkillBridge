@@ -14,6 +14,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validator, Validators } fr
 })
 export class LoginComponent {
   loginForm: FormGroup;
+  isLoading = false;
   errorMessage = '';
   constructor(private fb: FormBuilder, private authService: AuthService, private router: Router) {
     this.loginForm = this.fb.group({
@@ -23,12 +24,17 @@ export class LoginComponent {
   }
   onSubmit() {
     if (this.loginForm.invalid) return;
+    this.isLoading = true;
     this.authService.login(this.loginForm.value).subscribe({
       next: () => {
-        const isProfileComplete = sessionStorage.getItem('is_profile_complete') === 'true';
-        this.router.navigate([isProfileComplete ? '/' : '/profile']);
+        setTimeout(() => {
+          this.isLoading = false;
+          const isProfileComplete = sessionStorage.getItem('is_profile_complete') === 'true';
+          this.router.navigate([isProfileComplete ? '/' : '/profile']);
+        }, 1200);
       },
       error: () => {
+        this.isLoading = false;
         this.errorMessage = 'Credenciales inválidas. Intentalo nievamente.';
       }
     });

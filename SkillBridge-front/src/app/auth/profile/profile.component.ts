@@ -16,6 +16,7 @@ export class ProfileComponent implements OnInit {
   profileForm!: FormGroup;
   selectedFile: File | null = null;
   errorMessage = "";
+  isLoading = false;
   successMessage = "";
   countryCodes: any[] = []
 
@@ -73,11 +74,7 @@ export class ProfileComponent implements OnInit {
   }
 
   onSubmit() {
-    console.log(this.profileForm.value)
-    if (this.profileForm.invalid) {
-      console.warn('⚠️ Formulario inválido', this.profileForm.errors);
-      return
-    };
+    if (this.profileForm.invalid) return;
     const formData = new FormData();
     Object.entries(this.profileForm.value).forEach(([key, value]) => {
       if (value instanceof File && value instanceof File) {
@@ -89,17 +86,19 @@ export class ProfileComponent implements OnInit {
     if (this.selectedFile) {
       formData.append('resume', this.selectedFile);
     }
-
     const token = localStorage.getItem('access_token');
     const headers = {Authorization: `Bearer ${token}`};
-
+    this.isLoading = true;
     this.http.post('http://localhost:8000/api/users/profile/', formData, { headers }).subscribe({
       next: () => {
-        console.log("✅ Perfil guardado correctamente");
-
-        this.router.navigate(['/']);
+        setTimeout(() => {
+          this.isLoading = false;
+          console.log("✅ Perfil guardado correctamente");
+          this.router.navigate(['/']);
+        }, 1500);
       },
       error: (err) => {
+        this.isLoading = false;
         this.errorMessage = 'Error al completar perfil';
         console.error("❌ Error al guardar el perfil:", err);
       }
