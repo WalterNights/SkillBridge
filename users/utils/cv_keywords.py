@@ -19,3 +19,18 @@ SKILL_KEYWORDS = [
     # Herramientas
     "jira", "trello", "figma", "adobe xd", "photoshop", "postman"
 ]
+
+PROFFESIONAL_RESUME_KEYWORDS = [
+    "perfil profesional", "título profesional", "professional title", "ocupación", "cargo", "aspiración laboral",
+    "resumen profesional", "resumen", "perfil", "professional profile", "professional summary"
+]
+
+SUMMARY_KEYWORDS = ["resumen profesional", "perfil profesional", "sobre mí", "acerca de mí"]
+
+EXPERIENCE_KEYWORDS = ["experiencia", "historial laboral", "trayectoria"]
+
+PHONE_KEYWORDS = ["teléfono", "celular", "número de contacto"]
+
+LINKEDIN_KEYWORDS = ["linkedin"]
+
+PORTFOLIO_KEYWORDS = ["portafolio", "portfolio"]

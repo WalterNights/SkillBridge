@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { AuthService } from '../auth.service';
 import { CommonModule } from '@angular/common';
+import { Title } from '@angular/platform-browser';
 import { Router, RouterModule } from '@angular/router';
-import { environment } from '../../../environment/environment';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validator, Validators } from '@angular/forms';
 
 @Component({
@@ -16,7 +16,13 @@ export class LoginComponent {
   loginForm: FormGroup;
   isLoading = false;
   errorMessage = '';
-  constructor(private fb: FormBuilder, private authService: AuthService, private router: Router) {
+  constructor(
+    private fb: FormBuilder, 
+    private authService: AuthService, 
+    private router: Router,
+    private titleService: Title
+  ) {
+    this.titleService.setTitle('SkillBridge - Login');
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
       password: ['', Validators.required]

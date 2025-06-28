@@ -1,89 +1,93 @@
 import re
-from .cv_keywords import SKILL_KEYWORDS, EDUCATION_KEYWORDS
+from .cv_keywords import *
 
 
-def simple_profile_parser(resume_text):
-    
-    print("🔎 Tipo de input recibido:", type(resume_text))
-    
-    profile = {}
-    text = resume_text.strip().lower()
-    lines = text.splitlines()
-    
-    # Extracting the first line as full name
-    if lines:
-        full_name_line = lines[0].strip().title()
-        name_part = full_name_line.split()
-        if len(name_part) >= 2:
-            profile["first_name"] = name_part[0]
-            profile["last_name"] = " ".join(name_part[1:])
-        else:
-            profile["first_name"] = full_name_line
-            profile["last_name"] = ""   
-            
-    # Extracting the phone number
-    phone_match = re.search(r'tel[:\s]*\+?(\d[\d\s\-]+)', text, re.IGNORECASE)
+def find_keywords(text, keywords):
+    return any(kw.lower() in text.lower() for kw in keywords)
+
+
+def simple_profile_parser(text: str) -> dict:
+    print("🔎 Tipo de input recibido:", type(text))
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    text_joined = " ".join(lines)
+    profile_data = {}
+    # Full name extraction
+    name_match = re.search(r"^(?P<first>[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)\s+(?P<last>[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑa-záéíóúñ]+)?)", lines[0])
+    if name_match:
+        profile_data["first_name"] = name_match.group("first")
+        profile_data["last_name"] = name_match.group("last")    
+    # Phone number extraction
+    phone_match = re.search(r"(?P<code>\+\d{1,3})[\s\-]?(?P<number>\d{7,10})", text_joined)
     if phone_match:
-        phone = phone_match.group(1).strip()
-        if phone.startswith("57"):
-            profile["phone_code"] = "+57"
-            profile["phone_number"] = phone[2:].strip()
-        elif phone.startswith("+"):
-            profile["phone_code"] = phone.split()[0]
-            profile["phone_number"] = " ".join(phone.split()[1:])
-        else:
-            profile["phone_code"] = ""
-            profile["phone_number"] = phone
-    else:
-        profile["phone_code"] = ""
-        profile["phone_number"] = ""
-              
-    # Extracting the city
-    city_country_match = re.search(r'^(medell[ií]n),?\s*(colombia)?$', text, re.MULTILINE | re.IGNORECASE)
-    profile["city"] = city_country_match.group(1).title() if city_country_match else ""
-        
-    # Extracting the education information
-    collecting = False
-    education_block = ""
+        profile_data["phone_code"] = phone_match.group(1)
+        profile_data["phone_number"] = phone_match.group(2)      
+    # Professional title extraction
     for line in lines:
-        line = line.strip().lower()       
-        if line.startswith("educación") or line.startswith("formación académica"):
-            collecting = True
-            continue
-        if collecting:
-            if any(
-                line.startswith(header)
-                for header in ["experiencia", "habilidades", "skills", "certificaciones", "resumen"]
-            ):
-                break
-            education_block += line + " "
-    profile["education"] = education_block.strip().title()      
-     
-    # Extracting the skills
-    found_skills = [skills for skills in SKILL_KEYWORDS if skills in text]
-    profile["skills"] = ", ".join(found_skills)
-    
-    # Extracting the experience
-    experience_block = ""
-    collecting = False
+        if find_keywords(line, PROFFESIONAL_RESUME_KEYWORDS):
+            idx = lines.index(line) +1
+            if idx < len(lines):
+                full_title = lines[idx].strip()
+                try:
+                    title = re.match(r"^[A-ZÁÉÍÓÚÑ][a-záéíóúñ\s]+", full_title, re.IGNORECASE)
+                    profile_data["professional_title"] = title.group(0) if title else full_title
+                except Exception as e:
+                    print(f"⚠️ Error extrayendo título profesional: {e}")
+                    profile_data["professional_title"] = full_title
+            break        
+    # Profile summary extraction 
+    summary_text = []
+    capturing = False
     for line in lines:
-        line_lower = line.strip().lower()
-        if line_lower.startswith("experiencia"):
-            collecting = True
+        if find_keywords(line, PROFFESIONAL_RESUME_KEYWORDS):
+            capturing = True
             continue
-        if collecting:
-            if any(
-                line_lower.startswith(header)
-                for header in ["educación", "formación", "habilidades", "skills", "certificaciones", "resumen"]
-            ):
-                break
-            experience_block += line.strip() + "\n"
-    profile["experience"] = experience_block.strip().title()
-        
-    # Extracting the LinkedIn URL
-    linkedin = re.search(r"https?://(www\.)?linkedin\.com/in/[^\s]+", text)
-    if linkedin:
-        profile["linkedin_url"] = linkedin.group()
-        
-    return profile
-            
+        if capturing and (find_keywords(line, EDUCATION_KEYWORDS + SKILL_KEYWORDS + EXPERIENCE_KEYWORDS)):
+            break
+        if capturing:
+            summary_text.append(line)
+    if summary_text:
+        profile_data["summary"] = " ".join(summary_text).strip()
+    # Education extraction
+    education_text = []
+    capturing = False
+    for line in lines:
+        if find_keywords(line, EDUCATION_KEYWORDS):
+            capturing = True
+            continue
+        if capturing and find_keywords(line, SKILL_KEYWORDS + EXPERIENCE_KEYWORDS):
+            break
+        if capturing:
+            education_text.append(line)
+    if education_text:
+        profile_data["education"] = " ".join(education_text).strip()    
+    # Skills extraction
+    skills_match = re.search(r"(?i)(Habilidades T[eé]cnicas|Skills)[:\-]?\s*(.*?)(?=\n|\Z)", text, re.DOTALL)
+    if skills_match:
+        profile_data["skills"] = skills_match.group(2).strip().replace("\n", ", ")
+    # Experience extraction
+    experience_text = []
+    capturing = False
+    for line in lines:
+        if find_keywords(line, EXPERIENCE_KEYWORDS):
+            capturing = True
+            continue
+        if capturing and find_keywords(line, SKILL_KEYWORDS + EDUCATION_KEYWORDS):
+            break
+        if capturing:
+            experience_text.append(line)
+    if experience_text:
+        profile_data["experience"] = " ".join(experience_text).strip()
+    # LinkedIn
+    for line in lines:
+        if find_keywords(line, LINKEDIN_KEYWORDS):
+            linkedin_match = re.search(r"https?://[\w./-]*linkedin\.com/in/[\w-]+", line)
+            if linkedin_match:
+                profile_data["linkedin_url"] = linkedin_match.group(0)
+    # Portfolio
+    for line in lines:
+        if find_keywords(line, PORTFOLIO_KEYWORDS):
+            portfolio_match = re.search(r"https?://[\w./-]*portfolio[\w./-]*", line)
+            if portfolio_match:
+                profile_data["portfolio_url"] = portfolio_match.group(0)
+    print(profile_data)
+    return profile_data

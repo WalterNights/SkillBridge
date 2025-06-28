@@ -1,14 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Title } from '@angular/platform-browser';
 import { Router, RouterModule } from '@angular/router';
-import { FormBuilder, FormGroup, Validator, ReactiveFormsModule, Validators } from '@angular/forms';
+import { JobService } from '../../services/job.service';
+import { JobOffer } from '../../models/job-offer.model';
+import { LoaderModalComponent } from '../../shared/loader-modal/loader-modal.component';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, LoaderModalComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss']
 })
@@ -17,10 +21,19 @@ export class ProfileComponent implements OnInit {
   selectedFile: File | null = null;
   errorMessage = "";
   isLoading = false;
+  showLoader = false;
   successMessage = "";
   countryCodes: any[] = []
 
-  constructor(private fb: FormBuilder, private http: HttpClient, private router: Router) {}
+  constructor(
+    private fb: FormBuilder, 
+    private http: HttpClient, 
+    private router: Router,
+    private jobService: JobService,
+    private titleService: Title
+  ) {
+    this.titleService.setTitle('SkillBridge - Home');
+  }
   ngOnInit(): void {
     this.http.get<any[]>('/data/country-code.json').subscribe(data => {
       this.countryCodes = data;
@@ -32,6 +45,8 @@ export class ProfileComponent implements OnInit {
       phone_code: ['', Validators.required],
       phone_number: ['', Validators.required],
       city: ['', Validators.required],
+      professional_title: ['', Validators.required],
+      summary: ['', Validators.required],
       education: ['', Validators.required],
       skills: ['', Validators.required],
       experience: ['', Validators.required],
@@ -46,7 +61,8 @@ export class ProfileComponent implements OnInit {
     if (!this.selectedFile) return;
     const formData = new FormData();
     formData.append('resume', this.selectedFile);
-    this.http.post<any>('http://localhost:8000/api/users/resume/analyzer/', formData).subscribe({
+    this.isLoading = true;
+    this.http.post<any>('http://localhost:8000/api/users/resume-analyzer/', formData).subscribe({
       next: (data) => {
         this.profileForm.patchValue({
           first_name: data.first_name,
@@ -54,13 +70,17 @@ export class ProfileComponent implements OnInit {
           phone_code: data.phone_code,
           phone_number: data.phone_number,
           city: data.city,
+          professional_title: data.professional_title,
+          summary: data.summary,
           education: data.education,
           skills: data.skills,
           experience: data.experience,
           linkedin_url: data.linkedin_url,
           portfolio_url: data.portfolio_url
         });
+        this.isLoading = false;
         this.successMessage = "Hoja de vida analizada correctamente";
+        console.log("📦 Datos recibidos:", data)
         Object.keys(this.profileForm.controls).forEach(field => {
           const control = this.profileForm.get(field);
           control?.markAsTouched();
@@ -94,8 +114,19 @@ export class ProfileComponent implements OnInit {
         setTimeout(() => {
           this.isLoading = false;
           console.log("✅ Perfil guardado correctamente");
-          this.router.navigate(['/']);
+          this.showLoader = true;
         }, 1500);
+        this.jobService.getScrapedOffers().subscribe({
+          next: (res: JobOffer[]) => {
+            this.jobService.setOffers(res);
+            this.showLoader = false;
+            this.router.navigate(['/results']);
+          },
+          error: (err) => {
+            this.showLoader = false;
+            console.error("❌ Error al obtener vacantes:", err);
+          }
+        });
       },
       error: (err) => {
         this.isLoading = false;

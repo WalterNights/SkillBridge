@@ -51,6 +51,8 @@ class UserProfile(models.Model):
     number_id = models.CharField(max_length=20, unique=True, null=True, blank=True)
     phone = models.CharField(max_length=30)
     city = models.CharField(max_length=100)
+    professional_title = models.CharField(max_length=100)
+    summary = models.TextField(blank=True)
     education = models.TextField(blank=True)
     skills = models.TextField(help_text="Lista de habilidades separadas por coma")
     experience = models.TextField(help_text="Descripción libre de experiencia")

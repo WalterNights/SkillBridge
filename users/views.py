@@ -1,15 +1,16 @@
 import fitz
 from .models import *
+from io import BytesIO
 from .serializers import *
 from rest_framework import status
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
-from users.utils.cv_parser import extract_text_from_resume
 from users.utils.cv_analyzer import simple_profile_parser
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from users.utils.cv_parser import extract_layout_info_from_resume
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -32,22 +33,17 @@ class AnalyzerResumeView(APIView):
         if not file:
             return Response({"error": "No se ha proporcionado un archiv"}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            file_data = file.read()
-            if not file_data:
-                return Response({"error": "El archivo está vacío"}, status=status.HTTP_400_BAD_REQUEST)
-            doc = fitz.open(stream=file_data, filetype="pdf")
-            text = ""
-            for page in doc:
-                text += page.get_text()
-            doc.close()
-            print("🧾 Texto extraído del CV:")
-            print(text[:300])
-            profile_data = simple_profile_parser(text)
-            print("✅ Datos extraídos:", profile_data)    
+            # Convert the resume file to bytes
+            file_bytes = file.read()
+            resume_io = BytesIO(file_bytes)
+            # Use layout parser to extract visual information
+            visual_data = extract_layout_info_from_resume(resume_io)
+            raw_text = visual_data.get("raw_text", "")
+            parsed_data = simple_profile_parser(raw_text)
+            return Response(parsed_data, status=status.HTTP_200_OK)
         except Exception as e:
             print("❌ Error al analizar el archivo CV:", str(e))
             return Response({"error": "Error al analizar el archivo"}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(profile_data, status=status.HTTP_200_OK)
     
 
 class UserProfileCreateView(APIView):
@@ -55,12 +51,6 @@ class UserProfileCreateView(APIView):
     def post(self, request):
         user = request.user
         data = request.data.copy() 
-        
-        if "resume" in request.FILES:
-            resume_text = extract_text_from_resume(request.FILES["resume"])
-            parsed_data = simple_profile_parser(resume_text)
-            data.update(parsed_data)
-        
         try:
             profile = user.profile
             serializer = UserProfileSerializer(profile, data=data, partial=True)

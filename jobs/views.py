@@ -1,16 +1,24 @@
-from .models import JobOffer
 from django.db.models import Q
 from rest_framework import status
 from django.shortcuts import render
+from users.models import UserProfile
 from rest_framework.views import APIView
-from .serializers import JobOfferSerializer
 from rest_framework.response import Response
-from .utils.scraper import run_scraper_and_store_results
+from jobs.serializers import JobOfferSerializer
+from jobs.utils.scraper import scrap_computrabajo
+from jobs.utils.offer_filter import filter_offers_by_user_skill
+from jobs.utils.query_generator import extract_search_query_from_summary
 
 
 class JobScrapingView(APIView):
     def get(self, request):
-        query = request.GET.get('q', 'desarrollador')
-        new_offers = run_scraper_and_store_results(query)
-        serializer = JobOfferSerializer(new_offers, many=True)
+        user = request.user
+        try:
+            profile = user.profile
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User profile not found."}, status=status.HTTP_404_NOT_FOUND) 
+        query = extract_search_query_from_summary(profile.summary or "")
+        new_offers = scrap_computrabajo(query=query)
+        filtered_offers = filter_offers_by_user_skill(new_offers, profile.skills)
+        serializer = JobOfferSerializer(filtered_offers, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

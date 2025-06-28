@@ -39,7 +39,8 @@ def scrap_computrabajo(query="desarrollador", location="colombia"):
                         "company": company,
                         "location": location,
                         "summary": summary,
-                        "keywords": keywords
+                        "keywords": keywords,
+                        "url": job_url
                     }
                 )
                 if created:
