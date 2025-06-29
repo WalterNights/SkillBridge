@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.env
+
+# Django
+*.sqlite3
+db.sqlite3
+/media
+/staticfiles
+
+# VSCode/PyCharm
+.vscode/
+.idea/
+
+# Environment
+env/
+venv/
+ENV/
+
+# Archivos de salida
+output.html

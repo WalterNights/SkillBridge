@@ -1,4 +1,3 @@
-import fitz
 from .models import *
 from io import BytesIO
 from .serializers import *
@@ -7,10 +6,9 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
-from users.utils.cv_analyzer import simple_profile_parser
+from users.utils.cv_analyzer import *
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from users.utils.cv_parser import extract_layout_info_from_resume
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -29,18 +27,14 @@ class AnalyzerResumeView(APIView):
     parser_classes = [MultiPartParser]
     def post(self, request):
         file = request.FILES.get("resume")
-        print("Archivo recibido", file)
         if not file:
-            return Response({"error": "No se ha proporcionado un archiv"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "No hay archivo"}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            # Convert the resume file to bytes
             file_bytes = file.read()
-            resume_io = BytesIO(file_bytes)
-            # Use layout parser to extract visual information
-            visual_data = extract_layout_info_from_resume(resume_io)
-            raw_text = visual_data.get("raw_text", "")
-            parsed_data = simple_profile_parser(raw_text)
-            return Response(parsed_data, status=status.HTTP_200_OK)
+            profile_data = []
+            if not profile_data():
+                return Response({"error": "No se pudo analizar el conmtenido"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(profile_data, status=status.HTTP_200_OK)
         except Exception as e:
             print("❌ Error al analizar el archivo CV:", str(e))
             return Response({"error": "Error al analizar el archivo"}, status=status.HTTP_400_BAD_REQUEST)
