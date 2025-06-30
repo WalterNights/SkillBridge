@@ -12,8 +12,12 @@
     </div>
 </div>
 <!--Profile Form-->
-<div class="min-h-screen flex items-center justify-center bg-grey-100 px-4">
-    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="bg-white p-8 rounded-2xl shadow-xl space-y-6 w-full lg:w-2/4 max-w-mod">
+<div class="min-h-screen flex items-center justify-center bg-grey-100 dark:bg-darkBg px-4">
+    <form 
+        [formGroup]="profileForm" 
+        (ngSubmit)="onSubmit()" 
+        class="bg-white dark:bg-darkCard dark:text-darkText p-8 rounded-2xl shadow-xl space-y-6 w-full lg:w-2/4 max-w-mod mt-16"
+    >
         <h2 class="text-2xl font-bold text-center text-grey-800">
             Completar Perfil
         </h2>
@@ -35,7 +39,7 @@
                 <input 
                     type="text" 
                     formControlName="first_name"
-                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Escribe tu nombre"
                 />
             </div>
@@ -46,7 +50,7 @@
                 <input 
                     type="text" 
                     formControlName="last_name"
-                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Escribe tu apellido"
                 />
             </div>
@@ -57,7 +61,7 @@
                 <input 
                     type="number" 
                     formControlName="number_id"
-                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Escribe tu documento de identidad"
                 />
             </div>
@@ -68,7 +72,7 @@
                     </label>
                     <select 
                         formControlName="phone_code" 
-                        class="w-full mt-1 px-4 py-2 rounded-xl border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        class="w-full mt-1 px-4 py-2 rounded-xl dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     >
                         <option value="">Seleccione el código de país</option>
                         <option *ngFor="let country of countryCodes" [value]="country.code">
@@ -83,7 +87,7 @@
                     <input 
                         type="text" 
                         formControlName="phone_number"
-                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Escribe tu número de teléfono"
                     />
                 </div>
@@ -95,7 +99,7 @@
                 <input 
                     type="text" 
                     formControlName="city"
-                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Escribe tu ciudad"
                 />
             </div>
@@ -106,7 +110,7 @@
                 <input 
                     type="text" 
                     formControlName="professional_title"
-                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Escribe tu título profesional o cargo"
                 />
             </div>
@@ -117,7 +121,7 @@
                 <textarea 
                     formControlName="summary"
                     rows="2"
-                    class="w-full h-20 mt-1 px-4 py-2 rounded-xl border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    class="w-full h-20 mt-1 px-4 py-2 rounded-xl dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                 ></textarea>
             </div>
             <div>
@@ -127,7 +131,7 @@
                 <textarea 
                     formControlName="education"
                     rows="2"
-                    class="w-full h-20 mt-1 px-4 py-2 rounded-xl border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    class="w-full h-20 mt-1 px-4 py-2 rounded-xl dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                 ></textarea>
             </div>
             <div>
@@ -137,7 +141,7 @@
                 <textarea 
                     formControlName="skills"
                     rows="2"
-                    class="w-full h-20 mt-1 px-4 py-2 rounded-xl border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    class="w-full h-20 mt-1 px-4 py-2 rounded-xl dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                 ></textarea>
             </div>
             <div>
@@ -147,7 +151,7 @@
                 <textarea 
                     formControlName="experience"
                     rows="2"
-                    class="w-full h-20 mt-1 px-4 py-2 rounded-xl border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    class="w-full h-20 mt-1 px-4 py-2 rounded-xl dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                 ></textarea>
             </div>
             <div>
@@ -157,7 +161,7 @@
                 <input 
                     type="url" 
                     formControlName="linkedin_url"
-                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Escribe tu enlace de LinkedIn"
                 />
             </div>
@@ -168,7 +172,7 @@
                 <input 
                     type="url" 
                     formControlName="portfolio_url"
-                    class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Escribe el enlace de tu portafolio"
                 />
             </div>

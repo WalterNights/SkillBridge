@@ -1,27 +1,20 @@
-# Python
+# === Python / Django ===
+env/
 __pycache__/
 *.py[cod]
-*.so
-*.egg
-*.egg-info/
-dist/
-build/
-.env
-
-# Django
 *.sqlite3
-db.sqlite3
-/media
-/staticfiles
+*.log
+output.html
 
-# VSCode/PyCharm
+# === Node / Angular ===
+SkillBridge-front/node_modules/
+SkillBridge-front/dist/
+SkillBridge-front/.angular/cache/
+SkillBridge-front/.env
+
+# === IDEs / OS ===
 .vscode/
 .idea/
-
-# Environment
-env/
-venv/
-ENV/
-
-# Archivos de salida
-output.html
+*.swp
+.DS_Store
+Thumbs.db

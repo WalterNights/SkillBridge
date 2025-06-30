@@ -2,11 +2,19 @@ const { transform } = require('typescript');
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+    darkMode: 'class',
     content: [
         "./src/**/*.{html,ts}"
     ],
     theme: {
         extend: {
+            colors: {
+                primary: '#1a73e8',
+                darkBg: '#1c1c1d',
+                darkCard: '#252728',
+                darkText: '#e5e5e5',
+                darkBgTa: '#333334',
+            },
             animation: {
                 'fade-in': 'fadeIn 0.5s ease-in-out',
             },

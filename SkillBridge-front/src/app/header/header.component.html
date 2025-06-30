@@ -1,0 +1,23 @@
+<header class="fixed flex items-center justify-between top-0 w-full z-50 bg-white dark:bg-darkCard text-gray-900 dark:text-darkText shadow-md px-6 py-3">
+    <div class="text-xl font-bold">
+        SkillBridge
+    </div>
+    <div class="flex items-center space-x-4">
+        <ng-container *ngIf="!isLoggedIn; else logoutBlock">
+            <button class="" (click)="login()">
+                Login
+            </button>
+        </ng-container>
+        <ng-template #logoutBlock>
+            <button class="" (click)="logout()">
+                Logout
+            </button>
+        </ng-template>
+        <label class="flex items-center cursor-pointer">
+            <input type="checkbox" class="sr-only" [checked]="isDarkMode" (change)="toggleDarkMode()"/>
+            <div class="flex items-center w-10 h-5 bg-gray-300 dark:bg-gray-600 rounded-full p-1 transition">
+                <div class="bg-white w-4 h-4 rounded-full shadow-md transform transition-transform" [class.translate-x-5]="isDarkMode"></div>
+            </div>
+        </label>
+    </div>
+</header>

@@ -12,9 +12,12 @@
     </div>
 </div>
 <!--Register Form-->
-<div class="min-h-screen flex items-center justify-center bg-grey-100 px-4">
-    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()"
-        class="bg-white p-8 rounded-2xl shadow-xl space-y-6 w-full lg:w-2/4 2xl:w-1/4 max-w-mod">
+<div class="min-h-screen flex items-center justify-center bg-grey-100 dark:bg-darkBg px-4">
+    <form 
+        [formGroup]="registerForm" 
+        (ngSubmit)="onSubmit()"
+        class="bg-white dark:bg-darkCard dark:text-darkText p-8 rounded-2xl shadow-xl space-y-6 w-full lg:w-2/4 2xl:w-1/4 max-w-mod"
+    >
         <h2 class="text-2xl font-bold text-center text-grey-800">
             Registro de Uusario
         </h2>
@@ -23,7 +26,7 @@
                 <label class="block text-sm font-medium text-grey-700">
                     Usuario:
                     <input type="text" formControlName="username"
-                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Escribe el nombre de usuario de tu prteferencia" />
                 </label>
                 <div *ngIf="registerForm.get('username')?.invalid && registerForm.get('username')?.touched"
@@ -35,7 +38,7 @@
                 <label class="block text-sm font-medium text-grey-700">
                     Correo:
                     <input type="email" formControlName="email"
-                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Escribe tu correo electrónico" />
                 </label>
                 <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
@@ -47,7 +50,7 @@
                 <label class="block text-sm font-medium text-grey-700">
                     Contraseña:
                     <input type="password" formControlName="password"
-                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Escribe una contraseña segura" />
                 </label>
                 <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
@@ -59,7 +62,7 @@
                 <label class="block text-sm font-medium text-grey-700">
                     Confirmar Contraseña:
                     <input type="password" formControlName="confirmPassword"
-                        class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="w-full mt-1 px-4 py-2 border dark:bg-darkBgTa rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Vuelve a escribir tu contraseña para confirmarla
                         " />
                 </label>
