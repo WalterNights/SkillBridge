@@ -1,12 +1,11 @@
 from .models import *
-from io import BytesIO
 from .serializers import *
 from rest_framework import status
 from django.shortcuts import render
+from users.utils.cv_analyzer import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
-from users.utils.cv_analyzer import *
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -25,16 +24,32 @@ class UserRegisterView(APIView):
  
 class AnalyzerResumeView(APIView):
     parser_classes = [MultiPartParser]
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         file = request.FILES.get("resume")
         if not file:
             return Response({"error": "No hay archivo"}, status=status.HTTP_400_BAD_REQUEST)
+        file_type = file.name.split('.')[-1].lower()
+        if file_type not in ['pdf', 'docx']:
+            return Response({"error": "Formato de arcgivo no compatible"}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            file_bytes = file.read()
-            profile_data = []
-            if not profile_data():
-                return Response({"error": "No se pudo analizar el conmtenido"}, status=status.HTTP_400_BAD_REQUEST)
-            return Response(profile_data, status=status.HTTP_200_OK)
+            analyst_result = analyze_cv(file, filetype=file_type)
+            default_fields = {
+                "first_name": "",
+                "last_name": "",
+                "number_id": "",
+                "phone_code": "",
+                "phone_number": "",
+                "city": "",
+                "professional_title": "",
+                "summary": "",
+                "education": "",
+                "skills": "",
+                "experience": "",
+                "linkedin_url": "",
+                "portfolio_url": "",
+            }
+            response_data = {**default_fields, **analyst_result}
+            return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             print("❌ Error al analizar el archivo CV:", str(e))
             return Response({"error": "Error al analizar el archivo"}, status=status.HTTP_400_BAD_REQUEST)

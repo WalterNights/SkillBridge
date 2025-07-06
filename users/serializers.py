@@ -53,3 +53,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if phone_code and phone_number:
             validate_data["phone"] = f"{phone_code} {phone_number}"
         return super().update(instance, validate_data)
+    
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        if instance.phone:
+            parts = instance.phone.strip().split()
+            if len(parts) >= 2:
+                rep["phone_code"] = parts[0]
+                rep["phone_number"] = " ".join(parts[1:])
+        return rep

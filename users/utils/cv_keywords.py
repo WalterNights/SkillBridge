@@ -5,6 +5,11 @@ EDUCATION_KEYWORDS = [
     "profesional en", "egresado", "grado", "especialización"
 ]
 
+TITLE_KEYWORDS = [
+    "Desarrollador", "Ingeniero", "Analista", "Full Stack", "Backend", "Frontend", 
+    "Developer", "Architect", "Programador", "Software Engineer"
+]
+
 SKILL_KEYWORDS = [
     # Tecnologías
     "python", "java", "javascript", "typescript", "fetch", "jquery", "angular", "react",
@@ -25,10 +30,17 @@ PROFESSIONAL_RESUME_KEYWORDS = [
     "resumen profesional", "resumen", "perfil", "professional profile", "professional summary"
 ]
 
-EXPERIENCE_KEYWORDS = ["experiencia", "historial laboral", "trayectoria"]
+EXPERIENCE_KEYWORDS = ["experiencia", "historial laboral", "trayectoria", "laboral", "trabajo", "empresa", "desarrollé", 
+    "implementé", "fui responsable", "participé", "logré"]
 
 PHONE_KEYWORDS = ["teléfono", "celular", "número de contacto"]
 
 LINKEDIN_KEYWORDS = ["linkedin"]
 
 PORTFOLIO_KEYWORDS = ["portafolio", "portfolio"]
+
+CITY_KEYWORDS = [
+    "Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena", 
+    "Buenos Aires", "Madrid", "Barcelona", "Lima", "Santiago", "Quito", 
+    "New York", "San Francisco", "London"
+]
