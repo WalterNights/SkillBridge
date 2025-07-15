@@ -39,6 +39,7 @@ class AnalyzerResumeView(APIView):
                 "number_id": "",
                 "phone_code": "",
                 "phone_number": "",
+                "country": "",
                 "city": "",
                 "professional_title": "",
                 "summary": "",

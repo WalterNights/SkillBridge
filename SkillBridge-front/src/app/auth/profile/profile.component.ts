@@ -5,6 +5,7 @@ import { Title } from '@angular/platform-browser';
 import { Router, RouterModule } from '@angular/router';
 import { JobService } from '../../services/job.service';
 import { JobOffer } from '../../models/job-offer.model';
+import { Country, State, City } from 'country-state-city';
 import { LoaderModalComponent } from '../../shared/loader-modal/loader-modal.component';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -16,6 +17,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss']
 })
+
 export class ProfileComponent implements OnInit {
   profileForm!: FormGroup;
   selectedFile: File | null = null;
@@ -24,6 +26,9 @@ export class ProfileComponent implements OnInit {
   showLoader = false;
   successMessage = "";
   countryCodes: any[] = []
+  countries = Country.getAllCountries();
+  states: any[] = []
+  cities: any[] = [];
 
   constructor(
     private fb: FormBuilder, 
@@ -34,6 +39,7 @@ export class ProfileComponent implements OnInit {
   ) {
     this.titleService.setTitle('SkillBridge - Home');
   }
+
   ngOnInit(): void {
     this.http.get<any[]>('/data/country-code.json').subscribe(data => {
       this.countryCodes = data;
@@ -44,6 +50,7 @@ export class ProfileComponent implements OnInit {
       number_id: ['', Validators.required],
       phone_code: ['', Validators.required],
       phone_number: ['', Validators.required],
+      country: ['', Validators.required],
       city: ['', Validators.required],
       professional_title: ['', Validators.required],
       summary: ['', Validators.required],
@@ -56,6 +63,24 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  getFlagEmoji(countryCode: string): string {
+    if (!countryCode || countryCode.length !== 2) return '';
+    const codePoints = [...countryCode.toUpperCase()]
+      .map(char => 127397 + char.charCodeAt(0));
+    return String.fromCodePoint(...codePoints);
+  }
+
+  onCountryChange(countryCode: string): void {
+    console.log(this.getFlagEmoji('CO'));
+    const selected = this.countries.find(c => c.isoCode === countryCode);
+    if (selected) {
+      this.profileForm.patchValue({
+        phone_code: `+${selected?.phonecode}`
+      });
+      this.cities = City.getCitiesOfCountry(countryCode) ?? [];
+    }
+  }
+
   onFileSelected(event:any) {
     this.selectedFile = event.target.files[0];
     if (!this.selectedFile) return;
@@ -64,11 +89,15 @@ export class ProfileComponent implements OnInit {
     this.isLoading = true;
     this.http.post<any>('http://localhost:8000/api/users/resume-analyzer/', formData).subscribe({
       next: (data) => {
+        const phoneCode = data.phone_code.replace('+', '');
+        const matchedCountry = this.countries.find(c => c.phonecode === phoneCode);
+        const country_code = matchedCountry?.isoCode
         this.profileForm.patchValue({
           first_name: data.first_name,
           last_name: data.last_name,
           phone_code: data.phone_code,
           phone_number: data.phone_number,
+          country: country_code || '',
           city: data.city,
           professional_title: data.professional_title,
           summary: data.summary,
@@ -78,6 +107,7 @@ export class ProfileComponent implements OnInit {
           linkedin_url: data.linkedin_url,
           portfolio_url: data.portfolio_url
         });
+        if (country_code) this.onCountryChange(country_code);
         this.isLoading = false;
         this.successMessage = "Hoja de vida analizada correctamente";
         console.log("📦 Datos recibidos:", data)
