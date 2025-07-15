@@ -32,22 +32,27 @@ def clean_text(text):
     return text
     
  
-def extract_full_name(text):
-    lines = text.strip().split('\n')
-    
-    for line in lines[:8]:
-        clean = line.strip()
-        words = clean.split()
-        if len(words) == 2 and all(w[0].isupper() for w in words if w and w[0].isalpha()):
-            return clean
-    return ""
-
-
-def split_name(full_name):
-    if not full_name:
-        return "", ""
-    parts = full_name.strip().split()
-    return parts[0], " ".join(parts[1:]) if len(parts) > 1 else ""
+def extract_full_name(text, city):
+    # Normalizer and clean text
+    data = text.split('.')[0].strip()
+    city_clean = unidecode(city)
+    city_index = data.find(city_clean)
+    # Obtain only names without city
+    name_part = data[:city_index].strip().split()
+    if len(name_part) == 2:
+        first_name = name_part[0]
+        last_name = name_part[1]
+    elif len(name_part) == 3:
+        first_name = " ".join(name_part[0:2])
+        last_name = name_part[2]
+    elif len(name_part) == 4:
+        first_name = " ".join(name_part[0:2])
+        last_name = " ".join(name_part[2:4])
+    # If full name have more 5 words
+    else:
+        first_name = " ".join(name_part[0:2])
+        last_name = " ".join(name_part[2:])  
+    return first_name, last_name
 
 
 def extract_section(text, start_keyword, stop_keyword):
@@ -77,13 +82,10 @@ def extract_city(text, country_name):
                 pos = data.find(city_find)
                 if pos != -1:
                     city_candidates.append((city['name'], pos))
-                    print(city_candidates)
     city_candidates.sort(key=lambda x: x[1])
     best_match = city_candidates[0][0]
     return best_match
     
-    
-
 
 def extract_prof_title(summary):
     for kw in TITLE_KEYWORDS:
@@ -153,8 +155,14 @@ def analyze_cv(file, filetype='pdf'):
         return {}
     
     text = clean_text(text)
-    full_name = extract_full_name(text)
-    first_name, last_name = split_name(full_name)
+    
+    phone_code = extract_phone(text)[0]
+    phone_number = extract_phone(text)[1]
+    city = extract_city(text, extract_phone(text)[0])
+    
+    first_name = extract_full_name(text, city)[0]
+    last_name = extract_full_name(text, city)[1]
+    
     
     # Extract Header to Section
     summary = extract_section(text, PROFESSIONAL_RESUME_KEYWORDS, STOP_KEYWORDS["summary"])
@@ -162,9 +170,9 @@ def analyze_cv(file, filetype='pdf'):
     return {
         "first_name": first_name,
         "last_name": last_name,
-        "phone_code": extract_phone(text)[0],
-        "phone_number": extract_phone(text)[1],
-        "city": extract_city(text, extract_phone(text)[0]),
+        "phone_code": phone_code,
+        "phone_number": phone_number,
+        "city": city,
         "professional_title": extract_prof_title(text),
         "summary": extract_summary(text),
         "education": extract_education(text),
