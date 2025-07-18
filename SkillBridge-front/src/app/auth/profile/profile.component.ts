@@ -71,7 +71,6 @@ export class ProfileComponent implements OnInit {
   }
 
   onCountryChange(countryCode: string): void {
-    console.log(this.getFlagEmoji('CO'));
     const selected = this.countries.find(c => c.isoCode === countryCode);
     if (selected) {
       this.profileForm.patchValue({
@@ -92,6 +91,17 @@ export class ProfileComponent implements OnInit {
         const phoneCode = data.phone_code.replace('+', '');
         const matchedCountry = this.countries.find(c => c.phonecode === phoneCode);
         const country_code = matchedCountry?.isoCode
+
+        let linkedin = data.linkedin_url?.trim() || '';
+        if (linkedin && !linkedin.startsWith('http')) {
+          // Make a sure that match with https://www.
+          if (!linkedin.startsWith('www.')) {
+            linkedin = 'https://www.' + linkedin;
+          } else {
+            linkedin = 'https://' + linkedin;
+          }
+        }
+
         this.profileForm.patchValue({
           first_name: data.first_name,
           last_name: data.last_name,
@@ -104,18 +114,18 @@ export class ProfileComponent implements OnInit {
           education: data.education,
           skills: data.skills,
           experience: data.experience,
-          linkedin_url: data.linkedin_url,
+          linkedin_url: linkedin,
           portfolio_url: data.portfolio_url
         });
         if (country_code) this.onCountryChange(country_code);
-        this.isLoading = false;
         this.successMessage = "Hoja de vida analizada correctamente";
-        console.log("📦 Datos recibidos:", data)
+        // console.log("📦 Datos recibidos:", data)
         Object.keys(this.profileForm.controls).forEach(field => {
           const control = this.profileForm.get(field);
           control?.markAsTouched();
           control?.updateValueAndValidity();
         });
+        this.isLoading = false;
       },
       error: () => {
         this.errorMessage = "Error al analizar hoja de vida"

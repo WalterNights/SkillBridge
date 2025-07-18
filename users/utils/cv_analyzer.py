@@ -97,21 +97,14 @@ def extract_prof_title(summary):
 
 
 def extract_summary(text):
-    lines = text.strip().split('\n')
-    summary_lines = []
-    capture = False
-    for line in lines[:20]:
-        clean = line.strip()
-        if not clean:
-            continue
-        if any(x in clean.lower() for x in ["experiencia", "experience"]):
-            break
-        if len(clean.split()) >= 6:
-            summary_lines.append(clean)
-            capture = True
-        elif capture:
-            break
-    return clean_text(" ".join(summary_lines))
+    lines = text.strip().split()
+    for line in lines:
+        if "@" in line:
+            start_symmary = len(line) + text.find(line)
+        if line.isupper() and line in EXPERIENCE_KEYWORDS:
+            end_summary = text.find(line)
+            summary = text[start_symmary:end_summary]
+    return summary
 
 
 def extract_education(text):
