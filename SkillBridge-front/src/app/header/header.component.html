@@ -14,7 +14,9 @@
 <!--NavBar-->
 <header class="fixed flex items-center justify-between top-0 w-full z-50 bg-white dark:bg-darkCard text-gray-900 dark:text-darkText shadow-md px-6 py-3">
     <div class="text-xl font-bold">
-        SkillBridge
+        <button (click)="goToHome()">
+            SkillBridge
+        </button>
     </div>
     <div class="flex items-center space-x-4">
         <ng-container *ngIf="!isLoggedIn; else logoutBlock">

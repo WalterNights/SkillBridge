@@ -1,3 +1,4 @@
+import { Router } from '@angular/router';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
@@ -10,7 +11,15 @@ import { Title } from '@angular/platform-browser';
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent {
-  constructor(private titleService: Title) {
+  constructor(
+    private titleService: Title,
+    private router: Router
+  ) {
     this.titleService.setTitle('SkillBridge - Home');
   }
+
+  goToResults() {
+    this.router.navigate(['/results']);
+  }
+
 }

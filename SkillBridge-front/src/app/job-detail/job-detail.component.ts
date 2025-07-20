@@ -1,9 +1,9 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { HttpClient } from '@angular/common/http';
 import { JobService } from '../services/job.service';
-import { Router, ActivatedRoute } from '@angular/router';
 import { JobOffer } from '../models/job-offer.model';
 
 @Component({

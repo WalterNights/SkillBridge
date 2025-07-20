@@ -1,8 +1,8 @@
-<div class="min-h-screen p-6 mt-16 bg-gray-50 dark:bg-darkBg">
+<div class="min-h-screen flex flex-col items-center p-6 mt-16 bg-gray-50 dark:bg-darkBg">
     <h1 class="text-3xl font-bold mb-6 text-center dark:text-darkText">
         Vacantes para ti
     </h1>
-    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div class="md:w3/4 2xl:w-2/3 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <div 
             *ngFor="let offer of offers" 
             class="flex flex-col justify-between p-5 rounded-xl bg-white dark:bg-darkCard dark:text-darkText shadow-md hover:shadow-lg transition-all duration-300"

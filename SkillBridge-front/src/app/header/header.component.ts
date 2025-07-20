@@ -28,6 +28,10 @@ export class HeaderComponent {
       }
    }
 
+   goToHome() {
+      this.router.navigate(['/'])
+   }
+
    login() {
       this.router.navigate(['auth/login']);
    }
