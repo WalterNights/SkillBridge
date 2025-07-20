@@ -3,5 +3,6 @@ export interface JobOffer {
     'company': string,
     'location': string,
     'summary': string,
-    'keywords': string
+    'keywords': string,
+    'url': string
 }

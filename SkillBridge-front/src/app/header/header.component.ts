@@ -1,6 +1,7 @@
 import { Router } from '@angular/router';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../auth/auth.service';
 
 @Component({
    selector: 'app-header',
@@ -13,7 +14,7 @@ export class HeaderComponent {
    isDarkMode = false;
    isLoggedIn = false;
 
-   constructor(private router: Router) { }
+   constructor(private router: Router,private authService: AuthService) {}
    toggleDarkMode() {
       this.isDarkMode = !this.isDarkMode;
       const root = document.documentElement;
@@ -31,12 +32,14 @@ export class HeaderComponent {
    }
 
    logout() {
-      // Aquí deberías llamar a tu AuthService
       this.isLoggedIn = false;
       this.router.navigate(['/']);
    }
 
    ngOnInit() {
+      this.authService.isLoggedIn$.subscribe(status => {
+         this.isLoggedIn = status;
+      })
       const saveTheme = localStorage.getItem('theme');
       if (saveTheme === 'dark') {
          this.isDarkMode = true;

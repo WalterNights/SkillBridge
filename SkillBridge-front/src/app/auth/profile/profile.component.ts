@@ -91,7 +91,6 @@ export class ProfileComponent implements OnInit {
         const phoneCode = data.phone_code.replace('+', '');
         const matchedCountry = this.countries.find(c => c.phonecode === phoneCode);
         const country_code = matchedCountry?.isoCode
-
         let linkedin = data.linkedin_url?.trim() || '';
         if (linkedin && !linkedin.startsWith('http')) {
           // Make a sure that match with https://www.
@@ -101,7 +100,6 @@ export class ProfileComponent implements OnInit {
             linkedin = 'https://' + linkedin;
           }
         }
-
         this.profileForm.patchValue({
           first_name: data.first_name,
           last_name: data.last_name,

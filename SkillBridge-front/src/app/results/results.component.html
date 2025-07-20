@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-grey-50 p-6">
+<div class="min-h-screen bg-grey-50 p-6 mt-12">
     <h1 class="text-3xl font-bold mb-6 text-center">
         Vacantes para ti
     </h1>
@@ -13,7 +13,9 @@
             <p class="text-sm text-grey-500 mb-4">
                 {{ offer.location }}
             </p>
-            <button class="text-white bg-indigo-600 hover:gb-indigo-700 px-4 py-2 rounded-md">Ver más</button>
+            <a [href]="offer.url" target="_blank" rel="noopener noreferrer">
+                <button class="text-white bg-indigo-600 hover:gb-indigo-700 px-4 py-2 rounded-md">Ver más</button>
+            </a>
         </div>
         <div *ngIf="offers.length === 0" class="text-center text-gray-500">
             No se encontraron vacantes por ahora. Intenta actualizar tu perfil o volver más tarde.

@@ -90,7 +90,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['username'] = user.username
         data['email'] = user.email
         data['rol'] = user.rol
-        data['is_profile_complete'] = user.profile.number_id is not None
+        try:
+            profile = user.profile
+            data['is_profile_complete'] = profile.number_id is not None
+        except:
+            data['is_profile_complete'] = False
         return data
     
     

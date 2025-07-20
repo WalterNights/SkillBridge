@@ -1,12 +1,16 @@
 import requests, re
 from bs4 import BeautifulSoup
+from unidecode import unidecode
 from jobs.models import JobOffer
 from django.utils import timezone
 from jobs.keywords import COMMON_KEYWORDS
 
 
-def scrap_computrabajo(query="desarrollador", location="colombia"):
-    base_url = f"https://co.computrabajo.com/trabajo-de-{query}?p="
+def scrap_computrabajo(query, location):
+    clear_query = query.replace(" ", "-").lower()
+    clear_location = unidecode(location.lower())
+    base_url = f"https://co.computrabajo.com/trabajo-de-{clear_query}-en-{clear_location}?p="
+    print(query, clear_query, base_url)
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                       "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -29,7 +33,7 @@ def scrap_computrabajo(query="desarrollador", location="colombia"):
                 title = title_tag.get_text(strip=True) if title_tag else ""
                 job_url = "https://co.computrabajo.com" + title_tag["href"] if title_tag else ""
                 company = company_tag.get_text(strip=True) if company_tag else ""
-                location = location_tag.get_text(strip=True) if location_tag else ""
+                location_job = location_tag.get_text(strip=True) if location_tag else ""
                 description, requirements, keywords = get_offer_summary(job_url)
                 summary = f"{description}\n\nREQUISITOS:\n{requirements}" if requirements else description
                 obj, created = JobOffer.objects.get_or_create(
@@ -37,7 +41,7 @@ def scrap_computrabajo(query="desarrollador", location="colombia"):
                     defaults={
                         "title": title,
                         "company": company,
-                        "location": location,
+                        "location": location_job,
                         "summary": summary,
                         "keywords": keywords,
                         "url": job_url
