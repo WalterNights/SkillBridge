@@ -1,5 +1,5 @@
-import { provideRouter, Routes } from '@angular/router';
 import { AutoGuard } from './auth/auto.guard';
+import { provideRouter, Routes } from '@angular/router';
 import { HeaderComponent } from './header/header.component';
 
 export const routes: Routes = [
@@ -7,5 +7,6 @@ export const routes: Routes = [
   { path: 'auth', loadChildren: () => import('./auth/auth.module').then(m => m.AuthModule) },
   { path: 'profile', canActivate: [AutoGuard], loadComponent: () => import('./auth/profile/profile.component').then(m => m.ProfileComponent) },
   { path: 'results', loadComponent: () => import('./results/results.component').then(m => m.ResultsComponent) },
+  { path: 'jobs/:id', loadComponent: () => import('./job-detail/job-detail.component').then(m => m.JobDetailComponent) },
   { path: '**', redirectTo: 'auth/register' }
 ];

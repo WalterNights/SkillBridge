@@ -39,13 +39,6 @@ CITY_KEYWORDS = [
     "New York", "San Francisco", "London"
 ]
 
-STOP_KEYWORDS = {
-    "summary": EXPERIENCE_KEYWORDS + EDUCATION_KEYWORDS,
-    "experience": EDUCATION_KEYWORDS + SKILLS_KEYWORDS,
-    "education": SKILLS_KEYWORDS + ["idiomas", "certificaciones", "otros"],
-    "skills": ["idiomas", "languages", "otros"]
-}
-
 TITLE_KEYWORDS = {
     "Desarrollador Frontend": [
         "react", "angular", "vue", "html", "css", "typescript", "tailwind", "bootstrap"

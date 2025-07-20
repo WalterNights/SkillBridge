@@ -1,0 +1,45 @@
+<div *ngIf="job" class="min-h-screen p-6 mt-16 bg-gray-50 dark:bg-darkBg">
+    <div class="flex flex-col justify-between p-5 rounded-xl bg-white dark:bg-darkCard dark:text-darkText shadow-md hover:shadow-lg transition-all duration-300">
+        <h1 class="text-3xl font-bold mb-6 text-center">
+            {{ job.title }}
+        </h1>
+        <div class="flex">
+            <p>
+                {{ job.location }} - {{ job.company }}
+            </p>
+        </div>
+        <h2 class="m-2">
+            Detalles de la oferta:
+        </h2>
+        <p class="text-justify">
+            {{ job.summary }}
+        </p>
+        <h2 class="m-2">
+            Palabras clave:
+        </h2>
+        <p>
+            {{ job.keywords }}
+        </p>
+        <a 
+            [href]="job.url" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="mt-4 text-white text-center font-bold px-4 py-2 rounded-md transition-all duration-300"
+            [ngClass]="{
+                'bg-green-300 hover:bg-green-600': jobDetail.match_percentage === 100,
+                'bg-blue-300 hover:bg-blue-600': jobDetail.match_percentage > 60 && jobDetail.match_percentage < 100,
+                'bg-orange-300 hover:bg-orange-600': jobDetail.match_percentage === 60,
+            }"
+        >
+            Aplica a esta oferta
+        </a>
+    </div>
+    <div *ngIf="jobDetail.match_percentage != 100" class="flex flex-col justify-between mt-4 p-5 rounded-xl bg-white dark:bg-darkCard dark:text-darkText shadow-md hover:shadow-lg transition-all duration-300">
+        <p>
+            Te hacen falta las siguientes habilidades:
+        </p>
+        <p>
+            {{ jobDetail.missing_skills }}
+        </p>
+    </div>
+</div>

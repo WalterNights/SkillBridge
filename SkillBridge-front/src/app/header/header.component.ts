@@ -13,6 +13,7 @@ import { AuthService } from '../auth/auth.service';
 export class HeaderComponent {
    isDarkMode = false;
    isLoggedIn = false;
+   isLoading = false;
 
    constructor(private router: Router,private authService: AuthService) {}
    toggleDarkMode() {
@@ -32,8 +33,12 @@ export class HeaderComponent {
    }
 
    logout() {
-      this.isLoggedIn = false;
-      this.router.navigate(['/']);
+      this.isLoading = true;
+      setTimeout(() => {
+          this.isLoading = false;
+          this.isLoggedIn = false;
+          this.router.navigate(['/']);
+      }, 1200);
    }
 
    ngOnInit() {

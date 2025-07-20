@@ -1,10 +1,18 @@
-<div class="min-h-screen bg-grey-50 p-6 mt-12">
-    <h1 class="text-3xl font-bold mb-6 text-center">
+<div class="min-h-screen p-6 mt-16 bg-gray-50 dark:bg-darkBg">
+    <h1 class="text-3xl font-bold mb-6 text-center dark:text-darkText">
         Vacantes para ti
     </h1>
     <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <div *ngFor="let offer of offers" class="bg-white p-5 rounded-xl shadow hover:shadow-lg transition">
-            <h2 class="text-xl font-semibold text-indigo-700">
+        <div 
+            *ngFor="let offer of offers" 
+            class="flex flex-col justify-between p-5 rounded-xl bg-white dark:bg-darkCard dark:text-darkText shadow-md hover:shadow-lg transition-all duration-300"
+            [ngClass]="{
+                'shadow-green-300': offer.match_percentage === 100,
+                'shadow-blue-300': offer.match_percentage > 60 && offer.match_percentage < 100,
+                'shadow-orange-300': offer.match_percentage === 60,
+            }"
+        >
+            <h2 class="text-xl font-semibold text-indigo-700 dark:text-indigo-200">
                 {{ offer.title }}
             </h2>
             <p class="text-sm text-grey-600 mb-2">
@@ -13,9 +21,21 @@
             <p class="text-sm text-grey-500 mb-4">
                 {{ offer.location }}
             </p>
-            <a [href]="offer.url" target="_blank" rel="noopener noreferrer">
-                <button class="text-white bg-indigo-600 hover:gb-indigo-700 px-4 py-2 rounded-md">Ver más</button>
-            </a>
+            <div class="flex justify-between items-center">
+                <button (click)="goToDetail(offer)">
+                    <button class="text-white bg-indigo-600 hover:gb-indigo-700 px-4 py-2 rounded-md">Ver más</button>
+                </button>
+                <p
+                    class="font-bold"
+                    [ngClass]="{
+                        'text-green-300': offer.match_percentage === 100,
+                        'text-blue-300': offer.match_percentage > 60 && offer.match_percentage < 100,
+                        'text-orange-300': offer.match_percentage === 60,
+                    }"
+                >
+                    Compatibilidad: {{ offer.match_percentage }}%
+                </p>
+            </div>
         </div>
         <div *ngIf="offers.length === 0" class="text-center text-gray-500">
             No se encontraron vacantes por ahora. Intenta actualizar tu perfil o volver más tarde.

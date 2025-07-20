@@ -55,12 +55,6 @@ def extract_full_name(text, city):
     return first_name, last_name
 
 
-def extract_section(text, start_keyword, stop_keyword):
-    pattern = rf"({'|'.join(start_keyword)})(.*?)(?={'|'.join(stop_keyword)})"
-    match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
-    return clean_text(match.group(2)) if match else ""
-
-
 def extract_phone(text):
     match = re.search(r'(\+\d{1,4})[\s\-]?\(?(\d{2,4})\)?[\s\-]?(\d{6,10})', text)
     if match:
@@ -156,9 +150,6 @@ def analyze_cv(file, filetype='pdf'):
     first_name = extract_full_name(text, city)[0]
     last_name = extract_full_name(text, city)[1]
     
-    
-    # Extract Header to Section
-    summary = extract_section(text, PROFESSIONAL_RESUME_KEYWORDS, STOP_KEYWORDS["summary"])
     
     return {
         "first_name": first_name,
