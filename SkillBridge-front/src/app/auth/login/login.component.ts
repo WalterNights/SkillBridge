@@ -36,7 +36,7 @@ export class LoginComponent {
         setTimeout(() => {
           this.isLoading = false;
           const isProfileComplete = sessionStorage.getItem('is_profile_complete') === 'true';
-          this.router.navigate([isProfileComplete ? '/results' : '/profile']);
+          this.router.navigate([isProfileComplete ? '/results' : '']);
         }, 1200);
       },
       error: () => {

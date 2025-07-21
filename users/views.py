@@ -13,6 +13,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class UserRegisterView(APIView):
     permission_classes = [AllowAny]
+    
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
@@ -24,6 +25,7 @@ class UserRegisterView(APIView):
  
 class AnalyzerResumeView(APIView):
     parser_classes = [MultiPartParser]
+    
     def post(self, request, *args, **kwargs):
         file = request.FILES.get("resume")
         if not file:
@@ -58,6 +60,7 @@ class AnalyzerResumeView(APIView):
 
 class UserProfileCreateView(APIView):
     permission_classes = [IsAuthenticated]
+    
     def post(self, request):
         user = request.user
         data = request.data.copy() 
@@ -83,6 +86,7 @@ class UserProfileCheckView(APIView):
     
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    
     def validate(self, attrs):
         data = super().validate(attrs)
         user = self.user

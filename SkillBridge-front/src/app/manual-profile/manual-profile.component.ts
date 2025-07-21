@@ -4,26 +4,19 @@ import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 
 @Component({
-  selector: 'app-home',
+  selector: 'app-manual-profile',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss']
+  templateUrl: './manual-profile.component.html',
+  styleUrls: ['./manual-profile.component.scss']
 })
-export class HomeComponent {
+export class ManualProfileComponent {
+
   constructor(
     private titleService: Title,
     private router: Router
   ) {
-    this.titleService.setTitle('SkillBridge - Home');
-  }
-
-  goToProfile() {
-    this.router.navigate(['/profile']);
-  }
-
-  goToResults() {
-    this.router.navigate(['/results']);
+    this.titleService.setTitle('SkillBridge - Registro Perfil Profesional');
   }
 
 }
