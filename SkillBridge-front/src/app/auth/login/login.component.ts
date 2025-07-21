@@ -35,8 +35,13 @@ export class LoginComponent {
       next: () => {
         setTimeout(() => {
           this.isLoading = false;
-          const isProfileComplete = sessionStorage.getItem('is_profile_complete') === 'true';
-          this.router.navigate([isProfileComplete ? '/results' : '']);
+          const redirectPath = sessionStorage.getItem('redirect_after_login') || '';
+          sessionStorage.removeItem('redirect_after_login');
+          if(sessionStorage.getItem('is_profile_complete') === 'true') {
+            this.router.navigate(['/results']);
+          } else {
+            this.router.navigate([redirectPath]);
+          }
         }, 1200);
       },
       error: () => {

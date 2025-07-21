@@ -1,5 +1,6 @@
 import { Router } from '@angular/router';
 import { Component } from '@angular/core';
+import { AuthService } from '../auth/auth.service';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 
@@ -11,19 +12,33 @@ import { Title } from '@angular/platform-browser';
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent {
+  profileComplete = false;
+
   constructor(
     private titleService: Title,
+    private authService: AuthService,
     private router: Router
   ) {
     this.titleService.setTitle('SkillBridge - Home');
   }
 
   goToProfile() {
-    this.router.navigate(['/profile']);
+    if (!this.authService.isAuthenticated()){
+      sessionStorage.setItem('redirect_after_login', '/profile');
+      this.router.navigate(['/auth/login']);
+    } else {
+      this.router.navigate(['/profile']);
+    }
   }
 
   goToResults() {
     this.router.navigate(['/results']);
+  }
+
+  ngOnInit() {
+    this.authService.isProfileComplete$.subscribe(status => {
+      this.profileComplete = status;
+    })
   }
 
 }

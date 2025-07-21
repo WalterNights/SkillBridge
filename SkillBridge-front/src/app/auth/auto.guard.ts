@@ -1,12 +1,19 @@
-import { inject, Injectable } from "@angular/core";
-import { CanActivateFn, Router } from "@angular/router";
+import { Injectable } from "@angular/core";
+import { AuthService } from "./auth.service";
+import { CanActivate, Router } from "@angular/router";
 
-export const AutoGuard: CanActivateFn = (route, state) => {
-    const isAuthenticated = sessionStorage.getItem('access_token');
-    if(!isAuthenticated) {
-        const router = inject(Router);
-        router.navigate(['/auth/login']);
-        return false
+@Injectable({
+    providedIn: 'root'
+})
+
+export class AutoGuard implements CanActivate {
+    constructor(private authService: AuthService, private router: Router) { }
+    canActivate(): boolean {
+        if (this.authService.isAuthenticated()) {
+            return true;
+        } else {
+            this.router.navigate(['/auth/login'])
+            return false;
+        }
     }
-    return true;
 };

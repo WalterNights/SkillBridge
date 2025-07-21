@@ -12,7 +12,7 @@ import { AuthService } from '../auth/auth.service';
 })
 export class HeaderComponent {
    isDarkMode = false;
-   isLoggedIn = false;
+   isLoggedIn: boolean = false;
    isLoading = false;
 
    constructor(private router: Router,private authService: AuthService) {}
@@ -38,9 +38,10 @@ export class HeaderComponent {
 
    logout() {
       this.isLoading = true;
+      this.authService.logout();
+      this.authService.updateProfileStatus();
       setTimeout(() => {
           this.isLoading = false;
-          this.isLoggedIn = false;
           this.router.navigate(['/']);
       }, 1200);
    }
