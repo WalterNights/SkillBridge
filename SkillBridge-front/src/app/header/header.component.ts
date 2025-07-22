@@ -11,6 +11,7 @@ import { AuthService } from '../auth/auth.service';
    styleUrls: ['./header.component.scss']
 })
 export class HeaderComponent {
+   userName: string | null = null;
    isDarkMode = false;
    isLoggedIn: boolean = false;
    isLoading = false;
@@ -49,6 +50,7 @@ export class HeaderComponent {
    ngOnInit() {
       this.authService.isLoggedIn$.subscribe(status => {
          this.isLoggedIn = status;
+         this.userName = sessionStorage.getItem('user_name');
       })
       const saveTheme = localStorage.getItem('theme');
       if (saveTheme === 'dark') {

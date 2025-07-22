@@ -4,7 +4,7 @@ import { Country, City } from 'country-state-city';
 import { JobService } from '../../services/job.service';
 import { JobOffer } from '../../models/job-offer.model';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 @Injectable({ providedIn: 'root'})
 export class ProfileBuilderComponent {
@@ -19,7 +19,10 @@ export class ProfileBuilderComponent {
     private router: Router
   ) {}
 
-  buildProfileForm(): FormGroup {
+  buildProfileForm(overrides: Partial <{ 
+    education: FormArray,
+    experience: FormArray 
+  }> = {}): FormGroup {
     return this.fb.group({
       first_name: ['', Validators.required],
       last_name: ['', Validators.required],
@@ -30,10 +33,10 @@ export class ProfileBuilderComponent {
       city: ['', Validators.required],
       professional_title: ['', Validators.required],
       summary: ['', Validators.required],
-      education: ['', Validators.required],
+      education: overrides.education ?? this.fb.control('', Validators.required),
+      experience: overrides.experience ?? this.fb.control('', Validators.required),
       skills: ['', Validators.required],
-      experience: ['', Validators.required],
-      linkedin_url: ['', [Validators.required, Validators.pattern(/^https?:\/\/(www\.)?linkedin\.com\/in\/[^\s]+$/)]],
+      linkedin_url: ['', [Validators.required, Validators.pattern(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?$/)]],
       portfolio_url: [''],
       resume: [null],
     });
@@ -92,10 +95,30 @@ export class ProfileBuilderComponent {
   ) {
     if (profileForm.invalid) return;
     const formData = new FormData();
-    Object.entries(profileForm.value).forEach(([key, value]) => {
-      if (value instanceof File && value instanceof File) {
+    // If data come from manual-profile
+    const rawData = profileForm.value
+    if (Array.isArray(rawData.education)) {
+      const education = rawData.education.map((edu: any) => {
+        return `${edu.title} en ${edu.institution} - (${edu.location_city}, ${edu.location_country}) - ${edu.start_date} a ${edu.end_date}`;
+      }).join('\n\n');
+      formData.append('education', education);
+    }
+    if (Array.isArray(rawData.experience)) {
+      const experiences = rawData.experience.map((exp: any) => {
+        return `${exp.position} en ${exp.company} - (${exp.location_city}, ${exp.location_country}) - ${exp.start_date} a ${exp.end_date}:\n ${exp.description}`;
+      }).join('\n\n');
+      formData.append('experience', experiences);
+    }
+    // Check if linkedin url have not http://www.
+    if (rawData.linkedin_url && !rawData.linkedin_url.startsWith('http')) {
+      rawData.linkedin_url = `https://www${rawData.linkedin_url}`;
+    }
+    // If data have array for education and experience
+    Object.entries(rawData).forEach(([key, value]) => {
+      if (['education', 'experience'].includes(key)) return;
+      if (value instanceof File) {
         formData.append(key, value);
-      }else if (value !== null && value !== undefined) {
+      } else if (value !== null && value !== undefined) {
         formData.append(key, String(value));
       }
     });

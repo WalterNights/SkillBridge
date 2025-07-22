@@ -60,18 +60,26 @@ class AnalyzerResumeView(APIView):
 
 class UserProfileCreateView(APIView):
     permission_classes = [IsAuthenticated]
-    
     def post(self, request):
         user = request.user
         data = request.data.copy() 
+        user_profile_data = {}
+        for key in data:
+            values = data.getlist(key)
+            if len(values) == 1 and not hasattr(values[0], 'read'):
+                user_profile_data[key] = values[0]
+            else:
+                user_profile_data[key] = values                   
         try:
             profile = user.profile
-            serializer = UserProfileSerializer(profile, data=data, partial=True)
+            serializer = UserProfileSerializer(profile, data=user_profile_data, partial=True)
         except UserProfile.DoesNotExist:
-            serializer = UserProfileSerializer(data=data)
+            serializer = UserProfileSerializer(data=user_profile_data)
         if serializer.is_valid():
             serializer.save(user=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            print("❌ Errores del serializer:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     

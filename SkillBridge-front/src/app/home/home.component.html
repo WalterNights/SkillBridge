@@ -7,6 +7,7 @@
     <div class="w-full xl:w-2/4 sm:flex items-center justify-evenly mt-10">
         <button
             *ngIf="!profileComplete"
+            (click)="goToManualProfile()"
             class="w-full sm:w-1/4 h-36 mb-3 dark:text-darkText bg-white p-5 font-semibold rounded-lg dark:bg-darkCard shadow-md hover:shadow-lg transition-all duration-300"
         >
             Crear hoja de vida en formato ATS CV

@@ -52,6 +52,7 @@ export class AuthService {
         sessionStorage.setItem('access_token', res.access);
         sessionStorage.setItem('refresh_token', res.refresh_token);
         sessionStorage.setItem('is_profile_complete', res.is_profile_complete);
+        sessionStorage.setItem('user_name', res.username);
         this.isLoggedInSubject.next(true);
         this.updateProfileStatus();
       })

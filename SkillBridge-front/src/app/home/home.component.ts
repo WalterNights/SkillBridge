@@ -22,6 +22,15 @@ export class HomeComponent {
     this.titleService.setTitle('SkillBridge - Home');
   }
 
+  goToManualProfile() {
+    if (!this.authService.isAuthenticated()){
+      sessionStorage.setItem('redirect_after_login', '/manual-profile');
+      this.router.navigate(['/auth/login']);
+    } else {
+      this.router.navigate(['/manual-profile']);
+    }
+  }
+
   goToProfile() {
     if (!this.authService.isAuthenticated()){
       sessionStorage.setItem('redirect_after_login', '/profile');

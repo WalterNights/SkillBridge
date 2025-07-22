@@ -19,18 +19,30 @@
         </button>
     </div>
     <div class="flex items-center space-x-4">
-        <ng-container *ngIf="!isLoggedIn; else logoutBlock">
+        <div *ngIf="isLoggedIn" class="group">
+            <label class="flex items-center z-40 cursor-pointer">
+                <button class="text-2 p-2 rounded-full shadow-md hover:bg-gray-200 dark:hover-gray-700 transition">
+                    <span >👤</span>
+                </button>
+            </label>
+            <div class="origin-top-right absolute right-0 z-30 w-56 text-black bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 hidden group-hover:block transition-opacity duration-200 ease-in-out opacity-0 group-hover:opacity-100">
+                <div class="py-1" role="menu">
+                    <p class="block px-4 py-2 text-sm text-gray-700" role="menuitem">Bienvenido {{ userName }}</p>
+                    <div class="mt-2 border-b"></div>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Mi perfil</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Configuración</a>
+                    <a class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                        <button (click)="logout()">Cerrar sesión</button>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <ng-container *ngIf="!isLoggedIn">
             <button class="" (click)="login()">
-                Login
+                Inicia sesión
             </button>
         </ng-container>
-        <ng-template #logoutBlock>
-            <button class="" (click)="logout()">
-                Logout
-            </button>
-        </ng-template>
         <label class="flex items-center cursor-pointer">
-            
             <button 
                 (click)="toggleDarkMode()" 
                 [attr.aria-label]="isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"

@@ -16,7 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
         return user
         
 
-class UserProfileSerializer(serializers.ModelSerializer):
+class UserProfileSerializer(serializers.ModelSerializer):    
     phone_code = serializers.CharField(write_only=True)
     phone_number = serializers.CharField(write_only=True)
     
@@ -40,6 +40,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'portfolio_url'
             ]
         read_only_fields = ['phone']
+        
+    def validate_linkedin_url(self, value):
+        if value and not value.startswith(("https://www")):
+            value = f"https://www.{value}"
+        return value
         
     def create(self, validate_data):
         phone_code = validate_data.pop("phone_code")

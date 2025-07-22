@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 
-/* 🔆 Animate boder rotate */
 @layer utilities {
+
+  /* 🔆 Animate boder rotate */
   .glow-animated {
     position: relative;
     z-index: 0;
