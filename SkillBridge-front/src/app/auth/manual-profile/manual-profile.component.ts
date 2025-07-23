@@ -57,14 +57,12 @@ export class ManualProfileComponent implements OnInit {
     this.profileForm.valueChanges.subscribe(val => {
       localStorage.setItem('manual_profile_draft', JSON.stringify(val));
     })
-
-
   }
 
   onCountryChange(countryCode: string): void {
     const phone = this.profileBuldier.extractPhoneCode(this.countries, countryCode);
-    this.profileForm.patchValue({ phone_code: phone });
     this.cities = this.profileBuldier.getCitiesByCountryCode(countryCode);
+    this.profileForm.patchValue({phone_code: phone});
   }
 
   get education(): FormArray {
@@ -130,7 +128,8 @@ export class ManualProfileComponent implements OnInit {
       (err) => {
         this.isLoading = false;
         this.errorMessage = 'Error al completar perfil';
-      }
+      },
+      false
     );
   }
 }

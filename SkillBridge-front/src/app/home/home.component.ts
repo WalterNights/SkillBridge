@@ -1,8 +1,8 @@
 import { Router } from '@angular/router';
 import { Component } from '@angular/core';
-import { AuthService } from '../auth/auth.service';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
+import { AuthService } from '../auth/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -41,7 +41,12 @@ export class HomeComponent {
   }
 
   goToResults() {
-    this.router.navigate(['/results']);
+    if (!this.authService.isAuthenticated()){
+      sessionStorage.setItem('redirect_after_login', '/results');
+      this.router.navigate(['/auth/login']);
+    } else {
+      this.router.navigate(['/results']);
+    }
   }
 
   ngOnInit() {

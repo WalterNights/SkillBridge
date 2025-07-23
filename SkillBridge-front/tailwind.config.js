@@ -15,6 +15,9 @@ module.exports = {
                 darkText: '#e5e5e5',
                 darkBgTa: '#333334',
             },
+            fontFamily: {
+                'timesNR': ['Times New Roman'],
+            },
             animation: {
                 'fade-in': 'fadeIn 0.5s ease-in-out',
             },

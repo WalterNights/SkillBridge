@@ -34,7 +34,11 @@ export class HeaderComponent {
    }
 
    login() {
-      this.router.navigate(['auth/login']);
+      this.isLoading = true;
+      setTimeout(() => {
+          this.isLoading = false;
+          this.router.navigate(['auth/login']);
+      }, 1200);
    }
 
    logout() {

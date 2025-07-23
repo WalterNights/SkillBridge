@@ -8,6 +8,7 @@ export const routes: Routes = [
   { path: 'manual-profile', canActivate: [AutoGuard], loadComponent: () => import('./auth/manual-profile/manual-profile.component').then(m => m.ManualProfileComponent) },
   { path: 'profile', canActivate: [AutoGuard], loadComponent: () => import('./auth/profile/profile.component').then(m => m.ProfileComponent) },
   { path: 'results', loadComponent: () => import('./results/results.component').then(m => m.ResultsComponent) },
+  { path: 'ats-cv', loadComponent: () => import('./ats-cv/ats-cv.component').then(m => m.AtsCvComponent) },
   { path: 'jobs/:id', loadComponent: () => import('./job-detail/job-detail.component').then(m => m.JobDetailComponent) },
   { path: '**', redirectTo: 'auth/register' }
 ];

@@ -11,6 +11,7 @@ export class ProfileBuilderComponent {
   profileForm: any;
   countryCodes: any[] = [];
   cities: any[] = [];
+  countries = Country.getAllCountries();
 
   constructor(
     private fb: FormBuilder,
@@ -53,7 +54,7 @@ export class ProfileBuilderComponent {
 
   analyzeResume(
     file: File,
-    countries = Country.getAllCountries(),
+    country_find = this.countries,
     calback: (data: any, countryCode: string) => void,
     onError?: () => void
   ) {
@@ -62,7 +63,7 @@ export class ProfileBuilderComponent {
     this.http.post<any>('http://localhost:8000/api/users/resume-analyzer/', formData).subscribe({
       next: (data) => {
         const phoneCode = data.phone_code.replace('+', '');
-        const matchedCountry = countries.find(c => c.phonecode === phoneCode);
+        const matchedCountry = country_find.find(c => c.phonecode === phoneCode);
         const country_code = matchedCountry?.isoCode || '';
         let linkedin = data.linkedin_url?.trim() || '';
         if (linkedin && !linkedin.startsWith('http')) {
@@ -91,7 +92,8 @@ export class ProfileBuilderComponent {
     selectedFile: File | null = null,
     onStart?: () => void,
     onSuccess?: () => void,
-    onError?: (err: any) => void
+    onError?: (err: any) => void,
+    shouldRedirect: boolean = true
   ) {
     if (profileForm.invalid) return;
     const formData = new FormData();
@@ -99,20 +101,30 @@ export class ProfileBuilderComponent {
     const rawData = profileForm.value
     if (Array.isArray(rawData.education)) {
       const education = rawData.education.map((edu: any) => {
+        const findCountry = this.countries.find(c => c.isoCode === edu.location_country); 
+        edu.location_country = findCountry != undefined ? findCountry.name : edu.location_country;
         return `${edu.title} en ${edu.institution} - (${edu.location_city}, ${edu.location_country}) - ${edu.start_date} a ${edu.end_date}`;
       }).join('\n\n');
       formData.append('education', education);
     }
     if (Array.isArray(rawData.experience)) {
       const experiences = rawData.experience.map((exp: any) => {
+        const findCountry = this.countries.find(c => c.isoCode === exp.location_country);
+        exp.location_country = findCountry != undefined ? findCountry.name : exp.location_country;;
         return `${exp.position} en ${exp.company} - (${exp.location_city}, ${exp.location_country}) - ${exp.start_date} a ${exp.end_date}:\n ${exp.description}`;
       }).join('\n\n');
       formData.append('experience', experiences);
     }
     // Check if linkedin url have not http://www.
     if (rawData.linkedin_url && !rawData.linkedin_url.startsWith('http')) {
-      rawData.linkedin_url = `https://www${rawData.linkedin_url}`;
+      rawData.linkedin_url = `https://www.${rawData.linkedin_url}`;
     }
+
+    if (rawData.country) {
+      const findCountry = this.countries.find(c => c.isoCode === rawData.country);
+      rawData.country = findCountry != undefined ? findCountry.name : rawData.country;
+    }
+
     // If data have array for education and experience
     Object.entries(rawData).forEach(([key, value]) => {
       if (['education', 'experience'].includes(key)) return;
@@ -126,13 +138,20 @@ export class ProfileBuilderComponent {
     const token = localStorage.getItem('access_token');
     const headers = new HttpHeaders({Authorization: `Bearer ${token}`});
     onStart?.();
+
+    localStorage.setItem('manual_profile_draft', JSON.stringify(rawData));
+
     this.http.post('http://localhost:8000/api/users/profile/', formData, { headers }).subscribe({
       next: () => {
         onSuccess?.();
         this.jobService.getScrapedOffers().subscribe({
           next: (res: JobOffer[]) => {
             this.jobService.setOffers(res);
-            this.router.navigate(['/results']);
+            if (shouldRedirect) {
+              this.router.navigate(['/results']);
+            } else {
+              this.router.navigate(['/ats-cv']);
+            }
           },
           error: (err) => {
             console.error("❌ Error al obtener vacantes:", err);

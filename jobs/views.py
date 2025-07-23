@@ -36,8 +36,8 @@ class JobsOfferViwe(APIView):
         filter_jobs = []
         for job in jobs:
             offer_skill = job.keywords.split(',')
-            matched_skills = [kw for kw in offer_skill if kw.strip() and kw in user_skills]
-            missing_skills = [kw for kw in offer_skill if kw.strip() not in user_skills]
+            matched_skills = [kw for kw in offer_skill if kw.strip() and kw in user_skills.lower()]
+            missing_skills = [kw for kw in offer_skill if kw.strip() not in user_skills.lower()]
             if len([kw for kw in offer_skill if kw.strip()]) !=0:
                 match_percentage = round((len(matched_skills) / len(offer_skill)) *100)
                 if match_percentage >= 60:

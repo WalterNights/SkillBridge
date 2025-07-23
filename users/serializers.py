@@ -1,4 +1,5 @@
 from .models import *
+from users.utils.cv_countries import *
 from rest_framework import serializers
 
 class UserSerializer(serializers.ModelSerializer):

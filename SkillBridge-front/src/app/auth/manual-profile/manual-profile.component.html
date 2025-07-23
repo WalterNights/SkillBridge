@@ -68,14 +68,8 @@
                         class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     >
                         <option value="">Seleccione un país</option>
-                        <option *ngFor="let country of countries" [value]="country.isoCode">
-                            <img 
-                                [src]="'https://flagcdn.com/16x12/' + country.isoCode.toLowerCase() + '.png'"
-                                width="16"
-                                height="12"
-                                alt="{{ country.name }}" 
-                            /> 
-                                {{ country.name }}
+                        <option *ngFor="let country of countries" [value]="country.isoCode"> 
+                            {{ country.name }}
                         </option>
                     </select>
                 </div>

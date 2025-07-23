@@ -105,7 +105,8 @@ export class ProfileComponent implements OnInit {
       (err) => {
         this.isLoading = false;
         this.errorMessage = 'Error al completar perfil';
-      }
+      },
+      true
     );
   }
 }

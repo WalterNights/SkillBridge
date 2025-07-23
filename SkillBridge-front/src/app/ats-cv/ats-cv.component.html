@@ -1,0 +1,101 @@
+<div class="min-h-screen flex items-center justify-center mt-16 bg-gray-100 dark:bg-darkBg px-4">
+  <button (click)="downloadCV()" class="fixed top-24 right-10 rounded-full bg-white p-5 shadow-sm">
+    Descargar CV
+  </button>
+  <button (click)="goToResults()" class="fixed top-48 right-10 rounded-full bg-white p-5 shadow-sm">
+    Ir a Ofertas
+  </button>
+    <div 
+      #cvContent 
+      id="cvContent" 
+      class="max-w-4xl mx-auto bg-white shadow-lg p-20 text-gray-800 font-timesNR space-y-5"
+      style="min-height: 1123px; box-sizing: border-box; margin: 0 auto;"
+    >
+      <!-- Header -->
+      <section class="text-center">
+        <div class="mb-5">
+          <h1 class="text-6xl text-gray-600 pb-3">{{ profileData?.first_name }} {{ profileData?.last_name }}</h1>
+        </div>
+        <div class="w-full flex justify-between items-center text-sm text-gray-600">
+          <p>{{ profileData?.city }}, {{ profileData?.country }}</p>
+          <p>●</p>
+          <p>{{ profileData?.linkedin_url }}</p>
+          <p>●</p>
+          <p>{{ profileData?.phone_code }} {{ profileData?.phone_number }}</p>
+          <p>●</p>
+          <p>walternights&#64;gmail.com</p>
+        </div>
+      </section>
+    
+      <!-- Summary -->
+      <section>
+        <div class="text-xl font-semibold text-gray-600 uppercase border-b pb-1 mb-3"></div>
+        <p class="text-justify italic">
+          {{ profileData?.summary }}
+        </p>
+      </section>
+    
+      <!-- Experiencia -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-600 uppercase mb-3">Experiencia Profesional</h2>
+        <div class="border-b mb-3"></div>
+        <div *ngFor="let exp of profileData?.experience" class="mb-6">
+          <div class="flex justify-between">
+            <div>
+              <h3 class="text-lg font-semibold">{{ exp.company }}</h3>
+              <p class="text-sm text-gray-600">{{ exp.position }}</p>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-gray-600 text-end">{{ exp.location_city }}, {{ exp.location_country }}</p>
+              <p class="text-sm text-gray-600 italic capitalize">
+                {{ exp.start_date | date:'MMMM yyyy':'':'es' }} - {{ exp.end_date | date:'MMMM yyyy':'':'es' }}
+              </p>
+            </div>
+          </div>
+          <div>
+            <p>{{ exp.description }}</p>
+          </div>
+        </div>
+      </section>
+    
+      <!-- Educación -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-600 uppercase mb-3">Educación</h2>
+        <div class="border-b mb-3"></div>
+        <div *ngFor="let edu of profileData?.education" class="flex justify-between">
+          <div>
+            <h3 class="font-semibold capitalize">{{ edu.institution }}</h3>
+            <p class="text-sm text-gray-600">{{ edu.title }}</p>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-gray-600 text-end">{{ edu.location_city }}, {{ edu.location_country }}</p>
+            <p class="text-sm text-gray-600 italic capitalize">
+              {{ edu.start_date | date:'MMMM yyyy':'':'es' }} - {{ edu.end_date | date:'MMMM yyyy':'':'es' }}
+            </p>
+          </div>
+        </div>
+      </section>
+    
+      <!-- Skills -->
+      <section>
+        <h2 class="text-xl font-semibold text-gray-600 uppercase mb-3">Habilidades Técnicas</h2>
+        <div class="border-b mb-3"></div>
+        <p class="text-sm italic">{{ profileData?.skills }}</p>
+      </section>
+    
+      <!-- Habilidades adicionales -->
+      <!-- <section>
+        <h2 class="text-xl font-semibold text-gray-600 uppercase border-b pb-1 mb-3">Habilidades Blandas</h2>
+        <p class="text-sm italic">
+          Liderazgo, Comunicación, Toma de decisiones, Gestión del tiempo, Trabajo en equipo, Pensamiento estratégico
+        </p>
+      </section> -->
+    
+      <!-- Lenguajes -->
+      <!-- <section>
+        <h2 class="text-xl font-semibold text-gray-600 uppercase border-b pb-1 mb-3">Idiomas</h2>
+        <p class="text-sm">Español: Nativo</p>
+        <p class="text-sm">Inglés: B2 (Intermedio)</p>
+      </section> -->
+    </div>
+</div>
