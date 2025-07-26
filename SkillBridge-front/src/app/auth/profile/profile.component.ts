@@ -74,7 +74,6 @@ export class ProfileComponent implements OnInit {
         });
         if (country_code) this.onCountryChange(country_code);
         this.successMessage = "Hoja de vida analizada correctamente";
-        // console.log("📦 Datos recibidos:", data)
         Object.keys(this.profileForm.controls).forEach(field => {
           const control = this.profileForm.get(field);
           control?.markAsTouched();

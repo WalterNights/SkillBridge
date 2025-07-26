@@ -105,6 +105,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         try:
             profile = user.profile
             data['is_profile_complete'] = profile.number_id is not None
+            data['user_name'] = profile.first_name
         except:
             data['is_profile_complete'] = False
         return data

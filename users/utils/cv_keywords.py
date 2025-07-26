@@ -1,10 +1,3 @@
-EDUCATION_KEYWORDS = [
-    "universidad", "universitario", "formación académica", "educación",
-    "título", "licenciatura", "ingeniería", "pregrado", "maestría",
-    "doctorado", "tecnólogo", "tecnico", "estudios", "facultad", "carrera",
-    "profesional en", "egresado", "grado", "especialización"
-]
-
 SKILLS_KEYWORDS = [
     # Hard Skill
     "python", "java", "javascript", "typescript", "fetch", "jquery", "angular", "react",
@@ -27,27 +20,15 @@ EXPERIENCE_KEYWORDS = ["experiencia", "experiencia profesional", "EXPERIENCIA PR
     "EXPERIENCE", "WORK EXPERIENCE", "historial laboral", "trayectoria", "laboral"
 ]
 
-PHONE_KEYWORDS = ["teléfono", "celular", "número de contacto"]
-
-LINKEDIN_KEYWORDS = ["linkedin"]
-
-PORTFOLIO_KEYWORDS = ["portafolio", "portfolio"]
-
-CITY_KEYWORDS = [
-    "Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena", 
-    "Buenos Aires", "Madrid", "Barcelona", "Lima", "Santiago", "Quito", 
-    "New York", "San Francisco", "London"
-]
-
 TITLE_KEYWORDS = {
     "Desarrollador Frontend": [
-        "react", "angular", "vue", "html", "css", "typescript", "tailwind", "bootstrap"
+        "react", "angular", "vue", "html", "css", "javascript", "typescript", "tailwind", "bootstrap"
     ],
     "Desarrollador Backend": [
-        "django", "flask", "node", "express", "spring", "java", "php", "mysql", "mongodb"
+        "python", "django", "flask", "node", "express", "spring", "java", "php", "mysql", "mongodb"
     ],
     "Desarrollador Full Stack": [
-        "full stack", "frontend", "backend"
+        "full stack", "fullstack", "frontend", "backend"
     ],
     "Científico de Datos": [
         "pandas", "numpy", "data science", "machine learning", "scikit-learn"
@@ -59,3 +40,9 @@ TITLE_KEYWORDS = {
         "audiovisual", "storytelling", "video", "edición"
     ]
 }
+
+# EDUCATION KEYWORDS
+START_EDUCATION_SECTION = ["EDUCACION", "EDUCATION", "FORMACION", "FORMACION ACADEMICA", "ACADEMIC FORMATION"]
+
+END_EDUCATION_SECTION = ["HABILIDADES", "HABILIDADES TECNICAS", "SKILL", "SKILLS", "SKILLS TECHNIQUES", "SOFT SKILLS",  "HARD SKILLS"]
+    

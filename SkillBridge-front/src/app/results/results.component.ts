@@ -6,6 +6,9 @@ import { JobOffer } from '../models/job-offer.model';
 import { JobService } from '../services/job.service';
 import { Router, RouterModule } from '@angular/router';
 
+
+
+
 @Component({
   selector: 'app-results',
   imports: [CommonModule, RouterModule],
@@ -41,4 +44,20 @@ export class ResultsComponent {
   goToLinkedin(link: string): void {
     window.open(link, '_blank');
   }
+
+
+
+
+  obtainOffers() {
+    this.jobService.getScrapedOffers().subscribe({
+      next: (res: JobOffer[]) => {
+        this.jobService.setOffers(res);
+      },
+      error: (err) => {
+        console.error("❌ Error al obtener vacantes:", err);
+      }
+    });
+  }
+
+
 }

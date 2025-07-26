@@ -40,7 +40,7 @@ class JobsOfferViwe(APIView):
             missing_skills = [kw for kw in offer_skill if kw.strip() not in user_skills.lower()]
             if len([kw for kw in offer_skill if kw.strip()]) !=0:
                 match_percentage = round((len(matched_skills) / len(offer_skill)) *100)
-                if match_percentage >= 60:
+                if match_percentage >= 50:
                     job.matched_skills = matched_skills
                     job.missing_skills = missing_skills
                     job.match_percentage = match_percentage

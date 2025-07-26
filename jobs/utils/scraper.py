@@ -17,7 +17,7 @@ def scrap_computrabajo(query, location):
                       "Chrome/114.0.0.0 Safari/537.36"
     }
     offers = []
-    for page in range(1, 3):
+    for page in range(1, 3): # Change range to scrape more pages
         url = base_url + str(page)
         response = requests.get(url, headers=headers)
         soup = BeautifulSoup(response.content, "html.parser")
@@ -28,14 +28,14 @@ def scrap_computrabajo(query, location):
         for article in articles:
             try:
                 title_tag = article.select_one("a.js-o-link")
-                company_tag = article.select_one("p.fs16.fc_base.mt5")
+                company_tag = article.select_one("a.fc_base.t_ellipsis")
                 location_tag = article.find_all("p")[1] if len(article.find_all("p")) > 1 else None
                 title = title_tag.get_text(strip=True) if title_tag else ""
                 job_url = "https://co.computrabajo.com" + title_tag["href"] if title_tag else ""
                 company = company_tag.get_text(strip=True) if company_tag else ""
                 location_job = location_tag.get_text(strip=True) if location_tag else ""
                 description, requirements, keywords = get_offer_summary(job_url)
-                summary = f"{description}\n\nREQUISITOS:\n{requirements}" if requirements else description
+                summary = f"{description}" if requirements else description
                 obj, created = JobOffer.objects.get_or_create(
                     url=job_url,
                     defaults={
@@ -56,11 +56,11 @@ def scrap_computrabajo(query, location):
 
 
 def extract_keywords(text):
-    text = text.lower().replace(".net core", ".net").replace("c ", "c# ")
+    text = text.lower()
     found_keywords = [
         kw for kw in COMMON_KEYWORDS
-        if re.search(r'\b' + re.escape(kw) + r'\b', text)
-        ]  
+        if re.search(r'(?<!\w)' + re.escape(kw) + r'(?!\w)', text, re.IGNORECASE)
+    ]
     return ', '.join(found_keywords)
 
 
@@ -84,24 +84,38 @@ def get_offer_summary(offer_url):
         for sibling in description_title.find_next_siblings():
             if sibling.name == "h3":
                 break
-            if sibling.name == "p" or sibling.name == "li":
-                all_text.append(sibling.get_text(strip=True))       
-        full_text = "\n".join(all_text)
-        split_keywords = ["requisitos", "habilidades", "condiciones", "te ofrecemos", "perfil", "ofrecemos", "conocimientos", "skills", "qué harás", "responsabilidades"]
+            if sibling.name in ["p", "li"]:
+                for line in sibling:
+                    if line.name == "br":
+                         all_text.append("\n")
+                    elif "Requerimientos" in line.get_text():
+                        all_text.append("\n\nRequerimientos:\n\n")
+                    elif "Aptitudes asociadas a esta oferta" in line.get_text() or "Palabras clave:" in line.get_text():
+                        break
+                    else:
+                        all_text.append(line.get_text())   
+            elif sibling.name == "ul":
+                for li in sibling.find_all("li"):
+                    li_text = li.get_text(strip=True)
+                    all_text.append(f"- {li_text}\n\n")   
+        full_text = "".join(all_text)
+        split_keywords = [
+            "requisitos", "habilidades", "condiciones", "te ofrecemos", 
+            "perfil", "ofrecemos", "conocimientos", "skills", "qué harás", "responsabilidades"
+        ]
         split_point = -1
         for keyword in split_keywords:
             pattern = re.compile(keyword, re.IGNORECASE)
             match = pattern.search(full_text)
             if match:
                 split_point = match.start()
-                break
+                break  
+        description = full_text  
         if split_point != -1:
-            description = full_text[:split_point].strip()
             requirements = full_text[split_point:].strip()
         else:
-            description = full_text
-            requirements = ""  
-        keywords = extract_keywords(requirements)      
+            requirements = ""
+        keywords = extract_keywords(full_text)
         return description, requirements, keywords
     except Exception as e:
         print("Error obteniendo resumen:", e)

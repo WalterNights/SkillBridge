@@ -1,5 +1,4 @@
 import { jsPDF } from 'jspdf';
-import html2pdf from 'html2pdf.js';
 import html2canvas from 'html2canvas';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -9,6 +8,7 @@ import { Title } from '@angular/platform-browser';
 import { registerLocaleData } from '@angular/common';
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 
+
 @Component({
   selector: 'app-ats-cv',
   imports: [CommonModule],
@@ -17,6 +17,7 @@ import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
   styleUrls: ['./ats-cv.component.scss']
 })
 export class AtsCvComponent implements OnInit {
+  userEmail: string | null = null;
   profileData: any = null;
   @ViewChild('cvContent', { static: false }) cvContent!: ElementRef;
 
@@ -31,27 +32,25 @@ export class AtsCvComponent implements OnInit {
   ngOnInit(): void {
     registerLocaleData(localeEs, 'es');
     const savedData = localStorage.getItem('manual_profile_draft');
+    this.userEmail = sessionStorage.getItem('user_email');
     this.profileData = savedData ? JSON.parse(savedData) : null;
   }
 
   downloadCV(): void {
     const element = this.cvContent.nativeElement;
-    html2canvas(element, {
-      scale: 2,
-      useCORS: true
-    }).then(canvas => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'pt', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      // Force scale to can in on one page
-      const imgProps = pdf.getImageProperties(imgData);
-      const imgRatio = imgProps.width / imgProps.height;
-      const scaledWidth = pageWidth;
-      const scaledHeight = pageWidth / imgRatio;
-      pdf.addImage(imgData, 'PNG', 0, 0, scaledWidth, scaledHeight);
-      pdf.save('skillbridge-ats-cv.pdf');
-    });
+    const doc = new jsPDF('p', 'pt', 'a4');
+    if (element) {
+      doc.html(element, {
+        callback: (doc) => {
+          doc.save('skillbridge-ats-cv.pdf');
+          //this.router.navigate(['/results']);
+        },
+        x: 10,
+        y: 0,
+        html2canvas: {scale: 0.65}
+      });
+      //localStorage.removeItem('manual_profile_draft');
+    }
   }
 
   goToResults() {

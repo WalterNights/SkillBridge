@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { HttpClient } from '@angular/common/http';
+import { AuthService } from '../auth/auth.service';
 import { JobService } from '../services/job.service';
 import { JobOffer } from '../models/job-offer.model';
+import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-job-detail',
@@ -18,8 +19,10 @@ export class JobDetailComponent implements OnInit {
   jobDetail!: JobOffer;
 
   constructor(
+    private router: Router,
     private route: ActivatedRoute,
     private jobService: JobService,
+    private authService: AuthService,
     private titleService: Title,
     private http: HttpClient
   ) {
@@ -36,4 +39,12 @@ export class JobDetailComponent implements OnInit {
     });
   }
 
+  goToResults() {
+    if (!this.authService.isAuthenticated()){
+      sessionStorage.setItem('redirect_after_login', '/results');
+      this.router.navigate(['/auth/login']);
+    } else {
+      this.router.navigate(['/results']);
+    }
+  }
 }

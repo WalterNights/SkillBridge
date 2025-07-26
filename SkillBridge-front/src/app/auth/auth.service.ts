@@ -51,8 +51,13 @@ export class AuthService {
       tap((res: any) => {
         sessionStorage.setItem('access_token', res.access);
         sessionStorage.setItem('refresh_token', res.refresh_token);
+        if (res.first_name != undefined){
+          sessionStorage.setItem('user_name', res.user_name);
+        }else {
+          sessionStorage.setItem('user_name', res.username);
+        }
         sessionStorage.setItem('is_profile_complete', res.is_profile_complete);
-        sessionStorage.setItem('user_name', res.username);
+        sessionStorage.setItem('user_email', res.email);
         this.isLoggedInSubject.next(true);
         this.updateProfileStatus();
       })

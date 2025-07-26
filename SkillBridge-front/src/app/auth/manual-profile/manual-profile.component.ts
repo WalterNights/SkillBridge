@@ -47,9 +47,7 @@ export class ManualProfileComponent implements OnInit {
       education: educationArray, 
       experience: experienceArray 
     });
-
-
-    // DEBUGIN Autofill Form
+    // Autofill Form to make ats-cv or if page was closed before sending data
     const savedForm = localStorage.getItem('manual_profile_draft');
     if (savedForm) {
       this.profileForm.patchValue(JSON.parse(savedForm));
@@ -121,8 +119,6 @@ export class ManualProfileComponent implements OnInit {
         setTimeout(() => {
           this.isLoading = false;
           this.showLoader = true;
-          console.log("✅ Perfil guardado correctamente");
-          //localStorage.removeItem('manual_profile_draft');
         }, 1500);
       },
       (err) => {

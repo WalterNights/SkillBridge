@@ -1,15 +1,26 @@
 <div class="min-h-screen flex flex-col items-center p-6 mt-16 bg-gray-50 dark:bg-darkBg">
+    
+    <!-- DEBUGGING BUTTON -->
+     <div (click)="obtainOffers()" class="fixed top-15 left-0 p-5 font-bold bg-white rounded-r-full shadow-md cursor-pointer">
+        <span class="absolute -top-2 left-36 rounded-full text-sm bg-green-300 p-1">DEBUG</span>
+        <p>OBTENER OFERTAS</p>
+     </div>
+    <!-- DEBUGGING BUTTON -->
+
     <h1 class="text-3xl font-bold mb-6 text-center dark:text-darkText">
         Vacantes para ti
     </h1>
-    <div class="md:w-3/4 2xl:w-2/3 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div 
+        class="md:w-3/4 2xl:w-2/3 grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+        [ngClass]="{'md:grid-cols-2 lg:grid-cols-3': offers.length > 0}"
+    >
         <div 
             *ngFor="let offer of offers" 
             class="flex flex-col justify-between p-5 rounded-xl bg-white dark:bg-darkCard dark:text-darkText shadow-md hover:shadow-lg transition-all duration-300"
             [ngClass]="{
                 'shadow-green-300': offer.match_percentage === 100,
-                'shadow-blue-300': offer.match_percentage > 60 && offer.match_percentage < 100,
-                'shadow-orange-300': offer.match_percentage === 60,
+                'shadow-blue-300': offer.match_percentage >= 70 && offer.match_percentage < 100,
+                'shadow-orange-300': offer.match_percentage >= 50 && offer.match_percentage < 70,
             }"
         >
             <h2 class="text-xl font-semibold text-indigo-700 dark:text-indigo-200">
@@ -29,8 +40,8 @@
                     class="font-bold"
                     [ngClass]="{
                         'text-green-300': offer.match_percentage === 100,
-                        'text-blue-300': offer.match_percentage > 60 && offer.match_percentage < 100,
-                        'text-orange-300': offer.match_percentage === 60,
+                        'text-blue-300': offer.match_percentage >= 70 && offer.match_percentage < 100,
+                        'text-orange-300': offer.match_percentage >= 50 && offer.match_percentage < 70,
                     }"
                 >
                     Compatibilidad: {{ offer.match_percentage }}%

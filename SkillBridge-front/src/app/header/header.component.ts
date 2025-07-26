@@ -30,7 +30,9 @@ export class HeaderComponent {
    }
 
    goToHome() {
-      this.router.navigate(['/'])
+      this.router.navigate(['/']).then(() => {
+         this.authService.updateProfileStatus();
+      });
    }
 
    login() {

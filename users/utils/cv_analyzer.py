@@ -82,12 +82,19 @@ def extract_city(text, country_name):
     
 
 def extract_prof_title(summary):
-    for kw in TITLE_KEYWORDS:
-        if kw.lower() in summary.lower():
-            return kw
-    if summary:
-        return summary.split('.')[0].strip()
-    return ""
+    if not summary:
+        return ""
+    max_score = 0
+    best_title = ""
+    for title, keywords in TITLE_KEYWORDS.items():
+        score = sum(1 for kw in keywords if kw.lower() in summary.lower())
+        
+        if score > max_score:
+            max_score = score
+            best_title = title
+    if best_title:
+        return best_title
+    return summary.split('.')[0].strip()  
 
 
 def extract_summary(text):
@@ -102,7 +109,16 @@ def extract_summary(text):
 
 
 def extract_education(text):
-    pattern = r"EDUCACI[oÓ]N(.*?)SKILLS"
+    clear_text = unidecode(text)
+    lines = clear_text.strip().split()
+    edu_section_start = ""
+    edu_section_end = ""
+    for line in lines:
+        if line.upper() in START_EDUCATION_SECTION:
+            edu_section_start = line
+        if line.upper() in END_EDUCATION_SECTION:
+            edu_section_end = line
+    pattern = rf"{edu_section_start}(.*?){edu_section_end}"
     match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
     if match:
         return clean_text(match.group(1))
@@ -134,23 +150,19 @@ def extract_portfolio(text):
 
 
 def analyze_cv(file, filetype='pdf'):
+    print("🔍 Analizando CV...")
     if filetype == 'pdf':
         text = extract_text_from_pdf(file)
     elif filetype == 'docx':
         text = extract_text_from_docx(file)
     else:
         return {}
-    
     text = clean_text(text)
-    
     phone_code = extract_phone(text)[0]
     phone_number = extract_phone(text)[1]
     city = extract_city(text, extract_phone(text)[0])
-    
     first_name = extract_full_name(text, city)[0]
     last_name = extract_full_name(text, city)[1]
-    
-    
     return {
         "first_name": first_name,
         "last_name": last_name,

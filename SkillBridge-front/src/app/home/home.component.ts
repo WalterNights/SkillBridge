@@ -49,10 +49,9 @@ export class HomeComponent {
     }
   }
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.authService.isProfileComplete$.subscribe(status => {
       this.profileComplete = status;
     })
   }
-
 }

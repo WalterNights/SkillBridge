@@ -11,6 +11,14 @@
         </div>
     </div>
 </div>
+<!--Modal Info-->
+<div class="fixed top-60 left-20 w-80 min-h-md bg-white dark:bg-darkCard dark:text-darkText text-sm rounded-2xl shadow-xl p-4 z-40">
+    <ul class="list-disc list-inside">
+        <li>Revisa cuidadosamente la información generada desde tu hoja de vida.</li>
+        <div class="my-4 border-b"></div>
+        <li>Puedes corregir la información cargada desde tu hoja de vida en caso que creas que no se haya generado correctamente.</li>
+    </ul>
+</div>
 <!--Profile Form-->
 <div class="min-h-screen flex items-center justify-center mt-16 bg-gray-100 dark:bg-darkBg px-4">
     <form 
@@ -93,8 +101,7 @@
                     />
                 </div>
             </div>
-            
-
+        
             <div class="flex flex-col md:flex-row gap-4">
                 <div class="w-full lg:w-2/4">
                     <label class="block text-sm font-medium text-grey-700">
@@ -108,13 +115,7 @@
                     >
                         <option value="">Seleccione un país</option>
                         <option *ngFor="let country of countries" [value]="country.isoCode">
-                            <img 
-                                [src]="'https://flagcdn.com/16x12/' + country.isoCode.toLowerCase() + '.png'"
-                                width="16"
-                                height="12"
-                                alt="{{ country.name }}" 
-                            /> 
-                                {{ country.name }}
+                            {{ country.name }}
                         </option>
                     </select>
                 </div>
@@ -133,8 +134,6 @@
                     </select>
                 </div>
             </div>
-
-
             <div>
                 <label class="block text-sm font-medium text-grey-700">
                     * Cargo:

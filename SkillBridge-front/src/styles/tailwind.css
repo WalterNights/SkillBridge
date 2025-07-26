@@ -5,6 +5,19 @@
 
 @layer utilities {
 
+  .dot {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    display: inline-block;
+    position: relative;
+    transform: translateY(-1px);
+    border-radius: 50%;
+    vertical-align: middle;
+    margin: 0 5px;
+    padding-bottom: 5px;
+  }
+
   /* 🔆 Animate boder rotate */
   .glow-animated {
     position: relative;

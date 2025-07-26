@@ -6,7 +6,8 @@ import { JobOffer } from '../../models/job-offer.model';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
-@Injectable({ providedIn: 'root'})
+
+@Injectable({ providedIn: 'root' })
 export class ProfileBuilderComponent {
   profileForm: any;
   countryCodes: any[] = [];
@@ -18,11 +19,11 @@ export class ProfileBuilderComponent {
     private http: HttpClient,
     private jobService: JobService,
     private router: Router
-  ) {}
+  ) { }
 
-  buildProfileForm(overrides: Partial <{ 
+  buildProfileForm(overrides: Partial<{
     education: FormArray,
-    experience: FormArray 
+    experience: FormArray
   }> = {}): FormGroup {
     return this.fb.group({
       first_name: ['', Validators.required],
@@ -99,32 +100,40 @@ export class ProfileBuilderComponent {
     const formData = new FormData();
     // If data come from manual-profile
     const rawData = profileForm.value
-    if (Array.isArray(rawData.education)) {
-      const education = rawData.education.map((edu: any) => {
-        const findCountry = this.countries.find(c => c.isoCode === edu.location_country); 
-        edu.location_country = findCountry != undefined ? findCountry.name : edu.location_country;
-        return `${edu.title} en ${edu.institution} - (${edu.location_city}, ${edu.location_country}) - ${edu.start_date} a ${edu.end_date}`;
-      }).join('\n\n');
-      formData.append('education', education);
-    }
-    if (Array.isArray(rawData.experience)) {
-      const experiences = rawData.experience.map((exp: any) => {
-        const findCountry = this.countries.find(c => c.isoCode === exp.location_country);
-        exp.location_country = findCountry != undefined ? findCountry.name : exp.location_country;;
-        return `${exp.position} en ${exp.company} - (${exp.location_city}, ${exp.location_country}) - ${exp.start_date} a ${exp.end_date}:\n ${exp.description}`;
-      }).join('\n\n');
-      formData.append('experience', experiences);
-    }
     // Check if linkedin url have not http://www.
     if (rawData.linkedin_url && !rawData.linkedin_url.startsWith('http')) {
       rawData.linkedin_url = `https://www.${rawData.linkedin_url}`;
     }
-
     if (rawData.country) {
       const findCountry = this.countries.find(c => c.isoCode === rawData.country);
       rawData.country = findCountry != undefined ? findCountry.name : rawData.country;
     }
-
+    if (Array.isArray(rawData.education) && Array.isArray(rawData.experience)) {
+      if (rawData.education.length > 0) {
+        const education = rawData.education.map((edu: any) => {
+          const findCountry = this.countries.find(c => c.isoCode === edu.location_country);
+          edu.location_country = findCountry != undefined ? findCountry.name : edu.location_country;
+          return `${edu.title} en ${edu.institution} - (${edu.location_city}, ${edu.location_country}) - ${edu.start_date} a ${edu.end_date}`;
+        }).join('\n\n');
+        formData.append('education', education);
+      }
+      if (rawData.experience.length > 0) {
+        const experiences = rawData.experience.map((exp: any) => {
+          const findCountry = this.countries.find(c => c.isoCode === exp.location_country);
+          exp.location_country = findCountry != undefined ? findCountry.name : exp.location_country;;
+          return `${exp.position} en ${exp.company} - (${exp.location_city}, ${exp.location_country}) - ${exp.start_date} a ${exp.end_date}:\n ${exp.description}`;
+        }).join('\n\n');
+        formData.append('experience', experiences);
+      }
+      localStorage.setItem('manual_profile_draft', JSON.stringify(rawData));
+    } else {
+      if (typeof rawData.education === 'string' && rawData.education.trim() !== '') {
+        formData.append('education', rawData.education);
+      }
+      if (typeof rawData.experience === 'string' && rawData.experience.trim() !== '') {
+        formData.append('experience', rawData.experience);
+      }
+    }
     // If data have array for education and experience
     Object.entries(rawData).forEach(([key, value]) => {
       if (['education', 'experience'].includes(key)) return;
@@ -134,16 +143,18 @@ export class ProfileBuilderComponent {
         formData.append(key, String(value));
       }
     });
-    if (selectedFile) formData.append('resume', selectedFile);
+    selectedFile = rawData.resume;
+    if (selectedFile instanceof File) formData.append('resume', selectedFile);
     const token = localStorage.getItem('access_token');
-    const headers = new HttpHeaders({Authorization: `Bearer ${token}`});
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
     onStart?.();
-
-    localStorage.setItem('manual_profile_draft', JSON.stringify(rawData));
-
     this.http.post('http://localhost:8000/api/users/profile/', formData, { headers }).subscribe({
-      next: () => {
+      next: (res: any) => {
         onSuccess?.();
+        if (res) {
+          sessionStorage.setItem('is_profile_complete', 'true');
+          sessionStorage.setItem('user_name', res.first_name);
+        }
         this.jobService.getScrapedOffers().subscribe({
           next: (res: JobOffer[]) => {
             this.jobService.setOffers(res);
