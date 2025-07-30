@@ -18,52 +18,30 @@
     padding-bottom: 5px;
   }
 
+  .transitionWidth {
+    transition: width 0.4s;
+  }
+
+  .animate-gradient-spin {
+    animation: gradient-spin 5s linear infinite;
+  }
+
   /* 🔆 Animate boder rotate */
-  .glow-animated {
-    position: relative;
-    z-index: 0;
-  }
-
-  .glow-animated::before {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border-radius: inherit;
-    background: conic-gradient(
-      from 0deg,
-      #00f0ff,
-      #007bff,
-      #33ccff,
-      #00f0ff
-    );
-    animation: spinGlow 3s linear infinite;
-    filter: blur(6px);
-    opacity: 0.8;
-  }
-
-  @keyframes spinGlow {
+  @keyframes gradient-spin {
     0% {
-      transform: rotate(0deg);
+      transform: translate(-50%, -50%) rotate(0deg);
     }
     100% {
-      transform: rotate(360deg);
+      transform: translate(-50%, -50%) rotate(360deg);
     }
   }
 
-  /* match color per % */
-  .glow-green::before {
-    background: conic-gradient(#00ff00, #33ff66, #00ff00);
-  }
 
-  .glow-blue::before {
-    background: conic-gradient(#007bff, #66ccff, #007bff);
-  }
 
-  .glow-orange::before {
-    background: conic-gradient(#ffa500, #ffcc66, #ffa500);
-  }
+
+
+/* html, body {
+  background: #FCEEB5;
+  font-family: Abel, Arial, Verdana, sans-serif;
+} */
 }

@@ -14,6 +14,7 @@ module.exports = {
                 darkCard: '#252728',
                 darkText: '#e5e5e5',
                 darkBgTa: '#333334',
+                skBg1: '#FCEEB5',
             },
             fontFamily: {
                 'timesNR': ['Times New Roman'],

@@ -20,7 +20,7 @@
     >
         {{ jobDetail.match_percentage }}%
     </div>
-    <div class="flex flex-col w-2/3 justify-between p-5 rounded-xl bg-white dark:bg-darkCard dark:text-darkText shadow-md hover:shadow-lg transition-all duration-300">
+    <div class="flex flex-col w-2/3 justify-between p-10 rounded-xl bg-white dark:bg-darkCard dark:text-darkText shadow-md hover:shadow-lg transition-all duration-300">
         <h1 class="text-3xl font-bold mb-6 text-center">
             {{ job.title }}
         </h1>
@@ -57,18 +57,21 @@
             Aplica a esta oferta
         </a>
     </div>
-    <div *ngIf="jobDetail.match_percentage != 100" class="flex flex-col w-2/3 justify-between mt-4 p-5 rounded-xl bg-white dark:bg-darkCard dark:text-darkText shadow-md hover:shadow-lg transition-all duration-300">
+    <div *ngIf="jobDetail.match_percentage != 100" class="flex flex-col w-2/3 justify-between mt-4 p-10 rounded-xl bg-white dark:bg-darkCard dark:text-darkText shadow-md hover:shadow-lg transition-all duration-300">
         <p class="text-xl font-bold mb-4">
             Te hacen falta las siguientes habilidades:
         </p>
-        <ul class="font-bold px-5 list-disc list-inside">
-            <li 
+        <div class="flex gap-6 font-bold px-5">
+            <button 
                 *ngFor="let skill of jobDetail.missing_skills" 
-                class="cursor-pointer hover:text-blue-300"
+                class="
+                    w-20 h-12 border-solid border-2 border-blue-500 rounded-md 
+                    cursor-pointer shadow-md hover:shadow-lg transition-all duration-300
+                "
             >
                 {{ skill }}
-            </li>
-        </ul>
+            </button>
+        </div>
         <div class="mt-4 border-b"></div>
         <div class="mt-4">
             <span class="font-bold">NOTA: </span>

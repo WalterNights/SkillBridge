@@ -35,7 +35,7 @@ export class JobDetailComponent implements OnInit {
     const jobId = this.route.snapshot.paramMap.get('id');
     this.http.get(`http://localhost:8000/api/jobs/jobs-details/${jobId}/`).subscribe({
       next: data => this.job = data,
-      error: err => console.log('Error al cargar la oferta', err)
+      error: err => console.log('Error al cargar la oferta')
     });
   }
 
