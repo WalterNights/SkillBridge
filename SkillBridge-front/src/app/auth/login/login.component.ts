@@ -3,6 +3,7 @@ import { AuthService } from '../auth.service';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { Router, RouterModule } from '@angular/router';
+import { StorageMethodComponent } from '../../shared/storage-method/storage-method'; 
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validator, Validators } from '@angular/forms';
 
 @Component({
@@ -12,15 +13,20 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validator, Validators } fr
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
+
 export class LoginComponent {
   loginForm: FormGroup;
   isLoading = false;
   errorMessage = '';
+  isStorage = false;
+  storage: 'session' | 'local' = 'session';
+
   constructor(
     private fb: FormBuilder, 
     private authService: AuthService, 
     private router: Router,
-    private titleService: Title
+    private titleService: Title,
+    private storageMethod: StorageMethodComponent
   ) {
     this.titleService.setTitle('SkillBridge - Login');
     this.loginForm = this.fb.group({
@@ -28,6 +34,26 @@ export class LoginComponent {
       password: ['', Validators.required]
     });
   }
+
+  ngOnInit(){
+    if(localStorage.getItem('storage') === 'true') {
+      this.isStorage = true;
+      this.storage = 'local';
+    }
+  }
+
+  toggleStorage() {
+      this.isStorage = !this.isStorage;
+      const root = document.documentElement;
+      if (this.isStorage) {
+         localStorage.setItem('storage', 'true');
+         this.storage = 'local';
+      } else {
+         localStorage.setItem('storage', 'false');
+         this.storage = 'session';
+      }
+   }
+
   onSubmit() {
     if (this.loginForm.invalid) return;
     this.isLoading = true;
@@ -37,7 +63,7 @@ export class LoginComponent {
           this.isLoading = false;
           const redirectPath = sessionStorage.getItem('redirect_after_login') || '';
           sessionStorage.removeItem('redirect_after_login');
-          if(sessionStorage.getItem('is_profile_complete') === 'true') {
+          if(this.storageMethod.getStorageItem(this.storage, 'is_profile_complete') === 'true') {
             this.router.navigate(['/results']);
           } else {
             this.router.navigate([redirectPath]);

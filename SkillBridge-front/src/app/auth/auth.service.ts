@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap, BehaviorSubject, Observable } from 'rxjs';
 import { environment } from '../../environment/environment';
+import { StorageMethodComponent } from '../shared/storage-method/storage-method';
 
 interface RegisterData {
   username: string;
@@ -18,15 +19,25 @@ export class AuthService {
   isLoggedIn$ = this.isLoggedInSubject.asObservable();
   private isProfileCompleteSubject = new BehaviorSubject<boolean>(this.getProfileStatus());
   isProfileComplete$ = this.isProfileCompleteSubject.asObservable();
+  StorageKey = ['access_token', 'refresh_token', 'storage', 'user', 'user_id', 'user_name', 'is_profile_complete', 'manual_profile_draft'];
+  storage: 'session' | 'local' = 'session';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private storageMethod: StorageMethodComponent) { }
 
   getToken(): string | null {
-    return sessionStorage.getItem('access_token');
+    if (localStorage.getItem("storage") === 'true') {
+      return localStorage.getItem('access_token');
+    } else {
+      return sessionStorage.getItem('access_token');
+    }
   }
 
   private getProfileStatus(): boolean {
-    return sessionStorage.getItem('is_profile_complete') === 'true';
+    if (localStorage.getItem("storage") === 'true') {
+      return localStorage.getItem('is_profile_complete') === 'true';
+    } else {
+      return sessionStorage.getItem('is_profile_complete') === 'true';
+    }
   }
 
   updateProfileStatus(): void {
@@ -46,17 +57,25 @@ export class AuthService {
     return this.http.post(this.apiUrl, data);
   }
 
-  login(credentials: {username: string, password: string}) {
+  login(credentials: { username: string, password: string }) {
     return this.http.post(`${environment.apiUrl}/token/login/`, credentials).pipe(
       tap((res: any) => {
-        sessionStorage.setItem('access_token', res.access);
-        sessionStorage.setItem('refresh_token', res.refresh_token);
-        if (res.first_name != undefined){
-          sessionStorage.setItem('user_name', res.user_name);
-        }else {
-          sessionStorage.setItem('user_name', res.username);
+        if (localStorage.getItem('storage') === 'true') {
+          this.storage = "local"
+          this.storageMethod.setStorageItem(this.storage, 'access_token', res.access)
+          this.storageMethod.setStorageItem(this.storage, 'refresh_token', res.refresh_token)
+          this.storageMethod.setStorageItem(this.storage, 'is_profile_complete', res.is_profile_complete)
+        } else {
+          this.storage = "session"
+          this.storageMethod.setStorageItem(this.storage, 'access_token', res.access)
+          this.storageMethod.setStorageItem(this.storage, 'refresh_token', res.refresh_token)
+          this.storageMethod.setStorageItem(this.storage, 'is_profile_complete', res.is_profile_complete)
         }
-        sessionStorage.setItem('is_profile_complete', res.is_profile_complete);
+        if (res.first_name != undefined) {
+          this.storageMethod.setStorageItem(this.storage, 'user_name', res.user_name);
+        } else {
+          this.storageMethod.setStorageItem(this.storage, 'user_name', res.username);
+        }
         sessionStorage.setItem('user_email', res.email);
         this.isLoggedInSubject.next(true);
         this.updateProfileStatus();
@@ -66,15 +85,18 @@ export class AuthService {
 
   logout(): void {
     sessionStorage.clear();
+    this.StorageKey.forEach(key => {
+      localStorage.removeItem(key);
+    });
     this.isLoggedInSubject.next(false);
     this.updateProfileStatus();
   }
 
   refreshToken(): Observable<any> {
-    const refresh = sessionStorage.getItem('refresh_token');
+    const refresh = this.storageMethod.getStorageItem(this.storage, 'access_token')
     return this.http.post(`${environment.apiUrl}/token/refresh/`, { refresh }).pipe(
       tap((res: any) => {
-        sessionStorage.setItem('access_token', res.access);
+        this.storageMethod.setStorageItem(this.storage, 'refresh_token', res.refresh_token)
         this.isLoggedInSubject.next(true);
       })
     )

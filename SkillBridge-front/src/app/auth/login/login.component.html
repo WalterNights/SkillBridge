@@ -44,6 +44,19 @@
                     placeholder="Escribe tu contraseña"
                 >
             </div>
+            <div class="flex justify-between">
+                <span>Recordar mi usuario</span>
+                <label class="flex items-center cursor-pointer">
+                     <input type="checkbox" class="sr-only" [checked]="" (change)="toggleStorage()" />
+                     <div class="w-10 h-5 bg-gray-300 dark:bg-gray-600 rounded-full p-1 flex items-center transition">
+                        <div
+                            class="w-4 h-4 rounded-full shadow-md transform transition-transform"
+                            [class.translate-x-4]="isStorage"
+                            [class]="isStorage ? 'bg-indigo-600' : 'bg-white'"
+                        ></div>
+                     </div>
+                </label>
+            </div>
             <div>
                 <button 
                     type="submit" 

@@ -5,7 +5,6 @@ import { HttpClient } from '@angular/common/http';
 import { JobOffer } from '../models/job-offer.model';
 import { JobService } from '../services/job.service';
 import { Router, RouterModule } from '@angular/router';
-
 import { HTMLChangesComponent } from '../shared/html-changes/html-changes';
 
 
@@ -21,6 +20,7 @@ export class ResultsComponent {
   offers: JobOffer[] = [];
   hoverState: { [offerId: number]: boolean } = {}
   selectedFilter: 'all' | 'good' | 'regular' | 'bad' = 'all';
+  errorMessage = '';
 
   constructor(
     private router: Router,

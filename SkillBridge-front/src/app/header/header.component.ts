@@ -2,6 +2,7 @@ import { Router } from '@angular/router';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../auth/auth.service';
+import { StorageMethodComponent } from '../shared/storage-method/storage-method';
 
 @Component({
    selector: 'app-header',
@@ -15,8 +16,10 @@ export class HeaderComponent {
    isDarkMode = false;
    isLoggedIn: boolean = false;
    isLoading = false;
+   storage: 'session' | 'local' = 'session';
 
-   constructor(private router: Router,private authService: AuthService) {}
+   constructor(private router: Router,private authService: AuthService, private storageMethod: StorageMethodComponent) {}
+   
    toggleDarkMode() {
       this.isDarkMode = !this.isDarkMode;
       const root = document.documentElement;
@@ -54,9 +57,10 @@ export class HeaderComponent {
    }
 
    ngOnInit() {
+      this.storage = localStorage.getItem('storage') === 'true' ? 'local' : 'session';
       this.authService.isLoggedIn$.subscribe(status => {
          this.isLoggedIn = status;
-         this.userName = sessionStorage.getItem('user_name');
+         this.userName = this.storageMethod.getStorageItem(this.storage, 'user_name');
       })
       const saveTheme = localStorage.getItem('theme');
       if (saveTheme === 'dark') {
