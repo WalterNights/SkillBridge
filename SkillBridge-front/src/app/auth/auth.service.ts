@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { tap, BehaviorSubject, Observable } from 'rxjs';
+import { tap, BehaviorSubject, Observable, throwError } from 'rxjs';
 import { environment } from '../../environment/environment';
 import { StorageMethodComponent } from '../shared/storage-method/storage-method';
 
@@ -19,7 +19,14 @@ export class AuthService {
   isLoggedIn$ = this.isLoggedInSubject.asObservable();
   private isProfileCompleteSubject = new BehaviorSubject<boolean>(this.getProfileStatus());
   isProfileComplete$ = this.isProfileCompleteSubject.asObservable();
-  StorageKey = ['access_token', 'refresh_token', 'storage', 'user', 'user_id', 'user_name', 'is_profile_complete', 'manual_profile_draft'];
+  StorageKey = [
+    'access_token', 
+    'refresh_token', 
+    'storage', 'user', 
+    'user_id', 'user_name', 
+    'is_profile_complete', 
+    'manual_profile_draft'
+  ];
   storage: 'session' | 'local' = 'session';
 
   constructor(private http: HttpClient, private storageMethod: StorageMethodComponent) { }
@@ -60,22 +67,12 @@ export class AuthService {
   login(credentials: { username: string, password: string }) {
     return this.http.post(`${environment.apiUrl}/token/login/`, credentials).pipe(
       tap((res: any) => {
-        if (localStorage.getItem('storage') === 'true') {
-          this.storage = "local"
-          this.storageMethod.setStorageItem(this.storage, 'access_token', res.access)
-          this.storageMethod.setStorageItem(this.storage, 'refresh_token', res.refresh_token)
-          this.storageMethod.setStorageItem(this.storage, 'is_profile_complete', res.is_profile_complete)
-        } else {
-          this.storage = "session"
-          this.storageMethod.setStorageItem(this.storage, 'access_token', res.access)
-          this.storageMethod.setStorageItem(this.storage, 'refresh_token', res.refresh_token)
-          this.storageMethod.setStorageItem(this.storage, 'is_profile_complete', res.is_profile_complete)
-        }
-        if (res.first_name != undefined) {
-          this.storageMethod.setStorageItem(this.storage, 'user_name', res.user_name);
-        } else {
-          this.storageMethod.setStorageItem(this.storage, 'user_name', res.username);
-        }
+        const userName = res.first_name != undefined ? res.user_name : res.username;
+        this.storage = localStorage.getItem('storage') === 'true' ? 'local' : 'session';
+        this.storageMethod.setStorageItem(this.storage, 'access_token', res.access)
+        this.storageMethod.setStorageItem(this.storage, 'refresh_token', res.refresh)
+        this.storageMethod.setStorageItem(this.storage, 'is_profile_complete', res.is_profile_complete)
+        this.storageMethod.setStorageItem(this.storage, 'user_name', userName);
         sessionStorage.setItem('user_email', res.email);
         this.isLoggedInSubject.next(true);
         this.updateProfileStatus();
@@ -93,10 +90,13 @@ export class AuthService {
   }
 
   refreshToken(): Observable<any> {
-    const refresh = this.storageMethod.getStorageItem(this.storage, 'access_token')
+    const refresh = this.storageMethod.getStorageItem(this.storage, 'refresh_token')
+    if(!refresh) {
+      return throwError(() => new Error('Refresh token missing'));
+    }
     return this.http.post(`${environment.apiUrl}/token/refresh/`, { refresh }).pipe(
       tap((res: any) => {
-        this.storageMethod.setStorageItem(this.storage, 'refresh_token', res.refresh_token)
+        this.storageMethod.setStorageItem(this.storage, 'access_token', res.access)
         this.isLoggedInSubject.next(true);
       })
     )

@@ -20,7 +20,6 @@ export class ResultsComponent {
   offers: JobOffer[] = [];
   hoverState: { [offerId: number]: boolean } = {}
   selectedFilter: 'all' | 'good' | 'regular' | 'bad' = 'all';
-  errorMessage = '';
 
   constructor(
     private router: Router,

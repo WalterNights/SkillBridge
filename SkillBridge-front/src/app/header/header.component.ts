@@ -18,7 +18,11 @@ export class HeaderComponent {
    isLoading = false;
    storage: 'session' | 'local' = 'session';
 
-   constructor(private router: Router,private authService: AuthService, private storageMethod: StorageMethodComponent) {}
+   constructor(
+      private router: Router,
+      private authService: AuthService, 
+      private storageMethod: StorageMethodComponent
+   ) {}
    
    toggleDarkMode() {
       this.isDarkMode = !this.isDarkMode;

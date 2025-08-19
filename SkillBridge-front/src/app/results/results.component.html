@@ -1,7 +1,7 @@
 <div class="min-h-screen flex flex-col items-center p-6 mt-16 bg-gray-10 dark:bg-darkBg">
 
     <!-- DEBUGGING BUTTON -->
-    <div (click)="obtainOffers()"
+    <div *ngIf="offers.length === 0" (click)="obtainOffers()"
         class="fixed top-15 left-0 p-5 font-bold bg-white rounded-r-full shadow-md cursor-pointer">
         <span class="absolute -top-2 left-36 rounded-full text-sm bg-green-300 p-1">DEBUG</span>
         <p>OBTENER OFERTAS</p>

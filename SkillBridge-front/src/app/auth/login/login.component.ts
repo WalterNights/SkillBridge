@@ -44,7 +44,6 @@ export class LoginComponent {
 
   toggleStorage() {
       this.isStorage = !this.isStorage;
-      const root = document.documentElement;
       if (this.isStorage) {
          localStorage.setItem('storage', 'true');
          this.storage = 'local';
