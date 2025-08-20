@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer utilities {
+
+  .table-dash,
+  .table-dash thead tr th,
+  .table-dash tbody tr td {
+    border: 1px solid #e3e6f0;
+    padding: 1rem;
+  }
+
+  .table-dash thead {
+    border-bottom: 2px solid #e3e6f0;
+  }
+
+  .dot {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    display: inline-block;
+    position: relative;
+    transform: translateY(-1px);
+    border-radius: 50%;
+    vertical-align: middle;
+    margin: 0 5px;
+    padding-bottom: 5px;
+  }
+
+  .transitionWidth {
+    transition: width 0.4s;
+  }
+
+  .animate-gradient-spin {
+    animation: gradient-spin 5s linear infinite;
+  }
+
+  /* 🔆 Animate boder rotate */
+  @keyframes gradient-spin {
+    0% {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+
+
+
+
+
+/* html, body {
+  background: #FCEEB5;
+  font-family: Abel, Arial, Verdana, sans-serif;
+} */
+}

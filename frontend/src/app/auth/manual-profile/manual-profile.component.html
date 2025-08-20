@@ -1,0 +1,369 @@
+<!--Modal Window-->
+<div *ngIf="isLoading" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-72 text-center">
+        <div class="flex flex-col items-center">
+            <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <p class="mt-4 text-grey-700 font-semibold">Creando tu perfil...</p>
+        </div>
+    </div>
+</div>
+<!--Profile Form-->
+<div class="min-h-screen flex items-center justify-center mt-16 bg-gray-100 dark:bg-darkBg px-4">
+    <form 
+        [formGroup]="profileForm" 
+        (ngSubmit)="onSubmit()" 
+        class="bg-white dark:bg-darkCard dark:text-darkText p-8 rounded-2xl shadow-xl space-y-6 w-full lg:w-2/4 max-w-mod mt-16"
+    >
+        <h2 class="text-2xl font-bold text-center text-grey-800">
+            Crea Tu Perfil
+        </h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * Nombre:
+                </label>
+                <input 
+                    type="text" 
+                    formControlName="first_name"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Escribe tu nombre"
+                />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * Apellido:
+                </label>
+                <input 
+                    type="text" 
+                    formControlName="last_name"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Escribe tu apellido"
+                />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * Documento de Identidad:
+                </label>
+                <input 
+                    type="number" 
+                    formControlName="number_id"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    [class.border-red-500]="profileForm.get('number_id')?.invalid && profileForm.get('number_id')?.touched"
+                    placeholder="Escribe tu documento de identidad"
+                />
+            </div>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="w-full lg:w-2/4">
+                    <label class="block text-sm font-medium text-grey-700">
+                        País:
+                    </label>
+                    <select 
+                        formControlName="country"
+                        (change)="onCountryChange(countryForm.value)"
+                        #countryForm
+                        class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                        <option value="">Seleccione un país</option>
+                        <option *ngFor="let country of countries" [value]="country.isoCode"> 
+                            {{ country.name }}
+                        </option>
+                    </select>
+                </div>
+                <div class="w-full lg:w-2/4">
+                    <label class="block text-sm font-medium text-grey-700">
+                        * Ciudad:
+                    </label>
+                    <select 
+                        formControlName="city"
+                        class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                        <option value="">Seleccione una ciudad</option>
+                        <option *ngFor="let city of cities" [value]="city.name">
+                            {{ city.name }}
+                        </option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="w-full lg:w-2/4">
+                    <label class="block text-sm font-medium text-grey-700">
+                        Código País:
+                    </label>
+                    <select 
+                        formControlName="phone_code" 
+                        class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                        <option value="">Seleccione el código de país</option>
+                        <option *ngFor="let country of countryCodes" [value]="country.code">
+                            {{ country.name }} ({{ country.code }})
+                        </option>
+                    </select>
+                </div>
+                <div class="w-full lg:w-2/4">
+                    <label class="block text-sm font-medium text-grey-700">
+                        * Teléfono:
+                    </label>
+                    <input 
+                        type="text" 
+                        formControlName="phone_number"
+                        class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Escribe tu número de teléfono"
+                    />
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * Cargo:
+                </label>
+                <input 
+                    type="text" 
+                    formControlName="professional_title"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Escribe tu título profesional o cargo"
+                />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * Resumen Profesional:
+                </label>
+                <textarea 
+                    formControlName="summary"
+                    rows="2"
+                    class="w-full h-20 mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                ></textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * Habilidades:
+                </label>
+                <textarea 
+                    formControlName="skills"
+                    rows="2"
+                    class="w-full h-20 mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                ></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * LinkedIn :
+                </label>
+                <input 
+                    type="url" 
+                    formControlName="linkedin_url"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Escribe tu enlace de LinkedIn"
+                />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-grey-700">
+                    * Portafolio :
+                </label>
+                <input 
+                    type="url" 
+                    formControlName="portfolio_url"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Escribe el enlace de tu portafolio"
+                />
+            </div>
+
+            <div formArrayName="education">
+                <div *ngFor="let edu of education.controls; let i = index" [formGroupName]="i" class="boder rounded-lg mt-4 shadow-sm space-y-4">
+                    <h3 class="font-semibold my-6 text-center px-6">EDUCACIÓN ({{ i + 1 }})</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-grey-700">* Institución</label>
+                        <input 
+                            formControlName="institution"
+                            type="text" 
+                            class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Escribe el nombre de la empresa"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-grey-700">* Título:</label>
+                        <input 
+                            formControlName="title" 
+                            type="text" 
+                            class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Escribe el cargo que ocupaste"
+                        >
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold my-6 text-end px-6">UBICACIÓN</h4>
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <div class="w-full lg:w-1/4">
+                                <label class="block text-sm font-medium text-grey-700">* País:</label>
+                                <select 
+                                    formControlName="location_country"
+                                    (change)="onCountryChange(countryForm.value)"
+                                    #countryForm
+                                    class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                >
+                                    <option value="">Seleccione un país</option>
+                                    <option *ngFor="let country of countries" [value]="country.isoCode">
+                                        {{ country.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="w-full lg:w-1/4">
+                                <label class="block text-sm font-medium text-grey-700">* Ciudad:</label>
+                                <select 
+                                    formControlName="location_city"
+                                    class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                >
+                                    <option value="">Seleccione una ciudad</option>
+                                    <option *ngFor="let city of cities" [value]="city.name">
+                                        {{ city.name }}
+                                    </option>
+                                </select>
+                            </div> 
+                            <div class="w-full lg:w-1/4">
+                                <label class="block text-sm font-medium text-grey-700">* Desde:</label>
+                                <input 
+                                    formControlName="start_date" 
+                                    type="date" 
+                                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                >
+                            </div>
+                            <div class="w-full lg:w-1/4">
+                                <label class="block text-sm font-medium text-grey-700">Hasta:</label>
+                                <input 
+                                    formControlName="end_date" 
+                                    type="date" 
+                                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                >
+                            </div>
+                        </div>
+                    </div>
+                    <button 
+                        type="button" 
+                        (click)="removeEducation(i)" 
+                        class="w-full py-2 px-4 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition"
+                    >
+                        Eliminar Educación ({{ i + 1 }})
+                    </button>
+                </div>
+            </div>
+            <button 
+                type="button" 
+                (click)="addEducation()" 
+                class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition"
+            >
+                Añadir Educación
+            </button>
+
+            <div formArrayName="experience">
+                <div *ngFor="let exp of experience.controls; let i = index" [formGroupName]="i" class="boder rounded-lg mt-4 shadow-sm space-y-4">
+                    <h3 class="font-semibold my-6 text-center px-6">EXPERIENCIA ({{ i + 1 }})</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-grey-700">* Empresa</label>
+                        <input 
+                            formControlName="company"
+                            type="text" 
+                            class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Escribe el nombre de la empresa"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-grey-700">* Cargo:</label>
+                        <input 
+                            formControlName="position" 
+                            type="text" 
+                            class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Escribe el cargo que ocupaste"
+                        >
+                    </div>
+                    <div>
+                        <h4 class="font-semibold my-6 text-end px-6">UBICACIÓN</h4>
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <div class="w-full lg:w-1/4">
+                                <label class="block text-sm font-medium text-grey-700">* País:</label>
+                                <select 
+                                    formControlName="location_country"
+                                    (change)="onCountryChange(countryForm.value)"
+                                    #countryForm
+                                    class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                >
+                                    <option value="">Seleccione un país</option>
+                                    <option *ngFor="let country of countries" [value]="country.isoCode">
+                                        {{ country.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="w-full lg:w-1/4">
+                                <label class="block text-sm font-medium text-grey-700">* Ciudad:</label>
+                                <select 
+                                    formControlName="location_city"
+                                    class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                >
+                                    <option value="">Seleccione una ciudad</option>
+                                    <option *ngFor="let city of cities" [value]="city.name">
+                                        {{ city.name }}
+                                    </option>
+                                </select>
+                            </div> 
+                            <div class="w-full lg:w-1/4">
+                                <label class="block text-sm font-medium text-grey-700">* Desde:</label>
+                                <input 
+                                    formControlName="start_date" 
+                                    type="date" 
+                                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                >
+                            </div>
+                            <div class="w-full lg:w-1/4">
+                                <label class="block text-sm font-medium text-grey-700">Hasta:</label>
+                                <input 
+                                    formControlName="end_date" 
+                                    type="date" 
+                                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                >
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-grey-700">* Descripción:</label>
+                        <textarea 
+                            formControlName="description" 
+                            rows="2" 
+                            class="w-full h-20 mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        ></textarea>
+                    </div>
+                    <button 
+                        type="button" 
+                        (click)="removeExperience(i)" 
+                        class="w-full py-2 px-4 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition"
+                    >
+                        Eliminar Experiencia ({{ i + 1 }})
+                    </button>
+                </div>
+            </div>
+            <button 
+                type="button" 
+                (click)="addExperience()" 
+                class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition"
+            >
+                Añadir Experiencia
+            </button>
+
+            <div>
+                <button 
+                    type="submit"
+                    [disabled]="profileForm.invalid || isLoading"
+                    class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                    Guardar Perfil
+                </button>
+                <p *ngIf="errorMessage">{{ errorMessage }}</p>
+                <div *ngIf="profileForm.invalid && profileForm.touched">
+                    <p>⚠️ Revisa que todos los campos obligatorios (*) estén completos.</p>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<!--Modal Loader-->
+<app-loader-modal *ngIf="showLoader" />

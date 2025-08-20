@@ -1,0 +1,61 @@
+<div class="min-h-screen flex flex-col items-center p-6 mt-16 bg-gray-50 dark:bg-darkBg">
+    <section>
+        <h1 class="text-6xl font-bold dark:text-darkText">
+            Bienvenidos a SkillBridge
+        </h1>
+    </section>
+    <div class="w-full xl:w-2/4 sm:flex items-center justify-evenly mt-10">
+        <button
+            *ngIf="!profileComplete"
+            (click)="goToManualProfile()"
+            class="w-full sm:w-1/4 h-36 mb-3 dark:text-darkText bg-white p-5 font-semibold rounded-lg dark:bg-darkCard shadow-md hover:shadow-lg transition-all duration-300"
+        >
+            Crear hoja de vida en formato ATS CV
+        </button>
+        <button
+            *ngIf="!profileComplete"
+            (click)="goToProfile()"
+            class="w-full sm:w-1/4 h-36 mb-3 dark:text-darkText bg-white p-5 font-semibold rounded-lg dark:bg-darkCard shadow-md hover:shadow-lg transition-all duration-300"
+        >
+            Cargar hoja de vida en formato ATS CV
+        </button>
+        <button 
+            *ngIf="profileComplete"
+            (click)="goToResults()"
+            class="w-full sm:w-1/4 h-36 mb-3 dark:text-darkText bg-white p-5 font-semibold rounded-lg dark:bg-darkCard shadow-md hover:shadow-lg transition-all duration-300"
+        >
+            Ir a empleos
+        </button>
+    </div>
+    <section class="dark:text-darkText">
+        <h2 class="my-5 text-xl">¿Qué es SkillBridge?</h2>
+        <ul class="list-disc list-inside">
+            <li>SkillBridge NO es una temporal de empleos.</li>
+            <li>SkillBridge NO es una plataforma de cursos.</li>
+            <li>
+                SkillBridge ES el puente entre tu perfil profesional y lo que necesitas mejorar, 
+                trayendote las vacantes que mas se ajusten a tus conocimientos y habilidades.
+            </li>
+            <li>SkillBridge te guía para que puedas mejorar tu perfil profesional y postularte a las vacantes mas apropiadas.</li>
+        </ul>
+        <h2 class="my-5 text-xl">Pero ¿Qué hace SkillBridge?</h2>
+        <ul class="list-disc list-inside">
+            <li>Te ayuda a crear tu hoja de vida con el formato ATS CV.</li>
+            <li>Si tu hoja de vida ya está adaptada a este formato, entonces tu perfil de usuario se crea automaticamente cargando tu cv.</li>
+            <li>Traemos las ofertas que más se adapten a tu perfil.</li>
+            <li>Te indicamos si cumples con todos los requisitos.</li>
+            <li>
+                Te indicamos en donde puedes adiquirir los conociminetos que te hacen falta 
+                (si eres premium tienes un 30% de descuento en los costes de los cursos con nuestros aliados).
+            </li>
+        </ul>
+        <h2 class="my-5 text-xl">¿Qué busca SkillBridge?</h2>
+        <ul class="list-disc list-inside">
+            <li>Facilitar tu proceso de busqueda de empleo, reduciendo los pasos que tienes que hacer y centrarlizarlos todo para ti.</li>
+        </ul>
+        <h2 class="my-5 text-xl">¿Para quien es SkillBridge?</h2>
+        <ul class="list-disc list-inside">
+            <li>SkillBridge está dirigido a personas recien graduadas o qué, por cuestiones de la vida, cambiaron de ambito profesional.</li>
+        </ul>
+    </section>
+</div>

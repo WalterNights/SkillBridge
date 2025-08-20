@@ -1,0 +1,62 @@
+<div class="flex ml-56">
+    <div class="w-full flex flex-col bg-[#f8f9fc] overflow-hidden">
+        <div class="min-h-screen mt-36">
+            <div class="font-nunito px-10 w-100">
+                <h1 class="text-3xl mb-4">Gestion de Usuarios</h1>
+                <p class="mb-4">Bienvenido al control y manejo de usuarios y casos, a contunuación encontrará la lista
+                    de usuarios registrados, cada uno puede tener de uno a 5 casos maximo.</p>
+                <div class="flex flex-col relative bg-[#fff] border border-gray-200 rounded-lg shadow-lg">
+                    <div class="rounded-t-lg border-b-2 bg-[#f8f9fc] p-4">
+                        <h6 class="text-indigo-800 font-bold">Tabla de Usuarios</h6>
+                    </div>
+                    <div class="p-4 text-gray-500">
+                        <div class="flex justify-between py-3">
+                            <div class="flex items-center gap-2">
+                                <span>Mostrar</span>
+                                <select class="w-12 border rounded-md border-gray-300 py-1">
+                                    <option value="">10</option>
+                                    <option value="">25</option>
+                                    <option value="">50</option>
+                                </select>
+                                <span>registros</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label for="">Buscar:</label>
+                                <input class="border rounded-md border-gray-300 py-1 px-2" type="text">
+                            </div>
+                        </div>
+                        <table class="table-dash" width="100%">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Apellido</th>
+                                    <th>Número de Documento</th>
+                                    <th>Profesión</th>
+                                    <th>Ciudad</th>
+                                    <th>Correo</th>
+                                    <th>Teléfono</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody *ngFor="let user of users">
+                                <tr>
+                                    <td>{{ user.first_name }}</td>
+                                    <td>{{ user.last_name }}</td>
+                                    <td>{{ user.number_id }}</td>
+                                    <td>{{ user.professional_title }}</td>
+                                    <td>{{ user.city }}</td>
+                                    <td>{{ user.user.email }}</td>
+                                    <td>{{ user.phone }}</td>
+                                    <td class="color-blue-uc text-center">
+                                        <a href=""><i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

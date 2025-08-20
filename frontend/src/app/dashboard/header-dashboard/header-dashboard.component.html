@@ -1,0 +1,83 @@
+<!--Modal Window-->
+<div *ngIf="isLoading" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-72 text-center">
+        <div class="flex flex-col items-center">
+            <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <p class="mt-4 text-grey-700 font-semibold">Regresando a la página de inicio...</p>
+        </div>
+    </div>
+</div>
+<!--NavBar-->
+<div class="fixed left-56 w-[calc(100%-14rem)]">
+    <nav class="flex w-full bg-white mb-4 px-10 py-2 shadow-md">
+        <ul class="w-full flex justify-between items-center">
+            <li class="nav-item dropdown no-arrow d-sm-none">
+                <!-- Dropdown - Messages -->
+                <div class="p-3">
+                    <div class="flex items-center">
+                        <input class="w-80 border-0 bg-gray-100 rounded-l-md p-2" type="text" placeholder="Buscar por...">
+                        <div class="w-10 text-center border rounded-r-md p-2 bg-darkBg hover:bg-gray-800 transition">
+                            <button class="cursor-pointer" type="button">
+                                <i class="fas fa-search fa-sm text-white"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <div class="w-40 flex items-center justify-between">
+                <!-- Nav Item - Alerts -->
+                <li class="nav-item dropdown no-arrow mx-1">
+                    <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-bell fa-fw text-gray-300 hover:text-gray-500"></i>
+                        <!-- Counter - Alerts -->
+                        <span class="badge badge-danger badge-counter">3+</span>
+                    </a>
+                    <!-- Dropdown - Alerts -->
+                </li>
+                <!-- Nav Item - Messages -->
+                <li class="nav-item dropdown no-arrow mx-1">
+                    <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-envelope fa-fw text-gray-300 hover:text-gray-500"></i>
+                        <!-- Counter - Messages -->
+                        <span class="badge badge-danger badge-counter">7</span>
+                    </a>
+                    <!-- Dropdown - Messages -->
+                </li>
+                <div class="topbar-divider d-none d-sm-block"></div>
+                <!-- Nav Item - User Information -->
+                <li class="nav-item dropdown no-arrow">
+                    <div class="group">
+                        <label class="flex items-center z-40 cursor-pointer">
+                            <button
+                                class="text-2 p-2 rounded-full shadow-md hover:bg-gray-200 dark:hover-gray-700 transition">
+                                <span>👤</span>
+                            </button>
+                        </label>
+                        <div
+                            class="origin-top-right absolute right-0 z-30 w-56 text-black bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 hidden group-hover:block transition-opacity duration-200 ease-in-out opacity-0 group-hover:opacity-100">
+                            <div class="py-1" role="menu">
+                                <p class="block px-4 py-2 text-sm text-gray-700" role="menuitem">Bienvenido
+                                    {{ userName }} </p>
+                                <div class="mt-2 border-b"></div>
+                                <a class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                                    <button>Mi perfil</button>
+                                </a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    role="menuitem">Configuración</a>
+                                <a class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                                    <button (click)="logout()">Cerrar sesión</button>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </div>
+        </ul>
+    </nav>
+</div>
