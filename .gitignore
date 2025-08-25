@@ -9,10 +9,10 @@ __pycache__/
 output.html
 
 # === Node / Angular ===
-SkillBridge-front/node_modules/
-SkillBridge-front/dist/
-SkillBridge-front/.angular/cache/
-SkillBridge-front/.env
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/cache/
+frontend/.env
 
 # === IDEs / OS ===
 .vscode/

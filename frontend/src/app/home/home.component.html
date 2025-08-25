@@ -1,61 +1,166 @@
-<div class="min-h-screen flex flex-col items-center p-6 mt-16 bg-gray-50 dark:bg-darkBg">
-    <section>
-        <h1 class="text-6xl font-bold dark:text-darkText">
-            Bienvenidos a SkillBridge
-        </h1>
-    </section>
-    <div class="w-full xl:w-2/4 sm:flex items-center justify-evenly mt-10">
-        <button
-            *ngIf="!profileComplete"
-            (click)="goToManualProfile()"
-            class="w-full sm:w-1/4 h-36 mb-3 dark:text-darkText bg-white p-5 font-semibold rounded-lg dark:bg-darkCard shadow-md hover:shadow-lg transition-all duration-300"
+<!-- Banner Hero -->
+<section class="h-screen">
+  <div class="index-banner h-full flex flex-col justify-end items-center">
+    <div class="absolute text-white py-8 text-center z-20">
+      <h1 class="text-4xl md:text-6xl font-bold mb-4">Impulsa tu carrera con la hoja de ruta adecuada</h1>
+      <p class="text-lg md:text-xl mb-6">
+        Crea tu perfil profesional, analiza tu CV y recibe vacantes que hacen match con
+        tus habilidades.</p>
+      <div class="space-x-4">
+        <button 
+          *ngIf="!profileComplete" (click)="goToManualProfile()"
+          class="px-6 py-3 bg-white text-orange-600 font-semibold rounded-lg shadow hover:bg-gray-100"
         >
-            Crear hoja de vida en formato ATS CV
-        </button>
-        <button
-            *ngIf="!profileComplete"
-            (click)="goToProfile()"
-            class="w-full sm:w-1/4 h-36 mb-3 dark:text-darkText bg-white p-5 font-semibold rounded-lg dark:bg-darkCard shadow-md hover:shadow-lg transition-all duration-300"
-        >
-            Cargar hoja de vida en formato ATS CV
+          Crear mi CV
         </button>
         <button 
-            *ngIf="profileComplete"
-            (click)="goToResults()"
-            class="w-full sm:w-1/4 h-36 mb-3 dark:text-darkText bg-white p-5 font-semibold rounded-lg dark:bg-darkCard shadow-md hover:shadow-lg transition-all duration-300"
+          *ngIf="!profileComplete" (click)="goToProfile()"
+          class="px-6 py-3 bg-transparent border border-white font-semibold rounded-lg shadow hover:bg-orange-500"
         >
-            Ir a empleos
+          Subit mi CV
         </button>
+        <button 
+          *ngIf="profileComplete" (click)="goToResults()"
+          class="px-6 py-3 bg-transparent border border-white font-semibold rounded-lg shadow hover:bg-orange-500"
+        >
+          Ver ofertas de empleo
+        </button>
+      </div>
     </div>
-    <section class="dark:text-darkText">
-        <h2 class="my-5 text-xl">¿Qué es SkillBridge?</h2>
-        <ul class="list-disc list-inside">
-            <li>SkillBridge NO es una temporal de empleos.</li>
-            <li>SkillBridge NO es una plataforma de cursos.</li>
-            <li>
-                SkillBridge ES el puente entre tu perfil profesional y lo que necesitas mejorar, 
-                trayendote las vacantes que mas se ajusten a tus conocimientos y habilidades.
-            </li>
-            <li>SkillBridge te guía para que puedas mejorar tu perfil profesional y postularte a las vacantes mas apropiadas.</li>
-        </ul>
-        <h2 class="my-5 text-xl">Pero ¿Qué hace SkillBridge?</h2>
-        <ul class="list-disc list-inside">
-            <li>Te ayuda a crear tu hoja de vida con el formato ATS CV.</li>
-            <li>Si tu hoja de vida ya está adaptada a este formato, entonces tu perfil de usuario se crea automaticamente cargando tu cv.</li>
-            <li>Traemos las ofertas que más se adapten a tu perfil.</li>
-            <li>Te indicamos si cumples con todos los requisitos.</li>
-            <li>
-                Te indicamos en donde puedes adiquirir los conociminetos que te hacen falta 
-                (si eres premium tienes un 30% de descuento en los costes de los cursos con nuestros aliados).
-            </li>
-        </ul>
-        <h2 class="my-5 text-xl">¿Qué busca SkillBridge?</h2>
-        <ul class="list-disc list-inside">
-            <li>Facilitar tu proceso de busqueda de empleo, reduciendo los pasos que tienes que hacer y centrarlizarlos todo para ti.</li>
-        </ul>
-        <h2 class="my-5 text-xl">¿Para quien es SkillBridge?</h2>
-        <ul class="list-disc list-inside">
-            <li>SkillBridge está dirigido a personas recien graduadas o qué, por cuestiones de la vida, cambiaron de ambito profesional.</li>
-        </ul>
-    </section>
-</div>
+    <div class="w-full h-60 bg-black opacity-50 z-10"></div>
+  </div>
+</section>
+
+
+
+<!-- Hero -->
+<!-- <section class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-20 text-center">
+  <h1 class="text-4xl md:text-6xl font-bold mb-4">Impulsa tu carrera con la hoja de ruta adecuada</h1>
+  <p class="text-lg md:text-xl mb-6">Crea tu perfil profesional, analiza tu CV y recibe vacantes que hacen match con tus
+    habilidades.</p>
+  <div class="space-x-4">
+    <a routerLink="/register"
+      class="px-6 py-3 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100">Crear mi CV</a>
+    <a routerLink="/jobs"
+      class="px-6 py-3 bg-transparent border border-white font-semibold rounded-lg shadow hover:bg-indigo-500">Explorar
+      vacantes</a>
+  </div>
+</section> -->
+
+<!-- Beneficios -->
+<section class="py-16 bg-gray-50 text-center">
+  <div class="max-w-5xl mx-auto grid md:grid-cols-3 gap-8">
+    <div class="p-6 bg-white rounded-2xl shadow">
+      <p class="text-4xl mb-3">📄</p>
+      <h3 class="text-xl font-bold mb-2">CV Inteligente</h3>
+      <p>Genera un currículum optimizado para sistemas de selección ATS.</p>
+    </div>
+    <div class="p-6 bg-white rounded-2xl shadow">
+      <p class="text-4xl mb-3">🔎</p>
+      <h3 class="text-xl font-bold mb-2">Match Automático</h3>
+      <p>Descubre ofertas laborales alineadas con tu perfil.</p>
+    </div>
+    <div class="p-6 bg-white rounded-2xl shadow">
+      <p class="text-4xl mb-3">📊</p>
+      <h3 class="text-xl font-bold mb-2">Dashboard de Crecimiento</h3>
+      <p>Visualiza tu progreso y qué habilidades debes aprender.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Cómo funciona -->
+<section class="py-16 text-center">
+  <h2 class="text-3xl font-bold mb-10">Cómo funciona</h2>
+  <div class="max-w-4xl mx-auto grid md:grid-cols-3 gap-8">
+    <div>
+      <h3 class="text-xl font-bold mb-2">1. Crea tu perfil</h3>
+      <p>Sube tu CV o complétalo manualmente.</p>
+    </div>
+    <div>
+      <h3 class="text-xl font-bold mb-2">2. Recibe recomendaciones</h3>
+      <p>Ofertas de empleo que encajan contigo.</p>
+    </div>
+    <div>
+      <h3 class="text-xl font-bold mb-2">3. Aprende y crece</h3>
+      <p>Accede a tu ruta de aprendizaje personalizada.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Vista previa ofertas -->
+<section class="py-16 bg-gray-100 text-center">
+  <h2 class="text-3xl font-bold mb-6">Oportunidades que podrías recibir</h2>
+  <div class="max-w-4xl mx-auto grid md:grid-cols-3 gap-6">
+    <div class="p-6 bg-white rounded-2xl shadow">
+      <h3 class="font-bold text-lg">Desarrollador Web Junior</h3>
+      <p class="text-gray-600">Bogotá</p>
+    </div>
+    <div class="p-6 bg-white rounded-2xl shadow">
+      <h3 class="font-bold text-lg">Analista de Datos</h3>
+      <p class="text-gray-600">Medellín</p>
+    </div>
+    <div class="p-6 bg-white rounded-2xl shadow">
+      <h3 class="font-bold text-lg">Diseñador UX</h3>
+      <p class="text-gray-600">Remoto</p>
+    </div>
+  </div>
+  <div class="mt-8">
+    <a routerLink="/jobs"
+      class="px-6 py-3 bg-orange-600 text-white font-semibold rounded-lg shadow hover:bg-orange-700">Ver más ofertas</a>
+  </div>
+</section>
+
+<!-- CTA Final -->
+<section class="py-20 bg-orange-600 text-white text-center">
+  <h2 class="text-3xl font-bold mb-6">¿Listo para dar el siguiente paso en tu carrera?</h2>
+  <a routerLink="/register"
+    class="px-8 py-4 bg-white text-orange-600 font-bold rounded-lg shadow hover:bg-gray-100">Registrarme gratis</a>
+</section>
+
+<section class="flex flex-col items-center py-20 bg-gray-50 dark:bg-darkBg">
+  <div>
+    <h1 class="text-3xl font-bold mb-6">
+      ¿Qué es SkilTak?
+    </h1>
+  </div>
+  <div class="dark:text-darkText">
+    <h2 class="my-5 text-xl">SkilTak</h2>
+    <ul class="list-disc list-inside">
+      <li>SkilTak NO es una temporal de empleos.</li>
+      <li>SkilTak NO es una plataforma de cursos.</li>
+      <li>
+        SkilTak ES el puente entre tu perfil profesional y lo que necesitas mejorar,
+        trayendote las vacantes que mas se ajusten a tus conocimientos y habilidades.
+      </li>
+      <li>SkilTak te guía para que puedas mejorar tu perfil profesional y postularte a las vacantes mas apropiadas.
+      </li>
+    </ul>
+    <h2 class="my-5 text-xl">Pero ¿Qué hace SkilTak?</h2>
+    <ul class="list-disc list-inside">
+      <li>Te ayuda a crear tu hoja de vida con el formato ATS CV.</li>
+      <li>Si tu hoja de vida ya está adaptada a este formato, entonces tu perfil de usuario se crea automaticamente
+        cargando tu cv.</li>
+      <li>Traemos las ofertas que más se adapten a tu perfil.</li>
+      <li>Te indicamos si cumples con todos los requisitos.</li>
+      <li>
+        Te indicamos en donde puedes adiquirir los conociminetos que te hacen falta
+        (si eres premium tienes un 30% de descuento en los costes de los cursos con nuestros aliados).
+      </li>
+    </ul>
+    <h2 class="my-5 text-xl">¿Qué busca SkilTak?</h2>
+    <ul class="list-disc list-inside">
+      <li>Facilitar tu proceso de busqueda de empleo, reduciendo los pasos que tienes que hacer y centrarlizarlos todo
+        para ti.</li>
+    </ul>
+    <h2 class="my-5 text-xl">¿Para quien es SkilTak?</h2>
+    <ul class="list-disc list-inside">
+      <li>SkilTak está dirigido a personas recien graduadas o qué, por cuestiones de la vida, cambiaron de ambito
+        profesional.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="py-8 bg-gray-900 text-gray-400 text-center text-sm">
+  <p>© 2025 SkilTak. Todos los derechos reservados.</p>
+</footer>

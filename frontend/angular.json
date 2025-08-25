@@ -26,11 +26,8 @@
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
-              {
-                "glob": "**/*",
-                "input": "public",
-                "output": "/assets/"
-              }
+              "src/public/favicon.ico",
+              "src/assets"
             ],
             "styles": [
               "src/styles/tailwind.css"

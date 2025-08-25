@@ -1,6 +1,5 @@
+import { Routes } from '@angular/router';
 import { AutoGuard } from './auth/auto.guard';
-import { provideRouter, Routes } from '@angular/router';
-import { HeaderComponent } from './header/header.component';
 
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./home/home.component').then(m => m.HomeComponent) },

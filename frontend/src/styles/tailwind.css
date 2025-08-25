@@ -5,6 +5,20 @@
 
 @layer utilities {
 
+  .header-logo {
+    content: url('/assets/image/SkilTak_logo.png');
+  }
+
+  .dark .header-logo {
+    content: url('/assets/image/SkilTak_white_logo.png');
+  }
+
+  .index-banner {
+    background-image: url('/assets/image/skillbridge-banner.jpg');
+    background-size: 100% 135%;
+    background-position-y: 22%;
+  }
+
   .table-dash,
   .table-dash thead tr th,
   .table-dash tbody tr td {
@@ -46,13 +60,4 @@
       transform: translate(-50%, -50%) rotate(360deg);
     }
   }
-
-
-
-
-
-/* html, body {
-  background: #FCEEB5;
-  font-family: Abel, Arial, Verdana, sans-serif;
-} */
 }

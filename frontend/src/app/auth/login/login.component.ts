@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { Router, RouterModule } from '@angular/router';
 import { StorageMethodComponent } from '../../shared/storage-method/storage-method'; 
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validator, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-login',

@@ -28,10 +28,10 @@ export class AppComponent implements AfterViewInit, OnInit {
     .subscribe((event: any) => {
       const noHeader = ['auth/login', '/dashboard'];
       const SideBar = ['/dashboard'];
-      const showHeaderDashboard = ['/dashboard'];
+      const headerDashboard = ['/dashboard'];
       this.showHeader = !noHeader.includes(event.urlAfterRedirects);
       this.showSideBar = SideBar.includes(event.urlAfterRedirects);
-      this.showSideBar = showHeaderDashboard.includes(event.urlAfterRedirects);
+      this.showHeaderDashboard = headerDashboard.includes(event.urlAfterRedirects);
     })
   }
   ngOnInit(): void {
