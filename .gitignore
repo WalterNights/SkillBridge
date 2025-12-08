@@ -1,0 +1,22 @@
+# === Python / Django ===
+env/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+output.html
+
+# === Node / Angular ===
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/cache/
+frontend/.env
+
+# === IDEs / OS ===
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

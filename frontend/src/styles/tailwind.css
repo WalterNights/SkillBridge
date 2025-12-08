@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer utilities {
+
+  .header-logo {
+    content: url('/assets/image/SkilTak_logo.png');
+  }
+
+  .dark .header-logo {
+    content: url('/assets/image/SkilTak_white_logo.png');
+  }
+
+  .index-banner {
+    background-image: url('/assets/image/skillbridge-banner.jpg');
+    background-size: 100% 135%;
+    background-position-y: 22%;
+  }
+
+  .table-dash,
+  .table-dash thead tr th,
+  .table-dash tbody tr td {
+    border: 1px solid #e3e6f0;
+    padding: 1rem;
+  }
+
+  .table-dash thead {
+    border-bottom: 2px solid #e3e6f0;
+  }
+
+  .dot {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    display: inline-block;
+    position: relative;
+    transform: translateY(-1px);
+    border-radius: 50%;
+    vertical-align: middle;
+    margin: 0 5px;
+    padding-bottom: 5px;
+  }
+
+  .transitionWidth {
+    transition: width 0.4s;
+  }
+
+  .animate-gradient-spin {
+    animation: gradient-spin 5s linear infinite;
+  }
+
+  /* 🔆 Animate boder rotate */
+  @keyframes gradient-spin {
+    0% {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+}

@@ -1,0 +1,16 @@
+<svg width="1.5em" height="1.5em" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor" class="h-4 w-4 stroke-2">
+  <!-- Edificio principal -->
+  <path d="M3 21V7a1 1 0 0 1 1-1h5V3h6v3h5a1 1 0 0 1 1 1v14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Base -->
+  <path d="M3 21h18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Puerta -->
+  <path d="M10 21v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Ventanas izquierda -->
+  <path d="M5 10h2" stroke="currentColor" stroke-linecap="round"/>
+  <path d="M5 13h2" stroke="currentColor" stroke-linecap="round"/>
+  <path d="M5 16h2" stroke="currentColor" stroke-linecap="round"/>
+  <!-- Ventanas derecha -->
+  <path d="M17 10h2" stroke="currentColor" stroke-linecap="round"/>
+  <path d="M17 13h2" stroke="currentColor" stroke-linecap="round"/>
+  <path d="M17 16h2" stroke="currentColor" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,509 @@
+<!-- Hero Section Moderno -->
+<section class="relative min-h-screen flex items-center overflow-hidden bg-white dark:bg-dark-bg-primary">
+  <!-- Animated Background -->
+  <div class="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-dark-bg-primary dark:via-dark-bg-secondary dark:to-dark-bg-primary">
+    <!-- Grid Pattern -->
+    <div class="absolute inset-0 bg-grid-pattern opacity-20"></div>
+    
+    <!-- Animated Gradient Orbs -->
+    <div class="absolute top-20 left-20 w-96 h-96 bg-primary-500/20 dark:bg-primary-500/10 rounded-full blur-3xl animate-pulse"></div>
+    <div class="absolute bottom-20 right-20 w-96 h-96 bg-secondary-500/20 dark:bg-secondary-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent-500/10 dark:bg-accent-500/5 rounded-full blur-3xl animate-pulse" style="animation-delay: 0.5s;"></div>
+  </div>
+  
+  <!-- Content -->
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+    <div class="text-center space-y-8 animate-fade-in">
+      <!-- Badge -->
+      <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-dark-bg-tertiary/80 backdrop-blur-sm rounded-full border border-gray-200 dark:border-dark-border shadow-sm">
+        <span class="h-2 w-2 bg-accent-500 rounded-full animate-pulse"></span>
+        <span class="text-sm font-medium text-gray-700 dark:text-dark-text-primary">Potenciado con IA avanzada</span>
+      </div>
+      
+      <!-- Main Headline -->
+      <h1 class="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white leading-tight">
+        Impulsa tu carrera con
+        <span class="block mt-2 bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+          tecnología de IA
+        </span>
+      </h1>
+      
+      <!-- Subheadline -->
+      <p class="text-xl md:text-2xl text-gray-600 dark:text-dark-text-secondary max-w-3xl mx-auto">
+        Analiza tu CV con inteligencia artificial y encuentra las oportunidades perfectas 
+        que coinciden con tus habilidades y experiencia
+      </p>
+      
+      <!-- CTA Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
+        <button
+          *ngIf="!profileComplete"
+          (click)="goToManualProfile()"
+          class="group relative px-8 py-4 bg-primary-600 dark:bg-primary-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-all duration-200 hover:scale-105 active:scale-95"
+        >
+          <span>Crear mi perfil</span>
+          <svg class="inline-block ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </button>
+        
+        <button
+          *ngIf="!profileComplete"
+          (click)="goToProfile()"
+          class="px-8 py-4 bg-white dark:bg-dark-bg-tertiary border-2 border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text-primary font-semibold rounded-xl hover:border-primary-600 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-all duration-200"
+        >
+          Subir mi CV
+        </button>
+        
+        <button
+          *ngIf="profileComplete"
+          (click)="goToResults()"
+          class="group relative px-8 py-4 bg-primary-600 dark:bg-primary-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-all duration-200 hover:scale-105 active:scale-95"
+        >
+          <span>Ver ofertas de empleo</span>
+          <svg class="inline-block ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Social Proof -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8">
+        <div class="flex -space-x-2">
+          <div class="w-10 h-10 rounded-full ring-2 ring-white dark:ring-dark-bg-primary bg-gradient-to-br from-primary-400 to-primary-600"></div>
+          <div class="w-10 h-10 rounded-full ring-2 ring-white dark:ring-dark-bg-primary bg-gradient-to-br from-secondary-400 to-secondary-600"></div>
+          <div class="w-10 h-10 rounded-full ring-2 ring-white dark:ring-dark-bg-primary bg-gradient-to-br from-accent-400 to-accent-600"></div>
+          <div class="w-10 h-10 rounded-full ring-2 ring-white dark:ring-dark-bg-primary bg-gradient-to-br from-warning-400 to-warning-600"></div>
+        </div>
+        <div class="text-left">
+          <div class="flex items-center gap-1 text-warning-400">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+            <span class="text-sm font-semibold text-gray-700 dark:text-dark-text-primary">4.9/5</span>
+          </div>
+          <p class="text-sm text-gray-500 dark:text-dark-text-secondary">Más de 1,500+ profesionales</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Scroll Indicator -->
+  <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
+    <svg class="w-6 h-6 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+    </svg>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-20 bg-gray-50 dark:bg-dark-bg-secondary">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16 animate-fade-in">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+        ¿Por qué SkillBridge?
+      </h2>
+      <p class="text-lg text-gray-600 dark:text-dark-text-secondary max-w-2xl mx-auto">
+        Herramientas potenciadas con IA para llevar tu búsqueda de empleo al siguiente nivel
+      </p>
+    </div>
+    
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- Feature 1 -->
+      <div class="group p-8 bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border hover:border-primary-500 dark:hover:border-primary-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">CV Inteligente con IA</h3>
+        <p class="text-gray-600 dark:text-dark-text-secondary">
+          Genera un currículum optimizado para sistemas ATS con análisis automático de palabras clave y formato profesional
+        </p>
+      </div>
+      
+      <!-- Feature 2 -->
+      <div class="group p-8 bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border hover:border-secondary-500 dark:hover:border-secondary-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="w-14 h-14 bg-gradient-to-br from-secondary-500 to-secondary-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Match Semántico Avanzado</h3>
+        <p class="text-gray-600 dark:text-dark-text-secondary">
+          Algoritmo de NLP que encuentra ofertas perfectamente alineadas con tu experiencia y habilidades únicas
+        </p>
+      </div>
+      
+      <!-- Feature 3 -->
+      <div class="group p-8 bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border hover:border-accent-500 dark:hover:border-accent-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div class="w-14 h-14 bg-gradient-to-br from-accent-500 to-accent-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Dashboard de Crecimiento</h3>
+        <p class="text-gray-600 dark:text-dark-text-secondary">
+          Visualiza tu progreso profesional, identifica gaps de habilidades y recibe recomendaciones personalizadas
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-20 bg-white dark:bg-dark-bg-primary">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+        Cómo funciona
+      </h2>
+      <p class="text-lg text-gray-600 dark:text-dark-text-secondary max-w-2xl mx-auto">
+        Tres simples pasos para encontrar tu próxima oportunidad
+      </p>
+    </div>
+    
+    <div class="relative">
+      <!-- Connection Line -->
+      <div class="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-200 via-secondary-200 to-accent-200 dark:from-primary-900 dark:via-secondary-900 dark:to-accent-900 transform -translate-y-1/2"></div>
+      
+      <div class="grid md:grid-cols-3 gap-12 relative">
+        <!-- Step 1 -->
+        <div class="text-center">
+          <div class="relative inline-flex items-center justify-center mb-6">
+            <div class="absolute w-20 h-20 bg-primary-100 dark:bg-primary-900/30 rounded-full animate-pulse"></div>
+            <div class="relative w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+              1
+            </div>
+          </div>
+          <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Crea tu perfil</h3>
+          <p class="text-gray-600 dark:text-dark-text-secondary">
+            Sube tu CV o complétalo manualmente con análisis automático de IA
+          </p>
+        </div>
+        
+        <!-- Step 2 -->
+        <div class="text-center">
+          <div class="relative inline-flex items-center justify-center mb-6">
+            <div class="absolute w-20 h-20 bg-secondary-100 dark:bg-secondary-900/30 rounded-full animate-pulse" style="animation-delay: 0.3s;"></div>
+            <div class="relative w-16 h-16 bg-gradient-to-br from-secondary-500 to-secondary-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+              2
+            </div>
+          </div>
+          <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Recibe recomendaciones</h3>
+          <p class="text-gray-600 dark:text-dark-text-secondary">
+            Ofertas de empleo que encajan contigo, analizadas con algoritmos de NLP
+          </p>
+        </div>
+        
+        <!-- Step 3 -->
+        <div class="text-center">
+          <div class="relative inline-flex items-center justify-center mb-6">
+            <div class="absolute w-20 h-20 bg-accent-100 dark:bg-accent-900/30 rounded-full animate-pulse" style="animation-delay: 0.6s;"></div>
+            <div class="relative w-16 h-16 bg-gradient-to-br from-accent-500 to-accent-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+              3
+            </div>
+          </div>
+          <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Aprende y crece</h3>
+          <p class="text-gray-600 dark:text-dark-text-secondary">
+            Accede a tu ruta de aprendizaje personalizada con recomendaciones inteligentes
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Job Preview Section -->
+<section class="py-20 bg-gray-50 dark:bg-dark-bg-secondary">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center mb-12">
+      <div>
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+          Oportunidades que podrías recibir
+        </h2>
+        <p class="text-lg text-gray-600 dark:text-dark-text-secondary">
+          Las mejores ofertas disponibles ahora
+        </p>
+      </div>
+      <button
+        (click)="goToResults()"
+        class="hidden md:flex items-center gap-2 px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white font-semibold rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-all"
+      >
+        Ver todas
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </button>
+    </div>
+    
+    <div class="grid md:grid-cols-3 gap-6">
+      <!-- Job Card 1 -->
+      <div class="group bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border p-6 hover:border-primary-500 dark:hover:border-primary-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">
+            D
+          </div>
+          <span class="px-3 py-1 bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-400 text-sm font-medium rounded-full">
+            95% Match
+          </span>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+          Desarrollador Web Junior
+        </h3>
+        <p class="text-gray-600 dark:text-dark-text-secondary text-sm mb-4">
+          Tech Innovations • Bogotá
+        </p>
+        <div class="flex flex-wrap gap-2 mb-4">
+          <span class="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-xs font-medium rounded-full">React</span>
+          <span class="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-xs font-medium rounded-full">Node.js</span>
+          <span class="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-xs font-medium rounded-full">MongoDB</span>
+        </div>
+        <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-dark-border">
+          <span class="text-sm text-gray-500 dark:text-dark-text-tertiary">$3M - $4.5M COP</span>
+          <span class="text-sm font-medium text-primary-600 dark:text-primary-400 group-hover:translate-x-1 transition-transform">Ver detalles →</span>
+        </div>
+      </div>
+      
+      <!-- Job Card 2 -->
+      <div class="group bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border p-6 hover:border-secondary-500 dark:hover:border-secondary-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">
+            A
+          </div>
+          <span class="px-3 py-1 bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-400 text-sm font-medium rounded-full">
+            88% Match
+          </span>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-secondary-600 dark:group-hover:text-secondary-400 transition-colors">
+          Analista de Datos
+        </h3>
+        <p class="text-gray-600 dark:text-dark-text-secondary text-sm mb-4">
+          Data Corp • Medellín
+        </p>
+        <div class="flex flex-wrap gap-2 mb-4">
+          <span class="px-3 py-1 bg-secondary-100 dark:bg-secondary-900/30 text-secondary-700 dark:text-secondary-400 text-xs font-medium rounded-full">Python</span>
+          <span class="px-3 py-1 bg-secondary-100 dark:bg-secondary-900/30 text-secondary-700 dark:text-secondary-400 text-xs font-medium rounded-full">SQL</span>
+          <span class="px-3 py-1 bg-secondary-100 dark:bg-secondary-900/30 text-secondary-700 dark:text-secondary-400 text-xs font-medium rounded-full">Tableau</span>
+        </div>
+        <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-dark-border">
+          <span class="text-sm text-gray-500 dark:text-dark-text-tertiary">$4M - $5.5M COP</span>
+          <span class="text-sm font-medium text-secondary-600 dark:text-secondary-400 group-hover:translate-x-1 transition-transform">Ver detalles →</span>
+        </div>
+      </div>
+      
+      <!-- Job Card 3 -->
+      <div class="group bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border p-6 hover:border-accent-500 dark:hover:border-accent-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">
+            U
+          </div>
+          <span class="px-3 py-1 bg-warning-100 dark:bg-warning-900/30 text-warning-700 dark:text-warning-400 text-sm font-medium rounded-full">
+            82% Match
+          </span>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors">
+          Diseñador UX
+        </h3>
+        <p class="text-gray-600 dark:text-dark-text-secondary text-sm mb-4">
+          Creative Studio • Remoto
+        </p>
+        <div class="flex flex-wrap gap-2 mb-4">
+          <span class="px-3 py-1 bg-accent-100 dark:bg-accent-900/30 text-accent-700 dark:text-accent-400 text-xs font-medium rounded-full">Figma</span>
+          <span class="px-3 py-1 bg-accent-100 dark:bg-accent-900/30 text-accent-700 dark:text-accent-400 text-xs font-medium rounded-full">Adobe XD</span>
+          <span class="px-3 py-1 bg-accent-100 dark:bg-accent-900/30 text-accent-700 dark:text-accent-400 text-xs font-medium rounded-full">Sketch</span>
+        </div>
+        <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-dark-border">
+          <span class="text-sm text-gray-500 dark:text-dark-text-tertiary">$3.5M - $4.8M COP</span>
+          <span class="text-sm font-medium text-accent-600 dark:text-accent-400 group-hover:translate-x-1 transition-transform">Ver detalles →</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mobile CTA -->
+    <div class="md:hidden text-center mt-8">
+      <button
+        (click)="goToResults()"
+        class="w-full px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white font-semibold rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-all"
+      >
+        Ver todas las ofertas
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="relative py-24 overflow-hidden">
+  <!-- Gradient Background -->
+  <div class="absolute inset-0 bg-gradient-to-br from-primary-600 via-secondary-600 to-accent-600"></div>
+  <div class="absolute inset-0 bg-grid-pattern opacity-10"></div>
+  
+  <!-- Animated Orbs -->
+  <div class="absolute top-10 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+  <div class="absolute bottom-10 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+  
+  <!-- Content -->
+  <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">
+      ¿Listo para dar el siguiente paso en tu carrera?
+    </h2>
+    <p class="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+      Únete a miles de profesionales que ya están impulsando su carrera con SkillBridge
+    </p>
+    <a
+      routerLink="/register"
+      class="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary-600 font-bold rounded-xl shadow-2xl hover:shadow-3xl hover:scale-105 transition-all duration-200"
+    >
+      Registrarme gratis
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+      </svg>
+    </a>
+    <p class="mt-4 text-white/70 text-sm">No requiere tarjeta de crédito • Configura tu perfil en 5 minutos</p>
+  </div>
+</section>
+
+<!-- About Section -->
+<section class="py-20 bg-white dark:bg-dark-bg-primary">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          ¿Qué es SkillBridge?
+        </h2>
+        <p class="text-lg text-gray-600 dark:text-dark-text-secondary">
+          Tu plataforma inteligente para el desarrollo profesional
+        </p>
+      </div>
+      
+      <div class="space-y-8">
+        <!-- What We Are -->
+        <div class="p-6 bg-gray-50 dark:bg-dark-bg-secondary rounded-2xl border border-gray-200 dark:border-dark-border">
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+            <span class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white text-sm">✓</span>
+            Lo que somos
+          </h3>
+          <ul class="space-y-3 text-gray-700 dark:text-dark-text-secondary">
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              <span>El puente entre tu perfil profesional y las oportunidades perfectas para ti</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              <span>Tu guía personalizada para mejorar tu perfil y alcanzar tus metas profesionales</span>
+            </li>
+          </ul>
+        </div>
+        
+        <!-- What We Do -->
+        <div class="p-6 bg-gray-50 dark:bg-dark-bg-secondary rounded-2xl border border-gray-200 dark:border-dark-border">
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+            <span class="w-8 h-8 bg-secondary-600 rounded-lg flex items-center justify-center text-white text-sm">⚡</span>
+            Lo que hacemos
+          </h3>
+          <ul class="space-y-3 text-gray-700 dark:text-dark-text-secondary">
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-secondary-600 dark:text-secondary-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              <span>Te ayudamos a crear tu CV con formato ATS optimizado para sistemas de selección</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-secondary-600 dark:text-secondary-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              <span>Analizamos automáticamente tu CV existente y creamos tu perfil al instante</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-secondary-600 dark:text-secondary-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              <span>Traemos ofertas que más se adaptan a tu perfil con match semántico avanzado</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-secondary-600 dark:text-secondary-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              <span>Te indicamos dónde adquirir los conocimientos que te hacen falta para cada posición</span>
+            </li>
+          </ul>
+        </div>
+        
+        <!-- Target Audience -->
+        <div class="p-6 bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-primary-900/10 dark:to-secondary-900/10 rounded-2xl border border-primary-200 dark:border-primary-800">
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+            <span class="w-8 h-8 bg-accent-600 rounded-lg flex items-center justify-center text-white text-sm">👥</span>
+            ¿Para quién es SkillBridge?
+          </h3>
+          <p class="text-gray-700 dark:text-dark-text-secondary">
+            Diseñado para personas recién graduadas o profesionales que, por diversos motivos, 
+            cambiaron de ámbito profesional y buscan impulsar su nueva carrera con herramientas inteligentes.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="py-16 bg-gray-900 dark:bg-dark-bg-tertiary">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid md:grid-cols-4 gap-8 mb-8">
+      <!-- Brand -->
+      <div class="md:col-span-2">
+        <h3 class="text-2xl font-bold text-white mb-4">SkillBridge</h3>
+        <p class="text-gray-400 mb-4 max-w-md">
+          Plataforma inteligente de desarrollo profesional potenciada con IA para conectar talento con oportunidades perfectas.
+        </p>
+        <div class="flex gap-4">
+          <a href="#" class="w-10 h-10 bg-gray-800 hover:bg-primary-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
+          </a>
+          <a href="#" class="w-10 h-10 bg-gray-800 hover:bg-primary-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          </a>
+          <a href="#" class="w-10 h-10 bg-gray-800 hover:bg-primary-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Quick Links -->
+      <div>
+        <h4 class="text-white font-semibold mb-4">Navegación</h4>
+        <ul class="space-y-2">
+          <li><a routerLink="/" class="text-gray-400 hover:text-white transition-colors">Inicio</a></li>
+          <li><a routerLink="/results" class="text-gray-400 hover:text-white transition-colors">Ofertas</a></li>
+          <li><a routerLink="/login" class="text-gray-400 hover:text-white transition-colors">Iniciar sesión</a></li>
+          <li><a routerLink="/register" class="text-gray-400 hover:text-white transition-colors">Registrarse</a></li>
+        </ul>
+      </div>
+      
+      <!-- Resources -->
+      <div>
+        <h4 class="text-white font-semibold mb-4">Recursos</h4>
+        <ul class="space-y-2">
+          <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Centro de ayuda</a></li>
+          <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Blog</a></li>
+          <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Términos de uso</a></li>
+          <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Privacidad</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <!-- Bottom Bar -->
+    <div class="pt-8 border-t border-gray-800">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+        <p class="text-gray-400 text-sm">© 2025 SkillBridge. Todos los derechos reservados.</p>
+        <div class="flex items-center gap-6 text-sm text-gray-400">
+          <a href="#" class="hover:text-white transition-colors">Política de cookies</a>
+          <a href="#" class="hover:text-white transition-colors">Accesibilidad</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>

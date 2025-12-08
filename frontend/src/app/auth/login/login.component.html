@@ -1,0 +1,236 @@
+<!-- Loading Modal -->
+<div *ngIf="isLoading" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
+  <div class="bg-white dark:bg-dark-bg-tertiary rounded-2xl shadow-2xl p-8 w-80 text-center animate-scale-in">
+    <div class="flex flex-col items-center gap-4">
+      <div class="relative">
+        <div class="w-16 h-16 border-4 border-primary-200 dark:border-primary-900 rounded-full"></div>
+        <div class="w-16 h-16 border-4 border-primary-600 dark:border-primary-400 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+      </div>
+      <p class="text-gray-700 dark:text-dark-text-primary font-semibold text-lg">Iniciando sesión...</p>
+      <p class="text-gray-500 dark:text-dark-text-secondary text-sm">Espera un momento</p>
+    </div>
+  </div>
+</div>
+
+<!-- Login Page -->
+<div class="min-h-screen flex bg-gray-50 dark:bg-dark-bg-primary">
+  <!-- Left Side - Illustration/Branding (Hidden on mobile) -->
+  <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary-600 via-secondary-600 to-accent-600">
+    <!-- Animated Background -->
+    <div class="absolute inset-0">
+      <div class="absolute top-20 left-20 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+      <div class="absolute bottom-20 right-20 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+      <div class="absolute inset-0 bg-grid-pattern opacity-10"></div>
+    </div>
+    
+    <!-- Content -->
+    <div class="relative z-10 flex flex-col justify-center px-16 text-white">
+      <div class="mb-8">
+        <h1 class="text-5xl font-bold mb-4">Bienvenido de vuelta</h1>
+        <p class="text-xl text-white/90">Continúa tu camino hacia la oportunidad perfecta</p>
+      </div>
+      
+      <!-- Features List -->
+      <div class="space-y-6">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-semibold text-lg mb-1">Ofertas Personalizadas</h3>
+            <p class="text-white/80">Accede a trabajos que coinciden con tu perfil</p>
+          </div>
+        </div>
+        
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-semibold text-lg mb-1">Dashboard Inteligente</h3>
+            <p class="text-white/80">Visualiza tu progreso y análisis de habilidades</p>
+          </div>
+        </div>
+        
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-semibold text-lg mb-1">Match con IA</h3>
+            <p class="text-white/80">Algoritmos de NLP encuentran tu trabajo ideal</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Stats -->
+      <div class="mt-12 flex gap-8">
+        <div>
+          <div class="text-4xl font-bold">1,500+</div>
+          <div class="text-white/80 text-sm">Usuarios activos</div>
+        </div>
+        <div>
+          <div class="text-4xl font-bold">5,000+</div>
+          <div class="text-white/80 text-sm">Ofertas de empleo</div>
+        </div>
+        <div>
+          <div class="text-4xl font-bold">95%</div>
+          <div class="text-white/80 text-sm">Satisfacción</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Right Side - Login Form -->
+  <div class="w-full lg:w-1/2 flex items-center justify-center p-8">
+    <div class="w-full max-w-md">
+      <!-- Logo for Mobile -->
+      <div class="lg:hidden text-center mb-8">
+        <h1 class="text-3xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+          SkillBridge
+        </h1>
+        <p class="text-gray-600 dark:text-dark-text-secondary mt-2">Inicia sesión para continuar</p>
+      </div>
+      
+      <!-- Form Card -->
+      <div class="bg-white dark:bg-dark-bg-tertiary rounded-2xl shadow-xl border border-gray-200 dark:border-dark-border p-8 animate-slide-in-up">
+        <!-- Header -->
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Inicia Sesión</h2>
+          <p class="text-gray-600 dark:text-dark-text-secondary">Accede a tu cuenta profesional</p>
+        </div>
+        
+        <!-- Form -->
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+          <!-- Username Field -->
+          <div>
+            <label for="username" class="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+              Usuario
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <input 
+                type="text" 
+                id="username" 
+                formControlName="username"
+                class="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 dark:text-dark-text-primary transition-all" 
+                placeholder="tu_usuario"
+              >
+            </div>
+          </div>
+          
+          <!-- Password Field -->
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+              Contraseña
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <input 
+                type="password" 
+                id="password" 
+                formControlName="password"
+                class="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 dark:text-dark-text-primary transition-all" 
+                placeholder="••••••••"
+              >
+            </div>
+          </div>
+          
+          <!-- Remember Me & Forgot Password -->
+          <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 cursor-pointer group">
+              <input type="checkbox" class="sr-only" [checked]="isStorage" (change)="toggleStorage()" />
+              <div class="w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full p-0.5 transition-all duration-200 group-hover:bg-gray-400 dark:group-hover:bg-gray-500">
+                <div
+                  class="w-5 h-5 rounded-full shadow-md transform transition-all duration-200"
+                  [class.translate-x-5]="isStorage"
+                  [ngClass]="isStorage ? 'bg-primary-600' : 'bg-white'"
+                ></div>
+              </div>
+              <span class="text-sm text-gray-700 dark:text-dark-text-secondary">Recordarme</span>
+            </label>
+            <a href="#" class="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
+              ¿Olvidaste tu contraseña?
+            </a>
+          </div>
+          
+          <!-- Error Message -->
+          <div *ngIf="errorMessage" class="p-4 bg-error-50 dark:bg-error-900/20 border border-error-200 dark:border-error-800 rounded-xl">
+            <div class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-error-600 dark:text-error-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+              <span class="text-sm text-error-700 dark:text-error-400 font-medium">{{ errorMessage }}</span>
+            </div>
+          </div>
+          
+          <!-- Submit Button -->
+          <button 
+            type="submit" 
+            [disabled]="loginForm.invalid || isLoading"
+            class="w-full py-3 px-4 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-semibold rounded-xl hover:from-primary-700 hover:to-secondary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none"
+          >
+            <span class="flex items-center justify-center gap-2">
+              Iniciar Sesión
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </span>
+          </button>
+        </form>
+        
+        <!-- Divider -->
+        <div class="relative my-8">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-300 dark:border-dark-border"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-4 bg-white dark:bg-dark-bg-tertiary text-gray-500 dark:text-dark-text-tertiary">
+              ¿Nuevo en SkillBridge?
+            </span>
+          </div>
+        </div>
+        
+        <!-- Register Link -->
+        <div class="text-center">
+          <a 
+            [routerLink]="['/auth/register']" 
+            class="inline-flex items-center gap-2 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium transition-colors"
+          >
+            Crea tu cuenta gratis
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Back to Home -->
+      <div class="text-center mt-6">
+        <a 
+          routerLink="/" 
+          class="inline-flex items-center gap-2 text-gray-600 dark:text-dark-text-secondary hover:text-gray-900 dark:hover:text-dark-text-primary transition-colors text-sm"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Volver al inicio
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
