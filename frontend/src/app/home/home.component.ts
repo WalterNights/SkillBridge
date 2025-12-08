@@ -3,7 +3,11 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { AuthService } from '../auth/auth.service';
+import { STORAGE_KEYS } from '../constants/app-stats';
 
+/**
+ * Home/Landing page component
+ */
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -22,27 +26,36 @@ export class HomeComponent {
     this.titleService.setTitle('SkillBridge - Home');
   }
 
-  goToManualProfile() {
+  /**
+   * Navigates to manual profile page, redirecting to login if not authenticated
+   */
+  goToManualProfile(): void {
     if (!this.authService.isAuthenticated()){
-      sessionStorage.setItem('redirect_after_login', '/manual-profile');
+      sessionStorage.setItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN, '/manual-profile');
       this.router.navigate(['/auth/login']);
     } else {
       this.router.navigate(['/manual-profile']);
     }
   }
 
-  goToProfile() {
+  /**
+   * Navigates to profile page, redirecting to login if not authenticated
+   */
+  goToProfile(): void {
     if (!this.authService.isAuthenticated()){
-      sessionStorage.setItem('redirect_after_login', '/profile');
+      sessionStorage.setItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN, '/profile');
       this.router.navigate(['/auth/login']);
     } else {
       this.router.navigate(['/profile']);
     }
   }
 
-  goToResults() {
+  /**
+   * Navigates to results page, redirecting to login if not authenticated
+   */
+  goToResults(): void {
     if (!this.authService.isAuthenticated()){
-      sessionStorage.setItem('redirect_after_login', '/results');
+      sessionStorage.setItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN, '/results');
       this.router.navigate(['/auth/login']);
     } else {
       this.router.navigate(['/results']);
