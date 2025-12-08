@@ -1,62 +1,250 @@
-<div class="flex ml-56">
-    <div class="w-full flex flex-col bg-[#f8f9fc] overflow-hidden">
-        <div class="min-h-screen mt-36">
-            <div class="font-nunito px-10 w-100">
-                <h1 class="text-3xl mb-4">Gestion de Usuarios</h1>
-                <p class="mb-4">Bienvenido al control y manejo de usuarios y casos, a contunuación encontrará la lista
-                    de usuarios registrados, cada uno puede tener de uno a 5 casos maximo.</p>
-                <div class="flex flex-col relative bg-[#fff] border border-gray-200 rounded-lg shadow-lg">
-                    <div class="rounded-t-lg border-b-2 bg-[#f8f9fc] p-4">
-                        <h6 class="text-indigo-800 font-bold">Tabla de Usuarios</h6>
-                    </div>
-                    <div class="p-4 text-gray-500">
-                        <div class="flex justify-between py-3">
-                            <div class="flex items-center gap-2">
-                                <span>Mostrar</span>
-                                <select class="w-12 border rounded-md border-gray-300 py-1">
-                                    <option value="">10</option>
-                                    <option value="">25</option>
-                                    <option value="">50</option>
-                                </select>
-                                <span>registros</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <label for="">Buscar:</label>
-                                <input class="border rounded-md border-gray-300 py-1 px-2" type="text">
-                            </div>
-                        </div>
-                        <table class="table-dash" width="100%">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Apellido</th>
-                                    <th>Número de Documento</th>
-                                    <th>Profesión</th>
-                                    <th>Ciudad</th>
-                                    <th>Correo</th>
-                                    <th>Teléfono</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody *ngFor="let user of users">
-                                <tr>
-                                    <td>{{ user.first_name }}</td>
-                                    <td>{{ user.last_name }}</td>
-                                    <td>{{ user.number_id }}</td>
-                                    <td>{{ user.professional_title }}</td>
-                                    <td>{{ user.city }}</td>
-                                    <td>{{ user.user.email }}</td>
-                                    <td>{{ user.phone }}</td>
-                                    <td class="color-blue-uc text-center">
-                                        <a href=""><i class="fas fa-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+<!-- Dashboard Container -->
+<div class="min-h-screen bg-gray-50 dark:bg-dark-bg-primary">
+  <!-- Main Content Area -->
+  <div class="lg:ml-64 pt-20 lg:pt-24">
+    <div class="px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Header Section -->
+      <div class="mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+          Dashboard
+        </h1>
+        <p class="text-gray-600 dark:text-dark-text-secondary">
+          Bienvenido a tu panel de control. Aquí puedes gestionar tu perfil y seguimiento.
+        </p>
+      </div>
+      
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Stat Card 1 - Total Users -->
+        <div class="bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border p-6 hover:shadow-xl transition-all duration-300 group">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <svg class="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
             </div>
+            <span class="px-2 py-1 bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-400 text-xs font-medium rounded-full">
+              +12%
+            </span>
+          </div>
+          <h3 class="text-gray-500 dark:text-dark-text-secondary text-sm font-medium mb-1">Total Usuarios</h3>
+          <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ users?.length || 0 }}</p>
         </div>
+        
+        <!-- Stat Card 2 - Active Profiles -->
+        <div class="bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border p-6 hover:shadow-xl transition-all duration-300 group">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 bg-secondary-100 dark:bg-secondary-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <svg class="w-6 h-6 text-secondary-600 dark:text-secondary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <span class="px-2 py-1 bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-400 text-xs font-medium rounded-full">
+              +8%
+            </span>
+          </div>
+          <h3 class="text-gray-500 dark:text-dark-text-secondary text-sm font-medium mb-1">Perfiles Activos</h3>
+          <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ users?.length || 0 }}</p>
+        </div>
+        
+        <!-- Stat Card 3 - Job Matches -->
+        <div class="bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border p-6 hover:shadow-xl transition-all duration-300 group">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 bg-accent-100 dark:bg-accent-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <svg class="w-6 h-6 text-accent-600 dark:text-accent-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <span class="px-2 py-1 bg-warning-100 dark:bg-warning-900/30 text-warning-700 dark:text-warning-400 text-xs font-medium rounded-full">
+              +15%
+            </span>
+          </div>
+          <h3 class="text-gray-500 dark:text-dark-text-secondary text-sm font-medium mb-1">Matches Activos</h3>
+          <p class="text-3xl font-bold text-gray-900 dark:text-white">847</p>
+        </div>
+        
+        <!-- Stat Card 4 - Success Rate -->
+        <div class="bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border p-6 hover:shadow-xl transition-all duration-300 group">
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <svg class="w-6 h-6 text-success-600 dark:text-success-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <span class="px-2 py-1 bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-400 text-xs font-medium rounded-full">
+              +5%
+            </span>
+          </div>
+          <h3 class="text-gray-500 dark:text-dark-text-secondary text-sm font-medium mb-1">Tasa de Éxito</h3>
+          <p class="text-3xl font-bold text-gray-900 dark:text-white">94.5%</p>
+        </div>
+      </div>
+      
+      <!-- Users Table Section -->
+      <div class="bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border shadow-xl overflow-hidden">
+        <!-- Table Header -->
+        <div class="px-6 py-5 border-b border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg-secondary">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-bold text-gray-900 dark:text-white">Gestión de Usuarios</h2>
+              <p class="text-sm text-gray-600 dark:text-dark-text-secondary mt-1">
+                Lista completa de usuarios registrados en la plataforma
+              </p>
+            </div>
+            <button class="px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white font-medium rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-all shadow-lg">
+              <span class="flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Nuevo Usuario
+              </span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Table Controls -->
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-dark-border">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <!-- Show Entries -->
+            <div class="flex items-center gap-2 text-sm text-gray-700 dark:text-dark-text-secondary">
+              <span>Mostrar</span>
+              <select class="px-3 py-2 bg-gray-50 dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-dark-text-primary">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+              <span>registros</span>
+            </div>
+            
+            <!-- Search -->
+            <div class="flex items-center gap-2">
+              <label for="search" class="text-sm text-gray-700 dark:text-dark-text-secondary">Buscar:</label>
+              <div class="relative">
+                <input 
+                  id="search"
+                  type="text" 
+                  class="pl-10 pr-4 py-2 bg-gray-50 dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-dark-text-primary"
+                  placeholder="Buscar usuario..."
+                >
+                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Table Content -->
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 dark:bg-dark-bg-secondary border-b border-gray-200 dark:border-dark-border">
+              <tr>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-dark-text-primary uppercase tracking-wider">
+                  Nombre
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-dark-text-primary uppercase tracking-wider">
+                  Apellido
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-dark-text-primary uppercase tracking-wider">
+                  Documento
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-dark-text-primary uppercase tracking-wider">
+                  Profesión
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-dark-text-primary uppercase tracking-wider">
+                  Ciudad
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-dark-text-primary uppercase tracking-wider">
+                  Correo
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-dark-text-primary uppercase tracking-wider">
+                  Teléfono
+                </th>
+                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 dark:text-dark-text-primary uppercase tracking-wider">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-dark-border">
+              <tr *ngFor="let user of users" class="hover:bg-gray-50 dark:hover:bg-dark-bg-secondary transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                      {{ user.first_name?.charAt(0)?.toUpperCase() }}{{ user.last_name?.charAt(0)?.toUpperCase() }}
+                    </div>
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ user.first_name }}</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-dark-text-secondary">
+                  {{ user.last_name }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-dark-text-secondary">
+                  {{ user.number_id }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-xs font-medium rounded-full">
+                    {{ user.professional_title }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-dark-text-secondary">
+                  {{ user.city }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-dark-text-secondary">
+                  {{ user.user.email }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-dark-text-secondary">
+                  {{ user.phone }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                  <button class="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 text-primary-600 dark:text-primary-400 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+              
+              <!-- Empty State -->
+              <tr *ngIf="!users || users.length === 0">
+                <td colspan="8" class="px-6 py-12 text-center">
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="w-16 h-16 bg-gray-100 dark:bg-dark-bg-secondary rounded-full flex items-center justify-center">
+                      <svg class="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    </div>
+                    <p class="text-gray-500 dark:text-dark-text-secondary font-medium">No hay usuarios registrados</p>
+                    <p class="text-sm text-gray-400 dark:text-dark-text-tertiary">Los usuarios aparecerán aquí cuando se registren</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Table Footer / Pagination -->
+        <div class="px-6 py-4 border-t border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg-secondary">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-gray-600 dark:text-dark-text-secondary">
+            <p>
+              Mostrando <span class="font-medium text-gray-900 dark:text-white">1</span> a 
+              <span class="font-medium text-gray-900 dark:text-white">{{ users?.length || 0 }}</span> de 
+              <span class="font-medium text-gray-900 dark:text-white">{{ users?.length || 0 }}</span> registros
+            </p>
+            <div class="flex gap-2">
+              <button class="px-3 py-2 bg-white dark:bg-dark-bg-tertiary border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-bg-secondary transition-colors disabled:opacity-50" disabled>
+                Anterior
+              </button>
+              <button class="px-3 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors">
+                1
+              </button>
+              <button class="px-3 py-2 bg-white dark:bg-dark-bg-tertiary border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-bg-secondary transition-colors disabled:opacity-50" disabled>
+                Siguiente
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </div>

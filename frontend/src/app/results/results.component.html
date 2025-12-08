@@ -1,100 +1,260 @@
-<div class="min-h-screen flex flex-col items-center p-6 mt-16 bg-gray-10 dark:bg-darkBg">
+<!-- Results Page -->
+<div class="min-h-screen bg-gray-50 dark:bg-dark-bg-primary pt-20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Header Section -->
+    <div class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+        Ofertas de Empleo
+      </h1>
+      <p class="text-gray-600 dark:text-dark-text-secondary">
+        Encuentra las mejores oportunidades que coinciden con tu perfil
+      </p>
+    </div>
 
-    <!-- DEBUGGING BUTTON -->
-    <div *ngIf="offers.length === 0" (click)="obtainOffers()"
-        class="fixed top-15 left-0 p-5 font-bold bg-white rounded-r-full shadow-md cursor-pointer">
-        <span class="absolute -top-2 left-36 rounded-full text-sm bg-green-300 p-1">DEBUG</span>
-        <p>OBTENER OFERTAS</p>
+    <!-- DEBUG Button -->
+    <div *ngIf="offers.length === 0" 
+         (click)="obtainOffers()"
+         class="fixed top-20 left-4 z-50 px-6 py-3 bg-success-600 hover:bg-success-700 text-white font-semibold rounded-xl shadow-lg cursor-pointer transition-all hover:scale-105 flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+      </svg>
+      <span>Obtener Ofertas</span>
     </div>
-    <!-- DEBUGGING BUTTON -->
 
-    <h1 class="text-3xl font-bold mb-6 text-center dark:text-darkText">
-        Vacantes para ti
-    </h1>
-    <!-- FILTER SECTION -->
-    <div class="grid place-items-center md:w-3/4 2xl:w-2/3 h-40 rounded-xl bg-gray-50">
-        <h2>Bucar Vacante</h2>
-        <input type="text" class="w-3/4 mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-    </div>
-    <div class="flex gap-6 md:w-3/4 2xl:w-2/3 h-8 border-b my-5">
-        <button (click)="setFilter('all')" class="text-xl hover:border-b border-blue-300 cursor-pointer">Todo</button>
-        <button (click)="setFilter('good')" class="text-xl hover:border-b border-blue-300 cursor-pointer">Bueno</button>
-        <button (click)="setFilter('regular')" class="text-xl hover:border-b border-blue-300 cursor-pointer">Regular</button>
-        <button (click)="setFilter('bad')" class="text-xl hover:border-b border-blue-300 cursor-pointer">Malo</button>
-    </div>
-    <!-- FILTER SECTION -->
-    <div 
-        class="grid gap-6 place-items-center md:w-3/4 2xl:w-2/3 md:grid-cols-2 lg:grid-cols-3 mt-10"
-        [ngClass]="{'md:grid-cols-2 lg:grid-cols-3': offers.length > 0}"
-    >
-        <div 
-            *ngFor="let offer of filteredOffer" 
-            (click)="goToDetail(offer)" 
-            (mouseenter)="onHover(true, offer.id)"
-            (mouseleave)="onHover(false, offer.id)" 
-            class="
-                w-10/12 h-[300px] rounded-xl grid place-items-center
-                shadow-md overflow-hidden relative
-                hover:shadow-lg hover:scale-105 transition-all cursor-pointer
-            " [ngClass]="{
-                'shadow-green-300': offer.match_percentage === 100,
-                'shadow-blue-300': offer.match_percentage >= 70 && offer.match_percentage < 100,
-                'shadow-orange-300': offer.match_percentage >= 50 && offer.match_percentage < 70,
-            }"
+    <!-- Search & Filter Section -->
+    <div class="bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border shadow-lg p-6 mb-8">
+      <!-- Search Bar -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
+          Buscar Vacante
+        </label>
+        <div class="relative">
+          <input 
+            type="text" 
+            class="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 dark:text-dark-text-primary transition-all"
+            placeholder="Buscar por título, empresa o ubicación..."
+          >
+          <svg class="w-6 h-6 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="flex flex-wrap gap-3">
+        <button 
+          (click)="setFilter('all')"
+          [class.bg-primary-600]="selectedFilter === 'all'"
+          [class.text-white]="selectedFilter === 'all'"
+          [class.bg-gray-100]="selectedFilter !== 'all'"
+          [class.dark:bg-dark-bg-secondary]="selectedFilter !== 'all'"
+          [class.text-gray-700]="selectedFilter !== 'all'"
+          [class.dark:text-dark-text-primary]="selectedFilter !== 'all'"
+          class="px-6 py-2.5 rounded-xl font-medium transition-all duration-200 hover:scale-105"
         >
-            <span 
-                aria-hidden="true"
-                [ngStyle]="{'background-image': setGradient(offer.match_percentage, isHovered(offer.id))}" 
-                class="
-                    content[''] duration-5000 absolute left-2/4 top-2/4 block 
-                    w-[calc(100%*1.5)] -translate-x-2/4 -translate-y-2/4 
-                    animate-gradient-spin rounded-full bg-conic-gradient pb-[calc(100%*1.5)]
-                "
-            ></span>
-            <div class="grid w-[99.5%] h-[99.5%] rounded-xl dark:text-darkText z-40">
-                <div class="text-sm text-gray-500 pt-5">
-                    <p class="px-5">
-                        <i>{{ offer.location }}</i>
-                    </p>
-                    <div class="border-b pt-3"></div>
-                </div>
-                <h2 
-                    #jobTitle 
-                    class="text-lg font-extrabold font-mono text-indigo-800 dark:text-indigo-200 px-5"
-                >
-                    {{ offer.title.length > 40 ? (offer.title| slice:0:40) + '...' : offer.title }}
-                </h2>
-                <div class="flex items-center bg-gray-50 dark:bg-darkBg px-5">
-                    <p class="text-xs text-gray-600 font-bold font-mono">
-                        <i>{{ offer.company }}</i>
-                    </p>
-                </div>
-                <div 
-                    class="flex justify-center items-center w-full h-10 rounded-b-xl mt-auto"
-                    [ngStyle]="{'background-color': setColor(offer.match_percentage)}">
-                    <p class="text-black text-sm font-bold opacity-50"
-                >
-                        Compatibilidad: {{ offer.match_percentage }}%
-                    </p>
-                </div>
-            </div>
-            <!--BACKGROUND HOVER EFFECTS-->
-            <!--from right to lefth effect-->
-            <div 
-                [ngStyle]="{'width': setWidth(isHovered(offer.id))}"
-                class="absolute top-[0.5px] right-[0.5px] w-0 h-[18%] rounded-t-xl bg-blue-100 transitionWidth z-30"
-            ></div>
-            <!--from left to right effect-->
-            <div 
-                [ngStyle]="{'width': setWidth(isHovered(offer.id))}"
-                class="absolute left-[0.5px] w-0 h-[99.5%] rounded-xl bg-gray-50 transitionWidth z-20"
-            ></div>
-            <!--static background-->
-            <div class="absolute w-[99.5%] h-[99.5%] rounded-xl bg-white dark:bg-darkCard z-10"></div>
-            <!--BACKGROUND HOVER EFFECTS-->
-        </div>
-        <div *ngIf="offers.length === 0" class="text-center text-gray-500">
-            No se encontraron vacantes por ahora. Intenta actualizar tu perfil o volver más tarde.
-        </div>
+          <span class="flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            Todo
+          </span>
+        </button>
+
+        <button 
+          (click)="setFilter('good')"
+          [class.bg-success-600]="selectedFilter === 'good'"
+          [class.text-white]="selectedFilter === 'good'"
+          [class.bg-gray-100]="selectedFilter !== 'good'"
+          [class.dark:bg-dark-bg-secondary]="selectedFilter !== 'good'"
+          [class.text-gray-700]="selectedFilter !== 'good'"
+          [class.dark:text-dark-text-primary]="selectedFilter !== 'good'"
+          class="px-6 py-2.5 rounded-xl font-medium transition-all duration-200 hover:scale-105"
+        >
+          <span class="flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Excelente (100%)
+          </span>
+        </button>
+
+        <button 
+          (click)="setFilter('regular')"
+          [class.bg-warning-600]="selectedFilter === 'regular'"
+          [class.text-white]="selectedFilter === 'regular'"
+          [class.bg-gray-100]="selectedFilter !== 'regular'"
+          [class.dark:bg-dark-bg-secondary]="selectedFilter !== 'regular'"
+          [class.text-gray-700]="selectedFilter !== 'regular'"
+          [class.dark:text-dark-text-primary]="selectedFilter !== 'regular'"
+          class="px-6 py-2.5 rounded-xl font-medium transition-all duration-200 hover:scale-105"
+        >
+          <span class="flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Bueno (70-99%)
+          </span>
+        </button>
+
+        <button 
+          (click)="setFilter('bad')"
+          [class.bg-error-600]="selectedFilter === 'bad'"
+          [class.text-white]="selectedFilter === 'bad'"
+          [class.bg-gray-100]="selectedFilter !== 'bad'"
+          [class.dark:bg-dark-bg-secondary]="selectedFilter !== 'bad'"
+          [class.text-gray-700]="selectedFilter !== 'bad'"
+          [class.dark:text-dark-text-primary]="selectedFilter !== 'bad'"
+          class="px-6 py-2.5 rounded-xl font-medium transition-all duration-200 hover:scale-105"
+        >
+          <span class="flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Regular (50-69%)
+          </span>
+        </button>
+      </div>
+
+      <!-- Results Count -->
+      <div class="mt-4 pt-4 border-t border-gray-200 dark:border-dark-border">
+        <p class="text-sm text-gray-600 dark:text-dark-text-secondary">
+          Mostrando <span class="font-semibold text-gray-900 dark:text-white">{{ filteredOffer.length }}</span> 
+          de <span class="font-semibold text-gray-900 dark:text-white">{{ offers.length }}</span> ofertas
+        </p>
+      </div>
     </div>
+
+    <!-- Job Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div 
+        *ngFor="let offer of filteredOffer"
+        (click)="goToDetail(offer)"
+        class="group bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer"
+        [class.border-success-500]="offer.match_percentage === 100"
+        [class.border-primary-500]="offer.match_percentage >= 70 && offer.match_percentage < 100"
+        [class.border-warning-500]="offer.match_percentage >= 50 && offer.match_percentage < 70"
+      >
+        <!-- Card Header with Match Badge -->
+        <div class="relative h-32 bg-gradient-to-br overflow-hidden"
+             [class.from-success-500]="offer.match_percentage === 100"
+             [class.to-success-600]="offer.match_percentage === 100"
+             [class.from-primary-500]="offer.match_percentage >= 70 && offer.match_percentage < 100"
+             [class.to-primary-600]="offer.match_percentage >= 70 && offer.match_percentage < 100"
+             [class.from-warning-500]="offer.match_percentage >= 50 && offer.match_percentage < 70"
+             [class.to-warning-600]="offer.match_percentage >= 50 && offer.match_percentage < 70"
+        >
+          <div class="absolute inset-0 bg-grid-pattern opacity-10"></div>
+          <div class="absolute top-4 right-4">
+            <div class="px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg">
+              <span class="text-sm font-bold"
+                    [class.text-success-700]="offer.match_percentage === 100"
+                    [class.text-primary-700]="offer.match_percentage >= 70 && offer.match_percentage < 100"
+                    [class.text-warning-700]="offer.match_percentage >= 50 && offer.match_percentage < 70"
+              >
+                {{ offer.match_percentage }}% Match
+              </span>
+            </div>
+          </div>
+          
+          <!-- Company Avatar -->
+          <div class="absolute -bottom-8 left-6">
+            <div class="w-16 h-16 bg-white dark:bg-dark-bg-tertiary rounded-2xl shadow-lg flex items-center justify-center border-4 border-white dark:border-dark-bg-primary">
+              <span class="text-2xl font-bold text-gray-700 dark:text-dark-text-primary">
+                {{ offer.company && offer.company.charAt(0).toUpperCase() || '?' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Content -->
+        <div class="pt-12 px-6 pb-6">
+          <!-- Job Title -->
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2">
+            {{ offer.title }}
+          </h3>
+
+          <!-- Company Name -->
+          <p class="text-sm text-gray-600 dark:text-dark-text-secondary mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            {{ offer.company }}
+          </p>
+
+          <!-- Location -->
+          <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-dark-text-tertiary mb-4">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>{{ offer.location }}</span>
+          </div>
+
+          <!-- Divider -->
+          <div class="border-t border-gray-200 dark:border-dark-border my-4"></div>
+
+          <!-- Footer with CTA -->
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-500 dark:text-dark-text-tertiary">
+              Ver detalles
+            </span>
+            <div class="w-8 h-8 bg-gray-100 dark:bg-dark-bg-secondary rounded-lg flex items-center justify-center group-hover:bg-primary-600 dark:group-hover:bg-primary-500 transition-colors">
+              <svg class="w-5 h-5 text-gray-600 dark:text-dark-text-secondary group-hover:text-white transition-colors group-hover:translate-x-1 duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="offers.length === 0" class="col-span-full">
+        <div class="bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border p-12 text-center">
+          <div class="flex flex-col items-center gap-4">
+            <div class="w-20 h-20 bg-gray-100 dark:bg-dark-bg-secondary rounded-full flex items-center justify-center">
+              <svg class="w-10 h-10 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                No hay ofertas disponibles
+              </h3>
+              <p class="text-gray-600 dark:text-dark-text-secondary mb-4">
+                No se encontraron vacantes por ahora. Intenta actualizar tu perfil o volver más tarde.
+              </p>
+              <button 
+                (click)="obtainOffers()"
+                class="px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white font-semibold rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-all shadow-lg hover:shadow-xl"
+              >
+                Cargar Ofertas
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No Results for Filter -->
+      <div *ngIf="offers.length > 0 && filteredOffer.length === 0" class="col-span-full">
+        <div class="bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border p-12 text-center">
+          <div class="flex flex-col items-center gap-4">
+            <div class="w-20 h-20 bg-warning-100 dark:bg-warning-900/30 rounded-full flex items-center justify-center">
+              <svg class="w-10 h-10 text-warning-600 dark:text-warning-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Sin resultados para este filtro
+              </h3>
+              <p class="text-gray-600 dark:text-dark-text-secondary">
+                No se encontraron ofertas con los criterios seleccionados. Intenta con otro filtro.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
