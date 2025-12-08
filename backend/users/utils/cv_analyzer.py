@@ -35,11 +35,19 @@ def clean_text(text):
 def extract_full_name(text, city):
     # Normalizer and clean text
     data = text.split('.')[0].strip()
+    if not city:
+        return "", ""
     city_clean = unidecode(city)
     city_index = data.find(city_clean)
+    if city_index == -1:
+        return "", ""
     # Obtain only names without city
     name_part = data[:city_index].strip().split()
-    if len(name_part) == 2:
+    if len(name_part) == 0:
+        return "", ""
+    elif len(name_part) == 1:
+        return name_part[0], ""
+    elif len(name_part) == 2:
         first_name = name_part[0]
         last_name = name_part[1]
     elif len(name_part) == 3:
@@ -66,6 +74,8 @@ def extract_phone(text):
 
 def extract_city(text, country_name):
     country_found = PHONE_CODE_COUNTRY.get(country_name)
+    if not country_found:
+        return ""
     countrys = get_all_countries_and_cities_nested()
     data = text.split('.')[0]
     city_candidates = []           
@@ -76,6 +86,8 @@ def extract_city(text, country_name):
                 pos = data.find(city_find)
                 if pos != -1:
                     city_candidates.append((city['name'], pos))
+    if not city_candidates:
+        return ""
     city_candidates.sort(key=lambda x: x[1])
     best_match = city_candidates[0][0]
     return best_match
@@ -99,12 +111,15 @@ def extract_prof_title(summary):
 
 def extract_summary(text):
     lines = text.strip().split()
+    start_symmary = 0
+    end_summary = len(text)
     for line in lines:
         if "@" in line:
             start_symmary = len(line) + text.find(line)
         if line.isupper() and line in EXPERIENCE_KEYWORDS:
             end_summary = text.find(line)
-            summary = text[start_symmary:end_summary]
+            break
+    summary = text[start_symmary:end_summary].strip()
     return summary
 
 
@@ -151,29 +166,61 @@ def extract_portfolio(text):
 
 def analyze_cv(file, filetype='pdf'):
     print("🔍 Analizando CV...")
-    if filetype == 'pdf':
-        text = extract_text_from_pdf(file)
-    elif filetype == 'docx':
-        text = extract_text_from_docx(file)
-    else:
-        return {}
-    text = clean_text(text)
-    phone_code = extract_phone(text)[0]
-    phone_number = extract_phone(text)[1]
-    city = extract_city(text, extract_phone(text)[0])
-    first_name = extract_full_name(text, city)[0]
-    last_name = extract_full_name(text, city)[1]
-    return {
-        "first_name": first_name,
-        "last_name": last_name,
-        "phone_code": phone_code,
-        "phone_number": phone_number,
-        "city": city,
-        "professional_title": extract_prof_title(text),
-        "summary": extract_summary(text),
-        "education": extract_education(text),
-        "skills": ", ".join(extract_skills(text, SKILLS_KEYWORDS)),
-        "experience": extract_experience(text),
-        "linkedin_url": extract_linkedin(text),
-        "portfolio_url": extract_portfolio(text),
-    }
+    try:
+        if filetype == 'pdf':
+            text = extract_text_from_pdf(file)
+        elif filetype == 'docx':
+            text = extract_text_from_docx(file)
+        else:
+            print("❌ Formato de archivo no soportado")
+            return {}
+        
+        if not text or len(text.strip()) < 10:
+            print("❌ No se pudo extraer texto del CV o el texto es muy corto")
+            return {}
+        
+        text = clean_text(text)
+        print(f"✅ Texto extraído ({len(text)} caracteres)")
+        
+        # Extract phone information
+        phone_code, phone_number = extract_phone(text)
+        print(f"📞 Teléfono: {phone_code} {phone_number}")
+        
+        # Extract city
+        city = extract_city(text, phone_code) if phone_code else ""
+        print(f"🌆 Ciudad: {city}")
+        
+        # Extract name
+        first_name, last_name = extract_full_name(text, city)
+        print(f"👤 Nombre: {first_name} {last_name}")
+        
+        # Extract other information
+        summary = extract_summary(text)
+        professional_title = extract_prof_title(summary)
+        education = extract_education(text)
+        skills = extract_skills(text, SKILLS_KEYWORDS)
+        experience = extract_experience(text)
+        linkedin_url = extract_linkedin(text)
+        portfolio_url = extract_portfolio(text)
+        
+        print("✅ CV analizado exitosamente")
+        
+        return {
+            "first_name": first_name,
+            "last_name": last_name,
+            "phone_code": phone_code,
+            "phone_number": phone_number,
+            "city": city,
+            "professional_title": professional_title,
+            "summary": summary,
+            "education": education,
+            "skills": ", ".join(skills) if skills else "",
+            "experience": experience,
+            "linkedin_url": linkedin_url or "",
+            "portfolio_url": portfolio_url,
+        }
+    except Exception as e:
+        print(f"❌ Error inesperado en analyze_cv: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise

@@ -1,7 +1,8 @@
-from .models import *
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserCreationForm
+
+from users.models import User, UserProfile
 
 class CustomUserCreationFom(UserCreationForm):
     class Meta:

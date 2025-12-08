@@ -1,9 +1,17 @@
-from .views import *
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+
+from users.views import (
+    UserRegisterView,
+    UserProfileViewSet,
+    AnalyzerResumeView
+)
+
+router = DefaultRouter()
+router.register(r'profiles', UserProfileViewSet, basename='profile')
 
 urlpatterns = [
     path('register/', UserRegisterView.as_view(), name='user-register'),
-    path('profile/', UserProfileCreateView.as_view()),
-    path('profile/check/', UserProfileCheckView.as_view()),
-    path('resume-analyzer/', AnalyzerResumeView.as_view(), name="analyzer-resume")
+    path('resume-analyzer/', AnalyzerResumeView.as_view(), name="analyzer-resume"),
+    path('', include(router.urls)),
 ]

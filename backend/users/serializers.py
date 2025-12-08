@@ -1,6 +1,6 @@
-from .models import *
-from users.utils.cv_countries import *
 from rest_framework import serializers
+
+from users.models import User, UserProfile
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)

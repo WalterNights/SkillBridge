@@ -1,115 +1,151 @@
-from .models import *
-from .serializers import *
-from rest_framework import status
-from django.shortcuts import render
-from users.utils.cv_analyzer import *
+from rest_framework import viewsets, status
 from rest_framework.views import APIView
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
-from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from users.models import User, UserProfile
+from users.serializers import UserSerializer, UserProfileSerializer
+from users.services.profile_service import ProfileService
+from users.services.cv_analyzer_service import CVAnalyzerService
 
 
 class UserRegisterView(APIView):
+    """Vista para registro de nuevos usuarios"""
     permission_classes = [AllowAny]
     
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "Usuario creado exitosamente", "data": serializer.data}, status=status.HTTP_201_CREATED)
-        print(serializer.errors)
+            return Response(
+                {"message": "Usuario creado exitosamente", "data": serializer.data}, 
+                status=status.HTTP_201_CREATED
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
  
  
 class AnalyzerResumeView(APIView):
+    """Vista para analizar CVs y extraer información"""
     parser_classes = [MultiPartParser]
     
     def post(self, request, *args, **kwargs):
         file = request.FILES.get("resume")
-        if not file:
-            return Response({"error": "No hay archivo"}, status=status.HTTP_400_BAD_REQUEST)
-        file_type = file.name.split('.')[-1].lower()
-        if file_type not in ['pdf', 'docx']:
-            return Response({"error": "Formato de arcgivo no compatible"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validar archivo usando servicio
+        is_valid, error_message = CVAnalyzerService.validate_cv_file(file)
+        if not is_valid:
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        
         try:
-            analyst_result = analyze_cv(file, filetype=file_type)
+            # Usar servicio de análisis
+            analyst_result = CVAnalyzerService.analyze_cv(file)
+            
+            # Campos por defecto para mantener compatibilidad
             default_fields = {
                 "first_name": "",
                 "last_name": "",
                 "number_id": "",
                 "phone_code": "",
                 "phone_number": "",
-                "country": "",
-                "city": "",
-                "professional_title": "",
-                "summary": "",
+                "country": analyst_result.get('country', ''),
+                "city": analyst_result.get('city', ''),
+                "professional_title": analyst_result.get('title', ''),
+                "summary": analyst_result.get('summary', ''),
                 "education": "",
-                "skills": "",
+                "skills": analyst_result.get('skills', ''),
                 "experience": "",
                 "linkedin_url": "",
                 "portfolio_url": "",
+                "full_name": analyst_result.get('full_name', ''),
             }
-            response_data = {**default_fields, **analyst_result}
-            return Response(response_data, status=status.HTTP_200_OK)
+            
+            return Response(default_fields, status=status.HTTP_200_OK)
         except Exception as e:
-            print("❌ Error al analizar el archivo CV:", str(e))
-            return Response({"error": "Error al analizar el archivo"}, status=status.HTTP_400_BAD_REQUEST)
-    
+            return Response(
+                {"error": f"Error al analizar el archivo: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-class UserProfileCreateView(APIView):
+
+class UserProfileViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestión de perfiles de usuario.
+    
+    Endpoints:
+    - GET /users/profiles/ - Obtener perfil del usuario autenticado
+    - POST /users/profiles/ - Crear o actualizar perfil
+    - GET /users/profiles/check/ - Verificar si perfil está completo
+    """
+    serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
-    def post(self, request):
+    
+    def get_queryset(self):
+        """Retorna solo el perfil del usuario autenticado"""
+        return UserProfile.objects.filter(user=self.request.user).select_related('user')
+    
+    def create(self, request):
+        """Crea o actualiza el perfil del usuario"""
         user = request.user
-        data = request.data.copy() 
-        user_profile_data = {}
-        for key in data:
-            values = data.getlist(key)
-            if len(values) == 1 and not hasattr(values[0], 'read'):
-                user_profile_data[key] = values[0]
-            else:
-                user_profile_data[key] = values                   
-        try:
-            profile = user.profile
-            serializer = UserProfileSerializer(profile, data=user_profile_data, partial=True)
-        except UserProfile.DoesNotExist:
-            serializer = UserProfileSerializer(data=user_profile_data)
-        if serializer.is_valid():
-            serializer.save(user=user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        profile_data = request.data.copy()
+        
+        # Usar servicio de perfil
+        if ProfileService.profile_exists(user):
+            profile = ProfileService.get_profile_by_user(user)
+            updated_profile = ProfileService.update_profile(profile, profile_data)
+            serializer = self.get_serializer(updated_profile)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            print("❌ Errores del serializer:", serializer.errors)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            new_profile = ProfileService.create_profile(user, profile_data)
+            serializer = self.get_serializer(new_profile)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
     
-    
-class UserProfileCheckView(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        profile = request.user.profile
-        if not profile.full_name or not profile.city or not profile.phone:
-            return Response({"profile_complete": False})
-        return Response({"profile_complete": True})
-    
+    @action(detail=False, methods=['get'])
+    def check(self, request):
+        """Verifica si el perfil del usuario está completo"""
+        if not ProfileService.profile_exists(request.user):
+            return Response(
+                {"error": "Profile not found", "profile_complete": False}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        profile = ProfileService.get_profile_by_user(request.user)
+        is_complete = all([
+            profile.first_name,
+            profile.last_name,
+            profile.city,
+            profile.phone
+        ])
+        
+        return Response({"profile_complete": is_complete}, status=status.HTTP_200_OK)
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Serializer personalizado para incluir datos de perfil en token"""
     
     def validate(self, attrs):
         data = super().validate(attrs)
         user = self.user
+        
         data['user_id'] = user.id
         data['username'] = user.username
         data['email'] = user.email
         data['rol'] = user.rol
-        try:
-            profile = user.profile
+        
+        # Usar servicio de perfil
+        profile = ProfileService.get_profile_by_user(user)
+        if profile:
             data['is_profile_complete'] = profile.number_id is not None
             data['user_name'] = profile.first_name
-        except:
+        else:
             data['is_profile_complete'] = False
+            
         return data
     
     
 class CustomTokenObtainPairView(TokenObtainPairView):
+    """Vista personalizada para obtención de tokens JWT"""
     serializer_class = CustomTokenObtainPairSerializer
