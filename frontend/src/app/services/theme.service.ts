@@ -4,7 +4,7 @@ import { Injectable, signal, effect } from '@angular/core';
   providedIn: 'root'
 })
 export class ThemeService {
-  private readonly THEME_KEY = 'skillbridge-theme';
+  private readonly THEME_KEY = 'skiltak-theme';
   
   // Signal for reactive theme state
   isDarkMode = signal<boolean>(false);

@@ -26,7 +26,7 @@ export class JobDetailComponent implements OnInit {
     private titleService: Title,
     private http: HttpClient
   ) {
-    this.titleService.setTitle('SkillBridge - Oferta- Detalles');
+    this.titleService.setTitle('SkilTak - Oferta- Detalles');
   }
 
   ngOnInit() {

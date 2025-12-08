@@ -33,7 +33,7 @@ export class ProfileComponent implements OnInit {
     private profileBuldier: ProfileBuilderComponent,
     private titleService: Title
   ) {
-    this.titleService.setTitle('SkillBridge - Home');
+    this.titleService.setTitle('SkilTak - Home');
   }
 
   ngOnInit(): void {

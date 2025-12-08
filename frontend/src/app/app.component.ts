@@ -15,7 +15,7 @@ import { HeaderDashboardComponent } from './dashboard/header-dashboard/header-da
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements AfterViewInit, OnInit {
-  title = 'SkillBridge-front';
+  title = 'SkilTak-front';
   showHeader = true;
   showSideBar = true;
   showHeaderDashboard = true;

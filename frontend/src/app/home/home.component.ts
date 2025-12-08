@@ -23,7 +23,7 @@ export class HomeComponent {
     private authService: AuthService,
     private router: Router
   ) {
-    this.titleService.setTitle('SkillBridge - Home');
+    this.titleService.setTitle('SkilTak - Home');
   }
 
   /**

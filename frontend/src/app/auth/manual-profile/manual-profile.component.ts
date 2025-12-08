@@ -34,7 +34,7 @@ export class ManualProfileComponent implements OnInit {
     private fb: FormBuilder,
     private profileBuldier: ProfileBuilderComponent,
   ) {
-    this.titleService.setTitle('SkillBridge - Registro Perfil Profesional');
+    this.titleService.setTitle('SkilTak - Registro Perfil Profesional');
   }
 
   ngOnInit(): void {

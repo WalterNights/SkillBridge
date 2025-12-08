@@ -18,6 +18,6 @@ export interface CityData {
   name: string;
   countryCode: string;
   stateCode?: string;
-  latitude?: string;
-  longitude?: string;
+  latitude?: string | null;
+  longitude?: string | null;
 }

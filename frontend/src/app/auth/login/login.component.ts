@@ -32,7 +32,7 @@ export class LoginComponent {
     private titleService: Title,
     private storageMethod: StorageMethodComponent
   ) {
-    this.titleService.setTitle('SkillBridge - Login');
+    this.titleService.setTitle('SkilTak - Login');
   }
 
   /**

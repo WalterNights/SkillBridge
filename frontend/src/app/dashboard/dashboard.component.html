@@ -28,7 +28,7 @@
             </span>
           </div>
           <h3 class="text-gray-500 dark:text-dark-text-secondary text-sm font-medium mb-1">Total Usuarios</h3>
-          <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ users?.length || 0 }}</p>
+          <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ users.length || 0 }}</p>
         </div>
         
         <!-- Stat Card 2 - Active Profiles -->
@@ -44,7 +44,7 @@
             </span>
           </div>
           <h3 class="text-gray-500 dark:text-dark-text-secondary text-sm font-medium mb-1">Perfiles Activos</h3>
-          <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ users?.length || 0 }}</p>
+          <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ users.length || 0 }}</p>
         </div>
         
         <!-- Stat Card 3 - Job Matches -->
@@ -190,7 +190,7 @@
                   {{ user.city }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-dark-text-secondary">
-                  {{ user.user.email }}
+                  {{ user.user?.email || user.email }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-dark-text-secondary">
                   {{ user.phone }}
@@ -228,8 +228,8 @@
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-gray-600 dark:text-dark-text-secondary">
             <p>
               Mostrando <span class="font-medium text-gray-900 dark:text-white">1</span> a 
-              <span class="font-medium text-gray-900 dark:text-white">{{ users?.length || 0 }}</span> de 
-              <span class="font-medium text-gray-900 dark:text-white">{{ users?.length || 0 }}</span> registros
+              <span class="font-medium text-gray-900 dark:text-white">{{ users.length || 0 }}</span> de 
+              <span class="font-medium text-gray-900 dark:text-white">{{ users.length || 0 }}</span> registros
             </p>
             <div class="flex gap-2">
               <button class="px-3 py-2 bg-white dark:bg-dark-bg-tertiary border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-bg-secondary transition-colors disabled:opacity-50" disabled>

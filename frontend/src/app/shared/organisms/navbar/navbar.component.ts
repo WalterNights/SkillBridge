@@ -219,7 +219,7 @@ export interface NavItem {
   styles: []
 })
 export class NavbarComponent {
-  @Input() brandName = 'SkillBridge';
+  @Input() brandName = 'SkilTak';
   @Input() logoRoute = '/';
   @Input() navItems: NavItem[] = [];
   @Input() userMenuItems: NavItem[] = [];

@@ -19,5 +19,5 @@ export const STORAGE_KEYS = {
   SELECTED_JOB: 'selected_job',
   REDIRECT_AFTER_LOGIN: 'redirect_after_login',
   MANUAL_PROFILE_DRAFT: 'manual_profile_draft',
-  THEME: 'skillbridge-theme'
+  THEME: 'skiltak-theme'
 } as const;

@@ -14,7 +14,7 @@ export class LoaderModalComponent {
     '🔍 Analizando tu perfil...',
     '📡 Buscando oportunidades relevantes para ti...',
     '🌱 Nuestro objetivo: ayudarte a crecer profesionalmente.',
-    '🚀 SkillBridge conecta tu talento con la vacante ideal.',
+    '🚀 SkilTak conecta tu talento con la vacante ideal.',
     '🎯 Esto solo es el comienzo de tu próxima etapa laboral.',
   ];
   currentPhrase = this.motivationalPhrases[0];

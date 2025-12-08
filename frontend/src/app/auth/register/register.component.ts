@@ -27,7 +27,7 @@ export class RegisterComponent {
     private router: Router,
     private titleService: Title
   ) {
-    this.titleService.setTitle('SkillBridge - Registro');
+    this.titleService.setTitle('SkilTak - Registro');
   }
 
   /**

@@ -26,7 +26,7 @@ export class AtsCvComponent implements OnInit {
     private authService: AuthService,
     private router: Router
   ) {
-    this.titleService.setTitle('SkillBridge - Resultados');
+    this.titleService.setTitle('SkilTak - Resultados');
   }
 
   ngOnInit(): void {
@@ -42,7 +42,7 @@ export class AtsCvComponent implements OnInit {
     if (element) {
       doc.html(element, {
         callback: (doc) => {
-          doc.save('skillbridge-ats-cv.pdf');
+          doc.save('skiltak-ats-cv.pdf');
           //this.router.navigate(['/results']);
         },
         x: 10,

@@ -33,7 +33,7 @@ export class ResultsComponent {
     private http: HttpClient,
     private changes: HTMLChangesComponent
   ) {
-    this.titleService.setTitle('SkillBridge - Resultados de Búsqueda');
+    this.titleService.setTitle('SkilTak - Resultados de Búsqueda');
   }
 
   /**
