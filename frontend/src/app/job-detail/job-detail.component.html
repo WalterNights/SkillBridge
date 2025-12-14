@@ -4,7 +4,7 @@
         class="fixed top-44 left-0 p-5 font-bold rounded-r-full shadow-md"
         [ngClass]="{
             'bg-green-300': jobDetail.match_percentage === 100,
-            'bg-blue-300': jobDetail.match_percentage >= 70 && jobDetail.match_percentage < 100,
+            'bg-amber-300': jobDetail.match_percentage >= 70 && jobDetail.match_percentage < 100,
             'bg-orange-300': jobDetail.match_percentage >= 50 && jobDetail.match_percentage < 70,
         }"
     >
@@ -14,7 +14,7 @@
         class="fixed top-44 right-0 p-5 font-bold rounded-l-full shadow-md"
         [ngClass]="{
             'bg-green-300': jobDetail.match_percentage === 100,
-            'bg-blue-300': jobDetail.match_percentage >= 70 && jobDetail.match_percentage < 100,
+            'bg-amber-300': jobDetail.match_percentage >= 70 && jobDetail.match_percentage < 100,
             'bg-orange-300': jobDetail.match_percentage >= 50 && jobDetail.match_percentage < 70,
         }"
     >
@@ -50,7 +50,7 @@
             class="mt-10 text-white dark:text-black hover:dark:text-white text-center font-bold px-4 py-2 rounded-md transition-all duration-300"
             [ngClass]="{
                 'bg-green-300 hover:bg-green-600': jobDetail.match_percentage === 100,
-                'bg-blue-300 hover:bg-blue-600': jobDetail.match_percentage >= 70 && jobDetail.match_percentage < 100,
+                'bg-amber-300 hover:bg-amber-600': jobDetail.match_percentage >= 70 && jobDetail.match_percentage < 100,
                 'bg-orange-300 hover:bg-orange-600': jobDetail.match_percentage >= 50 && jobDetail.match_percentage < 70,
             }"
         >
@@ -65,7 +65,7 @@
             <button
                 *ngFor="let skill of jobDetail.missing_skills" 
                 class="
-                    w-min-20 h-12 p-2 border-solid border-2 border-blue-500 rounded-md 
+                    w-min-20 h-12 p-2 border-solid border-2 border-amber-500 rounded-md 
                     cursor-pointer shadow-md hover:shadow-lg hover:scale-105
                 "
             >

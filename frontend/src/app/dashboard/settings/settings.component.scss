@@ -1,0 +1,29 @@
+// Settings Component Styles
+
+:host {
+  display: block;
+}
+
+// Smooth transitions
+* {
+  transition: background-color 0.2s ease-in-out,
+              border-color 0.2s ease-in-out,
+              color 0.2s ease-in-out;
+}
+
+// Toggle switch animation
+button[type="button"] {
+  span {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+// Card hover effects
+.bg-white,
+.dark .bg-\[\#27272A\] {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+}

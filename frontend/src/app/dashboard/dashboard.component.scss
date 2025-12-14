@@ -1,0 +1,96 @@
+// Dashboard Component Styles
+
+// Smooth scroll behavior
+:host {
+  display: block;
+}
+
+// Custom scrollbar for table
+.overflow-x-auto {
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: theme('colors.gray.100');
+    border-radius: 4px;
+  }
+
+  :host-context(.dark) &::-webkit-scrollbar-track {
+    background: theme('colors.gray.800');
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(to right, theme('colors.primary.500'), theme('colors.secondary.500'));
+    border-radius: 4px;
+
+    &:hover {
+      background: linear-gradient(to right, theme('colors.primary.600'), theme('colors.secondary.600'));
+    }
+  }
+}
+
+// Animation for stat cards
+.group:hover {
+  transform: translateY(-2px);
+}
+
+// Table row animation
+tr {
+  transition: all 0.2s ease-in-out;
+}
+
+// Loading skeleton animation
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.loading-skeleton {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    to right,
+    theme('colors.gray.200') 4%,
+    theme('colors.gray.300') 25%,
+    theme('colors.gray.200') 36%
+  );
+  background-size: 1000px 100%;
+}
+
+:host-context(.dark) .loading-skeleton {
+  background: linear-gradient(
+    to right,
+    theme('colors.gray.800') 4%,
+    theme('colors.gray.700') 25%,
+    theme('colors.gray.800') 36%
+  );
+}
+
+// Smooth transitions for dark mode
+* {
+  transition: background-color 0.2s ease-in-out,
+              border-color 0.2s ease-in-out,
+              color 0.2s ease-in-out;
+}
+
+// Avatar gradient animation
+.bg-gradient-to-br {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}

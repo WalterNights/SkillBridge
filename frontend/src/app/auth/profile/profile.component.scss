@@ -1,0 +1,201 @@
+// Profile Component Styles
+
+// Smooth transitions
+* {
+  transition: background-color 0.2s ease-in-out,
+              border-color 0.2s ease-in-out,
+              color 0.2s ease-in-out;
+}
+
+// Custom scrollbar
+:host {
+  display: block;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: theme('colors.gray.100');
+    border-radius: 4px;
+  }
+
+  :host-context(.dark) &::-webkit-scrollbar-track {
+    background: theme('colors.gray.800');
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, theme('colors.primary.500'), theme('colors.secondary.500'));
+    border-radius: 4px;
+
+    &:hover {
+      background: linear-gradient(to bottom, theme('colors.primary.600'), theme('colors.secondary.600'));
+    }
+  }
+}
+
+// Form input focus effects
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+// File upload animation
+.upload-zone {
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent,
+      rgba(249, 115, 22, 0.05),
+      transparent
+    );
+    transform: rotate(45deg);
+    transition: all 0.6s ease;
+  }
+
+  &:hover::before {
+    left: 100%;
+  }
+}
+
+// Success message animation
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.success-message {
+  animation: slideInDown 0.3s ease-out;
+}
+
+// Loading spinner
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Info card hover effect
+.info-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -10px rgba(249, 115, 22, 0.2);
+  }
+}
+
+// Button ripple effect
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  &:active::after {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+// Textarea auto-resize
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+// Phone code select styling
+select[formControlName="country"],
+select[formControlName="phone_code"] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+// Required field indicator
+.required-field::after {
+  content: ' *';
+  color: theme('colors.red.500');
+}
+
+// Validation error shake
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.ng-invalid.ng-touched {
+  animation: shake 0.5s ease-in-out;
+}
+
+// Grid responsive improvements
+.form-grid {
+  display: grid;
+  gap: 1.5rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+// Sticky header smooth scroll
+.sticky {
+  position: sticky;
+  top: 6rem;
+  z-index: 10;
+}
+
+// Dark mode specific adjustments
+:host-context(.dark) {
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    -webkit-text-fill-color: theme('colors.white');
+    -webkit-box-shadow: 0 0 0px 1000px theme('colors.gray.900') inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+}

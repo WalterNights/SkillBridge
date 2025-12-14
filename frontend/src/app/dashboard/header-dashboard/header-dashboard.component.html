@@ -1,83 +1,119 @@
 <!--Modal Window-->
-<div *ngIf="isLoading" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
-    <div class="bg-white rounded-2xl shadow-xl p-6 w-72 text-center">
+<div *ngIf="isLoading" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-80 text-center">
         <div class="flex flex-col items-center">
-            <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+            <svg class="animate-spin h-10 w-10 text-primary-600 dark:text-primary-400" xmlns="http://www.w3.org/2000/svg" fill="none"
                 viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
             </svg>
-            <p class="mt-4 text-grey-700 font-semibold">Regresando a la página de inicio...</p>
+            <p class="mt-4 text-gray-700 dark:text-gray-300 font-semibold">Regresando a la página de inicio...</p>
         </div>
     </div>
 </div>
+
 <!--NavBar-->
-<div class="fixed left-56 w-[calc(100%-14rem)]">
-    <nav class="flex w-full bg-white mb-4 px-10 py-2 shadow-md">
-        <ul class="w-full flex justify-between items-center">
-            <li class="nav-item dropdown no-arrow d-sm-none">
-                <!-- Dropdown - Messages -->
-                <div class="p-3">
-                    <div class="flex items-center">
-                        <input class="w-80 border-0 bg-gray-100 rounded-l-md p-2" type="text" placeholder="Buscar por...">
-                        <div class="w-10 text-center border rounded-r-md p-2 bg-darkBg hover:bg-gray-800 transition">
-                            <button class="cursor-pointer" type="button">
-                                <i class="fas fa-search fa-sm text-white"></i>
+<header
+    class="fixed top-0 z-40 backdrop-blur-md bg-white dark:bg-[#18181B] border-b border-gray-200 dark:border-[#27272A] shadow-sm transition-all duration-300"
+    [ngClass]="isSidebarCollapsed ? 'left-20 w-[calc(100%-5rem)]' : 'left-64 w-[calc(100%-16rem)]'"
+>
+    <div class="px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <!-- Search Bar -->
+            <div class="flex-1 max-w-2xl">
+                <div class="relative">
+                    <input
+                        type="text"
+                        placeholder="Buscar usuarios, estadísticas..."
+                        class="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-[#27272A] border border-gray-300 dark:border-[#3F3F46] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                    >
+                    <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-3 ml-6">
+                <!-- Notifications -->
+                <button class="relative p-2 rounded-xl bg-gray-100 dark:bg-[#27272A] hover:bg-gray-200 dark:hover:bg-[#3F3F46] transition-colors">
+                    <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-orange-500 rounded-full"></span>
+                </button>
+
+                <!-- Messages -->
+                <button class="relative p-2 rounded-xl bg-gray-100 dark:bg-[#27272A] hover:bg-gray-200 dark:hover:bg-[#3F3F46] transition-colors">
+                    <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-orange-500 rounded-full"></span>
+                </button>
+
+                <!-- User Menu -->
+                <div class="relative group">
+                    <button class="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-[#27272A] hover:bg-gray-200 dark:hover:bg-[#3F3F46] transition-colors">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-semibold shadow-md">
+                            {{ (userName && userName.charAt(0).toUpperCase()) || '👤' }}
+                        </div>
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ userName }}</span>
+                        <svg class="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div class="absolute right-0 mt-2 w-56 rounded-xl bg-white dark:bg-[#27272A] shadow-xl border border-gray-200 dark:border-[#3F3F46] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                        <div class="p-3 border-b border-gray-200 dark:border-[#3F3F46]">
+                            <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ userName }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Administrador</p>
+                        </div>
+                        <div class="py-2">
+                            <button
+                                (click)="navigateTo('/profile')"
+                                class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#3F3F46] transition-colors flex items-center gap-2"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                                Mi perfil
+                            </button>
+                            <button
+                                (click)="navigateTo('/dashboard/settings')"
+                                class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#3F3F46] transition-colors flex items-center gap-2"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                Configuración
+                            </button>
+                        </div>
+                        <div class="border-t border-gray-200 dark:border-[#3F3F46] p-2">
+                            <button
+                                (click)="logout()"
+                                class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                </svg>
+                                Cerrar sesión
                             </button>
                         </div>
                     </div>
                 </div>
-            </li>
-            <div class="w-40 flex items-center justify-between">
-                <!-- Nav Item - Alerts -->
-                <li class="nav-item dropdown no-arrow mx-1">
-                    <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
-                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-bell fa-fw text-gray-300 hover:text-gray-500"></i>
-                        <!-- Counter - Alerts -->
-                        <span class="badge badge-danger badge-counter">3+</span>
-                    </a>
-                    <!-- Dropdown - Alerts -->
-                </li>
-                <!-- Nav Item - Messages -->
-                <li class="nav-item dropdown no-arrow mx-1">
-                    <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
-                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-envelope fa-fw text-gray-300 hover:text-gray-500"></i>
-                        <!-- Counter - Messages -->
-                        <span class="badge badge-danger badge-counter">7</span>
-                    </a>
-                    <!-- Dropdown - Messages -->
-                </li>
-                <div class="topbar-divider d-none d-sm-block"></div>
-                <!-- Nav Item - User Information -->
-                <li class="nav-item dropdown no-arrow">
-                    <div class="group">
-                        <label class="flex items-center z-40 cursor-pointer">
-                            <button
-                                class="text-2 p-2 rounded-full shadow-md hover:bg-gray-200 dark:hover-gray-700 transition">
-                                <span>👤</span>
-                            </button>
-                        </label>
-                        <div
-                            class="origin-top-right absolute right-0 z-30 w-56 text-black bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 hidden group-hover:block transition-opacity duration-200 ease-in-out opacity-0 group-hover:opacity-100">
-                            <div class="py-1" role="menu">
-                                <p class="block px-4 py-2 text-sm text-gray-700" role="menuitem">Bienvenido
-                                    {{ userName }} </p>
-                                <div class="mt-2 border-b"></div>
-                                <a class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
-                                    <button>Mi perfil</button>
-                                </a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                    role="menuitem">Configuración</a>
-                                <a class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
-                                    <button (click)="logout()">Cerrar sesión</button>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </li>
+
+                <!-- Dark Mode Toggle -->
+                <button
+                    (click)="toggleDarkMode()"
+                    [attr.aria-label]="isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+                    class="p-2 rounded-xl bg-gray-100 dark:bg-[#27272A] hover:bg-gray-200 dark:hover:bg-[#3F3F46] transition-colors text-xl"
+                >
+                    <span *ngIf="!isDarkMode">🌙</span>
+                    <span *ngIf="isDarkMode">☀️</span>
+                </button>
             </div>
-        </ul>
-    </nav>
-</div>
+        </div>
+    </div>
+</header>

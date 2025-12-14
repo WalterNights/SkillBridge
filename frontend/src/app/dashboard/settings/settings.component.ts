@@ -1,49 +1,47 @@
-import { Router } from '@angular/router';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
-import { environment } from '../../../environment/environment';
 import { StorageMethodComponent } from '../../shared/storage-method/storage-method';
+import { HeaderDashboardComponent } from '../header-dashboard/header-dashboard.component';
+import { SidebarComponent } from '../sidebar/sidebar.component';
 import { SidebarService } from '../services/sidebar.service';
 
 @Component({
-  selector: 'app-header-dashboard',
-  imports: [CommonModule],
+  selector: 'app-settings',
   standalone: true,
-  templateUrl: './header-dashboard.component.html',
-  styleUrls: ['./header-dashboard.component.scss']
+  imports: [CommonModule, FormsModule, HeaderDashboardComponent, SidebarComponent],
+  templateUrl: './settings.component.html',
+  styleUrls: ['./settings.component.scss']
 })
-export class HeaderDashboardComponent {
-  users: any;
-  isLoading = false;
+export class SettingsComponent {
   userName: string | null = null;
-  isLoggedIn: boolean = false;
-  isDarkMode = false;
-  isSidebarCollapsed = false;
+  userEmail: string | null = null;
   storage: 'session' | 'local' = 'session';
+  isDarkMode = false;
+  enableNotifications = true;
+  enableEmailAlerts = false;
+  language = 'es';
+  isSidebarCollapsed = false;
 
   constructor(
     private router: Router,
-    private http: HttpClient,
     private authService: AuthService,
     private storageMethod: StorageMethodComponent,
     private sidebarService: SidebarService,
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.storage = localStorage.getItem('storage') === 'true' ? 'local' : 'session';
     this.authService.isLoggedIn$.subscribe(status => {
-      this.isLoggedIn = status;
       this.userName = this.storageMethod.getStorageItem(this.storage, 'user_name');
-    })
+      this.userEmail = this.storageMethod.getStorageItem(this.storage, 'user_email');
+    });
 
-    // Load dark mode preference
+    // Load theme preference
     const saveTheme = localStorage.getItem('theme');
-    if (saveTheme === 'dark') {
-      this.isDarkMode = true;
-      document.documentElement.classList.add('dark');
-    }
+    this.isDarkMode = saveTheme === 'dark';
 
     // Subscribe to sidebar state changes
     this.sidebarService.isCollapsed$.subscribe(collapsed => {
@@ -63,18 +61,16 @@ export class HeaderDashboardComponent {
     }
   }
 
-  navigateTo(route: string): void {
-    this.router.navigate([route]);
+  saveSettings(): void {
+    // Aquí puedes agregar lógica para guardar las configuraciones en el backend
+    console.log('Settings saved:', {
+      enableNotifications: this.enableNotifications,
+      enableEmailAlerts: this.enableEmailAlerts,
+      language: this.language
+    });
   }
 
-  logout(): void {
-    this.isLoading = true;
-    this.authService.logout();
-    this.authService.updateProfileStatus();
-    setTimeout(() => {
-      this.isLoading = false;
-      this.router.navigate(['/']);
-    }, 1200);
+  goBack(): void {
+    this.router.navigate(['/dashboard']);
   }
-
 }

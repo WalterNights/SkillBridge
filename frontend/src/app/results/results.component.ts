@@ -47,7 +47,7 @@ export class ResultsComponent {
    * Loads job offers from the API
    */
   private loadOffers(): void {
-    this.http.get<JobOffer[]>(`${environment.apiUrl}/jobs/jobs-offer/`).subscribe({
+    this.http.get<JobOffer[]>(`${environment.apiUrl}/jobs/jobs/`).subscribe({
       next: (data) => {
         this.offers = Array.isArray(data) ? data : [];
       },
@@ -66,13 +66,13 @@ export class ResultsComponent {
       case 'good':
         return this.offers.filter(offer => offer.match_percentage === this.MATCH_THRESHOLD.EXCELLENT);
       case 'regular':
-        return this.offers.filter(offer => 
-          offer.match_percentage >= this.MATCH_THRESHOLD.GOOD_MIN && 
+        return this.offers.filter(offer =>
+          offer.match_percentage >= this.MATCH_THRESHOLD.GOOD_MIN &&
           offer.match_percentage <= this.MATCH_THRESHOLD.GOOD_MAX
         );
       case 'bad':
-        return this.offers.filter(offer => 
-          offer.match_percentage >= this.MATCH_THRESHOLD.REGULAR_MIN && 
+        return this.offers.filter(offer =>
+          offer.match_percentage >= this.MATCH_THRESHOLD.REGULAR_MIN &&
           offer.match_percentage <= this.MATCH_THRESHOLD.REGULAR_MAX
         );
       default:
@@ -149,6 +149,15 @@ export class ResultsComponent {
       },
       error: (err: HttpErrorResponse) => {
         console.error('Error fetching job offers:', err);
+        if (err.status === 400 && err.error?.error) {
+          alert(err.error.error);
+        } else if (err.status === 400) {
+          alert('Por favor completa tu perfil con tu título profesional y ciudad antes de buscar ofertas.');
+        } else if (err.status === 404) {
+          alert('No se encontró tu perfil. Por favor crea uno primero.');
+        } else {
+          alert('Error al obtener ofertas. Por favor intenta de nuevo.');
+        }
       }
     });
   }

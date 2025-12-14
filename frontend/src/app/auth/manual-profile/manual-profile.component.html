@@ -96,7 +96,7 @@
                 <input
                     type="text"
                     formControlName="first_name"
-                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="Escribe tu nombre"
                 />
             </div>
@@ -107,7 +107,7 @@
                 <input
                     type="text"
                     formControlName="last_name"
-                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="Escribe tu apellido"
                 />
             </div>
@@ -118,7 +118,7 @@
                 <input
                     type="number"
                     formControlName="number_id"
-                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                     [class.border-red-500]="profileForm.get('number_id')?.invalid && profileForm.get('number_id')?.touched"
                     placeholder="Escribe tu documento de identidad"
                 />
@@ -132,7 +132,7 @@
                         formControlName="country"
                         (change)="onCountryChange(countryForm.value)"
                         #countryForm
-                        class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500"
                     >
                         <option value="">Seleccione un país</option>
                         <option *ngFor="let country of countries" [value]="country.isoCode">
@@ -146,7 +146,7 @@
                     </label>
                     <select
                         formControlName="city"
-                        class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500"
                     >
                         <option value="">Seleccione una ciudad</option>
                         <option *ngFor="let city of cities" [value]="city.name">
@@ -162,7 +162,7 @@
                     </label>
                     <select
                         formControlName="phone_code"
-                        class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500"
                     >
                         <option value="">Seleccione el código de país</option>
                         <option *ngFor="let country of countryCodes" [value]="country.code">
@@ -177,7 +177,7 @@
                     <input
                         type="text"
                         formControlName="phone_number"
-                        class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                         placeholder="Escribe tu número de teléfono"
                     />
                 </div>
@@ -189,7 +189,7 @@
                 <input
                     type="text"
                     formControlName="professional_title"
-                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="Escribe tu título profesional o cargo"
                 />
             </div>
@@ -200,7 +200,7 @@
                 <textarea
                     formControlName="summary"
                     rows="2"
-                    class="w-full h-20 mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full h-20 mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 ></textarea>
             </div>
 
@@ -211,7 +211,7 @@
                 <textarea
                     formControlName="skills"
                     rows="2"
-                    class="w-full h-20 mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full h-20 mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 ></textarea>
             </div>
             <div>
@@ -221,7 +221,7 @@
                 <input
                     type="url"
                     formControlName="linkedin_url"
-                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="Escribe tu enlace de LinkedIn"
                 />
             </div>
@@ -232,7 +232,7 @@
                 <input
                     type="url"
                     formControlName="portfolio_url"
-                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="Escribe el enlace de tu portafolio"
                 />
             </div>
@@ -245,7 +245,7 @@
                         <input
                             formControlName="institution"
                             type="text"
-                            class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                             placeholder="Escribe el nombre de la empresa"
                         >
                     </div>
@@ -254,7 +254,7 @@
                         <input
                             formControlName="title"
                             type="text"
-                            class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                             placeholder="Escribe el cargo que ocupaste"
                         >
                     </div>
@@ -268,7 +268,7 @@
                                     formControlName="location_country"
                                     (change)="onCountryChange(countryForm.value)"
                                     #countryForm
-                                    class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500"
                                 >
                                     <option value="">Seleccione un país</option>
                                     <option *ngFor="let country of countries" [value]="country.isoCode">
@@ -280,7 +280,7 @@
                                 <label class="block text-sm font-medium text-grey-700">* Ciudad:</label>
                                 <select
                                     formControlName="location_city"
-                                    class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500"
                                 >
                                     <option value="">Seleccione una ciudad</option>
                                     <option *ngFor="let city of cities" [value]="city.name">
@@ -293,7 +293,7 @@
                                 <input
                                     formControlName="start_date"
                                     type="date"
-                                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 >
                             </div>
                             <div class="w-full lg:w-1/4">
@@ -301,7 +301,7 @@
                                 <input
                                     formControlName="end_date"
                                     type="date"
-                                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 >
                             </div>
                         </div>
@@ -318,7 +318,7 @@
             <button
                 type="button"
                 (click)="addEducation()"
-                class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition"
+                class="w-full py-2 px-4 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition"
             >
                 Añadir Educación
             </button>
@@ -331,7 +331,7 @@
                         <input
                             formControlName="company"
                             type="text"
-                            class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                             placeholder="Escribe el nombre de la empresa"
                         >
                     </div>
@@ -340,7 +340,7 @@
                         <input
                             formControlName="position"
                             type="text"
-                            class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                             placeholder="Escribe el cargo que ocupaste"
                         >
                     </div>
@@ -353,7 +353,7 @@
                                     formControlName="location_country"
                                     (change)="onCountryChange(countryForm.value)"
                                     #countryForm
-                                    class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500"
                                 >
                                     <option value="">Seleccione un país</option>
                                     <option *ngFor="let country of countries" [value]="country.isoCode">
@@ -365,7 +365,7 @@
                                 <label class="block text-sm font-medium text-grey-700">* Ciudad:</label>
                                 <select
                                     formControlName="location_city"
-                                    class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500"
                                 >
                                     <option value="">Seleccione una ciudad</option>
                                     <option *ngFor="let city of cities" [value]="city.name">
@@ -378,7 +378,7 @@
                                 <input
                                     formControlName="start_date"
                                     type="date"
-                                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 >
                             </div>
                             <div class="w-full lg:w-1/4">
@@ -386,7 +386,7 @@
                                 <input
                                     formControlName="end_date"
                                     type="date"
-                                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 >
                             </div>
                         </div>
@@ -396,7 +396,7 @@
                         <textarea
                             formControlName="description"
                             rows="2"
-                            class="w-full h-20 mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            class="w-full h-20 mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                         ></textarea>
                     </div>
                     <button
@@ -411,7 +411,7 @@
             <button
                 type="button"
                 (click)="addExperience()"
-                class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition"
+                class="w-full py-2 px-4 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition"
             >
                 Añadir Experiencia
             </button>
@@ -420,7 +420,7 @@
                 <button
                     type="submit"
                     [disabled]="profileForm.invalid || isLoading"
-                    class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    class="w-full py-2 px-4 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                     Guardar Perfil
                 </button>

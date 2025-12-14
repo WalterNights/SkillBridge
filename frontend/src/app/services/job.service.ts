@@ -20,7 +20,7 @@ export class JobService {
      * @returns Observable of job offers array
      */
     getScrapedOffers(): Observable<JobOffer[]> {
-        return this.http.get<JobOffer[]>(`${environment.apiUrl}/jobs/scrap-jobs/`);
+        return this.http.get<JobOffer[]>(`${environment.apiUrl}/jobs/jobs/scrape/`);
     }
 
     /**

@@ -1,0 +1,92 @@
+// Sidebar Component Styles
+
+:host {
+  display: block;
+}
+
+// Smooth transitions
+* {
+  transition: background-color 0.2s ease-in-out,
+              border-color 0.2s ease-in-out,
+              color 0.2s ease-in-out,
+              transform 0.2s ease-in-out;
+}
+
+// Custom scrollbar for navigation
+nav {
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  }
+}
+
+// Active link indicator
+a.active {
+  background: linear-gradient(to right, rgba(249, 115, 22, 0.1), transparent);
+  border-left: 3px solid theme('colors.orange.500');
+  color: theme('colors.white');
+
+  svg {
+    color: theme('colors.orange.500');
+  }
+}
+
+// Logo pulse animation
+.logo-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+// Navigation item hover effect
+a {
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background: linear-gradient(to bottom, theme('colors.orange.500'), theme('colors.orange.600'));
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+  }
+
+  &:hover::before {
+    transform: scaleY(1);
+  }
+}
+
+// Section header styling
+h3 {
+  letter-spacing: 0.05em;
+}
+
+// Footer toggle button animation
+button {
+  &:hover svg {
+    transform: translateX(-2px);
+  }
+}

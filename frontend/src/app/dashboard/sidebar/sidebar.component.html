@@ -1,118 +1,161 @@
-<div class="flex fixed">
+<div
+    class="fixed left-0 top-0 h-full bg-white dark:bg-[#18181B] border-r border-gray-200 dark:border-[#27272A] z-40 shadow-sm transition-all duration-300"
+    [ngClass]="isCollapsed ? 'w-20' : 'w-64'"
+>
     <!-- Sidebar -->
-    <ul class="w-56 min-h-screen text-white text-sm bg-darkBg p-4">
-        <div class="py-5">
-            <img src="" style="width: 50px;" alt="">
-            <span>SkilTak Dashboard</span>
-        </div>
-        <hr class="border-t border-[#ffffff26]">
-        <li class="py-3">
-            <a class="nav-link" href="">
-                <i class="fas fa-user"></i>
-                <span class="ml-2">Lista de Usuarios</span></a>
-        </li>
-        <li class="py-3">
-            <a class="nav-link" href="">
-                <i class="fas fa-fw fa-tachometer-alt"></i>
-                <span class="ml-2">Gráficas</span></a>
-        </li>
-        <hr class="border-t border-[#ffffff26]">
-        <div class="py-3">
-            Usuarios
-        </div>
-        <!-- Nav Item - Pages Collapse Menu -->
-        <!-- <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
-            aria-expanded="true" aria-controls="collapseTwo">
-            <i class="fas fa-fw fa-cog"></i>
-            <span>Components</span>
-        </a>
-        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Custom Components:</h6>
-                <a class="collapse-item" href="buttons.html">Buttons</a>
-                <a class="collapse-item" href="cards.html">Cards</a>
-            </div>
-        </div>
-        </li> -->
-        <!-- Nav Item - Utilities Collapse Menu -->
-        <!-- <li class="nav-item">
-            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
-                aria-expanded="true" aria-controls="collapseUtilities">
-                <i class="fas fa-fw fa-wrench"></i>
-                <span>Utilities</span>
-            </a>
-            <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities"
-                data-parent="#accordionSidebar">
-                <div class="bg-white py-2 collapse-inner rounded">
-                    <h6 class="collapse-header">Custom Utilities:</h6>
-                    <a class="collapse-item" href="utilities-color.html">Colors</a>
-                    <a class="collapse-item" href="utilities-border.html">Borders</a>
-                    <a class="collapse-item" href="utilities-animation.html">Animations</a>
-                    <a class="collapse-item" href="utilities-other.html">Other</a>
+    <div class="flex flex-col h-full">
+        <!-- Logo -->
+        <div class="p-6 border-b border-gray-200 dark:border-[#27272A]">
+            <div class="flex items-center gap-3" [ngClass]="{'justify-center': isCollapsed}">
+                <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span class="text-white font-bold text-xl">ST</span>
                 </div>
-            </div>
-        </li> -->
-        <!-- Nav Item - User Create -->
-        <li class="py-3">
-            <a class="nav-link collapsed" data-toggle="collapse" data-target="#collapseUserCreate"
-                aria-expanded="true" aria-controls="collapseUserCreate">
-                <i class="fas fa-address-book"></i>
-                <span class="ml-2">Crear Usuarios</span>
-            </a>
-            <div id="collapseUserCreate" class="collapse" aria-labelledby="headingUserCreate"
-                data-parent="#accordionSidebar">
-                <div class="bg-white py-2 collapse-inner rounded">
-                    <h6 class="collapse-header">Opciones de creación:</h6>
-                    <a class="collapse-item" href="">Creación Simple</a>
-                    <a class="collapse-item" href="">Creación Masiva</a>
-                </div>
-            </div>
-        </li>
-        <!-- Divider -->
-        <!-- <hr class="sidebar-divider"> -->
-        <!-- Heading -->
-        <!-- <div class="sidebar-heading">
-        Addons
-        </div> -->
-        <!-- Nav Item - Pages Collapse Menu -->
-        <!-- <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages"
-            aria-expanded="true" aria-controls="collapsePages">
-            <i class="fas fa-fw fa-folder"></i>
-            <span>Pages</span>
-        </a>
-        <div id="collapsePages" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Login Screens:</h6>
-                <a class="collapse-item" href="login.html">Login</a>
-                <a class="collapse-item" href="register.html">Register</a>
-                <a class="collapse-item" href="forgot-password.html">Forgot Password</a>
-                <div class="collapse-divider"></div>
-                <h6 class="collapse-header">Other Pages:</h6>
-                <a class="collapse-item" href="404.html">404 Page</a>
-                <a class="collapse-item" href="blank.html">Blank Page</a>
+                <span
+                    class="text-gray-900 dark:text-white font-bold text-lg transition-opacity duration-300"
+                    [ngClass]="{'opacity-0 hidden': isCollapsed}"
+                >
+                    SkilTak Dashboard
+                </span>
             </div>
         </div>
-        </li> -->
-        <!-- Nav Item - Charts -->
-        <!-- <li class="nav-item">
-            <a class="nav-link" href="charts.html">
-                <i class="fas fa-fw fa-chart-area"></i>
-                <span>Charts</span></a>
-        </li> -->
-        <!-- Nav Item - Tables -->
-        <!-- <li class="nav-item active">
-            <a class="nav-link" href="tables.html">
-                <i class="fas fa-fw fa-table"></i>
-                <span>Tables</span></a>
-        </li> -->
-        <!-- Divider -->
-        <hr class="border-t border-[#ffffff26]">
-        <!-- Sidebar Toggler (Sidebar) -->
-        <div class="text-center d-none d-md-inline">
-            <button class="rounded-circle border-0" id="sidebarToggle"></button>
+
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto p-4">
+            <!-- Mi Perfil -->
+            <div class="space-y-1 mb-6">
+                <h3
+                    class="px-4 mb-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider transition-opacity duration-300"
+                    [ngClass]="{'opacity-0 hidden': isCollapsed}"
+                >
+                    Mi Cuenta
+                </h3>
+
+                <button
+                    (click)="navigateTo('/profile')"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#27272A] hover:text-gray-900 dark:hover:text-white rounded-xl transition-all group"
+                    [ngClass]="{'justify-center': isCollapsed}"
+                >
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-orange-500 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    <span
+                        class="font-medium transition-opacity duration-300"
+                        [ngClass]="{'opacity-0 hidden': isCollapsed}"
+                    >
+                        Mi Perfil
+                    </span>
+                </button>
+
+                <button
+                    (click)="navigateTo('/dashboard/settings')"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#27272A] hover:text-gray-900 dark:hover:text-white rounded-xl transition-all group"
+                    [ngClass]="{'justify-center': isCollapsed}"
+                >
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-orange-500 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <span
+                        class="font-medium transition-opacity duration-300"
+                        [ngClass]="{'opacity-0 hidden': isCollapsed}"
+                    >
+                        Configuración
+                    </span>
+                </button>
+            </div>
+
+            <!-- Gestión -->
+            <div class="space-y-1">
+                <h3
+                    class="px-4 mb-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider transition-opacity duration-300"
+                    [ngClass]="{'opacity-0 hidden': isCollapsed}"
+                >
+                    Gestión
+                </h3>
+
+                <button
+                    (click)="navigateTo('/dashboard')"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#27272A] hover:text-gray-900 dark:hover:text-white rounded-xl transition-all group"
+                    [ngClass]="{'justify-center': isCollapsed}"
+                >
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-orange-500 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    <span
+                        class="font-medium transition-opacity duration-300"
+                        [ngClass]="{'opacity-0 hidden': isCollapsed}"
+                    >
+                        Lista de Usuarios
+                    </span>
+                </button>
+
+                <button
+                    (click)="navigateTo('/dashboard/stats')"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#27272A] hover:text-gray-900 dark:hover:text-white rounded-xl transition-all group"
+                    [ngClass]="{'justify-center': isCollapsed}"
+                >
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-orange-500 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    <span
+                        class="font-medium transition-opacity duration-300"
+                        [ngClass]="{'opacity-0 hidden': isCollapsed}"
+                    >
+                        Estadísticas
+                    </span>
+                </button>
+            </div>
+
+            <div class="mt-6 pt-6 border-t border-gray-200 dark:border-[#27272A]">
+                <h3
+                    class="px-4 mb-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider transition-opacity duration-300"
+                    [ngClass]="{'opacity-0 hidden': isCollapsed}"
+                >
+                    Acciones
+                </h3>
+
+                <button
+                    (click)="navigateTo('/dashboard/create-user')"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#27272A] hover:text-gray-900 dark:hover:text-white rounded-xl transition-all group"
+                    [ngClass]="{'justify-center': isCollapsed}"
+                >
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-orange-500 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                    </svg>
+                    <span
+                        class="font-medium transition-opacity duration-300"
+                        [ngClass]="{'opacity-0 hidden': isCollapsed}"
+                    >
+                        Crear Usuario
+                    </span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Footer -->
+        <div class="p-4 border-t border-gray-200 dark:border-[#27272A]">
+            <button
+                (click)="toggleSidebar()"
+                class="w-full flex items-center gap-2 px-4 py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#27272A] rounded-xl transition-all"
+                [ngClass]="{'justify-center': isCollapsed}"
+            >
+                <svg
+                    class="w-5 h-5 transition-transform duration-300 flex-shrink-0"
+                    [ngClass]="{'rotate-180': isCollapsed}"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+                </svg>
+                <span
+                    class="text-sm font-medium transition-opacity duration-300"
+                    [ngClass]="{'opacity-0 hidden': isCollapsed}"
+                >
+                    Contraer
+                </span>
+            </button>
         </div>
-    </ul>
+    </div>
     <!-- End of Sidebar -->
 </div>

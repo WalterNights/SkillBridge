@@ -69,12 +69,17 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        query = profile.title
+        query = profile.professional_title
         location = profile.city
         
         if not query or not location:
+            missing_fields = []
+            if not query:
+                missing_fields.append("título profesional")
+            if not location:
+                missing_fields.append("ciudad")
             return Response(
-                {"error": "Profile must have title and city configured."},
+                {"error": f"Por favor completa tu perfil con: {', '.join(missing_fields)}"},
                 status=status.HTTP_400_BAD_REQUEST
             )
         

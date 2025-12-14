@@ -4,13 +4,16 @@ import { CommonModule } from '@angular/common';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../environment/environment';
 import { User } from '../models/user.model';
+import { HeaderDashboardComponent } from './header-dashboard/header-dashboard.component';
+import { SidebarComponent } from './sidebar/sidebar.component';
+import { SidebarService } from './services/sidebar.service';
 
 /**
  * Dashboard component for user management
  */
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule],
+  imports: [CommonModule, HeaderDashboardComponent, SidebarComponent],
   standalone: true,
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
@@ -19,10 +22,12 @@ export class DashboardComponent {
   users: User[] = [];
   isLoading = false;
   errorMessage = '';
+  isSidebarCollapsed = false;
 
   constructor(
     private router: Router,
     private http: HttpClient,
+    private sidebarService: SidebarService,
   ){}
 
   /**
@@ -30,6 +35,11 @@ export class DashboardComponent {
    */
   ngOnInit(): void {
     this.loadUsers();
+
+    // Subscribe to sidebar state changes
+    this.sidebarService.isCollapsed$.subscribe(collapsed => {
+      this.isSidebarCollapsed = collapsed;
+    });
   }
 
   /**

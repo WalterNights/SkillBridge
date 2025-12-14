@@ -9,6 +9,12 @@ export const routes: Routes = [
   { path: 'results', loadComponent: () => import('./results/results.component').then(m => m.ResultsComponent) },
   { path: 'ats-cv', loadComponent: () => import('./ats-cv/ats-cv.component').then(m => m.AtsCvComponent) },
   { path: 'jobs/:id', loadComponent: () => import('./job-detail/job-detail.component').then(m => m.JobDetailComponent) },
-  { path: 'dashboard', loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent) },
+  {
+    path: 'dashboard',
+    children: [
+      { path: '', loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent) },
+      { path: 'settings', loadComponent: () => import('./dashboard/settings/settings.component').then(m => m.SettingsComponent) },
+    ]
+  },
   { path: '**', redirectTo: 'auth/register' }
 ];
