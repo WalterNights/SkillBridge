@@ -39,6 +39,7 @@ export class ProfileBuilderComponent {
     return this.fb.group({
       first_name: ['', Validators.required],
       last_name: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
       number_id: ['', Validators.required],
       phone_code: ['', Validators.required],
       phone_number: ['', Validators.required],
@@ -96,7 +97,7 @@ export class ProfileBuilderComponent {
         const matchedCountry = country_find.find(c => c.phonecode === phoneCode);
         const country_code = matchedCountry?.isoCode || '';
         let linkedin = data.linkedin_url?.trim() || '';
-        
+
         // Ensure LinkedIn URL has proper protocol prefix
         if (linkedin && !linkedin.startsWith('http')) {
           if (!linkedin.startsWith('www.')) {
@@ -105,7 +106,7 @@ export class ProfileBuilderComponent {
             linkedin = 'https://' + linkedin;
           }
         }
-        
+
         const parsedData: ResumeAnalysisData = {
           ...data,
           country: country_code,
@@ -137,41 +138,56 @@ export class ProfileBuilderComponent {
     shouldRedirect: boolean = true
   ): void {
     if (profileForm.invalid) return;
-    
+
     const formData = new FormData();
     const rawData = profileForm.value as ProfileFormData;
-    
+
     // Ensure LinkedIn URL has proper protocol prefix
     if (rawData.linkedin_url && !rawData.linkedin_url.startsWith('http')) {
       rawData.linkedin_url = `https://www.${rawData.linkedin_url}`;
     }
-    
+
     // Convert country code to country name
     if (rawData.country) {
       const findCountry = this.countries.find(c => c.isoCode === rawData.country);
       rawData.country = findCountry?.name ?? rawData.country;
     }
-    
+
+    // Only add user email from session if not provided in the form
+    if (!rawData.email || rawData.email.trim() === '') {
+      const userEmail = sessionStorage.getItem('user_email');
+      if (userEmail) {
+        rawData.email = userEmail;
+      }
+    }
+
     // Process education and experience arrays
     if (Array.isArray(rawData.education) && Array.isArray(rawData.experience)) {
+      // Convert education array to formatted strings for backend
       if (rawData.education.length > 0) {
-        const education = rawData.education.map((edu: EducationEntry) => {
+        const educationText = rawData.education.map((edu: EducationEntry) => {
           const findCountry = this.countries.find(c => c.isoCode === edu.location_country);
-          edu.location_country = findCountry?.name ?? edu.location_country;
-          return `${edu.title} en ${edu.institution} - (${edu.location_city}, ${edu.location_country}) - ${edu.start_date} a ${edu.end_date}`;
+          const countryName = findCountry?.name ?? edu.location_country;
+          // Update the location_country in the original object for localStorage
+          edu.location_country = countryName;
+          return `${edu.title} en ${edu.institution} - (${edu.location_city}, ${countryName}) - ${edu.start_date} a ${edu.end_date}`;
         }).join('\n\n');
-        formData.append('education', education);
+        formData.append('education', educationText);
       }
-      
+
+      // Convert experience array to formatted strings for backend
       if (rawData.experience.length > 0) {
-        const experiences = rawData.experience.map((exp: ExperienceEntry) => {
+        const experiencesText = rawData.experience.map((exp: ExperienceEntry) => {
           const findCountry = this.countries.find(c => c.isoCode === exp.location_country);
-          exp.location_country = findCountry?.name ?? exp.location_country;
-          return `${exp.position} en ${exp.company} - (${exp.location_city}, ${exp.location_country}) - ${exp.start_date} a ${exp.end_date}:\n ${exp.description}`;
+          const countryName = findCountry?.name ?? exp.location_country;
+          // Update the location_country in the original object for localStorage
+          exp.location_country = countryName;
+          return `${exp.position} en ${exp.company} - (${exp.location_city}, ${countryName}) - ${exp.start_date} a ${exp.end_date}:\n ${exp.description}`;
         }).join('\n\n');
-        formData.append('experience', experiences);
+        formData.append('experience', experiencesText);
       }
-      
+
+      // Save to localStorage with arrays intact and email included
       localStorage.setItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT, JSON.stringify(rawData));
     } else {
       // Handle string format for education and experience
@@ -181,8 +197,11 @@ export class ProfileBuilderComponent {
       if (typeof rawData.experience === 'string' && rawData.experience.trim() !== '') {
         formData.append('experience', rawData.experience);
       }
+
+      // Save to localStorage even for string format with email included
+      localStorage.setItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT, JSON.stringify(rawData));
     }
-    
+
     // Append all other form fields
     Object.entries(rawData).forEach(([key, value]) => {
       if (['education', 'experience'].includes(key)) return;
@@ -192,39 +211,43 @@ export class ProfileBuilderComponent {
         formData.append(key, String(value));
       }
     });
-    
+
     // Append resume file if provided
     selectedFile = rawData.resume ?? null;
     if (selectedFile instanceof File) {
       formData.append('resume', selectedFile);
     }
-    
+
     const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
-    
+
     onStart?.();
-    
-    this.http.post<{ first_name: string }>(`${environment.apiUrl}/users/profile/`, formData, { headers }).subscribe({
+
+    this.http.post<{ first_name: string }>(`${environment.apiUrl}/users/profiles/`, formData, { headers }).subscribe({
       next: (res) => {
         onSuccess?.();
         if (res) {
           sessionStorage.setItem(STORAGE_KEYS.PROFILE_COMPLETE, 'true');
           sessionStorage.setItem(STORAGE_KEYS.USER_NAME, res.first_name);
         }
-        
+
+        // Intentar obtener ofertas de trabajo, pero navegar independientemente del resultado
         this.jobService.getScrapedOffers().subscribe({
           next: (jobRes: JobOffer[]) => {
             this.jobService.setOffers(jobRes);
-            if (shouldRedirect) {
-              this.router.navigate(['/results']);
-            } else {
-              this.router.navigate(['/ats-cv']);
-            }
           },
           error: (err: HttpErrorResponse) => {
-            console.error('Error fetching job offers:', err);
+            console.warn('Error fetching job offers, continuing anyway:', err);
+            // Limpiar ofertas si hay error
+            this.jobService.setOffers([]);
           }
         });
+
+        // Navegar después de guardar el perfil solo si shouldRedirect es true
+        // Si shouldRedirect es false, el componente que llama manejará la navegación
+        if (shouldRedirect) {
+          this.router.navigate(['/results']);
+        }
       },
       error: (err: HttpErrorResponse) => {
         console.error('Error saving profile:', err);

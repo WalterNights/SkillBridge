@@ -266,16 +266,14 @@ body.dark .skeleton {
 
 /* Grid Pattern Background */
 .bg-grid-pattern {
-    background-image: 
+    background-image:
         linear-gradient(to right, #E5E7EB 1px, transparent 1px),
         linear-gradient(to bottom, #E5E7EB 1px, transparent 1px);
     background-size: 50px 50px;
 }
 
 body.dark .bg-grid-pattern {
-    background-image: 
-        linear-gradient(to right, #27272A 1px, transparent 1px),
-        linear-gradient(to bottom, #27272A 1px, transparent 1px);
+    background-image: none;
 }
 
 /* Button Reset */
@@ -323,7 +321,7 @@ img {
         background: white;
         color: black;
     }
-    
+
     .no-print {
         display: none;
     }

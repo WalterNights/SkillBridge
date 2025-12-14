@@ -24,6 +24,7 @@ export class ProfileComponent implements OnInit {
   isLoading = false;
   showLoader = false;
   successMessage = "";
+  profileSaved = false;
   countryCodes: any[] = [];
   countries = Country.getAllCountries();
   cities: any[] = [];
@@ -32,7 +33,8 @@ export class ProfileComponent implements OnInit {
     private http: HttpClient,
     private profileBuldier: ProfileBuilderComponent,
     private titleService: Title,
-    private location: Location
+    private location: Location,
+    private router: Router
   ) {
     this.titleService.setTitle('SkilTak - Home');
   }
@@ -94,19 +96,24 @@ export class ProfileComponent implements OnInit {
     this.profileBuldier.submitProfileData(
       this.profileForm,
       this.selectedFile,
-      () => { this.isLoading = true },
+      () => {
+        this.isLoading = true;
+        this.profileSaved = false;
+      },
       () => {
         setTimeout(() => {
           this.isLoading = false;
-          this.showLoader = true;
+          this.profileSaved = true;
+          this.successMessage = '¡Perfil guardado exitosamente!';
           console.log("✅ Perfil guardado correctamente");
         }, 1500);
       },
       (err) => {
         this.isLoading = false;
         this.errorMessage = 'Error al completar perfil';
+        this.profileSaved = false;
       },
-      true
+      false // shouldRedirect: false para ir a /ats-cv
     );
   }
 
@@ -115,5 +122,12 @@ export class ProfileComponent implements OnInit {
    */
   goBack(): void {
     this.location.back();
+  }
+
+  /**
+   * Navigate to ATS CV page
+   */
+  goToAtsCv(): void {
+    this.router.navigate(['/ats-cv']);
   }
 }

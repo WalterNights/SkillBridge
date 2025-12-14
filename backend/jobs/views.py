@@ -73,14 +73,18 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
         location = profile.city
         
         if not query or not location:
+            # En lugar de retornar error, retornar lista vacía con mensaje informativo
             missing_fields = []
             if not query:
                 missing_fields.append("título profesional")
             if not location:
                 missing_fields.append("ciudad")
             return Response(
-                {"error": f"Por favor completa tu perfil con: {', '.join(missing_fields)}"},
-                status=status.HTTP_400_BAD_REQUEST
+                {
+                    "message": f"Completa tu perfil con {', '.join(missing_fields)} para obtener ofertas personalizadas",
+                    "jobs": []
+                },
+                status=status.HTTP_200_OK
             )
         
         try:
