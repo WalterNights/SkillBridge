@@ -7,6 +7,7 @@ import json
 from typing import Dict, Optional
 import google.generativeai as genai
 from django.conf import settings
+from decouple import config
 
 logger = logging.getLogger(__name__)
 
@@ -16,12 +17,13 @@ class GeminiCVService:
     
     def __init__(self):
         """Inicializa el servicio con la API key de Gemini"""
-        api_key = os.getenv('GEMINI_API_KEY')
+        api_key = config('GEMINI_API_KEY', default=None)
         if not api_key:
             raise ValueError("GEMINI_API_KEY no encontrada en las variables de entorno")
         
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        # Usar gemini-2.5-flash - modelo más reciente y estable
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
     
     def extract_text_from_file(self, cv_file) -> str:
         """

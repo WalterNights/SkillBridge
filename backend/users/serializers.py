@@ -1,9 +1,11 @@
 from rest_framework import serializers
 
-from users.models import User, UserProfile
+from users.models import User, UserProfile, PasswordResetToken
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    rol = serializers.CharField(required=False, default='user')
+    
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'password', 'rol']
@@ -71,3 +73,49 @@ class UserProfileSerializer(serializers.ModelSerializer):
                 rep["phone_code"] = parts[0]
                 rep["phone_number"] = " ".join(parts[1:])
         return rep
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Serializer para solicitar restablecimiento de contraseña"""
+    email = serializers.EmailField()
+    
+    def validate_email(self, value):
+        """Verifica que el email exista en el sistema"""
+        if not User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("No existe un usuario con este correo electrónico")
+        return value
+
+
+class PasswordResetVerifySerializer(serializers.Serializer):
+    """Serializer para verificar código y establecer nueva contraseña"""
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6, min_length=6)
+    new_password = serializers.CharField(
+        write_only=True,
+        min_length=8,
+        style={'input_type': 'password'}
+    )
+    
+    def validate(self, data):
+        """Valida que el usuario y el código sean correctos"""
+        try:
+            user = User.objects.get(email=data['email'])
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Usuario no encontrado")
+        
+        # Buscar el token más reciente no usado
+        token = PasswordResetToken.objects.filter(
+            user=user,
+            code=data['code'],
+            is_used=False
+        ).order_by('-created_at').first()
+        
+        if not token:
+            raise serializers.ValidationError("Código inválido o ya utilizado")
+        
+        if not token.is_valid():
+            raise serializers.ValidationError("El código ha expirado. Solicita uno nuevo")
+        
+        data['user'] = user
+        data['token'] = token
+        return data

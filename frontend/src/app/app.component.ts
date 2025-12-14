@@ -38,6 +38,6 @@ export class AppComponent implements AfterViewInit, OnInit {
     this.authService.syncAuthStatus();
   }
   ngAfterViewInit(): void {
-    initMaterialTailwind();
+    // initMaterialTailwind(); // Comentado: causa errores con dropdowns que no existen
   }
 }

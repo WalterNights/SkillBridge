@@ -20,11 +20,11 @@ export class AuthService {
   private isProfileCompleteSubject = new BehaviorSubject<boolean>(this.getProfileStatus());
   isProfileComplete$ = this.isProfileCompleteSubject.asObservable();
   StorageKey = [
-    'access_token', 
-    'refresh_token', 
-    'storage', 'user', 
-    'user_id', 'user_name', 
-    'is_profile_complete', 
+    'access_token',
+    'refresh_token',
+    'storage', 'user',
+    'user_id', 'user_name',
+    'is_profile_complete',
     'manual_profile_draft'
   ];
   storage: 'session' | 'local' = 'session';
@@ -100,5 +100,13 @@ export class AuthService {
         this.isLoggedInSubject.next(true);
       })
     )
+  }
+
+  requestPasswordReset(email: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/users/password-reset/request/`, { email });
+  }
+
+  verifyPasswordReset(data: { email: string, code: string, new_password: string }): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/users/password-reset/verify/`, data);
   }
 }

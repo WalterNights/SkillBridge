@@ -38,7 +38,7 @@ export class ProfileComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.http.get<any[]>('/data/country-code.json').subscribe(data => {
+    this.http.get<any[]>('assets/data/country-code.json').subscribe(data => {
       this.countryCodes = data;
     });
     this.profileForm = this.profileBuldier.buildProfileForm();

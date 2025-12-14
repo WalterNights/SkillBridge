@@ -4,22 +4,17 @@
   <div class="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-dark-bg-primary dark:via-dark-bg-secondary dark:to-dark-bg-primary">
     <!-- Grid Pattern -->
     <div class="absolute inset-0 bg-grid-pattern opacity-20"></div>
-    
+
     <!-- Animated Gradient Orbs -->
     <div class="absolute top-20 left-20 w-96 h-96 bg-primary-500/20 dark:bg-primary-500/10 rounded-full blur-3xl animate-pulse"></div>
     <div class="absolute bottom-20 right-20 w-96 h-96 bg-secondary-500/20 dark:bg-secondary-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
     <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent-500/10 dark:bg-accent-500/5 rounded-full blur-3xl animate-pulse" style="animation-delay: 0.5s;"></div>
   </div>
-  
+
   <!-- Content -->
   <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
     <div class="text-center space-y-8 animate-fade-in">
-      <!-- Badge -->
-      <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-dark-bg-tertiary/80 backdrop-blur-sm rounded-full border border-gray-200 dark:border-dark-border shadow-sm">
-        <span class="h-2 w-2 bg-accent-500 rounded-full animate-pulse"></span>
-        <span class="text-sm font-medium text-gray-700 dark:text-dark-text-primary">Potenciado con IA avanzada</span>
-      </div>
-      
+
       <!-- Main Headline -->
       <h1 class="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white leading-tight">
         Impulsa tu carrera con
@@ -27,13 +22,13 @@
           tecnología de IA
         </span>
       </h1>
-      
+
       <!-- Subheadline -->
       <p class="text-xl md:text-2xl text-gray-600 dark:text-dark-text-secondary max-w-3xl mx-auto">
-        Analiza tu CV con inteligencia artificial y encuentra las oportunidades perfectas 
+        Analiza tu CV con inteligencia artificial y encuentra las oportunidades perfectas
         que coinciden con tus habilidades y experiencia
       </p>
-      
+
       <!-- CTA Buttons -->
       <div class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
         <button
@@ -46,7 +41,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
           </svg>
         </button>
-        
+
         <button
           *ngIf="!profileComplete"
           (click)="goToProfile()"
@@ -54,7 +49,7 @@
         >
           Subir mi CV
         </button>
-        
+
         <button
           *ngIf="profileComplete"
           (click)="goToResults()"
@@ -66,7 +61,7 @@
           </svg>
         </button>
       </div>
-      
+
       <!-- Social Proof -->
       <div class="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8">
         <div class="flex -space-x-2">
@@ -87,7 +82,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- Scroll Indicator -->
   <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
     <svg class="w-6 h-6 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,7 +102,7 @@
         Herramientas potenciadas con IA para llevar tu búsqueda de empleo al siguiente nivel
       </p>
     </div>
-    
+
     <div class="grid md:grid-cols-3 gap-8">
       <!-- Feature 1 -->
       <div class="group p-8 bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border hover:border-primary-500 dark:hover:border-primary-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
@@ -121,7 +116,7 @@
           Genera un currículum optimizado para sistemas ATS con análisis automático de palabras clave y formato profesional
         </p>
       </div>
-      
+
       <!-- Feature 2 -->
       <div class="group p-8 bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border hover:border-secondary-500 dark:hover:border-secondary-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
         <div class="w-14 h-14 bg-gradient-to-br from-secondary-500 to-secondary-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
@@ -134,7 +129,7 @@
           Algoritmo de NLP que encuentra ofertas perfectamente alineadas con tu experiencia y habilidades únicas
         </p>
       </div>
-      
+
       <!-- Feature 3 -->
       <div class="group p-8 bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border hover:border-accent-500 dark:hover:border-accent-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
         <div class="w-14 h-14 bg-gradient-to-br from-accent-500 to-accent-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
@@ -162,11 +157,11 @@
         Tres simples pasos para encontrar tu próxima oportunidad
       </p>
     </div>
-    
+
     <div class="relative">
       <!-- Connection Line -->
       <div class="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-200 via-secondary-200 to-accent-200 dark:from-primary-900 dark:via-secondary-900 dark:to-accent-900 transform -translate-y-1/2"></div>
-      
+
       <div class="grid md:grid-cols-3 gap-12 relative">
         <!-- Step 1 -->
         <div class="text-center">
@@ -181,7 +176,7 @@
             Sube tu CV o complétalo manualmente con análisis automático de IA
           </p>
         </div>
-        
+
         <!-- Step 2 -->
         <div class="text-center">
           <div class="relative inline-flex items-center justify-center mb-6">
@@ -195,7 +190,7 @@
             Ofertas de empleo que encajan contigo, analizadas con algoritmos de NLP
           </p>
         </div>
-        
+
         <!-- Step 3 -->
         <div class="text-center">
           <div class="relative inline-flex items-center justify-center mb-6">
@@ -236,7 +231,7 @@
         </svg>
       </button>
     </div>
-    
+
     <div class="grid md:grid-cols-3 gap-6">
       <!-- Job Card 1 -->
       <div class="group bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700/50 p-6 hover:border-primary-500 dark:hover:border-primary-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
@@ -264,7 +259,7 @@
           <span class="text-sm font-medium text-primary-600 dark:text-primary-400 group-hover:translate-x-1 transition-transform">Ver detalles →</span>
         </div>
       </div>
-      
+
       <!-- Job Card 2 -->
       <div class="group bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700/50 p-6 hover:border-secondary-500 dark:hover:border-secondary-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
         <div class="flex justify-between items-start mb-4">
@@ -291,7 +286,7 @@
           <span class="text-sm font-medium text-secondary-600 dark:text-secondary-400 group-hover:translate-x-1 transition-transform">Ver detalles →</span>
         </div>
       </div>
-      
+
       <!-- Job Card 3 -->
       <div class="group bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700/50 p-6 hover:border-accent-500 dark:hover:border-accent-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
         <div class="flex justify-between items-start mb-4">
@@ -319,7 +314,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Mobile CTA -->
     <div class="md:hidden text-center mt-8">
       <button
@@ -337,11 +332,11 @@
   <!-- Gradient Background -->
   <div class="absolute inset-0 bg-gradient-to-br from-primary-600 via-secondary-600 to-accent-600"></div>
   <div class="absolute inset-0 bg-grid-pattern opacity-10"></div>
-  
+
   <!-- Animated Orbs -->
   <div class="absolute top-10 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
   <div class="absolute bottom-10 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
-  
+
   <!-- Content -->
   <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
     <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">
@@ -375,7 +370,7 @@
           Tu plataforma inteligente para el desarrollo profesional
         </p>
       </div>
-      
+
       <div class="space-y-8">
         <!-- What We Are -->
         <div class="p-6 bg-gray-50 dark:bg-dark-bg-secondary rounded-2xl border border-gray-200 dark:border-dark-border">
@@ -398,7 +393,7 @@
             </li>
           </ul>
         </div>
-        
+
         <!-- What We Do -->
         <div class="p-6 bg-gray-50 dark:bg-dark-bg-secondary rounded-2xl border border-gray-200 dark:border-dark-border">
           <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
@@ -432,7 +427,7 @@
             </li>
           </ul>
         </div>
-        
+
         <!-- Target Audience -->
         <div class="p-6 bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-primary-900/10 dark:to-secondary-900/10 rounded-2xl border border-primary-200 dark:border-primary-800">
           <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
@@ -440,7 +435,7 @@
             ¿Para quién es SkilTak?
           </h3>
           <p class="text-gray-700 dark:text-dark-text-secondary">
-            Diseñado para personas recién graduadas o profesionales que, por diversos motivos, 
+            Diseñado para personas recién graduadas o profesionales que, por diversos motivos,
             cambiaron de ámbito profesional y buscan impulsar su nueva carrera con herramientas inteligentes.
           </p>
         </div>
@@ -471,7 +466,7 @@
           </a>
         </div>
       </div>
-      
+
       <!-- Quick Links -->
       <div>
         <h4 class="text-white font-semibold mb-4">Navegación</h4>
@@ -482,7 +477,7 @@
           <li><a routerLink="/register" class="text-gray-400 hover:text-white transition-colors">Registrarse</a></li>
         </ul>
       </div>
-      
+
       <!-- Resources -->
       <div>
         <h4 class="text-white font-semibold mb-4">Recursos</h4>
@@ -494,7 +489,7 @@
         </ul>
       </div>
     </div>
-    
+
     <!-- Bottom Bar -->
     <div class="pt-8 border-t border-gray-800">
       <div class="flex flex-col md:flex-row justify-between items-center gap-4">

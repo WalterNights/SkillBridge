@@ -6,9 +6,16 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.core.mail import send_mail
+from django.conf import settings
 
-from users.models import User, UserProfile
-from users.serializers import UserSerializer, UserProfileSerializer
+from users.models import User, UserProfile, PasswordResetToken
+from users.serializers import (
+    UserSerializer, 
+    UserProfileSerializer,
+    PasswordResetRequestSerializer,
+    PasswordResetVerifySerializer
+)
 from users.services.profile_service import ProfileService
 from users.services.gemini_cv_service import GeminiCVService
 
@@ -31,20 +38,27 @@ class UserRegisterView(APIView):
 class AnalyzerResumeView(APIView):
     """Vista para analizar CVs y extraer información usando Gemini AI"""
     parser_classes = [MultiPartParser]
+    permission_classes = [AllowAny]  # Permitir acceso sin autenticación
     
     def post(self, request, *args, **kwargs):
         file = request.FILES.get("resume")
         
+        if not file:
+            return Response(
+                {"error": "No se proporcionó ningún archivo"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         try:
-            # Inicializar servicio de Gemini
+            # Initialize Gemini service
             gemini_service = GeminiCVService()
             
-            # Validar archivo
+            # Validate file
             is_valid, error_message = gemini_service.validate_cv_file(file)
             if not is_valid:
                 return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
             
-            # Analizar CV con Gemini AI
+            # Analyze CV with Gemini AI
             extracted_data = gemini_service.analyze_cv(file)
             
             # Formatear respuesta para mantener compatibilidad con el frontend
@@ -74,8 +88,12 @@ class AnalyzerResumeView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
+            # Log error for debugging but don't expose details to client
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"CV analysis error: {str(e)}", exc_info=True)
             return Response(
-                {"error": f"Error al analizar el archivo: {str(e)}"}, 
+                {"error": "Error al analizar el archivo"}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -158,3 +176,88 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class CustomTokenObtainPairView(TokenObtainPairView):
     """Vista personalizada para obtención de tokens JWT"""
     serializer_class = CustomTokenObtainPairSerializer
+
+
+class PasswordResetRequestView(APIView):
+    """Vista para solicitar restablecimiento de contraseña"""
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        email = serializer.validated_data['email']
+        user = User.objects.get(email=email)
+        
+        # Generar código de 6 dígitos
+        code = PasswordResetToken.generate_code()
+        
+        # Crear token
+        token = PasswordResetToken.objects.create(user=user, code=code)
+        
+        # Enviar email
+        subject = 'Código de restablecimiento de contraseña - SkillBridge'
+        message = f'''
+Hola {user.username},
+
+Has solicitado restablecer tu contraseña en SkillBridge.
+
+Tu código de verificación es: {code}
+
+Este código expirará en 10 minutos.
+
+Si no solicitaste este cambio, ignora este mensaje.
+
+Saludos,
+El equipo de SkillBridge
+        '''
+        
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            return Response({
+                "message": "Código de verificación enviado a tu correo",
+                "email": email
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            # If sending fails, delete the created token
+            token.delete()
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Email sending error: {type(e).__name__}", exc_info=True)
+            return Response({
+                "error": "Error al enviar el correo. Intenta nuevamente."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class PasswordResetVerifyView(APIView):
+    """Vista para verificar código y restablecer contraseña"""
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        serializer = PasswordResetVerifySerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Obtener usuario y token validados
+        user = serializer.validated_data['user']
+        token = serializer.validated_data['token']
+        new_password = serializer.validated_data['new_password']
+        
+        # Cambiar contraseña
+        user.set_password(new_password)
+        user.save()
+        
+        # Marcar token como usado
+        token.is_used = True
+        token.save()
+        
+        return Response({
+            "message": "Contraseña restablecida exitosamente"
+        }, status=status.HTTP_200_OK)
