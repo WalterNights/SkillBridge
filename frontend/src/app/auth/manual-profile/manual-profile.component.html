@@ -1,33 +1,100 @@
 <!--Modal Window-->
-<div *ngIf="isLoading" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
-    <div class="bg-white rounded-2xl shadow-xl p-6 w-72 text-center">
+<div *ngIf="isLoading" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-80 text-center">
         <div class="flex flex-col items-center">
-            <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+            <svg class="animate-spin h-10 w-10 text-primary-600 dark:text-primary-400" xmlns="http://www.w3.org/2000/svg" fill="none"
                 viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
             </svg>
-            <p class="mt-4 text-grey-700 font-semibold">Creando tu perfil...</p>
+            <p class="mt-4 text-gray-700 dark:text-gray-300 font-semibold">Creando tu perfil...</p>
         </div>
     </div>
 </div>
-<!--Profile Form-->
-<div class="min-h-screen flex items-center justify-center mt-16 bg-gray-100 dark:bg-darkBg px-4">
-    <form 
-        [formGroup]="profileForm" 
-        (ngSubmit)="onSubmit()" 
-        class="bg-white dark:bg-darkCard dark:text-darkText p-8 rounded-2xl shadow-xl space-y-6 w-full lg:w-2/4 max-w-mod mt-16"
-    >
-        <h2 class="text-2xl font-bold text-center text-grey-800">
-            Crea Tu Perfil
-        </h2>
+
+<!--Profile Form Container-->
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24 pb-8 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Back Button -->
+        <button
+            (click)="goBack()"
+            class="mb-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+        >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Regresar
+        </button>
+
+        <div class="grid lg:grid-cols-12 gap-6 lg:gap-8">
+
+            <!-- Info Card - Hidden on mobile, shown on large screens -->
+            <div class="hidden lg:block lg:col-span-3">
+                <div class="sticky top-24 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+                    <div class="flex items-start gap-3 mb-4">
+                        <div class="flex-shrink-0 w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Lo que hacemos</h3>
+                    </div>
+                    <ul class="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+                        <li class="flex items-start gap-2">
+                            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>Te ayudamos a crear tu CV con formato ATS optimizado para sistemas de selección</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>Analizamos automáticamente tu CV existente y creamos tu perfil al instante</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>Traemos ofertas que más se adaptan a tu perfil con match semántico avanzado</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>Te indicamos dónde adquirir los conocimientos que te hacen falta para cada posición</span>
+                        </li>
+                    </ul>
+                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <p class="text-xs text-gray-500 dark:text-gray-500">
+                            💡 <strong>Tip:</strong> Completa todos los campos marcados con (*) para obtener mejores resultados.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Form -->
+            <div class="lg:col-span-9">
+                <form
+                    [formGroup]="profileForm"
+                    (ngSubmit)="onSubmit()"
+                    class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8"
+                >
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                            Crea Tu Perfil
+                        </h2>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            Completa tu información profesional manualmente
+                        </p>
+                    </div>
         <div class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-grey-700">
                     * Nombre:
                 </label>
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     formControlName="first_name"
                     class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Escribe tu nombre"
@@ -37,8 +104,8 @@
                 <label class="block text-sm font-medium text-grey-700">
                     * Apellido:
                 </label>
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     formControlName="last_name"
                     class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Escribe tu apellido"
@@ -48,8 +115,8 @@
                 <label class="block text-sm font-medium text-grey-700">
                     * Documento de Identidad:
                 </label>
-                <input 
-                    type="number" 
+                <input
+                    type="number"
                     formControlName="number_id"
                     class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     [class.border-red-500]="profileForm.get('number_id')?.invalid && profileForm.get('number_id')?.touched"
@@ -61,14 +128,14 @@
                     <label class="block text-sm font-medium text-grey-700">
                         País:
                     </label>
-                    <select 
+                    <select
                         formControlName="country"
                         (change)="onCountryChange(countryForm.value)"
                         #countryForm
                         class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     >
                         <option value="">Seleccione un país</option>
-                        <option *ngFor="let country of countries" [value]="country.isoCode"> 
+                        <option *ngFor="let country of countries" [value]="country.isoCode">
                             {{ country.name }}
                         </option>
                     </select>
@@ -77,7 +144,7 @@
                     <label class="block text-sm font-medium text-grey-700">
                         * Ciudad:
                     </label>
-                    <select 
+                    <select
                         formControlName="city"
                         class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     >
@@ -93,8 +160,8 @@
                     <label class="block text-sm font-medium text-grey-700">
                         Código País:
                     </label>
-                    <select 
-                        formControlName="phone_code" 
+                    <select
+                        formControlName="phone_code"
                         class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     >
                         <option value="">Seleccione el código de país</option>
@@ -107,8 +174,8 @@
                     <label class="block text-sm font-medium text-grey-700">
                         * Teléfono:
                     </label>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         formControlName="phone_number"
                         class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Escribe tu número de teléfono"
@@ -119,8 +186,8 @@
                 <label class="block text-sm font-medium text-grey-700">
                     * Cargo:
                 </label>
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     formControlName="professional_title"
                     class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Escribe tu título profesional o cargo"
@@ -130,7 +197,7 @@
                 <label class="block text-sm font-medium text-grey-700">
                     * Resumen Profesional:
                 </label>
-                <textarea 
+                <textarea
                     formControlName="summary"
                     rows="2"
                     class="w-full h-20 mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -141,7 +208,7 @@
                 <label class="block text-sm font-medium text-grey-700">
                     * Habilidades:
                 </label>
-                <textarea 
+                <textarea
                     formControlName="skills"
                     rows="2"
                     class="w-full h-20 mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -151,8 +218,8 @@
                 <label class="block text-sm font-medium text-grey-700">
                     * LinkedIn :
                 </label>
-                <input 
-                    type="url" 
+                <input
+                    type="url"
                     formControlName="linkedin_url"
                     class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Escribe tu enlace de LinkedIn"
@@ -162,8 +229,8 @@
                 <label class="block text-sm font-medium text-grey-700">
                     * Portafolio :
                 </label>
-                <input 
-                    type="url" 
+                <input
+                    type="url"
                     formControlName="portfolio_url"
                     class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Escribe el enlace de tu portafolio"
@@ -175,18 +242,18 @@
                     <h3 class="font-semibold my-6 text-center px-6">EDUCACIÓN ({{ i + 1 }})</h3>
                     <div>
                         <label class="block text-sm font-medium text-grey-700">* Institución</label>
-                        <input 
+                        <input
                             formControlName="institution"
-                            type="text" 
+                            type="text"
                             class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             placeholder="Escribe el nombre de la empresa"
                         >
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-grey-700">* Título:</label>
-                        <input 
-                            formControlName="title" 
-                            type="text" 
+                        <input
+                            formControlName="title"
+                            type="text"
                             class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             placeholder="Escribe el cargo que ocupaste"
                         >
@@ -197,7 +264,7 @@
                         <div class="flex flex-col md:flex-row gap-4">
                             <div class="w-full lg:w-1/4">
                                 <label class="block text-sm font-medium text-grey-700">* País:</label>
-                                <select 
+                                <select
                                     formControlName="location_country"
                                     (change)="onCountryChange(countryForm.value)"
                                     #countryForm
@@ -211,7 +278,7 @@
                             </div>
                             <div class="w-full lg:w-1/4">
                                 <label class="block text-sm font-medium text-grey-700">* Ciudad:</label>
-                                <select 
+                                <select
                                     formControlName="location_city"
                                     class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 >
@@ -220,37 +287,37 @@
                                         {{ city.name }}
                                     </option>
                                 </select>
-                            </div> 
+                            </div>
                             <div class="w-full lg:w-1/4">
                                 <label class="block text-sm font-medium text-grey-700">* Desde:</label>
-                                <input 
-                                    formControlName="start_date" 
-                                    type="date" 
+                                <input
+                                    formControlName="start_date"
+                                    type="date"
                                     class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
                             </div>
                             <div class="w-full lg:w-1/4">
                                 <label class="block text-sm font-medium text-grey-700">Hasta:</label>
-                                <input 
-                                    formControlName="end_date" 
-                                    type="date" 
+                                <input
+                                    formControlName="end_date"
+                                    type="date"
                                     class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
                             </div>
                         </div>
                     </div>
-                    <button 
-                        type="button" 
-                        (click)="removeEducation(i)" 
+                    <button
+                        type="button"
+                        (click)="removeEducation(i)"
                         class="w-full py-2 px-4 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition"
                     >
                         Eliminar Educación ({{ i + 1 }})
                     </button>
                 </div>
             </div>
-            <button 
-                type="button" 
-                (click)="addEducation()" 
+            <button
+                type="button"
+                (click)="addEducation()"
                 class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition"
             >
                 Añadir Educación
@@ -261,18 +328,18 @@
                     <h3 class="font-semibold my-6 text-center px-6">EXPERIENCIA ({{ i + 1 }})</h3>
                     <div>
                         <label class="block text-sm font-medium text-grey-700">* Empresa</label>
-                        <input 
+                        <input
                             formControlName="company"
-                            type="text" 
+                            type="text"
                             class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             placeholder="Escribe el nombre de la empresa"
                         >
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-grey-700">* Cargo:</label>
-                        <input 
-                            formControlName="position" 
-                            type="text" 
+                        <input
+                            formControlName="position"
+                            type="text"
                             class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             placeholder="Escribe el cargo que ocupaste"
                         >
@@ -282,7 +349,7 @@
                         <div class="flex flex-col md:flex-row gap-4">
                             <div class="w-full lg:w-1/4">
                                 <label class="block text-sm font-medium text-grey-700">* País:</label>
-                                <select 
+                                <select
                                     formControlName="location_country"
                                     (change)="onCountryChange(countryForm.value)"
                                     #countryForm
@@ -296,7 +363,7 @@
                             </div>
                             <div class="w-full lg:w-1/4">
                                 <label class="block text-sm font-medium text-grey-700">* Ciudad:</label>
-                                <select 
+                                <select
                                     formControlName="location_city"
                                     class="w-full mt-1 px-4 py-2 rounded-lg dark:bg-darkBgTa border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                 >
@@ -305,20 +372,20 @@
                                         {{ city.name }}
                                     </option>
                                 </select>
-                            </div> 
+                            </div>
                             <div class="w-full lg:w-1/4">
                                 <label class="block text-sm font-medium text-grey-700">* Desde:</label>
-                                <input 
-                                    formControlName="start_date" 
-                                    type="date" 
+                                <input
+                                    formControlName="start_date"
+                                    type="date"
                                     class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
                             </div>
                             <div class="w-full lg:w-1/4">
                                 <label class="block text-sm font-medium text-grey-700">Hasta:</label>
-                                <input 
-                                    formControlName="end_date" 
-                                    type="date" 
+                                <input
+                                    formControlName="end_date"
+                                    type="date"
                                     class="w-full mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
                             </div>
@@ -326,31 +393,31 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-grey-700">* Descripción:</label>
-                        <textarea 
-                            formControlName="description" 
-                            rows="2" 
+                        <textarea
+                            formControlName="description"
+                            rows="2"
                             class="w-full h-20 mt-1 px-4 py-2 dark:bg-darkBgTa border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         ></textarea>
                     </div>
-                    <button 
-                        type="button" 
-                        (click)="removeExperience(i)" 
+                    <button
+                        type="button"
+                        (click)="removeExperience(i)"
                         class="w-full py-2 px-4 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition"
                     >
                         Eliminar Experiencia ({{ i + 1 }})
                     </button>
                 </div>
             </div>
-            <button 
-                type="button" 
-                (click)="addExperience()" 
+            <button
+                type="button"
+                (click)="addExperience()"
                 class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition"
             >
                 Añadir Experiencia
             </button>
 
             <div>
-                <button 
+                <button
                     type="submit"
                     [disabled]="profileForm.invalid || isLoading"
                     class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"

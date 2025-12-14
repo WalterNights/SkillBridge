@@ -1,6 +1,6 @@
 import { Country } from 'country-state-city';
-import { RouterModule } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
+import { CommonModule, Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
@@ -31,7 +31,8 @@ export class ProfileComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private profileBuldier: ProfileBuilderComponent,
-    private titleService: Title
+    private titleService: Title,
+    private location: Location
   ) {
     this.titleService.setTitle('SkilTak - Home');
   }
@@ -107,5 +108,12 @@ export class ProfileComponent implements OnInit {
       },
       true
     );
+  }
+
+  /**
+   * Navigate back to previous page
+   */
+  goBack(): void {
+    this.location.back();
   }
 }

@@ -1,0 +1,24 @@
+{
+  "name": "skiltak",
+  "version": "1.0.0",
+  "description": "SkilTak - Plataforma inteligente de matching de ofertas laborales",
+  "scripts": {
+    "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
+    "start:frontend": "cd frontend && npm start",
+    "start:backend": "cd backend && python manage.py runserver",
+    "dev": "npm run start",
+    "install:all": "npm install && cd frontend && npm install && cd ..",
+    "frontend": "cd frontend && npm start",
+    "backend": "cd backend && python manage.py runserver"
+  },
+  "keywords": [
+    "job-matching",
+    "cv-analysis",
+    "career-development"
+  ],
+  "author": "WalterNights",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

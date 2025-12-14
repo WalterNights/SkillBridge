@@ -1,6 +1,6 @@
 import { Country } from 'country-state-city';
-import { RouterModule } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { RouterModule, Router } from '@angular/router';
+import { CommonModule, Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
@@ -33,6 +33,7 @@ export class ManualProfileComponent implements OnInit {
     private http: HttpClient,
     private fb: FormBuilder,
     private profileBuldier: ProfileBuilderComponent,
+    private location: Location,
   ) {
     this.titleService.setTitle('SkilTak - Registro Perfil Profesional');
   }
@@ -44,8 +45,8 @@ export class ManualProfileComponent implements OnInit {
     const educationArray = this.fb.array([this.createEducationGroup()]);
     const experienceArray = this.fb.array([this.createExperienceGroup()]);
     this.profileForm = this.profileBuldier.buildProfileForm({
-      education: educationArray, 
-      experience: experienceArray 
+      education: educationArray,
+      experience: experienceArray
     });
     // Autofill Form to make ats-cv or if page was closed before sending data
     const savedForm = localStorage.getItem('manual_profile_draft');
@@ -96,6 +97,10 @@ export class ManualProfileComponent implements OnInit {
 
   addEducation(): void {
     this.education.push(this.createEducationGroup());
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   addExperience(): void {

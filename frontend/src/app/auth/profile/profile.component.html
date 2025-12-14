@@ -13,10 +13,21 @@
 </div>
 
 <!--Profile Form Container-->
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24 pb-8 px-4 sm:px-6 lg:px-8">
     <div class="max-w-7xl mx-auto">
+        <!-- Back Button -->
+        <button
+            (click)="goBack()"
+            class="mb-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+        >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Regresar
+        </button>
+
         <div class="grid lg:grid-cols-12 gap-6 lg:gap-8">
-            
+
             <!-- Info Card - Hidden on mobile, shown on large screens -->
             <div class="hidden lg:block lg:col-span-3">
                 <div class="sticky top-24 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
@@ -64,9 +75,9 @@
 
             <!-- Profile Form -->
             <div class="lg:col-span-9">
-                <form 
-                    [formGroup]="profileForm" 
-                    (ngSubmit)="onSubmit()" 
+                <form
+                    [formGroup]="profileForm"
+                    (ngSubmit)="onSubmit()"
                     class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8"
                 >
                     <div class="mb-8">
@@ -83,14 +94,14 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 📄 Carga tu hoja de vida (PDF o DOCX):
                             </label>
-                            <input 
-                                type="file" 
+                            <input
+                                type="file"
                                 (change)="onFileSelected($event)"
-                                class="block w-full text-sm text-gray-600 dark:text-gray-400 
-                                file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 
-                                file:text-sm file:font-semibold file:bg-primary-100 dark:file:bg-primary-900/30 
-                                file:text-primary-700 dark:file:text-primary-400 
-                                hover:file:bg-primary-200 dark:hover:file:bg-primary-900/50 
+                                class="block w-full text-sm text-gray-600 dark:text-gray-400
+                                file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0
+                                file:text-sm file:font-semibold file:bg-primary-100 dark:file:bg-primary-900/30
+                                file:text-primary-700 dark:file:text-primary-400
+                                hover:file:bg-primary-200 dark:hover:file:bg-primary-900/50
                                 file:transition-colors file:cursor-pointer"
                             >
                         </div>
@@ -101,11 +112,11 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     * Nombre:
                                 </label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     formControlName="first_name"
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 
+                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                                     text-gray-900 dark:text-white transition-colors"
                                     placeholder="Escribe tu nombre"
                                 />
@@ -114,11 +125,11 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     * Apellido:
                                 </label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     formControlName="last_name"
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 
+                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                                     text-gray-900 dark:text-white transition-colors"
                                     placeholder="Escribe tu apellido"
                                 />
@@ -130,11 +141,11 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 * Documento de Identidad:
                             </label>
-                            <input 
-                                type="number" 
+                            <input
+                                type="number"
                                 formControlName="number_id"
-                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 
-                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 
+                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                                 text-gray-900 dark:text-white transition-colors"
                                 [class.border-red-500]="profileForm.get('number_id')?.invalid && profileForm.get('number_id')?.touched"
                                 placeholder="Escribe tu documento de identidad"
@@ -147,10 +158,10 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Código País:
                                 </label>
-                                <select 
-                                    formControlName="phone_code" 
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 
+                                <select
+                                    formControlName="phone_code"
+                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                                     text-gray-900 dark:text-white transition-colors"
                                 >
                                     <option value="">Seleccione el código de país</option>
@@ -163,29 +174,29 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     * Teléfono:
                                 </label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     formControlName="phone_number"
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 
+                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                                     text-gray-900 dark:text-white transition-colors"
                                     placeholder="Escribe tu número de teléfono"
                                 />
                             </div>
                         </div>
-                    
+
                         <!-- Country and City -->
                         <div class="grid sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     País:
                                 </label>
-                                <select 
+                                <select
                                     formControlName="country"
                                     (change)="onCountryChange(countryForm.value)"
                                     #countryForm
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 
+                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                                     text-gray-900 dark:text-white transition-colors"
                                 >
                                     <option value="">Seleccione un país</option>
@@ -198,10 +209,10 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     * Ciudad:
                                 </label>
-                                <select 
+                                <select
                                     formControlName="city"
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 
+                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                                     text-gray-900 dark:text-white transition-colors"
                                 >
                                     <option value="">Seleccione una ciudad</option>
@@ -217,11 +228,11 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 * Cargo:
                             </label>
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 formControlName="professional_title"
-                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 
-                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 
+                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                                 text-gray-900 dark:text-white transition-colors"
                                 placeholder="Escribe tu título profesional o cargo"
                             />
@@ -231,11 +242,11 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 * Resumen Profesional:
                             </label>
-                            <textarea 
+                            <textarea
                                 formControlName="summary"
                                 rows="3"
-                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 
-                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 
+                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                                 text-gray-900 dark:text-white transition-colors resize-none"
                                 placeholder="Describe brevemente tu perfil profesional"
                             ></textarea>
@@ -246,11 +257,11 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 * Educación:
                             </label>
-                            <textarea 
+                            <textarea
                                 formControlName="education"
                                 rows="3"
-                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 
-                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 
+                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                                 text-gray-900 dark:text-white transition-colors resize-none"
                                 placeholder="Describe tu formación académica"
                             ></textarea>
@@ -261,11 +272,11 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 * Habilidades:
                             </label>
-                            <textarea 
+                            <textarea
                                 formControlName="skills"
                                 rows="3"
-                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 
-                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 
+                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                                 text-gray-900 dark:text-white transition-colors resize-none"
                                 placeholder="Lista tus habilidades técnicas y blandas"
                             ></textarea>
@@ -276,11 +287,11 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 * Experiencia:
                             </label>
-                            <textarea 
+                            <textarea
                                 formControlName="experience"
                                 rows="3"
-                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 
-                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 
+                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                                 text-gray-900 dark:text-white transition-colors resize-none"
                                 placeholder="Describe tu experiencia laboral"
                             ></textarea>
@@ -292,11 +303,11 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     LinkedIn:
                                 </label>
-                                <input 
-                                    type="url" 
+                                <input
+                                    type="url"
                                     formControlName="linkedin_url"
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 
+                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                                     text-gray-900 dark:text-white transition-colors"
                                     placeholder="https://linkedin.com/in/tu-perfil"
                                 />
@@ -305,11 +316,11 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Portafolio:
                                 </label>
-                                <input 
-                                    type="url" 
+                                <input
+                                    type="url"
                                     formControlName="portfolio_url"
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 
+                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                                     text-gray-900 dark:text-white transition-colors"
                                     placeholder="https://tu-portafolio.com"
                                 />
@@ -318,11 +329,11 @@
 
                         <!-- Submit Button -->
                         <div class="pt-6">
-                            <button 
+                            <button
                                 type="submit"
                                 [disabled]="profileForm.invalid || isLoading"
-                                class="w-full py-3.5 px-6 bg-primary-600 dark:bg-primary-500 text-white font-semibold 
-                                rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 
+                                class="w-full py-3.5 px-6 bg-primary-600 dark:bg-primary-500 text-white font-semibold
+                                rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600
                                 transition-colors shadow-lg hover:shadow-xl
                                 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none
                                 flex items-center justify-center gap-2"
@@ -332,12 +343,12 @@
                                 </svg>
                                 Guardar Perfil
                             </button>
-                            
+
                             <p *ngIf="errorMessage" class="mt-4 text-red-600 dark:text-red-400 text-sm text-center">
                                 {{ errorMessage }}
                             </p>
-                            
-                            <div *ngIf="profileForm.invalid && profileForm.touched" 
+
+                            <div *ngIf="profileForm.invalid && profileForm.touched"
                                  class="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
                                 <p class="text-sm text-yellow-800 dark:text-yellow-400 flex items-center gap-2">
                                     <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
