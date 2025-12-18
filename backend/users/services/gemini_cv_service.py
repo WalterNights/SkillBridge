@@ -134,11 +134,13 @@ CV:
 
 Instrucciones:
 - Extrae ÚNICAMENTE la información que esté claramente presente en el CV
-- Si un campo no está presente, deja el valor vacío ""
-- Para las skills, lista solo las más relevantes y técnicas
+- Si un campo no está presente, deja el valor vacío "" o array vacío []
+- Para las skills, lista solo las más relevantes y técnicas separadas por coma
 - El summary debe ser un resumen profesional conciso (máximo 3 líneas)
 - El título profesional debe ser la posición o rol principal
-- Para educación y experiencia, proporciona un resumen estructurado
+- Para educación y experiencia, proporciona arrays con objetos estructurados
+- Las fechas deben estar en formato "Mes Año" (ej: "Marzo 2022")
+- Si la fecha de fin es actual, usa "Actual" o "Presente"
 
 Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
 {{
@@ -152,26 +154,45 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
     "professional_title": "título profesional o rol principal",
     "summary": "resumen profesional breve",
     "skills": "skill1, skill2, skill3, ...",
-    "education": "resumen de educación",
-    "experience": "resumen de experiencia laboral",
+    "education": [
+        {{
+            "institution": "nombre de la institución",
+            "title": "título o carrera obtenida",
+            "start_date": "Mes Año",
+            "end_date": "Mes Año o Actual",
+            "location_city": "ciudad",
+            "location_country": "país"
+        }}
+    ],
+    "experience": [
+        {{
+            "company": "nombre de la empresa",
+            "position": "cargo o puesto",
+            "start_date": "Mes Año",
+            "end_date": "Mes Año o Actual",
+            "location_city": "ciudad",
+            "location_country": "país",
+            "description": "descripción breve de responsabilidades y logros"
+        }}
+    ],
     "linkedin_url": "URL de LinkedIn si existe",
     "portfolio_url": "URL de portafolio o GitHub si existe"
 }}
 
 Responde SOLO con el JSON, sin texto adicional, sin markdown, sin explicaciones."""
     
-    def _normalize_extracted_data(self, data: Dict) -> Dict[str, str]:
+    def _normalize_extracted_data(self, data: Dict) -> Dict:
         """
         Normaliza y valida los datos extraídos.
-        
+
         Args:
             data: Datos extraídos de Gemini
-            
+
         Returns:
             Datos normalizados
         """
-        # Campos esperados con valores por defecto
-        expected_fields = {
+        # Campos de texto esperados con valores por defecto
+        text_fields = {
             'first_name': '',
             'last_name': '',
             'full_name': '',
@@ -183,31 +204,52 @@ Responde SOLO con el JSON, sin texto adicional, sin markdown, sin explicaciones.
             'title': '',  # Alias para compatibilidad
             'summary': '',
             'skills': '',
-            'education': '',
-            'experience': '',
             'linkedin_url': '',
             'portfolio_url': '',
         }
-        
-        # Combinar datos extraídos con valores por defecto
-        normalized = {key: data.get(key, default).strip() if data.get(key) else default 
-                     for key, default in expected_fields.items()}
-        
+
+        # Inicializar con valores por defecto para campos de texto
+        normalized = {}
+        for key, default in text_fields.items():
+            value = data.get(key, default)
+            if isinstance(value, str):
+                normalized[key] = value.strip()
+            else:
+                normalized[key] = default
+
+        # Manejar education como array o string
+        education = data.get('education', [])
+        if isinstance(education, list):
+            normalized['education'] = education
+        elif isinstance(education, str):
+            normalized['education'] = education.strip()
+        else:
+            normalized['education'] = []
+
+        # Manejar experience como array o string
+        experience = data.get('experience', [])
+        if isinstance(experience, list):
+            normalized['experience'] = experience
+        elif isinstance(experience, str):
+            normalized['experience'] = experience.strip()
+        else:
+            normalized['experience'] = []
+
         # Si no hay full_name pero hay first_name y last_name, combinarlos
         if not normalized['full_name'] and (normalized['first_name'] or normalized['last_name']):
             normalized['full_name'] = f"{normalized['first_name']} {normalized['last_name']}".strip()
-        
+
         # Copiar professional_title a title para compatibilidad con código existente
         if not normalized['title'] and normalized['professional_title']:
             normalized['title'] = normalized['professional_title']
         elif normalized['title'] and not normalized['professional_title']:
             normalized['professional_title'] = normalized['title']
-        
+
         # Limpiar URLs
         for url_field in ['linkedin_url', 'portfolio_url']:
             if normalized[url_field] and not normalized[url_field].startswith('http'):
                 normalized[url_field] = ''
-        
+
         return normalized
     
     @staticmethod

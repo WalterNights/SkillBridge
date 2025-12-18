@@ -72,9 +72,9 @@ class AnalyzerResumeView(APIView):
                 "city": extracted_data.get('city', ''),
                 "professional_title": extracted_data.get('professional_title', ''),
                 "summary": extracted_data.get('summary', ''),
-                "education": extracted_data.get('education', ''),
+                "education": extracted_data.get('education', []),  # Puede ser array o string
                 "skills": extracted_data.get('skills', ''),
-                "experience": extracted_data.get('experience', ''),
+                "experience": extracted_data.get('experience', []),  # Puede ser array o string
                 "linkedin_url": extracted_data.get('linkedin_url', ''),
                 "portfolio_url": extracted_data.get('portfolio_url', ''),
                 "full_name": extracted_data.get('full_name', ''),

@@ -20,9 +20,9 @@
 </div>
 
 <!-- CV Content -->
-<div *ngIf="!isLoading && !errorMessage && profileData" class="min-h-screen bg-gray-50 dark:bg-dark-bg-primary px-4" style="padding-top: 120px; padding-bottom: 60px;">
+<div *ngIf="!isLoading && !errorMessage && profileData" class="min-h-screen bg-gray-100 dark:bg-dark-bg-primary px-4" style="padding-top: 120px; padding-bottom: 60px;">
   <!-- Action Buttons -->
-  <div class="max-w-4xl mx-auto mb-6 flex justify-end gap-4">
+  <div class="cv-container mx-auto mb-6 flex justify-end gap-4">
     <button
       (click)="downloadCV()"
       class="px-6 py-3 bg-white dark:bg-dark-bg-tertiary border border-gray-300 dark:border-dark-border rounded-lg shadow-sm hover:shadow-md transition-all flex items-center gap-2 text-gray-700 dark:text-dark-text-primary font-medium"
@@ -43,103 +43,86 @@
     </button>
   </div>
 
-  <!-- ATS-Optimized CV -->
-  <div
-    #cvContent
-    class="max-w-4xl mx-auto bg-white shadow-xl"
-    style="padding: 60px; font-family: 'Times New Roman', serif; line-height: 1.5; color: #000000;"
-  >
-    <!-- Header Section - Centered -->
-    <header style="text-align: center; margin-bottom: 20px;">
-      <h1 style="font-size: 32px; font-weight: bold; color: #000000; margin: 0 0 5px 0; letter-spacing: 0.5px;">
-        {{ profileData.first_name }} {{ profileData.last_name }}
-      </h1>
-      <div *ngIf="profileData.professional_title" style="font-size: 12px; color: #000000; margin-bottom: 8px;">
-        {{ profileData.professional_title }}
-      </div>
-      <div style="font-size: 10px; color: #000000; line-height: 1.4;">
+  <!-- ATS-Optimized CV - A4 Size -->
+  <div #cvContent class="cv-page">
+    <!-- Header Section -->
+    <header class="cv-header">
+      <h1 class="cv-name">{{ profileData.first_name }} {{ profileData.last_name }}</h1>
+      <div class="cv-contact">
         <span *ngIf="profileData.city">{{ profileData.city }}, {{ profileData.country || 'Colombia' }}</span>
-        <span *ngIf="profileData.linkedin_url"> | {{ profileData.linkedin_url }}</span>
-        <span *ngIf="profileData.portfolio_url"> | {{ profileData.portfolio_url }}</span>
-        <span *ngIf="profileData.phone_number"> | {{ profileData.phone_code }} {{ profileData.phone_number }}</span>
-        <span *ngIf="profileData.email"> | {{ profileData.email }}</span>
+        <span *ngIf="profileData.linkedin_url" class="cv-contact-separator">|</span>
+        <span *ngIf="profileData.linkedin_url">{{ profileData.linkedin_url }}</span>
+        <span *ngIf="profileData.phone_number" class="cv-contact-separator">|</span>
+        <span *ngIf="profileData.phone_number">{{ profileData.phone_code }} {{ profileData.phone_number }}</span>
+        <span *ngIf="profileData.email" class="cv-contact-separator">|</span>
+        <span *ngIf="profileData.email">{{ profileData.email }}</span>
       </div>
     </header>
 
     <!-- Professional Summary -->
-    <section *ngIf="profileData.summary" style="margin-bottom: 20px;">
-      <p style="font-size: 10px; color: #000000; text-align: justify; margin: 0; line-height: 1.5; font-style: italic;">
-        {{ profileData.summary }}
-      </p>
+    <section *ngIf="profileData.summary" class="cv-section">
+      <p class="cv-summary">{{ profileData.summary }}</p>
     </section>
 
     <!-- Professional Experience -->
-    <section *ngIf="profileData.experience" style="margin-bottom: 20px;">
-      <h2 style="font-size: 11px; font-weight: bold; color: #000000; text-transform: uppercase; border-bottom: 1px solid #000000; padding-bottom: 3px; margin-bottom: 12px; letter-spacing: 0.3px;">
-        EXPERIENCIA PROFESIONAL
-      </h2>
+    <section *ngIf="profileData.experience" class="cv-section">
+      <h2 class="cv-section-title">EXPERIENCIA PROFESIONAL</h2>
+
       <!-- Array format (from CV analysis) -->
-      <div *ngIf="isExperienceArray()">
-        <div *ngFor="let exp of profileData.experience; let last = last" [style.margin-bottom]="last ? '0' : '16px'">
-          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px;">
-            <h3 style="font-size: 10px; font-weight: bold; color: #000000; margin: 0;">{{ exp.company }}</h3>
-            <span style="font-size: 10px; color: #000000; white-space: nowrap;">
-              {{ exp.location_city }}<span *ngIf="exp.location_country">, {{ exp.location_country }}</span>
-            </span>
+      <div *ngIf="isExperienceArray()" class="cv-entries">
+        <div *ngFor="let exp of profileData.experience" class="cv-entry">
+          <div class="cv-entry-header">
+            <div class="cv-entry-left">
+              <h3 class="cv-entry-title">{{ exp.company }}</h3>
+              <p class="cv-entry-subtitle">{{ exp.position }}</p>
+            </div>
+            <div class="cv-entry-right">
+              <span class="cv-entry-location">{{ exp.location_city }}<span *ngIf="exp.location_country">, {{ exp.location_country }}</span></span>
+              <span class="cv-entry-date">{{ exp.start_date }} - {{ exp.end_date }}</span>
+            </div>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
-            <p style="font-size: 10px; color: #000000; margin: 0;">{{ exp.position }}</p>
-            <span style="font-size: 10px; color: #000000; font-style: italic; white-space: nowrap;">
-              {{ exp.start_date | date:'MMMM yyyy':'':'es' | titlecase }}, {{ exp.end_date | date:'MMMM yyyy':'':'es' | titlecase }}
-            </span>
-          </div>
-          <ul style="margin: 0; padding-left: 18px; font-size: 10px; color: #000000; line-height: 1.5;">
-            <li style="margin-bottom: 3px;">{{ exp.description }}</li>
+          <ul *ngIf="exp.description" class="cv-entry-list">
+            <li>{{ exp.description }}</li>
           </ul>
         </div>
       </div>
+
       <!-- String format (manual input) -->
-      <div *ngIf="!isExperienceArray()" style="font-size: 10px; color: #000000; line-height: 1.6; white-space: pre-wrap;">
+      <div *ngIf="!isExperienceArray()" class="cv-text-content">
         {{ profileData.experience }}
       </div>
     </section>
 
     <!-- Education -->
-    <section *ngIf="profileData.education" style="margin-bottom: 20px;">
-      <h2 style="font-size: 11px; font-weight: bold; color: #000000; text-transform: uppercase; border-bottom: 1px solid #000000; padding-bottom: 3px; margin-bottom: 12px; letter-spacing: 0.3px;">
-        EDUCACIÓN
-      </h2>
+    <section *ngIf="profileData.education" class="cv-section">
+      <h2 class="cv-section-title">EDUCACION</h2>
+
       <!-- Array format (from CV analysis) -->
-      <div *ngIf="isEducationArray()">
-        <div *ngFor="let edu of profileData.education; let last = last" [style.margin-bottom]="last ? '0' : '12px'">
-          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px;">
-            <h3 style="font-size: 10px; font-weight: bold; color: #000000; margin: 0;">{{ edu.institution }}</h3>
-            <span style="font-size: 10px; color: #000000; white-space: nowrap;">
-              {{ edu.location_city }}<span *ngIf="edu.location_country">, {{ edu.location_country }}</span>
-            </span>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: baseline;">
-            <p style="font-size: 10px; color: #000000; margin: 0;">{{ edu.title }}</p>
-            <span style="font-size: 10px; color: #000000; font-style: italic; white-space: nowrap;">
-              {{ edu.start_date | date:'MMMM yyyy':'':'es' | titlecase }}, {{ edu.end_date | date:'MMMM yyyy':'':'es' | titlecase }}
-            </span>
+      <div *ngIf="isEducationArray()" class="cv-entries">
+        <div *ngFor="let edu of profileData.education" class="cv-entry">
+          <div class="cv-entry-header">
+            <div class="cv-entry-left">
+              <h3 class="cv-entry-title">{{ edu.institution }}</h3>
+              <p class="cv-entry-subtitle">{{ edu.title }}</p>
+            </div>
+            <div class="cv-entry-right">
+              <span class="cv-entry-location">{{ edu.location_city }}<span *ngIf="edu.location_country">, {{ edu.location_country }}</span></span>
+              <span class="cv-entry-date">{{ edu.start_date }} - {{ edu.end_date }}</span>
+            </div>
           </div>
         </div>
       </div>
+
       <!-- String format (manual input) -->
-      <div *ngIf="!isEducationArray()" style="font-size: 10px; color: #000000; line-height: 1.6; white-space: pre-wrap;">
+      <div *ngIf="!isEducationArray()" class="cv-text-content">
         {{ profileData.education }}
       </div>
     </section>
 
     <!-- Technical Skills -->
-    <section *ngIf="profileData.skills" style="margin-bottom: 15px;">
-      <h2 style="font-size: 11px; font-weight: bold; color: #000000; text-transform: uppercase; border-bottom: 1px solid #000000; padding-bottom: 3px; margin-bottom: 8px; letter-spacing: 0.3px;">
-        SKILLS
-      </h2>
-      <p style="font-size: 10px; color: #000000; margin: 0; line-height: 1.5;">
-        {{ profileData.skills }}
-      </p>
+    <section *ngIf="profileData.skills" class="cv-section">
+      <h2 class="cv-section-title">SKILLS</h2>
+      <p class="cv-skills">{{ profileData.skills }}</p>
     </section>
 
   </div>

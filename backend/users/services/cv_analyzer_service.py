@@ -45,8 +45,8 @@ class CVAnalyzerService:
                 'first_name': extracted_data.get('first_name', ''),
                 'last_name': extracted_data.get('last_name', ''),
                 'phone': f"{extracted_data.get('phone_code', '')} {extracted_data.get('phone_number', '')}".strip(),
-                'education': extracted_data.get('education', ''),
-                'experience': extracted_data.get('experience', ''),
+                'education': extracted_data.get('education', []),  # Ahora puede ser array o string
+                'experience': extracted_data.get('experience', []),  # Ahora puede ser array o string
                 'linkedin_url': extracted_data.get('linkedin_url', ''),
                 'portfolio_url': extracted_data.get('portfolio_url', ''),
             }

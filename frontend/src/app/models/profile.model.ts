@@ -11,8 +11,8 @@ export interface ResumeAnalysisData {
   city?: string;
   professional_title: string;
   summary: string;
-  education?: string;
-  experience?: string;
+  education?: EducationEntry[] | string;
+  experience?: ExperienceEntry[] | string;
   skills: string;
   linkedin_url?: string;
   portfolio_url?: string;

@@ -41,16 +41,16 @@ export class ProfileBuilderComponent {
       last_name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       number_id: ['', Validators.required],
-      phone_code: ['', Validators.required],
+      phone_code: [''],
       phone_number: ['', Validators.required],
-      country: ['', Validators.required],
+      country: [''],
       city: ['', Validators.required],
       professional_title: ['', Validators.required],
       summary: ['', Validators.required],
       education: overrides.education ?? this.fb.control('', Validators.required),
       experience: overrides.experience ?? this.fb.control('', Validators.required),
       skills: ['', Validators.required],
-      linkedin_url: ['', [Validators.required, Validators.pattern(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+\/?$/)]],
+      linkedin_url: ['', Validators.pattern(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9%_-]+\/?$/)],
       portfolio_url: [''],
       resume: [null],
     });
@@ -112,6 +112,11 @@ export class ProfileBuilderComponent {
           country: country_code,
           linkedin_url: linkedin
         };
+
+        // Guardar los datos estructurados en localStorage para el CV ATS
+        // Esto incluye los arrays de education y experience
+        localStorage.setItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT, JSON.stringify(parsedData));
+
         callback(parsedData, country_code);
       },
       error: () => {
@@ -161,6 +166,21 @@ export class ProfileBuilderComponent {
       }
     }
 
+    // Try to get existing localStorage data (may have arrays from resume analysis)
+    const existingData = localStorage.getItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT);
+    let existingParsed: any = null;
+    if (existingData) {
+      try {
+        existingParsed = JSON.parse(existingData);
+      } catch (e) {
+        existingParsed = null;
+      }
+    }
+
+    // Check if we have arrays in existing data (from resume analysis)
+    const hasExistingEducationArray = Array.isArray(existingParsed?.education) && existingParsed.education.length > 0;
+    const hasExistingExperienceArray = Array.isArray(existingParsed?.experience) && existingParsed.experience.length > 0;
+
     // Process education and experience arrays
     if (Array.isArray(rawData.education) && Array.isArray(rawData.experience)) {
       // Convert education array to formatted strings for backend
@@ -198,8 +218,18 @@ export class ProfileBuilderComponent {
         formData.append('experience', rawData.experience);
       }
 
-      // Save to localStorage even for string format with email included
-      localStorage.setItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT, JSON.stringify(rawData));
+      // Preserve arrays from existing localStorage if current data is strings
+      // This happens when user manually filled the form text but arrays exist from resume analysis
+      const dataToSave = { ...rawData };
+      if (hasExistingEducationArray && typeof rawData.education === 'string') {
+        dataToSave.education = existingParsed.education;
+      }
+      if (hasExistingExperienceArray && typeof rawData.experience === 'string') {
+        dataToSave.experience = existingParsed.experience;
+      }
+
+      // Save to localStorage preserving arrays if they existed
+      localStorage.setItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT, JSON.stringify(dataToSave));
     }
 
     // Append all other form fields

@@ -45,17 +45,30 @@ export class AtsCvComponent implements OnInit {
     // First try to get from localStorage (most recent form data)
     const savedData = localStorage.getItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT);
     if (savedData) {
-      this.profileData = JSON.parse(savedData);
-      console.log('📋 Datos cargados desde localStorage:', this.profileData);
-      console.log('✅ Education entries:', Array.isArray(this.profileData.education) ? this.profileData.education.length : 'Not an array');
-      console.log('✅ Experience entries:', Array.isArray(this.profileData.experience) ? this.profileData.experience.length : 'Not an array');
+      try {
+        this.profileData = JSON.parse(savedData);
+        console.log('📋 Datos cargados desde localStorage:', this.profileData);
+        console.log('✅ Education type:', typeof this.profileData.education, Array.isArray(this.profileData.education) ? `(array of ${this.profileData.education.length})` : '');
+        console.log('✅ Experience type:', typeof this.profileData.experience, Array.isArray(this.profileData.experience) ? `(array of ${this.profileData.experience.length})` : '');
 
-      // Si no tiene email, intentar obtenerlo del usuario autenticado
-      if (!this.profileData.email) {
-        const userEmail = sessionStorage.getItem('user_email');
-        if (userEmail) {
-          this.profileData.email = userEmail;
+        if (Array.isArray(this.profileData.education) && this.profileData.education.length > 0) {
+          console.log('📚 First education entry:', this.profileData.education[0]);
         }
+        if (Array.isArray(this.profileData.experience) && this.profileData.experience.length > 0) {
+          console.log('💼 First experience entry:', this.profileData.experience[0]);
+        }
+
+        // Si no tiene email, intentar obtenerlo del usuario autenticado
+        if (!this.profileData.email) {
+          const userEmail = sessionStorage.getItem('user_email');
+          if (userEmail) {
+            this.profileData.email = userEmail;
+          }
+        }
+      } catch (e) {
+        console.error('❌ Error parsing localStorage data:', e);
+        this.fetchProfileFromBackend();
+        return;
       }
 
       this.isLoading = false;
@@ -130,19 +143,40 @@ export class AtsCvComponent implements OnInit {
 
   downloadCV(): void {
     const element = this.cvContent.nativeElement;
-    const doc = new jsPDF('p', 'pt', 'a4');
-    if (element) {
-      doc.html(element, {
-        callback: (doc) => {
-          doc.save('skiltak-ats-cv.pdf');
-          //this.router.navigate(['/results']);
-        },
-        x: 10,
-        y: 0,
-        html2canvas: {scale: 0.65}
-      });
-      //localStorage.removeItem('manual_profile_draft');
-    }
+    if (!element) return;
+
+    // A4 dimensions in points (1 inch = 72 points, A4 = 210mm x 297mm)
+    const a4Width = 595.28;
+    const a4Height = 841.89;
+
+    html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff'
+    }).then((canvas) => {
+      const imgData = canvas.toDataURL('image/png');
+      const doc = new jsPDF('p', 'pt', 'a4');
+
+      const imgWidth = a4Width;
+      const imgHeight = (canvas.height * a4Width) / canvas.width;
+
+      // If content is taller than one page, handle multiple pages
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= a4Height;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        doc.addPage();
+        doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= a4Height;
+      }
+
+      doc.save('skiltak-ats-cv.pdf');
+    });
   }
 
   goToResults() {

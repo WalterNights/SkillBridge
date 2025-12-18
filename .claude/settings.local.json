@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx ng build:*)",
+      "Bash(dir:*)",
+      "Bash(node generate-pdf.js:*)",
+      "Bash(move \"d:\\WalterNights\\software projects\\SkillBridge\\docs\\generate-pdf.js\" \"d:\\WalterNights\\software projects\\SkillBridge\\frontend\\generate-pdf.js\")",
+      "Bash(cmd /c move:*)"
+    ]
+  }
+}

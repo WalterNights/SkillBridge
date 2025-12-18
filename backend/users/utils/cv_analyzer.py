@@ -124,6 +124,10 @@ def extract_summary(text):
 
 
 def extract_education(text):
+    """
+    Extrae la educación del CV en formato estructurado.
+    Retorna una lista de diccionarios con: institution, title, start_date, end_date, location_city, location_country
+    """
     clear_text = unidecode(text)
     lines = clear_text.strip().split()
     edu_section_start = ""
@@ -133,19 +137,168 @@ def extract_education(text):
             edu_section_start = line
         if line.upper() in END_EDUCATION_SECTION:
             edu_section_end = line
+
     pattern = rf"{edu_section_start}(.*?){edu_section_end}"
     match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
-    if match:
-        return clean_text(match.group(1))
-    return ""
+    if not match:
+        return []
+
+    edu_text = match.group(1).strip()
+    educations = []
+
+    # Patrones para detectar fechas
+    date_pattern = r'(\b(?:Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*\d{4}|\d{1,2}/\d{4}|\d{4})\s*[-–—a,]\s*(\b(?:Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*\d{4}|\d{1,2}/\d{4}|\d{4}|[Aa]ctual|[Pp]resente|[Pp]resent)'
+
+    # Patrón para detectar ubicaciones (Ciudad, País)
+    location_pattern = r'([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*)\s*,\s*([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*)'
+
+    # Dividir por fechas encontradas
+    date_matches = list(re.finditer(date_pattern, edu_text))
+
+    if not date_matches:
+        # Si no hay fechas, retornar como texto
+        return clean_text(edu_text)
+
+    for i, date_match in enumerate(date_matches):
+        # Obtener el texto antes de esta fecha
+        if i == 0:
+            before_text = edu_text[:date_match.start()].strip()
+        else:
+            before_text = edu_text[date_matches[i-1].end():date_match.start()].strip()
+
+        # Extraer fechas
+        start_date = date_match.group(1).strip()
+        end_date = date_match.group(2).strip()
+
+        # Buscar ubicación en el texto antes de la fecha
+        location_match = re.search(location_pattern, before_text)
+        location_city = ""
+        location_country = ""
+        if location_match:
+            location_city = location_match.group(1)
+            location_country = location_match.group(2)
+            # Remover la ubicación del texto
+            before_text = before_text[:location_match.start()].strip()
+
+        # El texto restante contiene institución y título
+        lines = [l.strip() for l in before_text.split('\n') if l.strip()]
+        if not lines:
+            lines = [l.strip() for l in before_text.split('.') if l.strip()]
+
+        institution = ""
+        title = ""
+        if len(lines) >= 2:
+            institution = lines[0]
+            title = lines[1]
+        elif len(lines) == 1:
+            # Intentar separar por guión
+            parts = re.split(r'\s*[-–—]\s*', lines[0])
+            if len(parts) >= 2:
+                title = parts[0]
+                institution = parts[1]
+            else:
+                institution = lines[0]
+
+        if institution or title:
+            educations.append({
+                "institution": institution,
+                "title": title,
+                "start_date": start_date,
+                "end_date": end_date,
+                "location_city": location_city,
+                "location_country": location_country
+            })
+
+    return educations if educations else clean_text(edu_text)
 
 
 def extract_experience(text):
+    """
+    Extrae la experiencia laboral del CV en formato estructurado.
+    Retorna una lista de diccionarios con: company, position, start_date, end_date, location_city, location_country, description
+    """
     pattern = r"EXPERIENCIA PROFESIONAL(.*?)EDUCACI[oÓ]N"
     match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
-    if match:
-        return clean_text(match.group(1))
-    return ""
+    if not match:
+        return []
+
+    exp_text = match.group(1).strip()
+    experiences = []
+
+    # Patrones para detectar fechas
+    date_pattern = r'(\b(?:Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*\d{4}|\d{1,2}/\d{4}|\d{4})\s*[-–—a]\s*(\b(?:Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*\d{4}|\d{1,2}/\d{4}|\d{4}|[Aa]ctual|[Pp]resente|[Pp]resent)'
+
+    # Patrón para detectar ubicaciones (Ciudad, País)
+    location_pattern = r'([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*)\s*,\s*([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*)'
+
+    # Dividir por fechas encontradas
+    date_matches = list(re.finditer(date_pattern, exp_text))
+
+    if not date_matches:
+        # Si no hay fechas, retornar como texto
+        return exp_text
+
+    for i, date_match in enumerate(date_matches):
+        # Obtener el texto antes de esta fecha hasta la fecha anterior
+        if i == 0:
+            before_text = exp_text[:date_match.start()].strip()
+        else:
+            before_text = exp_text[date_matches[i-1].end():date_match.start()].strip()
+
+        # Obtener texto después de la fecha (descripción)
+        if i < len(date_matches) - 1:
+            after_text = exp_text[date_match.end():date_matches[i+1].start()].strip()
+        else:
+            after_text = exp_text[date_match.end():].strip()
+
+        # Extraer fechas
+        start_date = date_match.group(1).strip()
+        end_date = date_match.group(2).strip()
+
+        # Buscar ubicación en el texto antes de la fecha
+        location_match = re.search(location_pattern, before_text)
+        location_city = ""
+        location_country = ""
+        if location_match:
+            location_city = location_match.group(1)
+            location_country = location_match.group(2)
+            # Remover la ubicación del texto
+            before_text = before_text[:location_match.start()].strip()
+
+        # El texto restante contiene empresa y puesto
+        lines = [l.strip() for l in before_text.split('\n') if l.strip()]
+        if not lines:
+            lines = [l.strip() for l in before_text.split('.') if l.strip()]
+
+        company = ""
+        position = ""
+        if len(lines) >= 2:
+            company = lines[0]
+            position = lines[1]
+        elif len(lines) == 1:
+            # Intentar separar por guión o coma
+            parts = re.split(r'\s*[-–—]\s*|\s*,\s*', lines[0])
+            if len(parts) >= 2:
+                company = parts[0]
+                position = parts[1]
+            else:
+                company = lines[0]
+
+        # Limpiar descripción
+        description = clean_text(after_text) if after_text else ""
+
+        if company or position:
+            experiences.append({
+                "company": company,
+                "position": position,
+                "start_date": start_date,
+                "end_date": end_date,
+                "location_city": location_city,
+                "location_country": location_country,
+                "description": description
+            })
+
+    return experiences if experiences else exp_text
 
 
 def extract_skills(text, SKILLS_KEYWORDS):

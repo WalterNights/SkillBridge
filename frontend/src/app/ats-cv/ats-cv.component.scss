@@ -1,0 +1,225 @@
+// CV Container width (matches A4 aspect ratio for screen)
+.cv-container {
+  max-width: 210mm;
+  width: 100%;
+}
+
+// CV Page - A4 dimensions with minimum height
+.cv-page {
+  width: 210mm;
+  min-height: 297mm;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 20mm 25mm;
+  background-color: #ffffff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  font-family: 'Times New Roman', Times, serif;
+  color: #333333;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+// Header Section
+.cv-header {
+  text-align: center;
+  margin-bottom: 8mm;
+  padding-bottom: 5mm;
+  border-bottom: 2px solid #2c5282;
+}
+
+.cv-name {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 32pt;
+  font-weight: bold;
+  color: #1a365d;
+  margin: 0 0 3mm 0;
+  letter-spacing: 1px;
+}
+
+.cv-contact {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 10pt;
+  color: #4a5568;
+  line-height: 1.8;
+
+  .cv-contact-separator {
+    margin: 0 3mm;
+    color: #718096;
+  }
+}
+
+// Section Styles
+.cv-section {
+  margin-bottom: 6mm;
+}
+
+.cv-section-title {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 12pt;
+  font-weight: bold;
+  color: #1a365d;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin: 0 0 4mm 0;
+  padding-bottom: 2mm;
+  border-bottom: 2px solid #2c5282;
+}
+
+// Summary
+.cv-summary {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 11pt;
+  color: #2d3748;
+  text-align: justify;
+  margin: 0;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+// Entry Styles (Experience & Education) - Array format
+.cv-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 5mm;
+}
+
+.cv-entry {
+  page-break-inside: avoid;
+  margin-bottom: 5mm;
+}
+
+.cv-entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.cv-entry-left {
+  flex: 1;
+}
+
+.cv-entry-right {
+  text-align: right;
+  flex-shrink: 0;
+  margin-left: 10mm;
+}
+
+.cv-entry-title {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 11pt;
+  font-weight: bold;
+  color: #1a202c;
+  margin: 0;
+}
+
+.cv-entry-subtitle {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 10.5pt;
+  color: #2d3748;
+  margin: 0;
+}
+
+.cv-entry-location {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 10.5pt;
+  color: #1a202c;
+  font-weight: bold;
+  display: block;
+}
+
+.cv-entry-date {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 10.5pt;
+  color: #2c5282;
+  font-weight: bold;
+  display: block;
+}
+
+.cv-entry-list {
+  margin: 3mm 0 0 0;
+  padding-left: 6mm;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 10.5pt;
+  color: #333333;
+  line-height: 1.6;
+
+  li {
+    margin-bottom: 2mm;
+    text-align: justify;
+
+    &::marker {
+      color: #2c5282;
+    }
+  }
+}
+
+// Text content (manual input format) - String format
+.cv-text-content {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 11pt;
+  color: #333333;
+  line-height: 1.7;
+  white-space: pre-line;
+  text-align: justify;
+
+  // Better paragraph spacing for text blocks
+  p {
+    margin-bottom: 3mm;
+  }
+}
+
+// Skills
+.cv-skills {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 11pt;
+  color: #333333;
+  margin: 0;
+  line-height: 1.6;
+}
+
+// Print & PDF Export Styles
+@media print {
+  .cv-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm 25mm;
+    margin: 0;
+    box-shadow: none;
+    page-break-after: always;
+  }
+
+  .cv-section {
+    page-break-inside: avoid;
+  }
+
+  .cv-entry {
+    page-break-inside: avoid;
+  }
+}
+
+// Responsive adjustments for smaller screens
+@media screen and (max-width: 800px) {
+  .cv-page {
+    width: 100%;
+    min-height: auto;
+    padding: 15mm 12mm;
+  }
+
+  .cv-name {
+    font-size: 24pt;
+  }
+
+  .cv-section-title {
+    font-size: 11pt;
+  }
+
+  .cv-entry-row {
+    flex-direction: column;
+    gap: 1mm;
+  }
+
+  .cv-entry-location,
+  .cv-entry-date {
+    text-align: left;
+  }
+}
