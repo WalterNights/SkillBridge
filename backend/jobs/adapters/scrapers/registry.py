@@ -1,19 +1,27 @@
 """Factory para resolver scrapers por nombre.
 
-Hoy solo existe Computrabajo. Cuando agreguemos InfoJobs, Indeed, etc.,
-basta con registrarlos acá — el resto del código (services, tasks)
-sigue hablando con el `ScraperRegistry`, no con clases concretas.
+Para agregar un portal nuevo: importar la clase y registrarla en _REGISTRY.
+El resto del código (services, tasks) sigue hablando con el registry, no
+con clases concretas.
+
+Elempleo está fuera del registry porque su buscador corre 100% en cliente
+vía JS — la URL pública devuelve siempre la misma lista de "ofertas
+populares de hoy" sin importar el query, así que guardábamos ~40 ofertas
+irrelevantes con match 0% cada vez que se llamaba. Para volver a
+activarlo hace falta uno de:
+  - un headless browser (Playwright) en el VPS que ejecute el JS
+  - acceder a /api/joboffers/findbyfilter con cookies de sesión
+La clase ElempleoScraper se queda en el código para retomarla cuando
+tengamos esa infra.
 """
 
 from __future__ import annotations
 
 from jobs.adapters.scrapers.base import JobScraper, ScraperError
 from jobs.adapters.scrapers.computrabajo import ComputrabajoScraper
-from jobs.adapters.scrapers.elempleo import ElempleoScraper
 
 _REGISTRY: dict[str, type[JobScraper]] = {
     ComputrabajoScraper.portal_name: ComputrabajoScraper,
-    ElempleoScraper.portal_name: ElempleoScraper,
 }
 
 

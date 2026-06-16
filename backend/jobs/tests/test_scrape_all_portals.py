@@ -23,6 +23,9 @@ def _offer(url: str, portal: str = "computrabajo") -> JobOfferData:
 
 @pytest.mark.django_db
 class TestScrapeAllPortals:
+    # Los tests pasan `portals=[...]` explícitos para no depender del registry
+    # (que hoy tiene solo Computrabajo activo — ver registry.py).
+
     def test_returns_offers_from_all_portals(self):
         """Cada portal devuelve sus ofertas, todas se persisten."""
 
@@ -37,7 +40,9 @@ class TestScrapeAllPortals:
             return []
 
         with patch("jobs.services.job_service._scrape_one_portal", side_effect=fake_scrape_one):
-            created = JobService.scrape_all_portals("dev", "Bogotá")
+            created = JobService.scrape_all_portals(
+                "dev", "Bogotá", portals=["computrabajo", "elempleo"]
+            )
 
         assert len(created) == 3
         portals = {o.portal for o in created}
@@ -54,7 +59,9 @@ class TestScrapeAllPortals:
             return []
 
         with patch("jobs.services.job_service._scrape_one_portal", side_effect=fake_scrape_one):
-            created = JobService.scrape_all_portals("dev", "Bogotá")
+            created = JobService.scrape_all_portals(
+                "dev", "Bogotá", portals=["computrabajo", "elempleo"]
+            )
 
         assert len(created) == 1
         assert created[0].portal == "elempleo"
@@ -66,7 +73,9 @@ class TestScrapeAllPortals:
             return [_offer(f"https://x.example/{portal}", portal)]
 
         with patch("jobs.services.job_service._scrape_one_portal", side_effect=fake_scrape_one):
-            JobService.scrape_all_portals("dev", "X")
+            JobService.scrape_all_portals(
+                "dev", "X", portals=["computrabajo", "elempleo"]
+            )
 
         portals_in_db = set(JobOffer.objects.values_list("portal", flat=True))
         assert "computrabajo" in portals_in_db
