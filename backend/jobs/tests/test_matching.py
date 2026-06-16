@@ -62,19 +62,25 @@ class TestCalculateMatchPercentage:
         )
         assert result['match_percentage'] == 100
 
-    def test_aliased_skills_currently_miss(self):
-        """Documenta el bug actual: react vs react.js NO matchea.
-
-        Este test pasa HOY. Después del Commit 3 (taxonomía con aliases),
-        este test debería cambiar a esperar 100% — lo actualizaremos
-        explícitamente en ese commit, no antes.
+    def test_aliases_resolve_to_canonical_skill(self):
+        """Después del Commit 3: variantes como `react.js` matchean con
+        `react` porque la taxonomía las trata como aliases del mismo skill.
         """
         result = JobMatchingService.calculate_match_percentage(
             job_keywords=['react.js'],
             user_skills=['react'],
         )
-        # Comportamiento actual roto: react.js ≠ react
-        assert result['match_percentage'] == 0
+        assert result['match_percentage'] == 100
+        assert 'react' in result['matched_skills']
+
+    def test_multiple_aliases_normalize_consistently(self):
+        """Varios aliases bidireccionales en una sola request."""
+        result = JobMatchingService.calculate_match_percentage(
+            job_keywords=['Node.js', 'PostgreSQL', 'C#', 'Spring Boot'],
+            user_skills=['node', 'postgres', 'csharp', 'spring'],
+        )
+        assert result['match_percentage'] == 100
+        assert set(result['matched_skills']) == {'node', 'postgresql', 'csharp', 'spring'}
 
 
 @pytest.mark.django_db

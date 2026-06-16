@@ -1,9 +1,12 @@
-import requests, re
+import re
+
+import requests
 from bs4 import BeautifulSoup
-from unidecode import unidecode
-from jobs.models import JobOffer
 from django.utils import timezone
-from jobs.keywords import COMMON_KEYWORDS
+from unidecode import unidecode
+
+from common.skills_taxonomy import all_recognizable, normalize
+from jobs.models import JobOffer
 
 
 def scrap_computrabajo(query, location):
@@ -56,12 +59,19 @@ def scrap_computrabajo(query, location):
 
 
 def extract_keywords(text):
-    text = text.lower()
-    found_keywords = [
-        kw for kw in COMMON_KEYWORDS
-        if re.search(r'(?<!\w)' + re.escape(kw) + r'(?!\w)', text, re.IGNORECASE)
-    ]
-    return ', '.join(found_keywords)
+    """Detecta skills conocidas en `text` y devuelve sus nombres canónicos.
+
+    Recorre `all_recognizable()` (skills + soft skills + aliases) y para
+    cada coincidencia con word-boundary normaliza al nombre canónico,
+    eliminando duplicados (ej. `react.js` y `react` cuentan como una sola).
+    """
+    text_lower = text.lower()
+    found = {
+        normalize(kw)
+        for kw in all_recognizable()
+        if re.search(r'(?<!\w)' + re.escape(kw) + r'(?!\w)', text_lower)
+    }
+    return ', '.join(sorted(found))
 
 
 def run_scraper_and_store_results(query):

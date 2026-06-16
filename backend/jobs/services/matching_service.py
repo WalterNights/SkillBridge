@@ -5,6 +5,7 @@ from typing import List, Dict
 from django.db.models import QuerySet
 from django.core.cache import cache
 
+from common.skills_taxonomy import normalize
 from jobs.models import JobOffer
 from users.models import UserProfile
 from users.services.nlp_service import NLPService
@@ -12,33 +13,37 @@ from users.services.nlp_service import NLPService
 
 class JobMatchingService:
     """Servicio para matching de ofertas con perfiles de usuario"""
-    
+
     @staticmethod
     def calculate_match_percentage(
-        job_keywords: List[str], 
+        job_keywords: List[str],
         user_skills: List[str],
         use_semantic: bool = False
     ) -> Dict[str, any]:
         """
         Calcula el porcentaje de match entre keywords de job y skills de usuario.
-        
+
+        Las skills se normalizan vía `common.skills_taxonomy.normalize` antes
+        de comparar — así `React.js` y `react` cuentan como la misma skill.
+
         Args:
             job_keywords: Lista de keywords del trabajo
             user_skills: Lista de skills del usuario
             use_semantic: Si True, usa similaridad semántica con NLP
-            
+
         Returns:
             Dict con matched_skills, missing_skills, match_percentage
         """
-        # Limpiar y normalizar keywords
+        # Normalizar (lowercase + strip + aplicar aliases del taxonomía)
         job_keywords_clean = [
-            kw.strip().lower() 
-            for kw in job_keywords 
+            normalize(kw)
+            for kw in job_keywords
             if kw.strip()
         ]
         user_skills_clean = [
-            skill.strip().lower() 
+            normalize(skill)
             for skill in user_skills
+            if skill.strip()
         ]
         
         if not job_keywords_clean:

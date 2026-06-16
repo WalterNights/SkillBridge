@@ -4,6 +4,8 @@ Servicio de NLP usando spaCy para análisis avanzado de texto.
 import logging
 from typing import List, Dict, Optional
 
+from common.skills_taxonomy import HARD_SKILLS, normalize
+
 logger = logging.getLogger(__name__)
 
 class NLPService:
@@ -83,31 +85,21 @@ class NLPService:
         
         try:
             doc = nlp(text.lower())
-            skills = []
-            
-            # Lista de skills técnicas comunes
-            technical_skills = {
-                'python', 'java', 'javascript', 'typescript', 'react', 'angular',
-                'vue', 'node', 'django', 'flask', 'spring', 'docker', 'kubernetes',
-                'aws', 'azure', 'gcp', 'sql', 'nosql', 'mongodb', 'postgresql',
-                'mysql', 'redis', 'git', 'ci/cd', 'jenkins', 'terraform', 'ansible',
-                'linux', 'windows', 'macos', 'api', 'rest', 'graphql', 'microservices',
-                'agile', 'scrum', 'html', 'css', 'sass', 'webpack', 'babel',
-                'testing', 'jest', 'pytest', 'selenium', 'cypress'
-            }
-            
-            # Extraer tokens que coinciden con skills técnicas
+            skills: List[str] = []
+
+            # Tokens que matchean alguna skill canónica de la taxonomía
             for token in doc:
-                if token.text in technical_skills and token.text not in skills:
-                    skills.append(token.text)
-            
-            # Extraer entidades de organización que pueden ser tecnologías
+                canonical = normalize(token.text)
+                if canonical in HARD_SKILLS and canonical not in skills:
+                    skills.append(canonical)
+
+            # Entidades de organización pueden ser nombres de tecnologías
             entities = cls.extract_entities(text)
             for org in entities.get('ORG', []):
-                org_lower = org.lower()
-                if org_lower in technical_skills and org_lower not in skills:
-                    skills.append(org_lower)
-            
+                canonical = normalize(org)
+                if canonical in HARD_SKILLS and canonical not in skills:
+                    skills.append(canonical)
+
             return skills
         except Exception as e:
             logger.error(f"Error extracting skills with NLP: {str(e)}")
