@@ -62,21 +62,24 @@ jobs:
           name: frontend-dist
           path: frontend-dist
 
-      - name: Setup SSH
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Add VPS to known_hosts
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+          ssh-keyscan -t ed25519,rsa -T 10 "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Rsync frontend dist to VPS
         run: |
           rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new" \
+            -e "ssh -o StrictHostKeyChecking=accept-new" \
             frontend-dist/ "$VPS_USER@$VPS_HOST:$VPS_PATH/frontend-dist/"
 
-      - name: Pull backend and restart services
+      - name: Run remote deploy script
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
-            "$VPS_USER@$VPS_HOST" \
+          ssh -o StrictHostKeyChecking=accept-new "$VPS_USER@$VPS_HOST" \
             "VPS_PATH=$VPS_PATH bash -s" < deploy/remote-deploy.sh
