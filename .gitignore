@@ -1,3 +1,4 @@
+.cache/
 # === Secrets ===
 .env
 .env.*
