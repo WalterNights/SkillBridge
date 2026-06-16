@@ -62,22 +62,35 @@ class JobService:
 
         Usa `get_or_create` por `url` (campo unique). Si una oferta ya
         existe no se actualiza ni se devuelve — el scraping es idempotente.
+
+        Si una oferta puntual falla al guardar (ej: campo demasiado largo,
+        URL malformada), se loguea y se sigue con el resto — no aborta
+        la batch entera. Aprendido tras un `DataError` por una sola URL
+        de Computrabajo > 200 chars que rompía todas las demás.
         """
         created: List[JobOffer] = []
+        skipped = 0
         for data in offers_data:
-            obj, was_created = JobOffer.objects.get_or_create(
-                url=data.url,
-                defaults={
-                    'title': data.title,
-                    'company': data.company,
-                    'location': data.location,
-                    'summary': data.summary,
-                    'keywords': data.keywords,
-                },
-            )
-            if was_created:
-                created.append(obj)
-        logger.info("save_new_offers: %d nuevas guardadas", len(created))
+            try:
+                obj, was_created = JobOffer.objects.get_or_create(
+                    url=data.url,
+                    defaults={
+                        'title': data.title,
+                        'company': data.company,
+                        'location': data.location,
+                        'summary': data.summary,
+                        'keywords': data.keywords,
+                    },
+                )
+                if was_created:
+                    created.append(obj)
+            except Exception:
+                skipped += 1
+                logger.exception("Skipping offer (url=%r)", data.url)
+        logger.info(
+            "save_new_offers: %d nuevas guardadas, %d saltadas",
+            len(created), skipped,
+        )
         return created
 
     @staticmethod

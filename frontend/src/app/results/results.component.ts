@@ -4,6 +4,7 @@ import { Title } from '@angular/platform-browser';
 import { HttpErrorResponse } from '@angular/common/http';
 import { JobOffer } from '../models/job-offer.model';
 import { JobService } from '../services/job.service';
+import { ToastService } from '../services/toast.service';
 import { Router, RouterModule } from '@angular/router';
 import { HTMLChangesComponent } from '../shared/html-changes/html-changes';
 import { MATCH_THRESHOLDS } from '../constants/match-thresholds';
@@ -28,6 +29,7 @@ export class ResultsComponent {
   constructor(
     private router: Router,
     private jobService: JobService,
+    private toast: ToastService,
     private titleService: Title,
     private changes: HTMLChangesComponent
   ) {
@@ -135,20 +137,35 @@ export class ResultsComponent {
    * Fetches job offers from scraping service
    */
   obtainOffers(): void {
+    this.toast.info('Buscando ofertas en los portales...', 'Cargando');
     this.jobService.getScrapedOffers().subscribe({
       next: (res: JobOffer[]) => {
         this.jobService.setOffers(res);
+        this.offers = res;
+        this.toast.success(
+          `Se encontraron ${res.length} ofertas para tu perfil.`,
+          '¡Listo!',
+        );
       },
       error: (err: HttpErrorResponse) => {
         console.error('Error fetching job offers:', err);
         if (err.status === 400 && err.error?.error) {
-          alert(err.error.error);
+          this.toast.warning(err.error.error, 'Completá tu perfil');
         } else if (err.status === 400) {
-          alert('Por favor completa tu perfil con tu título profesional y ciudad antes de buscar ofertas.');
+          this.toast.warning(
+            'Necesitamos tu título profesional y ciudad antes de buscar ofertas.',
+            'Completá tu perfil',
+          );
         } else if (err.status === 404) {
-          alert('No se encontró tu perfil. Por favor crea uno primero.');
+          this.toast.warning(
+            'No se encontró tu perfil. Por favor creá uno primero.',
+            'Perfil no encontrado',
+          );
         } else {
-          alert('Error al obtener ofertas. Por favor intenta de nuevo.');
+          this.toast.error(
+            'No pudimos obtener ofertas en este momento. Intentá de nuevo en unos segundos.',
+            'Algo falló',
+          );
         }
       }
     });

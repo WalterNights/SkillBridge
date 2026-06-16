@@ -7,10 +7,11 @@ import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { SidebarComponent } from './dashboard/sidebar/sidebar.component';
 import { HeaderDashboardComponent } from './dashboard/header-dashboard/header-dashboard.component';
+import { ToastContainerComponent } from './shared/molecules/toast-container/toast-container.component';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet, HeaderComponent, SidebarComponent, HeaderDashboardComponent],
+  imports: [CommonModule, RouterOutlet, HeaderComponent, SidebarComponent, HeaderDashboardComponent, ToastContainerComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
