@@ -62,12 +62,7 @@ export class SettingsComponent {
   }
 
   saveSettings(): void {
-    // Aquí puedes agregar lógica para guardar las configuraciones en el backend
-    console.log('Settings saved:', {
-      enableNotifications: this.enableNotifications,
-      enableEmailAlerts: this.enableEmailAlerts,
-      language: this.language
-    });
+    // TODO: persistir las preferencias en backend cuando exista el endpoint.
   }
 
   goBack(): void {

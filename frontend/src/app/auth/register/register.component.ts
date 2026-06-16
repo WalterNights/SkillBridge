@@ -94,7 +94,6 @@ export class RegisterComponent {
 
         // Log full error for debugging
         console.error('Registration error:', err);
-        console.log('Error structure:', err.error);
 
         // Handle specific backend validation errors
         if (err.error && typeof err.error === 'object') {

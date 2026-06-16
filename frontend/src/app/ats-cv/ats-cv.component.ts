@@ -46,16 +46,6 @@ export class AtsCvComponent implements OnInit {
     if (savedData) {
       try {
         this.profileData = JSON.parse(savedData);
-        console.log('📋 Datos cargados desde localStorage:', this.profileData);
-        console.log('✅ Education type:', typeof this.profileData.education, Array.isArray(this.profileData.education) ? `(array of ${this.profileData.education.length})` : '');
-        console.log('✅ Experience type:', typeof this.profileData.experience, Array.isArray(this.profileData.experience) ? `(array of ${this.profileData.experience.length})` : '');
-
-        if (Array.isArray(this.profileData.education) && this.profileData.education.length > 0) {
-          console.log('📚 First education entry:', this.profileData.education[0]);
-        }
-        if (Array.isArray(this.profileData.experience) && this.profileData.experience.length > 0) {
-          console.log('💼 First experience entry:', this.profileData.experience[0]);
-        }
 
         // Si no tiene email, intentar obtenerlo del usuario autenticado
         if (!this.profileData.email) {
@@ -65,15 +55,14 @@ export class AtsCvComponent implements OnInit {
           }
         }
       } catch (e) {
-        console.error('❌ Error parsing localStorage data:', e);
+        console.error('Error parsing localStorage data:', e);
         this.fetchProfileFromBackend();
         return;
       }
 
       this.isLoading = false;
     } else {
-      console.log('⚠️ No hay datos en localStorage, consultando backend...');
-      // If no localStorage data, fetch from backend
+      // No data in localStorage, fetch from backend
       this.fetchProfileFromBackend();
     }
   }

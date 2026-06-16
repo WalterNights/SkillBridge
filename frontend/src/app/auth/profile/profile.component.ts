@@ -170,7 +170,6 @@ export class ProfileComponent implements OnInit {
           this.isLoading = false;
           this.profileSaved = true;
           this.successMessage = '¡Perfil guardado exitosamente!';
-          console.log("✅ Perfil guardado correctamente");
         }, 1500);
       },
       (err) => {
