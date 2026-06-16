@@ -13,20 +13,49 @@ from users.models import UserProfile
 class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet para operaciones de lectura de ofertas de trabajo.
-    
+
     Endpoints:
-    - GET /jobs/ - Lista todas las ofertas
-    - GET /jobs/{id}/ - Detalle de una oferta
+    - GET /jobs/ - Lista todas las ofertas (enriquecidas con match del usuario)
+    - GET /jobs/{id}/ - Detalle de una oferta (enriquecido con match del usuario)
     - GET /jobs/matched/ - Ofertas filtradas por matching con usuario
     - GET /jobs/scrape/ - Ejecuta scraping de nuevas ofertas
     """
     queryset = JobOffer.objects.all()
     serializer_class = JobOfferSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         """Optimiza queries con select_related"""
         return JobOffer.objects.all().order_by('-created_at')
+
+    def _enrich_with_user_match(self, offers):
+        """Adjunta match_percentage / matched_skills / missing_skills usando
+        el perfil del usuario autenticado. Es no-op si el usuario no tiene
+        perfil completo todavía.
+        """
+        try:
+            profile = self.request.user.profile
+        except UserProfile.DoesNotExist:
+            return
+        JobMatchingService.enrich_with_match(offers, profile)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            self._enrich_with_user_match(page)
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        offers = list(queryset)
+        self._enrich_with_user_match(offers)
+        serializer = self.get_serializer(offers, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self._enrich_with_user_match([instance])
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
     
     @action(detail=False, methods=['get'])
     def matched(self, request):

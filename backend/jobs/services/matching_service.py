@@ -89,8 +89,31 @@ class JobMatchingService:
         }
     
     @staticmethod
+    def enrich_with_match(
+        offers,
+        user_profile: UserProfile,
+    ) -> None:
+        """Asigna `match_percentage`, `matched_skills` y `missing_skills` a
+        cada oferta in-place. No filtra — solo enriquece para que el
+        serializer pueda mostrar el badge en cualquier listing.
+
+        Si el usuario no tiene skills definidas, los atributos quedan
+        con defaults (0% / [] / keywords del job como missing).
+        """
+        user_skills = (user_profile.skills or '').split(',')
+        for job in offers:
+            job_keywords = (job.keywords or '').split(',')
+            match_data = JobMatchingService.calculate_match_percentage(
+                job_keywords,
+                user_skills,
+            )
+            job.matched_skills = match_data['matched_skills']
+            job.missing_skills = match_data['missing_skills']
+            job.match_percentage = match_data['match_percentage']
+
+    @staticmethod
     def filter_jobs_by_skills(
-        jobs: QuerySet[JobOffer], 
+        jobs: QuerySet[JobOffer],
         user_profile: UserProfile,
         min_match_percentage: int = 50
     ) -> List[JobOffer]:

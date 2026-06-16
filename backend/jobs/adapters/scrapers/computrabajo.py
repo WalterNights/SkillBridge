@@ -120,11 +120,16 @@ class ComputrabajoScraper(JobScraper):
         )
 
     def _fetch_detail(self, offer_url: str) -> Tuple[str, str]:
-        """Devuelve (summary, keywords) para una oferta individual."""
+        """Devuelve (summary, keywords) para una oferta individual.
+
+        Usa el USER_AGENT completo del listing — el corto 'Mozilla/5.0'
+        recibe 403 de Computrabajo, lo que causaba summary/keywords vacíos
+        en cada oferta.
+        """
         try:
             response = requests.get(
                 offer_url,
-                headers={"User-Agent": "Mozilla/5.0"},
+                headers={"User-Agent": USER_AGENT},
                 timeout=self.request_timeout_seconds,
             )
         except requests.RequestException as e:
