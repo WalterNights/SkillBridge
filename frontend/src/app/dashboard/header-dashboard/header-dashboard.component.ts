@@ -1,9 +1,7 @@
 import { Router } from '@angular/router';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../auth/auth.service';
-import { environment } from '../../../environment/environment';
 import { StorageMethodComponent } from '../../shared/storage-method/storage-method';
 import { SidebarService } from '../services/sidebar.service';
 
@@ -25,7 +23,6 @@ export class HeaderDashboardComponent {
 
   constructor(
     private router: Router,
-    private http: HttpClient,
     private authService: AuthService,
     private storageMethod: StorageMethodComponent,
     private sidebarService: SidebarService,

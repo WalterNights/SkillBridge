@@ -7,8 +7,7 @@ import { AuthService } from '../auth/auth.service';
 import { Title } from '@angular/platform-browser';
 import { registerLocaleData } from '@angular/common';
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { environment } from '../../environment/environment';
+import { ProfileService } from '../services/profile.service';
 import { STORAGE_KEYS } from '../constants/app-stats';
 
 @Component({
@@ -28,7 +27,7 @@ export class AtsCvComponent implements OnInit {
     private titleService: Title,
     private authService: AuthService,
     private router: Router,
-    private http: HttpClient
+    private profileService: ProfileService,
   ) {
     this.titleService.setTitle('SkilTak - CV ATS');
   }
@@ -80,20 +79,19 @@ export class AtsCvComponent implements OnInit {
   }
 
   /**
-   * Fetch profile data from backend
+   * Fetch profile data from backend.
+   * El token se inyecta automáticamente por `TokenInterceptor`.
    */
   fetchProfileFromBackend(): void {
-    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-    if (!token) {
+    if (!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)) {
       this.errorMessage = 'No se encontraron datos del perfil';
       this.isLoading = false;
       return;
     }
 
-    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
-    this.http.get<any>(`${environment.apiUrl}/users/profiles/`, { headers }).subscribe({
+    this.profileService.getMyProfile().subscribe({
       next: (response) => {
-        // API returns array, get first profile
+        // El endpoint puede devolver array (viewset list) u objeto puntual
         const profile = Array.isArray(response) ? response[0] : response;
         if (profile) {
           this.profileData = this.formatProfileData(profile);

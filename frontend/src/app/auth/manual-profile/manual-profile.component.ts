@@ -1,12 +1,13 @@
 import { Country } from 'country-state-city';
 import { RouterModule, Router } from '@angular/router';
 import { CommonModule, Location } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { FormBuilder, FormArray, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LoaderModalComponent } from '../../shared/loader-modal/loader-modal.component';
 import { ProfileBuilderComponent } from '../../shared/profile-builder/profile-builder.component';
+import { CountryCode } from '../../models/country-code.model';
+import { CountryCodeService } from '../../services/country-code.service';
 
 
 @Component({
@@ -24,13 +25,13 @@ export class ManualProfileComponent implements OnInit {
   isLoading = false;
   showLoader = false;
   successMessage = "";
-  countryCodes: any[] = [];
+  countryCodes: CountryCode[] = [];
   countries = Country.getAllCountries();
   cities: any[] = [];
 
   constructor(
     private titleService: Title,
-    private http: HttpClient,
+    private countryCodeService: CountryCodeService,
     private fb: FormBuilder,
     private profileBuldier: ProfileBuilderComponent,
     private location: Location,
@@ -39,7 +40,7 @@ export class ManualProfileComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.http.get<any[]>('/data/country-code.json').subscribe(data => {
+    this.countryCodeService.getCountryCodes().subscribe(data => {
       this.countryCodes = data;
     });
     const educationArray = this.fb.array([this.createEducationGroup()]);

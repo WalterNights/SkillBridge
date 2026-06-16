@@ -1,12 +1,13 @@
 import { Country } from 'country-state-city';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule, Location } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { LoaderModalComponent } from '../../shared/loader-modal/loader-modal.component';
 import { ProfileBuilderComponent } from '../../shared/profile-builder/profile-builder.component';
+import { CountryCode } from '../../models/country-code.model';
+import { CountryCodeService } from '../../services/country-code.service';
 
 
 @Component({
@@ -25,12 +26,12 @@ export class ProfileComponent implements OnInit {
   showLoader = false;
   successMessage = "";
   profileSaved = false;
-  countryCodes: any[] = [];
+  countryCodes: CountryCode[] = [];
   countries = Country.getAllCountries();
   cities: any[] = [];
 
   constructor(
-    private http: HttpClient,
+    private countryCodeService: CountryCodeService,
     private profileBuldier: ProfileBuilderComponent,
     private titleService: Title,
     private location: Location,
@@ -40,7 +41,7 @@ export class ProfileComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.http.get<any[]>('assets/data/country-code.json').subscribe(data => {
+    this.countryCodeService.getCountryCodes().subscribe(data => {
       this.countryCodes = data;
     });
     this.profileForm = this.profileBuldier.buildProfileForm();

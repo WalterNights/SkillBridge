@@ -1,12 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../auth/auth.service';
 import { JobService } from '../services/job.service';
 import { JobOffer } from '../models/job-offer.model';
 import { Router, ActivatedRoute } from '@angular/router';
-import { environment } from '../../environment/environment';
 
 @Component({
   selector: 'app-job-detail',
@@ -16,7 +14,7 @@ import { environment } from '../../environment/environment';
   styleUrls: ['./job-detail.component.scss']
 })
 export class JobDetailComponent implements OnInit {
-  job!: any;
+  job!: JobOffer;
   jobDetail!: JobOffer;
 
   constructor(
@@ -25,7 +23,6 @@ export class JobDetailComponent implements OnInit {
     private jobService: JobService,
     private authService: AuthService,
     private titleService: Title,
-    private http: HttpClient
   ) {
     this.titleService.setTitle('SkilTak - Oferta- Detalles');
   }
@@ -34,9 +31,10 @@ export class JobDetailComponent implements OnInit {
     const jobFiltered = this.jobService.getSelectedJob();
     if (jobFiltered) this.jobDetail = jobFiltered;
     const jobId = this.route.snapshot.paramMap.get('id');
-    this.http.get(`${environment.apiUrl}/jobs/jobs-details/${jobId}/`).subscribe({
+    if (!jobId) return;
+    this.jobService.getJobDetail(jobId).subscribe({
       next: data => this.job = data,
-      error: err => console.log('Error al cargar la oferta')
+      error: () => console.error('Error al cargar la oferta')
     });
   }
 

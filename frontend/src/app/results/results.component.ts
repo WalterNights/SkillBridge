@@ -1,11 +1,10 @@
 import { Component} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { JobOffer } from '../models/job-offer.model';
 import { JobService } from '../services/job.service';
 import { Router, RouterModule } from '@angular/router';
-import { environment } from '../../environment/environment';
 import { HTMLChangesComponent } from '../shared/html-changes/html-changes';
 import { MATCH_THRESHOLDS } from '../constants/match-thresholds';
 
@@ -30,26 +29,19 @@ export class ResultsComponent {
     private router: Router,
     private jobService: JobService,
     private titleService: Title,
-    private http: HttpClient,
     private changes: HTMLChangesComponent
   ) {
     this.titleService.setTitle('SkilTak - Resultados de Búsqueda');
   }
 
-  /**
-   * Initializes component and loads job offers
-   */
   ngOnInit(): void {
     this.loadOffers();
   }
 
-  /**
-   * Loads job offers from the API
-   */
   private loadOffers(): void {
-    this.http.get<JobOffer[]>(`${environment.apiUrl}/jobs/jobs/`).subscribe({
+    this.jobService.getJobs().subscribe({
       next: (data) => {
-        this.offers = Array.isArray(data) ? data : [];
+        this.offers = data;
       },
       error: (err: HttpErrorResponse) => {
         console.error('Failed to load job offers:', err);
