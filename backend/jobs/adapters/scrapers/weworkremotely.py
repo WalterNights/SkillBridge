@@ -40,6 +40,52 @@ USER_AGENT = (
 
 BASE_URL = "https://weworkremotely.com"
 
+# WWR sólo indexa títulos en inglés. Si dejamos pasar "Desarrollador" o
+# "Ingeniero" el search devuelve 0 ofertas. Traducimos los rótulos más
+# comunes que vemos en perfiles colombianos y quitamos stop-words ES.
+_ES_TO_EN = {
+    "desarrollador": "developer",
+    "desarrolladora": "developer",
+    "desarrollo": "development",
+    "ingeniero": "engineer",
+    "ingeniera": "engineer",
+    "ingenieria": "engineering",
+    "ingeniería": "engineering",
+    "programador": "programmer",
+    "programadora": "programmer",
+    "diseñador": "designer",
+    "diseñadora": "designer",
+    "analista": "analyst",
+    "arquitecto": "architect",
+    "arquitecta": "architect",
+    "administrador": "administrator",
+    "soporte": "support",
+    "datos": "data",
+    "sistemas": "systems",
+    "software": "software",
+    "web": "web",
+    "movil": "mobile",
+    "móvil": "mobile",
+    "frontend": "frontend",
+    "backend": "backend",
+    "fullstack": "fullstack",
+}
+_ES_STOPWORDS = {"de", "del", "la", "el", "los", "las", "en", "y", "para", "a"}
+
+
+def _translate_query_to_english(query: str) -> str:
+    """Mapea términos ES → EN y descarta stop-words.
+
+    Ej: "Ingeniero de Sistemas" → "engineer systems"
+        "Desarrollador Backend"  → "developer backend"
+    Si nada matchea, devuelve el query original (lo normal cuando el
+    usuario ya escribió en inglés).
+    """
+    tokens = [t for t in query.lower().split() if t not in _ES_STOPWORDS]
+    translated = [_ES_TO_EN.get(t, t) for t in tokens]
+    result = " ".join(translated).strip()
+    return result or query
+
 
 class WeWorkRemotelyScraper(JobScraper):
     """Scraper para weworkremotely.com."""
@@ -53,11 +99,17 @@ class WeWorkRemotelyScraper(JobScraper):
         # WWR no pagina el endpoint de search (devuelve ~50-80 ofertas en una sola
         # página). El parámetro `pages` queda en la firma para conformar el
         # contrato de JobScraper, pero se ignora.
+        en_query = _translate_query_to_english(query)
         search_url = (
             f"{BASE_URL}/remote-jobs/search?term="
-            + requests.utils.quote(query, safe="")
+            + requests.utils.quote(en_query, safe="")
         )
-        logger.info("Iniciando scrape WWR: query=%r url=%s", query, search_url)
+        logger.info(
+            "Iniciando scrape WWR: query=%r → en=%r url=%s",
+            query,
+            en_query,
+            search_url,
+        )
 
         try:
             response = requests.get(
