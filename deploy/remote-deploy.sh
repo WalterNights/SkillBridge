@@ -8,6 +8,10 @@ set -euo pipefail
 VPS_PATH="${VPS_PATH:-/var/www/skiltak}"
 cd "$VPS_PATH"
 
+# El repo es propiedad del usuario `skiltak` (creado por provision.sh) pero el
+# deploy corre como root via SSH. Git rechaza operar si el dueño difiere.
+git config --global --add safe.directory "$VPS_PATH"
+
 echo "==> Pulling latest backend code"
 git fetch --quiet origin main
 git reset --hard origin/main
