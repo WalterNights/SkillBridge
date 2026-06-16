@@ -134,18 +134,29 @@ export class ResultsComponent {
   }
 
   /**
-   * Fetches job offers from scraping service
+   * Dispara un scrape nuevo y refresca la lista visible.
+   *
+   * El endpoint `/scrape/` devuelve SOLO las ofertas nuevas que pasaron
+   * el filtro de match para el usuario — puede ser un array chico (o
+   * vacío) aunque la DB tenga más. Por eso después del scrape pedimos
+   * el listado completo via `getJobs()` para reflejar el estado real.
    */
   obtainOffers(): void {
     this.toast.info('Buscando ofertas en los portales...', 'Cargando');
     this.jobService.getScrapedOffers().subscribe({
-      next: (res: JobOffer[]) => {
-        this.jobService.setOffers(res);
-        this.offers = res;
-        this.toast.success(
-          `Se encontraron ${res.length} ofertas para tu perfil.`,
-          '¡Listo!',
-        );
+      next: (newOffers: JobOffer[]) => {
+        if (newOffers.length > 0) {
+          this.toast.success(
+            `Se agregaron ${newOffers.length} ofertas nuevas para tu perfil.`,
+            '¡Listo!',
+          );
+        } else {
+          this.toast.info(
+            'No hay ofertas nuevas por ahora. Mostrando las guardadas.',
+            'Sin novedades',
+          );
+        }
+        this.loadOffers();
       },
       error: (err: HttpErrorResponse) => {
         console.error('Error fetching job offers:', err);
