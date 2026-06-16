@@ -1,48 +1,40 @@
 """
 Tareas asíncronas para el módulo de jobs.
 """
-from celery import shared_task
 import logging
 
-from jobs.utils.scraper import scrap_computrabajo
+from celery import shared_task
+
 from jobs.models import JobOffer
+from jobs.services.job_service import JobService
 
 logger = logging.getLogger(__name__)
 
 
 @shared_task(name='jobs.scrape_job_offers')
-def scrape_job_offers(query: str, location: str):
-    """
-    Tarea asíncrona para scraping de ofertas de trabajo.
-    
-    Args:
-        query: Término de búsqueda (título profesional)
-        location: Ubicación para buscar ofertas
-        
-    Returns:
-        Dict con número de ofertas creadas
-    """
-    logger.info(f"Starting async scraping task: query='{query}', location='{location}'")
-    
+def scrape_job_offers(query: str, location: str, portal: str = 'computrabajo'):
+    """Tarea asíncrona para scraping de ofertas de trabajo."""
+    logger.info(
+        "Starting async scraping task: portal=%s query=%r location=%r",
+        portal, query, location,
+    )
     try:
-        new_offers = scrap_computrabajo(query, location)
-        count = len(new_offers)
-        
-        logger.info(f"Scraping task completed successfully. Created {count} offers")
-        
+        new_offers = JobService.scrape_new_jobs(query, location, portal=portal)
         return {
             'status': 'success',
-            'offers_created': count,
+            'offers_created': len(new_offers),
             'query': query,
-            'location': location
+            'location': location,
+            'portal': portal,
         }
     except Exception as e:
-        logger.error(f"Scraping task failed: {str(e)}", exc_info=True)
+        logger.error("Scraping task failed: %s", e, exc_info=True)
         return {
             'status': 'error',
             'error': str(e),
             'query': query,
-            'location': location
+            'location': location,
+            'portal': portal,
         }
 
 

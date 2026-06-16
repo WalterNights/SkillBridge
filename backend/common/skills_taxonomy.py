@@ -2,8 +2,8 @@
 
 Fuente única de verdad para:
   - Matching de ofertas con perfiles (`JobMatchingService`)
-  - Extracción de keywords del scraper (`jobs.utils.scraper`)
-  - Detección de skills en CVs (`users.services.nlp_service`, futuro `cv_analyzer`)
+  - Extracción de keywords del scraper (`jobs.adapters.scrapers.base.extract_keywords`)
+  - Detección de skills en CVs (`users.services.nlp_service`)
 
 Reemplaza las fuentes anteriores (eliminadas en este commit):
   - `jobs/keywords.py` (COMMON_KEYWORDS, ~90)
