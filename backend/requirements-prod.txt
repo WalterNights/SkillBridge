@@ -1,0 +1,101 @@
+# Requirements de producción (Linux/VPS).
+# Refleja `requirements.txt` quitando dependencias Windows-only y agregando
+# las que necesita correr Django detrás de Nginx/Gunicorn con PostgreSQL.
+
+# ----- Core Django -----
+Django==5.2.3
+djangorestframework==3.16.0
+djangorestframework_simplejwt==5.5.0
+django-cors-headers==4.7.0
+django-redis==5.4.0
+asgiref==3.8.1
+
+# ----- Servidor y estáticos en prod -----
+gunicorn==23.0.0
+whitenoise==6.8.2
+psycopg2-binary==2.9.10
+
+# ----- Celery + colas -----
+celery==5.4.0
+redis==5.2.1
+amqp==5.3.1
+billiard==4.2.4
+kombu==5.6.1
+vine==5.1.0
+
+# ----- Gemini AI -----
+google-generativeai==0.8.5
+google-ai-generativelanguage==0.6.15
+google-api-core==2.25.0rc1
+google-auth==2.37.0
+googleapis-common-protos==1.70.0
+grpcio==1.71.0
+grpcio-status==1.71.0
+proto-plus==1.26.1
+protobuf==5.29.4
+
+# ----- Procesamiento de PDF / OCR -----
+pdfplumber==0.11.7
+pdfminer.six==20250506
+pdf2image==1.17.0
+PyMuPDF==1.26.1
+pypdfium2==4.30.1
+python-docx==1.2.0
+pytesseract==0.3.13
+
+# ----- Datos -----
+pandas==2.3.0
+numpy==2.3.1
+py_countries_states_cities_database==2.2.13
+
+# ----- Web scraping -----
+beautifulsoup4==4.13.4
+lxml==5.4.0
+soupsieve==2.7
+requests==2.32.4
+
+# ----- Auth / Seguridad -----
+cryptography==45.0.4
+PyJWT==2.9.0
+certifi==2025.4.26
+
+# ----- HTTP -----
+httpx==0.28.1
+httpcore==1.0.9
+h11==0.16.0
+anyio==4.9.0
+sniffio==1.3.1
+
+# ----- Configuración -----
+python-decouple==3.8
+python-dotenv==1.1.0
+
+# ----- Validación -----
+pydantic==2.11.7
+pydantic_core==2.33.2
+annotated-types==0.7.0
+typing_extensions==4.14.0
+
+# ----- Utilidades -----
+Unidecode==1.4.0
+python-dateutil==2.9.0.post0
+pytz==2025.2
+tzdata==2025.2
+Pillow==11.2.1
+PyYAML==6.0.2
+Jinja2==3.1.6
+MarkupSafe==3.0.2
+charset-normalizer==3.4.2
+idna==3.10
+urllib3==2.4.0
+six==1.17.0
+packaging==25.0
+tqdm==4.67.1
+
+# ----- Otros -----
+cffi==1.17.1
+pycparser==2.22
+distro==1.9.0
+jiter==0.10.0
+sqlparse==0.5.3
+cachetools==5.5.2

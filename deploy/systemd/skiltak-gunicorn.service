@@ -1,0 +1,26 @@
+[Unit]
+Description=SkilTak Gunicorn (Django)
+Requires=skiltak-gunicorn.socket
+After=network.target postgresql.service redis-server.service
+
+[Service]
+Type=notify
+User=skiltak
+Group=www-data
+WorkingDirectory=/var/www/skiltak/backend
+EnvironmentFile=/var/www/skiltak/.env
+ExecStart=/var/www/skiltak/venv/bin/gunicorn \
+    --workers 3 \
+    --threads 2 \
+    --bind unix:/run/skiltak-gunicorn.sock \
+    --access-logfile - \
+    --error-logfile - \
+    core.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

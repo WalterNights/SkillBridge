@@ -1,3 +1,14 @@
+# === Secrets ===
+.env
+.env.*
+!.env.example
+frontend/src/environment/environment.prod.ts
+docs/stich_conection.md/
+
+# === Claude Code ===
+.claude/settings.json
+.claude/settings.local.json
+
 # === Python / Django ===
 env/
 .venv/
@@ -7,6 +18,8 @@ __pycache__/
 *.sqlite3
 *.log
 output.html
+backend/staticfiles/
+backend/media/
 
 # === Node / Angular ===
 frontend/node_modules/

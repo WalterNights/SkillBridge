@@ -6,6 +6,7 @@ import { AuthService } from '../auth/auth.service';
 import { JobService } from '../services/job.service';
 import { JobOffer } from '../models/job-offer.model';
 import { Router, ActivatedRoute } from '@angular/router';
+import { environment } from '../../environment/environment';
 
 @Component({
   selector: 'app-job-detail',
@@ -33,7 +34,7 @@ export class JobDetailComponent implements OnInit {
     const jobFiltered = this.jobService.getSelectedJob();
     if (jobFiltered) this.jobDetail = jobFiltered;
     const jobId = this.route.snapshot.paramMap.get('id');
-    this.http.get(`http://localhost:8000/api/jobs/jobs-details/${jobId}/`).subscribe({
+    this.http.get(`${environment.apiUrl}/jobs/jobs-details/${jobId}/`).subscribe({
       next: data => this.job = data,
       error: err => console.log('Error al cargar la oferta')
     });

@@ -1,0 +1,11 @@
+[Unit]
+Description=Gunicorn socket for SkilTak
+
+[Socket]
+ListenStream=/run/skiltak-gunicorn.sock
+SocketUser=www-data
+SocketGroup=www-data
+SocketMode=0660
+
+[Install]
+WantedBy=sockets.target

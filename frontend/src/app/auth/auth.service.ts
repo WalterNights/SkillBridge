@@ -14,7 +14,7 @@ interface RegisterData {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8000/api/users/register/';
+  private apiUrl = `${environment.apiUrl}/users/register/`;
   private isLoggedInSubject = new BehaviorSubject<boolean>(!!this.getToken());
   isLoggedIn$ = this.isLoggedInSubject.asObservable();
   private isProfileCompleteSubject = new BehaviorSubject<boolean>(this.getProfileStatus());
