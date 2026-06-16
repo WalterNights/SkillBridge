@@ -104,12 +104,23 @@ jobs:
           chmod 644 ~/.ssh/known_hosts
 
       - name: Rsync frontend dist to VPS
-        run: |
-          rsync -avz --delete \
-            -e "ssh -o StrictHostKeyChecking=accept-new" \
-            frontend-dist/ "$VPS_USER@$VPS_HOST:$VPS_PATH/frontend-dist/"
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: |
+            rsync -avz --delete --timeout=60 \
+              -e "ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30 -o ServerAliveInterval=15" \
+              frontend-dist/ "$VPS_USER@$VPS_HOST:$VPS_PATH/frontend-dist/"
 
       - name: Run remote deploy script
-        run: |
-          ssh -o StrictHostKeyChecking=accept-new "$VPS_USER@$VPS_HOST" \
-            "VPS_PATH=$VPS_PATH bash -s" < deploy/remote-deploy.sh
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 8
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: |
+            ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30 -o ServerAliveInterval=15 \
+              "$VPS_USER@$VPS_HOST" \
+              "VPS_PATH=$VPS_PATH bash -s" < deploy/remote-deploy.sh
