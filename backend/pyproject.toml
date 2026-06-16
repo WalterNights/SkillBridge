@@ -1,0 +1,63 @@
+[project]
+name = "skiltak-backend"
+version = "0.1.0"
+description = "SkilTak backend (Django + DRF)."
+requires-python = ">=3.13"
+
+
+# ---------------------------------------------------------------------------
+# Ruff — linter + formatter unificado para todo el backend.
+#   - reemplaza black + flake8 + isort + pylint (parcial)
+#   - es ~100x más rápido que la combinación anterior
+#   - se ejecuta vía pre-commit en local + CI
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = [
+    "**/migrations/*.py",  # autogeneradas, no las tocamos
+    "**/__pycache__",
+    ".venv",
+    "venv",
+    "env",
+]
+
+
+[tool.ruff.lint]
+# Reglas seleccionadas para encontrar bugs reales sin ahogar al equipo.
+# Más info: https://docs.astral.sh/ruff/rules/
+select = [
+    "E",   # pycodestyle errors (PEP 8)
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes (undefined names, unused imports, etc.)
+    "I",   # isort (orden de imports)
+    "B",   # flake8-bugbear (bugs comunes y patrones peligrosos)
+    "UP",  # pyupgrade (idioms modernos de Python)
+    "C4",  # flake8-comprehensions (list/dict/set comp más limpios)
+    "SIM", # flake8-simplify (simplificar branches)
+    "RUF", # reglas específicas de Ruff
+]
+ignore = [
+    "E501",  # line too long — el formatter ya se ocupa cuando puede
+    "B008",  # function call in default arg (común en Django `default=`)
+    "RUF012", # mutable class attrs need ClassVar (rompe Django models)
+]
+
+
+[tool.ruff.lint.per-file-ignores]
+# Tests pueden usar `assert` y nombres no convencionales.
+"**/tests/**" = ["B011", "S101"]
+"**/conftest.py" = ["F401"]
+# Migraciones Django son autogeneradas.
+"**/migrations/**" = ["E", "F", "I", "B", "UP"]
+
+
+[tool.ruff.lint.isort]
+known-first-party = ["common", "core", "dashboard", "jobs", "users"]
+combine-as-imports = true
+
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

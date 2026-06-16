@@ -1,0 +1,56 @@
+# Hooks que corren antes de cada `git commit`. Setup una vez:
+#
+#     pip install pre-commit
+#     pre-commit install
+#
+# Después podés correrlos manualmente sobre todo el repo con:
+#
+#     pre-commit run --all-files
+#
+# CI también los corre como red de seguridad (ver .github/workflows/deploy.yml).
+
+repos:
+  # ---------------------------------------------------------------------
+  # Hooks genéricos — higiene básica de archivos
+  # ---------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.md$'  # markdown a veces necesita dos espacios al final
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+        # tsconfig*.json tiene comentarios — no es JSON estándar.
+        exclude: '(tsconfig.*\.json|\.vscode/.*\.json)$'
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # ---------------------------------------------------------------------
+  # Python — Ruff (lint + format)
+  # ---------------------------------------------------------------------
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^backend/.*\.py$
+      - id: ruff-format
+        files: ^backend/.*\.py$
+
+  # ---------------------------------------------------------------------
+  # Frontend — Prettier (formato TS/HTML/SCSS/JSON/YAML/MD)
+  # ---------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types_or: [javascript, ts, html, scss, css, json, yaml, markdown]
+        files: ^frontend/
+        exclude: '(package-lock\.json|environment\.prod\.ts|dist/)'
+        additional_dependencies:
+          - prettier@3.4.2

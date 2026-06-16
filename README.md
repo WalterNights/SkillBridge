@@ -58,6 +58,29 @@ pip install -r requirements.txt
 python manage.py migrate
 ```
 
+### 4. Configurar pre-commit (calidad de código)
+
+```bash
+# Una sola vez por clone (necesita Python en el PATH)
+pip install pre-commit
+pre-commit install
+```
+
+A partir de ahí, cada `git commit` corre:
+- `ruff` (lint + format) sobre `backend/*.py`
+- `prettier` (format) sobre `frontend/src/*.{ts,html,scss,json}`
+- Higiene básica (trailing whitespace, EOF, large files, secret detection)
+
+Para correrlos manualmente sobre todo el repo:
+```bash
+pre-commit run --all-files
+```
+
+Si querés formatear solo el frontend a mano:
+```bash
+cd frontend && npm run format
+```
+
 ## 📁 Estructura del Proyecto
 
 ```

@@ -1,0 +1,16 @@
+# Build outputs
+dist/
+.angular/
+node_modules/
+
+# Generated files
+src/environment/environment.prod.ts
+*.min.js
+*.min.css
+
+# Lock files
+package-lock.json
+yarn.lock
+
+# Misc
+coverage/
