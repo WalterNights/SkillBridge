@@ -7,11 +7,7 @@ import { ButtonComponent } from '../../atoms/button/button.component';
   standalone: true,
   imports: [CommonModule, ButtonComponent],
   template: `
-    <div
-      *ngIf="isOpen"
-      class="fixed inset-0 z-50 overflow-y-auto"
-      [class.animate-fade-in]="isOpen"
-    >
+    <div *ngIf="isOpen" class="fixed inset-0 z-50 overflow-y-auto" [class.animate-fade-in]="isOpen">
       <!-- Backdrop -->
       <div
         (click)="onBackdropClick()"
@@ -35,11 +31,14 @@ import { ButtonComponent } from '../../atoms/button/button.component';
               <h3 class="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">
                 {{ title }}
               </h3>
-              <p *ngIf="subtitle" class="text-sm text-gray-500 dark:text-dark-text-secondary mt-0.5">
+              <p
+                *ngIf="subtitle"
+                class="text-sm text-gray-500 dark:text-dark-text-secondary mt-0.5"
+              >
                 {{ subtitle }}
               </p>
             </div>
-            
+
             <button
               *ngIf="showCloseButton"
               (click)="close()"
@@ -47,16 +46,18 @@ import { ButtonComponent } from '../../atoms/button/button.component';
               aria-label="Close"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
 
           <!-- Body -->
-          <div
-            class="flex-1 overflow-y-auto"
-            [class]="getBodyClasses()"
-          >
+          <div class="flex-1 overflow-y-auto" [class]="getBodyClasses()">
             <ng-content></ng-content>
           </div>
 
@@ -66,17 +67,13 @@ import { ButtonComponent } from '../../atoms/button/button.component';
             class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg-tertiary/50"
           >
             <ng-content select="[footer]"></ng-content>
-            
+
             <!-- Default Footer Buttons -->
             <ng-container *ngIf="!hasFooterContent">
-              <app-button
-                *ngIf="showCancelButton"
-                variant="outline"
-                (click)="onCancel()"
-              >
+              <app-button *ngIf="showCancelButton" variant="outline" (click)="onCancel()">
                 {{ cancelLabel }}
               </app-button>
-              
+
               <app-button
                 *ngIf="showConfirmButton"
                 [variant]="confirmVariant"
@@ -92,7 +89,7 @@ import { ButtonComponent } from '../../atoms/button/button.component';
       </div>
     </div>
   `,
-  styles: []
+  styles: [],
 })
 export class ModalComponent {
   @Input() isOpen = false;
@@ -151,9 +148,9 @@ export class ModalComponent {
       md: 'w-full max-w-md',
       lg: 'w-full max-w-2xl',
       xl: 'w-full max-w-4xl',
-      full: 'w-full max-w-7xl'
+      full: 'w-full max-w-7xl',
     };
-    
+
     return sizeClasses[this.size];
   }
 
@@ -162,9 +159,9 @@ export class ModalComponent {
       none: '',
       sm: 'px-4 py-3',
       md: 'px-6 py-4',
-      lg: 'px-8 py-6'
+      lg: 'px-8 py-6',
     };
-    
+
     return paddingClasses[this.padding];
   }
 }

@@ -12,10 +12,11 @@ Para agregar un proveedor nuevo:
   2. Implementar la subclase respetando este contrato
   3. Registrarla en `users.services.cv_analysis_service.get_cv_analyzer`
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 
 class CVAnalyzerError(Exception):
@@ -26,7 +27,7 @@ class CVAnalyzer(ABC):
     """Contrato que toda implementación de análisis de CV debe respetar."""
 
     @abstractmethod
-    def validate(self, cv_file: Any) -> tuple[bool, Optional[str]]:
+    def validate(self, cv_file: Any) -> tuple[bool, str | None]:
         """Valida el archivo antes de gastar cuota de IA.
 
         Returns:

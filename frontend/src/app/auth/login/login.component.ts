@@ -16,7 +16,7 @@ import { STORAGE_KEYS } from '../../constants/app-stats';
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   standalone: true,
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
+  styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent {
   loginForm!: FormGroup;
@@ -31,7 +31,7 @@ export class LoginComponent {
     private authService: AuthService,
     private router: Router,
     private titleService: Title,
-    private storageMethod: StorageMethodComponent
+    private storageMethod: StorageMethodComponent,
   ) {
     this.titleService.setTitle('SkilTak - Login');
   }
@@ -50,7 +50,7 @@ export class LoginComponent {
   private initializeForm(): void {
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
-      password: ['', Validators.required]
+      password: ['', Validators.required],
     });
   }
 
@@ -92,7 +92,10 @@ export class LoginComponent {
           const redirectPath = sessionStorage.getItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN) || '';
           sessionStorage.removeItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN);
 
-          if (this.storageMethod.getStorageItem(this.storage, STORAGE_KEYS.PROFILE_COMPLETE) === 'true') {
+          if (
+            this.storageMethod.getStorageItem(this.storage, STORAGE_KEYS.PROFILE_COMPLETE) ===
+            'true'
+          ) {
             this.router.navigate(['/results']);
           } else {
             this.router.navigate([redirectPath]);
@@ -103,7 +106,7 @@ export class LoginComponent {
         this.isLoading = false;
         this.errorMessage = 'Credenciales inválidas. Intentalo nuevamente.';
         console.error('Login error:', err);
-      }
+      },
     });
   }
 

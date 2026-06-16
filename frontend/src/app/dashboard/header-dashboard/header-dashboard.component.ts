@@ -10,7 +10,7 @@ import { SidebarService } from '../services/sidebar.service';
   imports: [CommonModule],
   standalone: true,
   templateUrl: './header-dashboard.component.html',
-  styleUrls: ['./header-dashboard.component.scss']
+  styleUrls: ['./header-dashboard.component.scss'],
 })
 export class HeaderDashboardComponent {
   users: any;
@@ -26,14 +26,14 @@ export class HeaderDashboardComponent {
     private authService: AuthService,
     private storageMethod: StorageMethodComponent,
     private sidebarService: SidebarService,
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.storage = localStorage.getItem('storage') === 'true' ? 'local' : 'session';
-    this.authService.isLoggedIn$.subscribe(status => {
+    this.authService.isLoggedIn$.subscribe((status) => {
       this.isLoggedIn = status;
       this.userName = this.storageMethod.getStorageItem(this.storage, 'user_name');
-    })
+    });
 
     // Load dark mode preference
     const saveTheme = localStorage.getItem('theme');
@@ -43,7 +43,7 @@ export class HeaderDashboardComponent {
     }
 
     // Subscribe to sidebar state changes
-    this.sidebarService.isCollapsed$.subscribe(collapsed => {
+    this.sidebarService.isCollapsed$.subscribe((collapsed) => {
       this.isSidebarCollapsed = collapsed;
     });
   }
@@ -73,5 +73,4 @@ export class HeaderDashboardComponent {
       this.router.navigate(['/']);
     }, 1200);
   }
-
 }

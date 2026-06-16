@@ -23,8 +23,10 @@ function parseEnv(content) {
     if (eq === -1) continue;
     const key = line.slice(0, eq).trim();
     let value = line.slice(eq + 1).trim();
-    if ((value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       value = value.slice(1, -1);
     }
     out[key] = value;
@@ -32,14 +34,10 @@ function parseEnv(content) {
   return out;
 }
 
-const env = fs.existsSync(ENV_FILE)
-  ? parseEnv(fs.readFileSync(ENV_FILE, 'utf8'))
-  : {};
+const env = fs.existsSync(ENV_FILE) ? parseEnv(fs.readFileSync(ENV_FILE, 'utf8')) : {};
 
 const apiUrl =
-  process.env.FRONTEND_API_URL ||
-  env.FRONTEND_API_URL ||
-  'https://api.skiltak.com/api';
+  process.env.FRONTEND_API_URL || env.FRONTEND_API_URL || 'https://api.skiltak.com/api';
 
 const contents = `// Generado por scripts/build-env.js — NO editar a mano.
 export const environment = {

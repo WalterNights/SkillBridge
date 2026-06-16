@@ -1,4 +1,4 @@
-import { Component} from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -17,7 +17,7 @@ import { MATCH_THRESHOLDS } from '../constants/match-thresholds';
   imports: [CommonModule, RouterModule],
   standalone: true,
   templateUrl: './results.component.html',
-  styleUrls: ['./results.component.scss']
+  styleUrls: ['./results.component.scss'],
 })
 export class ResultsComponent {
   offers: JobOffer[] = [];
@@ -31,7 +31,7 @@ export class ResultsComponent {
     private jobService: JobService,
     private toast: ToastService,
     private titleService: Title,
-    private changes: HTMLChangesComponent
+    private changes: HTMLChangesComponent,
   ) {
     this.titleService.setTitle('SkilTak - Resultados de Búsqueda');
   }
@@ -48,7 +48,7 @@ export class ResultsComponent {
       error: (err: HttpErrorResponse) => {
         console.error('Failed to load job offers:', err);
         this.offers = [];
-      }
+      },
     });
   }
 
@@ -58,16 +58,20 @@ export class ResultsComponent {
   get filteredOffer(): JobOffer[] {
     switch (this.selectedFilter) {
       case 'good':
-        return this.offers.filter(offer => offer.match_percentage === this.MATCH_THRESHOLD.EXCELLENT);
+        return this.offers.filter(
+          (offer) => offer.match_percentage === this.MATCH_THRESHOLD.EXCELLENT,
+        );
       case 'regular':
-        return this.offers.filter(offer =>
-          offer.match_percentage >= this.MATCH_THRESHOLD.GOOD_MIN &&
-          offer.match_percentage <= this.MATCH_THRESHOLD.GOOD_MAX
+        return this.offers.filter(
+          (offer) =>
+            offer.match_percentage >= this.MATCH_THRESHOLD.GOOD_MIN &&
+            offer.match_percentage <= this.MATCH_THRESHOLD.GOOD_MAX,
         );
       case 'bad':
-        return this.offers.filter(offer =>
-          offer.match_percentage >= this.MATCH_THRESHOLD.REGULAR_MIN &&
-          offer.match_percentage <= this.MATCH_THRESHOLD.REGULAR_MAX
+        return this.offers.filter(
+          (offer) =>
+            offer.match_percentage >= this.MATCH_THRESHOLD.REGULAR_MIN &&
+            offer.match_percentage <= this.MATCH_THRESHOLD.REGULAR_MAX,
         );
       default:
         return this.offers;
@@ -178,7 +182,7 @@ export class ResultsComponent {
             'Algo falló',
           );
         }
-      }
+      },
     });
   }
 }

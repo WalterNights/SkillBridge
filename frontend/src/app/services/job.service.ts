@@ -12,64 +12,64 @@ import { STORAGE_KEYS } from '../constants/app-stats';
  */
 @Injectable({ providedIn: 'root' })
 export class JobService {
-    private offers: JobOffer[] = [];
-    private selectedJob: JobOffer | null = null;
+  private offers: JobOffer[] = [];
+  private selectedJob: JobOffer | null = null;
 
-    constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {}
 
-    // ---- HTTP ---------------------------------------------------------
+  // ---- HTTP ---------------------------------------------------------
 
-    /**
-     * Lista las ofertas almacenadas en backend. Desempaqueta la paginación
-     * de DRF para devolver `JobOffer[]` directo.
-     */
-    getJobs(): Observable<JobOffer[]> {
-        return this.http
-            .get<PaginatedResponse<JobOffer>>(`${environment.apiUrl}/jobs/jobs/`)
-            .pipe(map(response => response.results));
-    }
+  /**
+   * Lista las ofertas almacenadas en backend. Desempaqueta la paginación
+   * de DRF para devolver `JobOffer[]` directo.
+   */
+  getJobs(): Observable<JobOffer[]> {
+    return this.http
+      .get<PaginatedResponse<JobOffer>>(`${environment.apiUrl}/jobs/jobs/`)
+      .pipe(map((response) => response.results));
+  }
 
-    /**
-     * Detalle de una oferta puntual.
-     */
-    getJobDetail(id: number | string): Observable<JobOffer> {
-        return this.http.get<JobOffer>(`${environment.apiUrl}/jobs/jobs/${id}/`);
-    }
+  /**
+   * Detalle de una oferta puntual.
+   */
+  getJobDetail(id: number | string): Observable<JobOffer> {
+    return this.http.get<JobOffer>(`${environment.apiUrl}/jobs/jobs/${id}/`);
+  }
 
-    /**
-     * Fetches job offers from scraping service
-     */
-    getScrapedOffers(): Observable<JobOffer[]> {
-        return this.http.get<JobOffer[]>(`${environment.apiUrl}/jobs/jobs/scrape/`);
-    }
+  /**
+   * Fetches job offers from scraping service
+   */
+  getScrapedOffers(): Observable<JobOffer[]> {
+    return this.http.get<JobOffer[]>(`${environment.apiUrl}/jobs/jobs/scrape/`);
+  }
 
-    // ---- Estado en memoria + session storage --------------------------
+  // ---- Estado en memoria + session storage --------------------------
 
-    setOffers(data: JobOffer[]): void {
-        this.offers = Array.isArray(data) ? data : [];
-    }
+  setOffers(data: JobOffer[]): void {
+    this.offers = Array.isArray(data) ? data : [];
+  }
 
-    getOffers(): JobOffer[] {
-        return this.offers;
-    }
+  getOffers(): JobOffer[] {
+    return this.offers;
+  }
 
-    clearOffers(): void {
-        this.offers = [];
-    }
+  clearOffers(): void {
+    this.offers = [];
+  }
 
-    setSelectedJob(job: JobOffer): void {
-        this.selectedJob = job;
-        sessionStorage.setItem(STORAGE_KEYS.SELECTED_JOB, JSON.stringify(job));
-    }
+  setSelectedJob(job: JobOffer): void {
+    this.selectedJob = job;
+    sessionStorage.setItem(STORAGE_KEYS.SELECTED_JOB, JSON.stringify(job));
+  }
 
-    getSelectedJob(): JobOffer | null {
-        if (this.selectedJob) return this.selectedJob;
-        const stored = sessionStorage.getItem(STORAGE_KEYS.SELECTED_JOB);
-        return stored ? JSON.parse(stored) : null;
-    }
+  getSelectedJob(): JobOffer | null {
+    if (this.selectedJob) return this.selectedJob;
+    const stored = sessionStorage.getItem(STORAGE_KEYS.SELECTED_JOB);
+    return stored ? JSON.parse(stored) : null;
+  }
 
-    clearSelectedJob(): void {
-        this.selectedJob = null;
-        sessionStorage.removeItem(STORAGE_KEYS.SELECTED_JOB);
-    }
+  clearSelectedJob(): void {
+    this.selectedJob = null;
+    sessionStorage.removeItem(STORAGE_KEYS.SELECTED_JOB);
+  }
 }

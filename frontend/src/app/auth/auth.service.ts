@@ -11,7 +11,7 @@ interface RegisterData {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
   private apiUrl = `${environment.apiUrl}/users/register/`;
@@ -22,17 +22,22 @@ export class AuthService {
   StorageKey = [
     'access_token',
     'refresh_token',
-    'storage', 'user',
-    'user_id', 'user_name',
+    'storage',
+    'user',
+    'user_id',
+    'user_name',
     'is_profile_complete',
-    'manual_profile_draft'
+    'manual_profile_draft',
   ];
   storage: 'session' | 'local' = 'session';
 
-  constructor(private http: HttpClient, private storageMethod: StorageMethodComponent) { }
+  constructor(
+    private http: HttpClient,
+    private storageMethod: StorageMethodComponent,
+  ) {}
 
   getToken(): string | null {
-    if (localStorage.getItem("storage") === 'true') {
+    if (localStorage.getItem('storage') === 'true') {
       return localStorage.getItem('access_token');
     } else {
       return sessionStorage.getItem('access_token');
@@ -40,7 +45,7 @@ export class AuthService {
   }
 
   private getProfileStatus(): boolean {
-    if (localStorage.getItem("storage") === 'true') {
+    if (localStorage.getItem('storage') === 'true') {
       return localStorage.getItem('is_profile_complete') === 'true';
     } else {
       return sessionStorage.getItem('is_profile_complete') === 'true';
@@ -48,7 +53,7 @@ export class AuthService {
   }
 
   updateProfileStatus(): void {
-    const status = this.getProfileStatus()
+    const status = this.getProfileStatus();
     this.isProfileCompleteSubject.next(status);
   }
 
@@ -64,25 +69,29 @@ export class AuthService {
     return this.http.post(this.apiUrl, data);
   }
 
-  login(credentials: { username: string, password: string }) {
+  login(credentials: { username: string; password: string }) {
     return this.http.post(`${environment.apiUrl}/token/login/`, credentials).pipe(
       tap((res: any) => {
         const userName = res.first_name != undefined ? res.user_name : res.username;
         this.storage = localStorage.getItem('storage') === 'true' ? 'local' : 'session';
-        this.storageMethod.setStorageItem(this.storage, 'access_token', res.access)
-        this.storageMethod.setStorageItem(this.storage, 'refresh_token', res.refresh)
-        this.storageMethod.setStorageItem(this.storage, 'is_profile_complete', res.is_profile_complete)
+        this.storageMethod.setStorageItem(this.storage, 'access_token', res.access);
+        this.storageMethod.setStorageItem(this.storage, 'refresh_token', res.refresh);
+        this.storageMethod.setStorageItem(
+          this.storage,
+          'is_profile_complete',
+          res.is_profile_complete,
+        );
         this.storageMethod.setStorageItem(this.storage, 'user_name', userName);
         sessionStorage.setItem('user_email', res.email);
         this.isLoggedInSubject.next(true);
         this.updateProfileStatus();
-      })
+      }),
     );
   }
 
   logout(): void {
     sessionStorage.clear();
-    this.StorageKey.forEach(key => {
+    this.StorageKey.forEach((key) => {
       localStorage.removeItem(key);
     });
     this.isLoggedInSubject.next(false);
@@ -90,23 +99,27 @@ export class AuthService {
   }
 
   refreshToken(): Observable<any> {
-    const refresh = this.storageMethod.getStorageItem(this.storage, 'refresh_token')
-    if(!refresh) {
+    const refresh = this.storageMethod.getStorageItem(this.storage, 'refresh_token');
+    if (!refresh) {
       return throwError(() => new Error('Refresh token missing'));
     }
     return this.http.post(`${environment.apiUrl}/token/refresh/`, { refresh }).pipe(
       tap((res: any) => {
-        this.storageMethod.setStorageItem(this.storage, 'access_token', res.access)
+        this.storageMethod.setStorageItem(this.storage, 'access_token', res.access);
         this.isLoggedInSubject.next(true);
-      })
-    )
+      }),
+    );
   }
 
   requestPasswordReset(email: string): Observable<any> {
     return this.http.post(`${environment.apiUrl}/users/password-reset/request/`, { email });
   }
 
-  verifyPasswordReset(data: { email: string, code: string, new_password: string }): Observable<any> {
+  verifyPasswordReset(data: {
+    email: string;
+    code: string;
+    new_password: string;
+  }): Observable<any> {
     return this.http.post(`${environment.apiUrl}/users/password-reset/verify/`, data);
   }
 }

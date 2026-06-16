@@ -35,7 +35,12 @@ export interface SidebarItem {
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </button>
 
@@ -54,12 +59,7 @@ export interface SidebarItem {
               >
                 <span [innerHTML]="item.icon" class="w-5 h-5 flex-shrink-0"></span>
                 <span *ngIf="!collapsed" class="flex-1 text-sm font-medium">{{ item.label }}</span>
-                <app-badge
-                  *ngIf="!collapsed && item.badge"
-                  variant="error"
-                  size="sm"
-                  pill
-                >
+                <app-badge *ngIf="!collapsed && item.badge" variant="error" size="sm" pill>
                   {{ item.badge > 99 ? '99+' : item.badge }}
                 </app-badge>
               </a>
@@ -72,7 +72,9 @@ export interface SidebarItem {
                 [title]="collapsed ? item.label : ''"
               >
                 <span [innerHTML]="item.icon" class="w-5 h-5 flex-shrink-0"></span>
-                <span *ngIf="!collapsed" class="flex-1 text-sm font-medium text-left">{{ item.label }}</span>
+                <span *ngIf="!collapsed" class="flex-1 text-sm font-medium text-left">{{
+                  item.label
+                }}</span>
               </button>
 
               <!-- Item with children -->
@@ -83,7 +85,9 @@ export interface SidebarItem {
                   [title]="collapsed ? item.label : ''"
                 >
                   <span [innerHTML]="item.icon" class="w-5 h-5 flex-shrink-0"></span>
-                  <span *ngIf="!collapsed" class="flex-1 text-sm font-medium text-left">{{ item.label }}</span>
+                  <span *ngIf="!collapsed" class="flex-1 text-sm font-medium text-left">{{
+                    item.label
+                  }}</span>
                   <svg
                     *ngIf="!collapsed"
                     class="w-4 h-4 transition-transform"
@@ -92,7 +96,12 @@ export interface SidebarItem {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </button>
 
@@ -136,7 +145,7 @@ export interface SidebarItem {
       class="fixed inset-0 bg-black/50 z-30 md:hidden"
     ></div>
   `,
-  styles: []
+  styles: [],
 })
 export class SidebarComponent {
   @Input() items: SidebarItem[] = [];
@@ -152,7 +161,7 @@ export class SidebarComponent {
   toggleCollapse(): void {
     this.collapsed = !this.collapsed;
     this.collapsedChange.emit(this.collapsed);
-    
+
     // Close all groups when collapsing
     if (this.collapsed) {
       this.expandedGroups.clear();

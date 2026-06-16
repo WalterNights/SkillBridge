@@ -1,17 +1,17 @@
 import { Injectable, signal, effect } from '@angular/core';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ThemeService {
   private readonly THEME_KEY = 'skiltak-theme';
-  
+
   // Signal for reactive theme state
   isDarkMode = signal<boolean>(false);
 
   constructor() {
     this.initializeTheme();
-    
+
     // Effect to update DOM when theme changes
     effect(() => {
       this.applyTheme(this.isDarkMode());
@@ -21,7 +21,7 @@ export class ThemeService {
   private initializeTheme(): void {
     // Check for saved theme preference or default to system preference
     const savedTheme = localStorage.getItem(this.THEME_KEY);
-    
+
     if (savedTheme) {
       this.isDarkMode.set(savedTheme === 'dark');
     } else {
@@ -55,7 +55,7 @@ export class ThemeService {
   }
 
   toggleTheme(): void {
-    this.isDarkMode.update(value => !value);
+    this.isDarkMode.update((value) => !value);
   }
 
   setTheme(isDark: boolean): void {

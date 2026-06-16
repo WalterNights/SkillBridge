@@ -19,15 +19,29 @@ export interface NavItem {
   standalone: true,
   imports: [CommonModule, RouterModule, ThemeToggleComponent, AvatarComponent, ButtonComponent],
   template: `
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-dark-bg-secondary/80 backdrop-blur-md border-b border-gray-200 dark:border-dark-border">
+    <nav
+      class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-dark-bg-secondary/80 backdrop-blur-md border-b border-gray-200 dark:border-dark-border"
+    >
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <!-- Logo & Brand -->
           <div class="flex items-center gap-3">
             <a [routerLink]="logoRoute" class="flex items-center gap-3 group">
-              <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <div
+                class="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105"
+              >
+                <svg
+                  class="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
                 </svg>
               </div>
               <span class="text-xl font-bold text-gray-900 dark:text-white hidden sm:block">
@@ -53,7 +67,7 @@ export interface NavItem {
                   {{ item.badge > 99 ? '99+' : item.badge }}
                 </span>
               </a>
-              
+
               <button
                 *ngIf="item.action"
                 (click)="item.action()"
@@ -77,7 +91,12 @@ export interface NavItem {
               aria-label="Notifications"
             >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
               </svg>
               <span
                 *ngIf="notificationCount > 0"
@@ -104,7 +123,12 @@ export interface NavItem {
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
 
@@ -121,7 +145,7 @@ export interface NavItem {
                     {{ userEmail }}
                   </p>
                 </div>
-                
+
                 <div class="py-1">
                   <a
                     *ngFor="let item of userMenuItems"
@@ -140,7 +164,12 @@ export interface NavItem {
                     class="w-full flex items-center gap-3 px-4 py-2 text-sm text-error-600 dark:text-error-400 hover:bg-error-50 dark:hover:bg-error-900/20 transition-colors"
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
                     </svg>
                     Cerrar sesión
                   </button>
@@ -156,12 +185,7 @@ export interface NavItem {
             </div>
 
             <!-- CTA Button -->
-            <app-button
-              *ngIf="showCTA"
-              variant="primary"
-              size="sm"
-              (click)="onCTAClick()"
-            >
+            <app-button *ngIf="showCTA" variant="primary" size="sm" (click)="onCTAClick()">
               {{ ctaLabel }}
             </app-button>
 
@@ -178,7 +202,12 @@ export interface NavItem {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               </svg>
               <svg
                 *ngIf="isMobileMenuOpen"
@@ -187,7 +216,12 @@ export interface NavItem {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -216,7 +250,7 @@ export interface NavItem {
     <!-- Spacer for fixed navbar -->
     <div class="h-16"></div>
   `,
-  styles: []
+  styles: [],
 })
 export class NavbarComponent {
   @Input() brandName = 'SkilTak';

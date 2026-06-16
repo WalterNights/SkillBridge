@@ -11,7 +11,7 @@ import { Router, ActivatedRoute } from '@angular/router';
   imports: [CommonModule],
   standalone: true,
   templateUrl: './job-detail.component.html',
-  styleUrls: ['./job-detail.component.scss']
+  styleUrls: ['./job-detail.component.scss'],
 })
 export class JobDetailComponent implements OnInit {
   job!: JobOffer;
@@ -33,13 +33,13 @@ export class JobDetailComponent implements OnInit {
     const jobId = this.route.snapshot.paramMap.get('id');
     if (!jobId) return;
     this.jobService.getJobDetail(jobId).subscribe({
-      next: data => this.job = data,
-      error: () => console.error('Error al cargar la oferta')
+      next: (data) => (this.job = data),
+      error: () => console.error('Error al cargar la oferta'),
     });
   }
 
   goToResults() {
-    if (!this.authService.isAuthenticated()){
+    if (!this.authService.isAuthenticated()) {
       sessionStorage.setItem('redirect_after_login', '/results');
       this.router.navigate(['/auth/login']);
     } else {

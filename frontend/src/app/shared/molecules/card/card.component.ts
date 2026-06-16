@@ -31,7 +31,7 @@ import { CommonModule } from '@angular/common';
       </div>
     </div>
   `,
-  styles: []
+  styles: [],
 })
 export class CardComponent {
   @Input() title = '';
@@ -45,21 +45,21 @@ export class CardComponent {
 
   getCardClasses(): string {
     const baseClasses = 'rounded-xl transition-all duration-300';
-    
+
     const variantClasses = {
       default: 'bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-border',
       elevated: 'bg-white dark:bg-dark-bg-secondary shadow-lg',
       outline: 'border-2 border-gray-300 dark:border-dark-border bg-transparent',
-      glass: 'glass backdrop-blur-md border border-white/20 dark:border-dark-border/20'
+      glass: 'glass backdrop-blur-md border border-white/20 dark:border-dark-border/20',
     };
-    
+
     const paddingClasses = {
       none: '',
       sm: 'p-3',
       md: 'p-6',
-      lg: 'p-8'
+      lg: 'p-8',
     };
-    
+
     const interactionClasses = [];
     if (this.hoverable) {
       interactionClasses.push('hover:shadow-xl hover:-translate-y-1');
@@ -67,7 +67,7 @@ export class CardComponent {
     if (this.clickable) {
       interactionClasses.push('cursor-pointer active:scale-98');
     }
-    
+
     return `${baseClasses} ${variantClasses[this.variant]} ${paddingClasses[this.padding]} ${interactionClasses.join(' ')}`.trim();
   }
 

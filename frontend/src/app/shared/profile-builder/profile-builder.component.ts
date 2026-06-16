@@ -1,12 +1,17 @@
 import { Router } from '@angular/router';
-import { Injectable } from "@angular/core";
+import { Injectable } from '@angular/core';
 import { Country, City } from 'country-state-city';
 import { JobService } from '../../services/job.service';
 import { JobOffer } from '../../models/job-offer.model';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CountryData, CityData } from '../../models/country.model';
-import { ResumeAnalysisData, ProfileFormData, EducationEntry, ExperienceEntry } from '../../models/profile.model';
+import {
+  ResumeAnalysisData,
+  ProfileFormData,
+  EducationEntry,
+  ExperienceEntry,
+} from '../../models/profile.model';
 import { environment } from '../../../environment/environment';
 import { STORAGE_KEYS } from '../../constants/app-stats';
 
@@ -24,18 +29,20 @@ export class ProfileBuilderComponent {
     private fb: FormBuilder,
     private http: HttpClient,
     private jobService: JobService,
-    private router: Router
-  ) { }
+    private router: Router,
+  ) {}
 
   /**
    * Builds a profile form with optional overrides
    * @param overrides - Optional form array overrides for education and experience
    * @returns Configured FormGroup
    */
-  buildProfileForm(overrides: Partial<{
-    education: FormArray,
-    experience: FormArray
-  }> = {}): FormGroup {
+  buildProfileForm(
+    overrides: Partial<{
+      education: FormArray;
+      experience: FormArray;
+    }> = {},
+  ): FormGroup {
     return this.fb.group({
       first_name: ['', Validators.required],
       last_name: ['', Validators.required],
@@ -50,7 +57,10 @@ export class ProfileBuilderComponent {
       education: overrides.education ?? this.fb.control('', Validators.required),
       experience: overrides.experience ?? this.fb.control('', Validators.required),
       skills: ['', Validators.required],
-      linkedin_url: ['', Validators.pattern(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9%_-]+\/?$/)],
+      linkedin_url: [
+        '',
+        Validators.pattern(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9%_-]+\/?$/),
+      ],
       portfolio_url: [''],
       resume: [null],
     });
@@ -72,7 +82,7 @@ export class ProfileBuilderComponent {
    * @returns Phone code with '+' prefix
    */
   extractPhoneCode(countries: CountryData[], countryCode: string): string {
-    const selected = countries.find(c => c.isoCode === countryCode);
+    const selected = countries.find((c) => c.isoCode === countryCode);
     return selected ? `+${selected.phonecode}` : '';
   }
 
@@ -87,42 +97,44 @@ export class ProfileBuilderComponent {
     file: File,
     country_find: CountryData[] = this.countries,
     callback: (data: ResumeAnalysisData, countryCode: string) => void,
-    onError?: () => void
+    onError?: () => void,
   ): void {
     const formData = new FormData();
     formData.append('resume', file);
-    this.http.post<ResumeAnalysisData>(`${environment.apiUrl}/users/resume-analyzer/`, formData).subscribe({
-      next: (data) => {
-        const phoneCode = data.phone_code.replace('+', '');
-        const matchedCountry = country_find.find(c => c.phonecode === phoneCode);
-        const country_code = matchedCountry?.isoCode || '';
-        let linkedin = data.linkedin_url?.trim() || '';
+    this.http
+      .post<ResumeAnalysisData>(`${environment.apiUrl}/users/resume-analyzer/`, formData)
+      .subscribe({
+        next: (data) => {
+          const phoneCode = data.phone_code.replace('+', '');
+          const matchedCountry = country_find.find((c) => c.phonecode === phoneCode);
+          const country_code = matchedCountry?.isoCode || '';
+          let linkedin = data.linkedin_url?.trim() || '';
 
-        // Ensure LinkedIn URL has proper protocol prefix
-        if (linkedin && !linkedin.startsWith('http')) {
-          if (!linkedin.startsWith('www.')) {
-            linkedin = 'https://www.' + linkedin;
-          } else {
-            linkedin = 'https://' + linkedin;
+          // Ensure LinkedIn URL has proper protocol prefix
+          if (linkedin && !linkedin.startsWith('http')) {
+            if (!linkedin.startsWith('www.')) {
+              linkedin = 'https://www.' + linkedin;
+            } else {
+              linkedin = 'https://' + linkedin;
+            }
           }
-        }
 
-        const parsedData: ResumeAnalysisData = {
-          ...data,
-          country: country_code,
-          linkedin_url: linkedin
-        };
+          const parsedData: ResumeAnalysisData = {
+            ...data,
+            country: country_code,
+            linkedin_url: linkedin,
+          };
 
-        // Guardar los datos estructurados en localStorage para el CV ATS
-        // Esto incluye los arrays de education y experience
-        localStorage.setItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT, JSON.stringify(parsedData));
+          // Guardar los datos estructurados en localStorage para el CV ATS
+          // Esto incluye los arrays de education y experience
+          localStorage.setItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT, JSON.stringify(parsedData));
 
-        callback(parsedData, country_code);
-      },
-      error: () => {
-        onError?.();
-      }
-    });
+          callback(parsedData, country_code);
+        },
+        error: () => {
+          onError?.();
+        },
+      });
   }
 
   /**
@@ -140,7 +152,7 @@ export class ProfileBuilderComponent {
     onStart?: () => void,
     onSuccess?: () => void,
     onError?: (err: HttpErrorResponse) => void,
-    shouldRedirect: boolean = true
+    shouldRedirect: boolean = true,
   ): void {
     if (profileForm.invalid) return;
 
@@ -154,7 +166,7 @@ export class ProfileBuilderComponent {
 
     // Convert country code to country name
     if (rawData.country) {
-      const findCountry = this.countries.find(c => c.isoCode === rawData.country);
+      const findCountry = this.countries.find((c) => c.isoCode === rawData.country);
       rawData.country = findCountry?.name ?? rawData.country;
     }
 
@@ -178,32 +190,38 @@ export class ProfileBuilderComponent {
     }
 
     // Check if we have arrays in existing data (from resume analysis)
-    const hasExistingEducationArray = Array.isArray(existingParsed?.education) && existingParsed.education.length > 0;
-    const hasExistingExperienceArray = Array.isArray(existingParsed?.experience) && existingParsed.experience.length > 0;
+    const hasExistingEducationArray =
+      Array.isArray(existingParsed?.education) && existingParsed.education.length > 0;
+    const hasExistingExperienceArray =
+      Array.isArray(existingParsed?.experience) && existingParsed.experience.length > 0;
 
     // Process education and experience arrays
     if (Array.isArray(rawData.education) && Array.isArray(rawData.experience)) {
       // Convert education array to formatted strings for backend
       if (rawData.education.length > 0) {
-        const educationText = rawData.education.map((edu: EducationEntry) => {
-          const findCountry = this.countries.find(c => c.isoCode === edu.location_country);
-          const countryName = findCountry?.name ?? edu.location_country;
-          // Update the location_country in the original object for localStorage
-          edu.location_country = countryName;
-          return `${edu.title} en ${edu.institution} - (${edu.location_city}, ${countryName}) - ${edu.start_date} a ${edu.end_date}`;
-        }).join('\n\n');
+        const educationText = rawData.education
+          .map((edu: EducationEntry) => {
+            const findCountry = this.countries.find((c) => c.isoCode === edu.location_country);
+            const countryName = findCountry?.name ?? edu.location_country;
+            // Update the location_country in the original object for localStorage
+            edu.location_country = countryName;
+            return `${edu.title} en ${edu.institution} - (${edu.location_city}, ${countryName}) - ${edu.start_date} a ${edu.end_date}`;
+          })
+          .join('\n\n');
         formData.append('education', educationText);
       }
 
       // Convert experience array to formatted strings for backend
       if (rawData.experience.length > 0) {
-        const experiencesText = rawData.experience.map((exp: ExperienceEntry) => {
-          const findCountry = this.countries.find(c => c.isoCode === exp.location_country);
-          const countryName = findCountry?.name ?? exp.location_country;
-          // Update the location_country in the original object for localStorage
-          exp.location_country = countryName;
-          return `${exp.position} en ${exp.company} - (${exp.location_city}, ${countryName}) - ${exp.start_date} a ${exp.end_date}:\n ${exp.description}`;
-        }).join('\n\n');
+        const experiencesText = rawData.experience
+          .map((exp: ExperienceEntry) => {
+            const findCountry = this.countries.find((c) => c.isoCode === exp.location_country);
+            const countryName = findCountry?.name ?? exp.location_country;
+            // Update the location_country in the original object for localStorage
+            exp.location_country = countryName;
+            return `${exp.position} en ${exp.company} - (${exp.location_city}, ${countryName}) - ${exp.start_date} a ${exp.end_date}:\n ${exp.description}`;
+          })
+          .join('\n\n');
         formData.append('experience', experiencesText);
       }
 
@@ -253,36 +271,38 @@ export class ProfileBuilderComponent {
 
     onStart?.();
 
-    this.http.post<{ first_name: string }>(`${environment.apiUrl}/users/profiles/`, formData, { headers }).subscribe({
-      next: (res) => {
-        onSuccess?.();
-        if (res) {
-          sessionStorage.setItem(STORAGE_KEYS.PROFILE_COMPLETE, 'true');
-          sessionStorage.setItem(STORAGE_KEYS.USER_NAME, res.first_name);
-        }
-
-        // Intentar obtener ofertas de trabajo, pero navegar independientemente del resultado
-        this.jobService.getScrapedOffers().subscribe({
-          next: (jobRes: JobOffer[]) => {
-            this.jobService.setOffers(jobRes);
-          },
-          error: (err: HttpErrorResponse) => {
-            console.warn('Error fetching job offers, continuing anyway:', err);
-            // Limpiar ofertas si hay error
-            this.jobService.setOffers([]);
+    this.http
+      .post<{ first_name: string }>(`${environment.apiUrl}/users/profiles/`, formData, { headers })
+      .subscribe({
+        next: (res) => {
+          onSuccess?.();
+          if (res) {
+            sessionStorage.setItem(STORAGE_KEYS.PROFILE_COMPLETE, 'true');
+            sessionStorage.setItem(STORAGE_KEYS.USER_NAME, res.first_name);
           }
-        });
 
-        // Navegar después de guardar el perfil solo si shouldRedirect es true
-        // Si shouldRedirect es false, el componente que llama manejará la navegación
-        if (shouldRedirect) {
-          this.router.navigate(['/results']);
-        }
-      },
-      error: (err: HttpErrorResponse) => {
-        console.error('Error saving profile:', err);
-        onError?.(err);
-      }
-    });
+          // Intentar obtener ofertas de trabajo, pero navegar independientemente del resultado
+          this.jobService.getScrapedOffers().subscribe({
+            next: (jobRes: JobOffer[]) => {
+              this.jobService.setOffers(jobRes);
+            },
+            error: (err: HttpErrorResponse) => {
+              console.warn('Error fetching job offers, continuing anyway:', err);
+              // Limpiar ofertas si hay error
+              this.jobService.setOffers([]);
+            },
+          });
+
+          // Navegar después de guardar el perfil solo si shouldRedirect es true
+          // Si shouldRedirect es false, el componente que llama manejará la navegación
+          if (shouldRedirect) {
+            this.router.navigate(['/results']);
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          console.error('Error saving profile:', err);
+          onError?.(err);
+        },
+      });
   }
 }

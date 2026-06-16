@@ -3,7 +3,15 @@ import { AuthService } from '../auth.service';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { Router, RouterModule } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+  AbstractControl,
+  ValidationErrors,
+  ValidatorFn,
+} from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
 /**
@@ -14,7 +22,7 @@ import { HttpErrorResponse } from '@angular/common/http';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './register.component.html',
-  styleUrls: ['./register.component.scss']
+  styleUrls: ['./register.component.scss'],
 })
 export class RegisterComponent {
   registerForm!: FormGroup;
@@ -27,7 +35,7 @@ export class RegisterComponent {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private titleService: Title
+    private titleService: Title,
   ) {
     this.titleService.setTitle('SkilTak - Registro');
   }
@@ -43,16 +51,22 @@ export class RegisterComponent {
    * Initializes the registration form with validators
    */
   private initializeForm(): void {
-    this.registerForm = this.fb.group({
-      username: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [
-        Validators.required,
-        Validators.minLength(8),
-        Validators.pattern('^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+{}:"<>?]).+$')
-      ]],
-      confirmPassword: ['', Validators.required]
-    }, { validators: [this.passwordMatchValidator()] });
+    this.registerForm = this.fb.group(
+      {
+        username: ['', Validators.required],
+        email: ['', [Validators.required, Validators.email]],
+        password: [
+          '',
+          [
+            Validators.required,
+            Validators.minLength(8),
+            Validators.pattern('^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+{}:"<>?]).+$'),
+          ],
+        ],
+        confirmPassword: ['', Validators.required],
+      },
+      { validators: [this.passwordMatchValidator()] },
+    );
   }
 
   /**
@@ -97,19 +111,32 @@ export class RegisterComponent {
 
         // Handle specific backend validation errors
         if (err.error && typeof err.error === 'object') {
-          if (err.error.username && Array.isArray(err.error.username) && err.error.username.length > 0) {
+          if (
+            err.error.username &&
+            Array.isArray(err.error.username) &&
+            err.error.username.length > 0
+          ) {
             this.errorMessage = 'El nombre de usuario ya está en uso';
-          } else if (err.error.email && Array.isArray(err.error.email) && err.error.email.length > 0) {
+          } else if (
+            err.error.email &&
+            Array.isArray(err.error.email) &&
+            err.error.email.length > 0
+          ) {
             this.errorMessage = 'El correo electrónico ya está registrado';
-          } else if (err.error.password && Array.isArray(err.error.password) && err.error.password.length > 0) {
+          } else if (
+            err.error.password &&
+            Array.isArray(err.error.password) &&
+            err.error.password.length > 0
+          ) {
             this.errorMessage = 'La contraseña no cumple con los requisitos';
           } else {
-            this.errorMessage = 'Error al registrar usuario. Verifique los datos e intente nuevamente';
+            this.errorMessage =
+              'Error al registrar usuario. Verifique los datos e intente nuevamente';
           }
         } else {
           this.errorMessage = 'Error al registrar usuario. Intentelo nuevamente';
         }
-      }
+      },
     });
   }
 

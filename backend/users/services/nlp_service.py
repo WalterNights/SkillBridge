@@ -14,8 +14,8 @@ TODO: migrar el modelo a `es_core_news_md` — CVs y ofertas son en español y
 el modelo inglés `en_core_web_sm` no tiene vectores entrenados, lo que hace
 que `calculate_text_similarity` devuelva valores casi aleatorios.
 """
+
 import logging
-from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class NLPService:
     """Servicio para procesamiento de lenguaje natural"""
 
     _nlp = None
-    _SPACY_MODEL = 'en_core_web_sm'
+    _SPACY_MODEL = "en_core_web_sm"
 
     @classmethod
     def get_nlp_model(cls):
@@ -35,13 +35,15 @@ class NLPService:
         if cls._nlp is None:
             try:
                 import spacy
+
                 cls._nlp = spacy.load(cls._SPACY_MODEL)
                 logger.info("spaCy model %s loaded", cls._SPACY_MODEL)
             except OSError:
                 logger.warning(
                     "spaCy model %s no instalado — el matching semántico "
                     "se desactiva. Instalar con: python -m spacy download %s",
-                    cls._SPACY_MODEL, cls._SPACY_MODEL,
+                    cls._SPACY_MODEL,
+                    cls._SPACY_MODEL,
                 )
                 cls._nlp = None
             except Exception as e:
@@ -50,7 +52,7 @@ class NLPService:
         return cls._nlp
 
     @classmethod
-    def extract_entities(cls, text: str) -> Dict[str, List[str]]:
+    def extract_entities(cls, text: str) -> dict[str, list[str]]:
         """Extrae entidades nombradas (personas, organizaciones, lugares).
 
         Returns:
@@ -63,7 +65,7 @@ class NLPService:
 
         try:
             doc = nlp(text)
-            entities: Dict[str, List[str]] = {}
+            entities: dict[str, list[str]] = {}
             for ent in doc.ents:
                 bucket = entities.setdefault(ent.label_, [])
                 if ent.text not in bucket:

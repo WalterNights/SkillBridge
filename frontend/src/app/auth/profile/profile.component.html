@@ -1,407 +1,393 @@
 <!--Modal Window-->
 <div *ngIf="isLoading" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-80 text-center">
-        <div class="flex flex-col items-center">
-            <svg class="animate-spin h-10 w-10 text-primary-600 dark:text-primary-400" xmlns="http://www.w3.org/2000/svg" fill="none"
-                viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-            </svg>
-            <p class="mt-4 text-gray-700 dark:text-gray-300 font-semibold">Cargando tu perfil...</p>
-        </div>
+  <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-80 text-center">
+    <div class="flex flex-col items-center">
+      <svg
+        class="animate-spin h-10 w-10 text-primary-600 dark:text-primary-400"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+      <p class="mt-4 text-gray-700 dark:text-gray-300 font-semibold">Cargando tu perfil...</p>
     </div>
+  </div>
 </div>
 
 <!--Profile Form Container-->
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24 pb-8 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-7xl mx-auto">
-        <!-- Back Button -->
-        <button
-            (click)="goBack()"
-            class="mb-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+  <div class="max-w-7xl mx-auto">
+    <!-- Back Button -->
+    <button
+      (click)="goBack()"
+      class="mb-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      Regresar
+    </button>
+
+    <div class="grid lg:grid-cols-12 gap-6 lg:gap-8">
+      <!-- Info Card - Hidden on mobile, shown on large screens -->
+      <div class="hidden lg:block lg:col-span-3">
+        <div
+          class="sticky top-24 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700"
         >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-            </svg>
-            Regresar
-        </button>
-
-        <div class="grid lg:grid-cols-12 gap-6 lg:gap-8">
-
-            <!-- Info Card - Hidden on mobile, shown on large screens -->
-            <div class="hidden lg:block lg:col-span-3">
-                <div class="sticky top-24 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-                    <div class="flex items-start gap-3 mb-4">
-                        <div class="flex-shrink-0 w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Lo que hacemos</h3>
-                    </div>
-                    <ul class="space-y-3 text-sm text-gray-600 dark:text-gray-400">
-                        <li class="flex items-start gap-2">
-                            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>Te ayudamos a crear tu CV con formato ATS optimizado para sistemas de selección</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>Analizamos automáticamente tu CV existente y creamos tu perfil al instante</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>Traemos ofertas que más se adaptan a tu perfil con match semántico avanzado</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span>Te indicamos dónde adquirir los conocimientos que te hacen falta para cada posición</span>
-                        </li>
-                    </ul>
-                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <p class="text-xs text-gray-500 dark:text-gray-500">
-                            💡 <strong>Tip:</strong> Revisa cuidadosamente la información generada y puedes corregirla si es necesario.
-                        </p>
-                    </div>
-                </div>
+          <div class="flex items-start gap-3 mb-4">
+            <div
+              class="flex-shrink-0 w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center"
+            >
+              <svg
+                class="w-6 h-6 text-primary-600 dark:text-primary-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
             </div>
-
-            <!-- Profile Form -->
-            <div class="lg:col-span-9">
-                <form
-                    [formGroup]="profileForm"
-                    (ngSubmit)="onSubmit()"
-                    class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8"
-                >
-                    <div class="mb-8">
-                        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                            Completar Perfil
-                        </h2>
-                        <p class="text-gray-600 dark:text-gray-400">
-                            Completa tu información profesional para encontrar las mejores oportunidades
-                        </p>
-                    </div>
-                    <div class="space-y-6">
-                        <!-- File Upload -->
-                        <div class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-6 border-2 border-dashed border-gray-300 dark:border-gray-700">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                📄 Carga tu hoja de vida (PDF o DOCX):
-                            </label>
-                            <input
-                                type="file"
-                                (change)="onFileSelected($event)"
-                                class="block w-full text-sm text-gray-600 dark:text-gray-400
-                                file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0
-                                file:text-sm file:font-semibold file:bg-primary-100 dark:file:bg-primary-900/30
-                                file:text-primary-700 dark:file:text-primary-400
-                                hover:file:bg-primary-200 dark:hover:file:bg-primary-900/50
-                                file:transition-colors file:cursor-pointer"
-                            >
-                        </div>
-
-                        <!-- Name and Lastname -->
-                        <div class="grid sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    * Nombre:
-                                </label>
-                                <input
-                                    type="text"
-                                    formControlName="first_name"
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                    text-gray-900 dark:text-white transition-colors"
-                                    placeholder="Escribe tu nombre"
-                                />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    * Apellido:
-                                </label>
-                                <input
-                                    type="text"
-                                    formControlName="last_name"
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                    text-gray-900 dark:text-white transition-colors"
-                                    placeholder="Escribe tu apellido"
-                                />
-                            </div>
-                        </div>
-
-                        <!-- Document ID -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                * Documento de Identidad:
-                            </label>
-                            <input
-                                type="number"
-                                formControlName="number_id"
-                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                text-gray-900 dark:text-white transition-colors"
-                                [class.border-red-500]="profileForm.get('number_id')?.invalid && profileForm.get('number_id')?.touched"
-                                placeholder="Escribe tu documento de identidad"
-                            />
-                        </div>
-
-                        <!-- Email -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                * Correo Electrónico:
-                            </label>
-                            <input
-                                type="email"
-                                formControlName="email"
-                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                text-gray-900 dark:text-white transition-colors"
-                                [class.border-red-500]="profileForm.get('email')?.invalid && profileForm.get('email')?.touched"
-                                placeholder="Escribe tu correo electrónico"
-                            />
-                        </div>
-
-                        <!-- Phone -->
-                        <div class="grid sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Código País:
-                                </label>
-                                <select
-                                    formControlName="phone_code"
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                    text-gray-900 dark:text-white transition-colors"
-                                >
-                                    <option value="">Seleccione el código de país</option>
-                                    <option *ngFor="let country of countryCodes" [value]="country.code">
-                                        {{ country.name }} ({{ country.code }})
-                                    </option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    * Teléfono:
-                                </label>
-                                <input
-                                    type="text"
-                                    formControlName="phone_number"
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                    text-gray-900 dark:text-white transition-colors"
-                                    placeholder="Escribe tu número de teléfono"
-                                />
-                            </div>
-                        </div>
-
-                        <!-- Country and City -->
-                        <div class="grid sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    País:
-                                </label>
-                                <select
-                                    formControlName="country"
-                                    (change)="onCountryChange(countryForm.value)"
-                                    #countryForm
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                    text-gray-900 dark:text-white transition-colors"
-                                >
-                                    <option value="">Seleccione un país</option>
-                                    <option *ngFor="let country of countries" [value]="country.isoCode">
-                                        {{ country.name }}
-                                    </option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    * Ciudad:
-                                </label>
-                                <select
-                                    formControlName="city"
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                    text-gray-900 dark:text-white transition-colors"
-                                >
-                                    <option value="">Seleccione una ciudad</option>
-                                    <option *ngFor="let city of cities" [value]="city.name">
-                                        {{ city.name }}
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Professional Title -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                * Cargo:
-                            </label>
-                            <input
-                                type="text"
-                                formControlName="professional_title"
-                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                text-gray-900 dark:text-white transition-colors"
-                                placeholder="Escribe tu título profesional o cargo"
-                            />
-                        </div>
-                        <!-- Summary -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                * Resumen Profesional:
-                            </label>
-                            <textarea
-                                formControlName="summary"
-                                rows="3"
-                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                text-gray-900 dark:text-white transition-colors resize-none"
-                                placeholder="Describe brevemente tu perfil profesional"
-                            ></textarea>
-                        </div>
-
-                        <!-- Education -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                * Educación:
-                            </label>
-                            <textarea
-                                formControlName="education"
-                                rows="3"
-                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                text-gray-900 dark:text-white transition-colors resize-none"
-                                placeholder="Describe tu formación académica"
-                            ></textarea>
-                        </div>
-
-                        <!-- Skills -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                * Habilidades:
-                            </label>
-                            <textarea
-                                formControlName="skills"
-                                rows="3"
-                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                text-gray-900 dark:text-white transition-colors resize-none"
-                                placeholder="Lista tus habilidades técnicas y blandas"
-                            ></textarea>
-                        </div>
-
-                        <!-- Experience -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                * Experiencia:
-                            </label>
-                            <textarea
-                                formControlName="experience"
-                                rows="3"
-                                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                text-gray-900 dark:text-white transition-colors resize-none"
-                                placeholder="Describe tu experiencia laboral"
-                            ></textarea>
-                        </div>
-
-                        <!-- LinkedIn and Portfolio -->
-                        <div class="grid sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    LinkedIn:
-                                </label>
-                                <input
-                                    type="url"
-                                    formControlName="linkedin_url"
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                    text-gray-900 dark:text-white transition-colors"
-                                    placeholder="https://linkedin.com/in/tu-perfil"
-                                />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Portafolio:
-                                </label>
-                                <input
-                                    type="url"
-                                    formControlName="portfolio_url"
-                                    class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
-                                    rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
-                                    text-gray-900 dark:text-white transition-colors"
-                                    placeholder="https://tu-portafolio.com"
-                                />
-                            </div>
-                        </div>
-
-                        <!-- Submit Button -->
-                        <div class="pt-6">
-                            <button
-                                type="submit"
-                                [disabled]="profileForm.invalid || isLoading || profileSaved"
-                                class="w-full py-3.5 px-6 bg-primary-600 dark:bg-primary-500 text-white font-semibold
-                                rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600
-                                transition-colors shadow-lg hover:shadow-xl
-                                disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none
-                                flex items-center justify-center gap-2"
-                            >
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                Guardar Perfil
-                            </button>
-
-                            <!-- Mensaje de éxito -->
-                            <div *ngIf="profileSaved" class="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-                                <p class="text-sm text-green-800 dark:text-green-400 flex items-center gap-2 mb-3">
-                                    <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                    </svg>
-                                    {{ successMessage }}
-                                </p>
-                                <button
-                                    type="button"
-                                    (click)="goToAtsCv()"
-                                    class="w-full py-3 px-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold
-                                    rounded-xl hover:from-orange-600 hover:to-orange-700
-                                    transition-all shadow-lg hover:shadow-xl
-                                    flex items-center justify-center gap-2 transform hover:scale-[1.02]"
-                                >
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                    Ver CV ATS
-                                </button>
-                            </div>
-
-                            <p *ngIf="errorMessage" class="mt-4 text-red-600 dark:text-red-400 text-sm text-center">
-                                {{ errorMessage }}
-                            </p>
-
-                            <div *ngIf="profileForm.invalid && profileForm.touched"
-                                 class="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
-                                <p class="text-sm text-yellow-800 dark:text-yellow-400 flex items-center gap-2">
-                                    <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                    </svg>
-                                    Revisa que todos los campos obligatorios (*) estén completos.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Lo que hacemos</h3>
+          </div>
+          <ul class="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+            <li class="flex items-start gap-2">
+              <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>Te ayudamos a crear tu CV con formato ATS optimizado para sistemas de selección</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>Analizamos automáticamente tu CV existente y creamos tu perfil al instante</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>Traemos ofertas que más se adaptan a tu perfil con match semántico avanzado</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>Te indicamos dónde adquirir los conocimientos que te hacen falta para cada posición</span>
+            </li>
+          </ul>
+          <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <p class="text-xs text-gray-500 dark:text-gray-500">
+              💡 <strong>Tip:</strong> Revisa cuidadosamente la información generada y puedes corregirla si es
+              necesario.
+            </p>
+          </div>
         </div>
+      </div>
+
+      <!-- Profile Form -->
+      <div class="lg:col-span-9">
+        <form
+          [formGroup]="profileForm"
+          (ngSubmit)="onSubmit()"
+          class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8"
+        >
+          <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Completar Perfil</h2>
+            <p class="text-gray-600 dark:text-gray-400">
+              Completa tu información profesional para encontrar las mejores oportunidades
+            </p>
+          </div>
+          <div class="space-y-6">
+            <!-- File Upload -->
+            <div
+              class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-6 border-2 border-dashed border-gray-300 dark:border-gray-700"
+            >
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                📄 Carga tu hoja de vida (PDF o DOCX):
+              </label>
+              <input
+                type="file"
+                (change)="onFileSelected($event)"
+                class="block w-full text-sm text-gray-600 dark:text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-primary-100 dark:file:bg-primary-900/30 file:text-primary-700 dark:file:text-primary-400 hover:file:bg-primary-200 dark:hover:file:bg-primary-900/50 file:transition-colors file:cursor-pointer"
+              />
+            </div>
+
+            <!-- Name and Lastname -->
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> * Nombre: </label>
+                <input
+                  type="text"
+                  formControlName="first_name"
+                  class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors"
+                  placeholder="Escribe tu nombre"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> * Apellido: </label>
+                <input
+                  type="text"
+                  formControlName="last_name"
+                  class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors"
+                  placeholder="Escribe tu apellido"
+                />
+              </div>
+            </div>
+
+            <!-- Document ID -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                * Documento de Identidad:
+              </label>
+              <input
+                type="number"
+                formControlName="number_id"
+                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors"
+                [class.border-red-500]="profileForm.get('number_id')?.invalid && profileForm.get('number_id')?.touched"
+                placeholder="Escribe tu documento de identidad"
+              />
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                * Correo Electrónico:
+              </label>
+              <input
+                type="email"
+                formControlName="email"
+                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors"
+                [class.border-red-500]="profileForm.get('email')?.invalid && profileForm.get('email')?.touched"
+                placeholder="Escribe tu correo electrónico"
+              />
+            </div>
+
+            <!-- Phone -->
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> Código País: </label>
+                <select
+                  formControlName="phone_code"
+                  class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors"
+                >
+                  <option value="">Seleccione el código de país</option>
+                  <option *ngFor="let country of countryCodes" [value]="country.code">
+                    {{ country.name }} ({{ country.code }})
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> * Teléfono: </label>
+                <input
+                  type="text"
+                  formControlName="phone_number"
+                  class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors"
+                  placeholder="Escribe tu número de teléfono"
+                />
+              </div>
+            </div>
+
+            <!-- Country and City -->
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> País: </label>
+                <select
+                  formControlName="country"
+                  (change)="onCountryChange(countryForm.value)"
+                  #countryForm
+                  class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors"
+                >
+                  <option value="">Seleccione un país</option>
+                  <option *ngFor="let country of countries" [value]="country.isoCode">
+                    {{ country.name }}
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> * Ciudad: </label>
+                <select
+                  formControlName="city"
+                  class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors"
+                >
+                  <option value="">Seleccione una ciudad</option>
+                  <option *ngFor="let city of cities" [value]="city.name">
+                    {{ city.name }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Professional Title -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> * Cargo: </label>
+              <input
+                type="text"
+                formControlName="professional_title"
+                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors"
+                placeholder="Escribe tu título profesional o cargo"
+              />
+            </div>
+            <!-- Summary -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                * Resumen Profesional:
+              </label>
+              <textarea
+                formControlName="summary"
+                rows="3"
+                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors resize-none"
+                placeholder="Describe brevemente tu perfil profesional"
+              ></textarea>
+            </div>
+
+            <!-- Education -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> * Educación: </label>
+              <textarea
+                formControlName="education"
+                rows="3"
+                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors resize-none"
+                placeholder="Describe tu formación académica"
+              ></textarea>
+            </div>
+
+            <!-- Skills -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> * Habilidades: </label>
+              <textarea
+                formControlName="skills"
+                rows="3"
+                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors resize-none"
+                placeholder="Lista tus habilidades técnicas y blandas"
+              ></textarea>
+            </div>
+
+            <!-- Experience -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> * Experiencia: </label>
+              <textarea
+                formControlName="experience"
+                rows="3"
+                class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors resize-none"
+                placeholder="Describe tu experiencia laboral"
+              ></textarea>
+            </div>
+
+            <!-- LinkedIn and Portfolio -->
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> LinkedIn: </label>
+                <input
+                  type="url"
+                  formControlName="linkedin_url"
+                  class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors"
+                  placeholder="https://linkedin.com/in/tu-perfil"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> Portafolio: </label>
+                <input
+                  type="url"
+                  formControlName="portfolio_url"
+                  class="w-full px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 text-gray-900 dark:text-white transition-colors"
+                  placeholder="https://tu-portafolio.com"
+                />
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-6">
+              <button
+                type="submit"
+                [disabled]="profileForm.invalid || isLoading || profileSaved"
+                class="w-full py-3.5 px-6 bg-primary-600 dark:bg-primary-500 text-white font-semibold rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors shadow-lg hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Guardar Perfil
+              </button>
+
+              <!-- Mensaje de éxito -->
+              <div
+                *ngIf="profileSaved"
+                class="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl"
+              >
+                <p class="text-sm text-green-800 dark:text-green-400 flex items-center gap-2 mb-3">
+                  <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  {{ successMessage }}
+                </p>
+                <button
+                  type="button"
+                  (click)="goToAtsCv()"
+                  class="w-full py-3 px-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 transform hover:scale-[1.02]"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  Ver CV ATS
+                </button>
+              </div>
+
+              <p *ngIf="errorMessage" class="mt-4 text-red-600 dark:text-red-400 text-sm text-center">
+                {{ errorMessage }}
+              </p>
+
+              <div
+                *ngIf="profileForm.invalid && profileForm.touched"
+                class="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl"
+              >
+                <p class="text-sm text-yellow-800 dark:text-yellow-400 flex items-center gap-2">
+                  <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  Revisa que todos los campos obligatorios (*) estén completos.
+                </p>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 
 <!--Modal Loader-->

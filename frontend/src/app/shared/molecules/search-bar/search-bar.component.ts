@@ -12,17 +12,17 @@ import { FormsModule } from '@angular/forms';
       <div class="relative">
         <!-- Search Icon -->
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg 
-            class="h-5 w-5 text-gray-400 dark:text-gray-500" 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            class="h-5 w-5 text-gray-400 dark:text-gray-500"
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path 
-              stroke-linecap="round" 
-              stroke-linejoin="round" 
-              stroke-width="2" 
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
         </div>
@@ -50,7 +50,12 @@ import { FormsModule } from '@angular/forms';
           aria-label="Clear search"
         >
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
 
@@ -60,8 +65,19 @@ import { FormsModule } from '@angular/forms';
           class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
         >
           <svg class="animate-spin h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
           </svg>
         </div>
       </div>
@@ -79,8 +95,18 @@ import { FormsModule } from '@angular/forms';
           type="button"
         >
           <div class="flex items-center gap-3">
-            <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              class="h-4 w-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
             <span>{{ suggestion }}</span>
           </div>
@@ -92,7 +118,9 @@ import { FormsModule } from '@angular/forms';
         *ngIf="isFocused && recentSearches.length > 0 && !searchQuery && showRecentSearches"
         class="absolute z-50 w-full mt-2 bg-white dark:bg-dark-bg-secondary border border-gray-200 dark:border-dark-border rounded-xl shadow-lg"
       >
-        <div class="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-dark-border">
+        <div
+          class="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-dark-border"
+        >
           Búsquedas recientes
         </div>
         <button
@@ -102,8 +130,18 @@ import { FormsModule } from '@angular/forms';
           type="button"
         >
           <div class="flex items-center gap-3">
-            <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              class="h-4 w-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span>{{ search }}</span>
           </div>
@@ -114,14 +152,19 @@ import { FormsModule } from '@angular/forms';
             aria-label="Remove"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </button>
       </div>
     </div>
   `,
-  styles: []
+  styles: [],
 })
 export class SearchBarComponent {
   @Input() placeholder = 'Buscar...';
@@ -193,16 +236,17 @@ export class SearchBarComponent {
   }
 
   getInputClasses(): string {
-    const baseClasses = 'block w-full pl-10 bg-white dark:bg-dark-bg-tertiary border border-gray-300 dark:border-dark-border rounded-xl text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200';
-    
+    const baseClasses =
+      'block w-full pl-10 bg-white dark:bg-dark-bg-tertiary border border-gray-300 dark:border-dark-border rounded-xl text-gray-900 dark:text-dark-text-primary placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200';
+
     const sizeClasses = {
       sm: 'py-2 pr-3 text-sm',
       md: 'py-3 pr-10 text-base',
-      lg: 'py-4 pr-12 text-lg'
+      lg: 'py-4 pr-12 text-lg',
     };
-    
+
     const disabledClasses = this.disabled ? 'opacity-50 cursor-not-allowed' : '';
-    
+
     return `${baseClasses} ${sizeClasses[this.size]} ${disabledClasses}`.trim();
   }
 

@@ -8,11 +8,10 @@ Reemplazo del módulo `jobs/utils/scraper.py`. Cambios respecto al original:
   - Devuelve `JobOfferData` (DTO), no persiste en DB
   - Errores tipados con `ScraperError`
 """
+
 from __future__ import annotations
 
 import logging
-import re
-from typing import List, Tuple
 
 import requests
 from bs4 import BeautifulSoup
@@ -36,18 +35,25 @@ USER_AGENT = (
 BASE_URL = "https://co.computrabajo.com"
 
 _DETAIL_SECTION_SPLITS = (
-    'requisitos', 'habilidades', 'condiciones', 'te ofrecemos',
-    'perfil', 'ofrecemos', 'conocimientos', 'skills',
-    'qué harás', 'responsabilidades',
+    "requisitos",
+    "habilidades",
+    "condiciones",
+    "te ofrecemos",
+    "perfil",
+    "ofrecemos",
+    "conocimientos",
+    "skills",
+    "qué harás",
+    "responsabilidades",
 )
 
 
 class ComputrabajoScraper(JobScraper):
     """Scraper para co.computrabajo.com."""
 
-    portal_name = 'computrabajo'
+    portal_name = "computrabajo"
 
-    def search(self, query: str, location: str, pages: int = 2) -> List[JobOfferData]:
+    def search(self, query: str, location: str, pages: int = 2) -> list[JobOfferData]:
         if not query or not location:
             raise ScraperError("query y location son obligatorios")
 
@@ -57,10 +63,12 @@ class ComputrabajoScraper(JobScraper):
 
         logger.info(
             "Iniciando scrape Computrabajo: query=%r location=%r pages=%d",
-            query, location, pages,
+            query,
+            location,
+            pages,
         )
 
-        offers: List[JobOfferData] = []
+        offers: list[JobOfferData] = []
         for page in range(1, pages + 1):
             url = f"{base}{page}"
             offers.extend(self._parse_listing_page(url))
@@ -68,7 +76,7 @@ class ComputrabajoScraper(JobScraper):
 
     # ---- Helpers internos ----------------------------------------------
 
-    def _parse_listing_page(self, url: str) -> List[JobOfferData]:
+    def _parse_listing_page(self, url: str) -> list[JobOfferData]:
         try:
             response = requests.get(
                 url,
@@ -83,7 +91,7 @@ class ComputrabajoScraper(JobScraper):
         articles = soup.find_all("article", class_="box_offer")
         logger.info("Ofertas en %s: %d", url, len(articles))
 
-        offers: List[JobOfferData] = []
+        offers: list[JobOfferData] = []
         for article in articles:
             try:
                 offer = self._parse_listing_card(article)
@@ -105,8 +113,8 @@ class ComputrabajoScraper(JobScraper):
 
         job_url = BASE_URL + title_tag["href"]
         title = title_tag.get_text(strip=True)
-        company = company_tag.get_text(strip=True) if company_tag else ''
-        location_text = location_tag.get_text(strip=True) if location_tag else ''
+        company = company_tag.get_text(strip=True) if company_tag else ""
+        location_text = location_tag.get_text(strip=True) if location_tag else ""
 
         summary, keywords = self._fetch_detail(job_url)
 
@@ -120,7 +128,7 @@ class ComputrabajoScraper(JobScraper):
             portal=self.portal_name,
         )
 
-    def _fetch_detail(self, offer_url: str) -> Tuple[str, str]:
+    def _fetch_detail(self, offer_url: str) -> tuple[str, str]:
         """Devuelve (summary, keywords) para una oferta individual.
 
         Usa el USER_AGENT completo del listing — el corto 'Mozilla/5.0'
@@ -135,7 +143,7 @@ class ComputrabajoScraper(JobScraper):
             )
         except requests.RequestException as e:
             logger.warning("Error fetching detail %s: %s", offer_url, e)
-            return '', ''
+            return "", ""
 
         soup = BeautifulSoup(response.content, "html.parser")
         description_title = soup.find(
@@ -143,18 +151,18 @@ class ComputrabajoScraper(JobScraper):
             string=lambda text: text and "descripción" in text.lower(),
         )
         if not description_title:
-            return '', ''
+            return "", ""
 
-        chunks: List[str] = []
+        chunks: list[str] = []
         for sibling in description_title.find_next_siblings():
             if sibling.name == "h3":
                 break
             if sibling.name in ("p", "li"):
                 for child in sibling:
-                    if getattr(child, 'name', None) == "br":
+                    if getattr(child, "name", None) == "br":
                         chunks.append("\n")
                         continue
-                    text = child.get_text() if hasattr(child, 'get_text') else str(child)
+                    text = child.get_text() if hasattr(child, "get_text") else str(child)
                     if "Requerimientos" in text:
                         chunks.append("\n\nRequerimientos:\n\n")
                     elif "Aptitudes asociadas a esta oferta" in text or "Palabras clave:" in text:

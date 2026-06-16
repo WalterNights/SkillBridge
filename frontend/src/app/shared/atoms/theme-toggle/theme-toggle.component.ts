@@ -45,7 +45,7 @@ import { ThemeService } from '../../../services/theme.service';
       </svg>
     </button>
   `,
-  styles: []
+  styles: [],
 })
 export class ThemeToggleComponent {
   constructor(public themeService: ThemeService) {}

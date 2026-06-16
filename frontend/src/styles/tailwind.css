@@ -2,9 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-
 @layer utilities {
-
   .header-logo {
     content: url('/assets/image/SkilTak_logo.png');
   }

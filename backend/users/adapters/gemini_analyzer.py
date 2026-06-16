@@ -3,11 +3,12 @@
 Mueve aquí toda la lógica que vivía en `users.services.gemini_cv_service`
 para que el `CVAnalyzer` quede como un adapter puro al SDK externo.
 """
+
 from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import google.generativeai as genai
 
@@ -16,7 +17,7 @@ from users.adapters.cv_analyzer_base import CVAnalyzer, CVAnalyzerError
 logger = logging.getLogger(__name__)
 
 MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
-ALLOWED_EXTENSIONS = ('pdf', 'docx')
+ALLOWED_EXTENSIONS = ("pdf", "docx")
 MIN_TEXT_LENGTH = 50
 
 _PROMPT_TEMPLATE = """Analiza el siguiente CV y extrae la información en formato JSON estrictamente estructurado.
@@ -77,7 +78,7 @@ Responde SOLO con el JSON, sin texto adicional, sin markdown, sin explicaciones.
 class GeminiCVAnalyzer(CVAnalyzer):
     """Analiza CVs delegando en la API de Google Gemini."""
 
-    def __init__(self, api_key: str, model_name: str = 'gemini-2.0-flash-exp'):
+    def __init__(self, api_key: str, model_name: str = "gemini-2.0-flash-exp"):
         if not api_key:
             raise CVAnalyzerError("GEMINI_API_KEY no provista")
         genai.configure(api_key=api_key)
@@ -85,16 +86,19 @@ class GeminiCVAnalyzer(CVAnalyzer):
 
     # ---- API pública del contrato ---------------------------------------
 
-    def validate(self, cv_file: Any) -> tuple[bool, Optional[str]]:
+    def validate(self, cv_file: Any) -> tuple[bool, str | None]:
         if not cv_file:
             return False, "No se proporcionó ningún archivo"
 
-        ext = cv_file.name.rsplit('.', 1)[-1].lower()
+        ext = cv_file.name.rsplit(".", 1)[-1].lower()
         if ext not in ALLOWED_EXTENSIONS:
             return False, f"Formato no permitido. Use: {', '.join(ALLOWED_EXTENSIONS)}"
 
         if cv_file.size > MAX_FILE_SIZE_BYTES:
-            return False, f"El archivo excede el tamaño máximo de {MAX_FILE_SIZE_BYTES // (1024 * 1024)}MB"
+            return (
+                False,
+                f"El archivo excede el tamaño máximo de {MAX_FILE_SIZE_BYTES // (1024 * 1024)}MB",
+            )
 
         return True, None
 
@@ -123,51 +127,56 @@ class GeminiCVAnalyzer(CVAnalyzer):
         import docx
         import pdfplumber
 
-        ext = cv_file.name.rsplit('.', 1)[-1].lower()
+        ext = cv_file.name.rsplit(".", 1)[-1].lower()
         cv_file.seek(0)
 
-        if ext == 'pdf':
+        if ext == "pdf":
             with pdfplumber.open(cv_file) as pdf:
-                return '\n'.join(
-                    (page.extract_text() or '')
-                    for page in pdf.pages
-                ).strip()
+                return "\n".join((page.extract_text() or "") for page in pdf.pages).strip()
 
-        if ext == 'docx':
+        if ext == "docx":
             doc = docx.Document(cv_file)
-            return '\n'.join(p.text for p in doc.paragraphs).strip()
+            return "\n".join(p.text for p in doc.paragraphs).strip()
 
         raise CVAnalyzerError(f"Formato no soportado: {ext}")
 
 
 # ---- Module-level helpers (reutilizables y testeables sin instanciar) ----
 
+
 def _strip_markdown_fences(text: str) -> str:
     """Gemini a veces envuelve el JSON en ```json ... ```. Lo limpiamos."""
-    if '```json' in text:
-        return text.split('```json', 1)[1].split('```', 1)[0].strip()
-    if '```' in text:
-        return text.split('```', 1)[1].split('```', 1)[0].strip()
+    if "```json" in text:
+        return text.split("```json", 1)[1].split("```", 1)[0].strip()
+    if "```" in text:
+        return text.split("```", 1)[1].split("```", 1)[0].strip()
     return text
 
 
 def _normalize_extracted_data(data: dict) -> dict:
     """Asegura el contrato público del endpoint /resume-analyzer/."""
     text_fields = (
-        'first_name', 'last_name', 'full_name',
-        'phone_code', 'phone_number',
-        'country', 'city',
-        'professional_title', 'title',
-        'summary', 'skills',
-        'linkedin_url', 'portfolio_url',
+        "first_name",
+        "last_name",
+        "full_name",
+        "phone_code",
+        "phone_number",
+        "country",
+        "city",
+        "professional_title",
+        "title",
+        "summary",
+        "skills",
+        "linkedin_url",
+        "portfolio_url",
     )
     out: dict = {}
     for key in text_fields:
-        value = data.get(key, '')
-        out[key] = value.strip() if isinstance(value, str) else ''
+        value = data.get(key, "")
+        out[key] = value.strip() if isinstance(value, str) else ""
 
     # Listas o strings (Gemini a veces devuelve string en lugar de lista)
-    for key in ('education', 'experience'):
+    for key in ("education", "experience"):
         value = data.get(key, [])
         if isinstance(value, list):
             out[key] = value
@@ -177,18 +186,18 @@ def _normalize_extracted_data(data: dict) -> dict:
             out[key] = []
 
     # full_name fallback
-    if not out['full_name'] and (out['first_name'] or out['last_name']):
-        out['full_name'] = f"{out['first_name']} {out['last_name']}".strip()
+    if not out["full_name"] and (out["first_name"] or out["last_name"]):
+        out["full_name"] = f"{out['first_name']} {out['last_name']}".strip()
 
     # title ↔ professional_title (compat con frontend viejo)
-    if not out['title'] and out['professional_title']:
-        out['title'] = out['professional_title']
-    elif out['title'] and not out['professional_title']:
-        out['professional_title'] = out['title']
+    if not out["title"] and out["professional_title"]:
+        out["title"] = out["professional_title"]
+    elif out["title"] and not out["professional_title"]:
+        out["professional_title"] = out["title"]
 
     # URLs deben ser absolutas
-    for url_key in ('linkedin_url', 'portfolio_url'):
-        if out[url_key] and not out[url_key].startswith('http'):
-            out[url_key] = ''
+    for url_key in ("linkedin_url", "portfolio_url"):
+        if out[url_key] and not out[url_key].startswith("http"):
+            out[url_key] = ""
 
     return out

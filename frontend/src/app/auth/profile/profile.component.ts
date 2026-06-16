@@ -9,22 +9,20 @@ import { ProfileBuilderComponent } from '../../shared/profile-builder/profile-bu
 import { CountryCode } from '../../models/country-code.model';
 import { CountryCodeService } from '../../services/country-code.service';
 
-
 @Component({
   selector: 'app-profile',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule, LoaderModalComponent],
   templateUrl: './profile.component.html',
-  styleUrls: ['./profile.component.scss']
+  styleUrls: ['./profile.component.scss'],
 })
-
 export class ProfileComponent implements OnInit {
   profileForm!: FormGroup;
   selectedFile: File | null = null;
-  errorMessage = "";
+  errorMessage = '';
   isLoading = false;
   showLoader = false;
-  successMessage = "";
+  successMessage = '';
   profileSaved = false;
   countryCodes: CountryCode[] = [];
   countries = Country.getAllCountries();
@@ -35,13 +33,13 @@ export class ProfileComponent implements OnInit {
     private profileBuldier: ProfileBuilderComponent,
     private titleService: Title,
     private location: Location,
-    private router: Router
+    private router: Router,
   ) {
     this.titleService.setTitle('SkilTak - Home');
   }
 
   ngOnInit(): void {
-    this.countryCodeService.getCountryCodes().subscribe(data => {
+    this.countryCodeService.getCountryCodes().subscribe((data) => {
       this.countryCodes = data;
     });
     this.profileForm = this.profileBuldier.buildProfileForm();
@@ -79,22 +77,22 @@ export class ProfileComponent implements OnInit {
           skills: data.skills,
           experience: experienceText,
           linkedin_url: data.linkedin_url,
-          portfolio_url: data.portfolio_url
+          portfolio_url: data.portfolio_url,
         });
         if (country_code) this.onCountryChange(country_code);
-        this.successMessage = "Hoja de vida analizada correctamente";
-        Object.keys(this.profileForm.controls).forEach(field => {
+        this.successMessage = 'Hoja de vida analizada correctamente';
+        Object.keys(this.profileForm.controls).forEach((field) => {
           const control = this.profileForm.get(field);
           control?.markAsTouched();
           control?.updateValueAndValidity();
         });
-        this.successMessage = "Hoja de vida analizada correctamente";
+        this.successMessage = 'Hoja de vida analizada correctamente';
         this.isLoading = false;
       },
       () => {
-        this.errorMessage = "Error al analizar hoja de vida"
+        this.errorMessage = 'Error al analizar hoja de vida';
         this.isLoading = false;
-      }
+      },
     );
   }
 
@@ -105,20 +103,22 @@ export class ProfileComponent implements OnInit {
     if (typeof education === 'string') return education;
     if (!Array.isArray(education)) return '';
 
-    return education.map(edu => {
-      const parts = [];
-      if (edu.title) parts.push(edu.title);
-      if (edu.institution) parts.push(`en ${edu.institution}`);
-      if (edu.location_city || edu.location_country) {
-        const location = [edu.location_city, edu.location_country].filter(Boolean).join(', ');
-        parts.push(`(${location})`);
-      }
-      if (edu.start_date || edu.end_date) {
-        const dates = [edu.start_date, edu.end_date].filter(Boolean).join(' - ');
-        parts.push(`[${dates}]`);
-      }
-      return parts.join(' ');
-    }).join('\n\n');
+    return education
+      .map((edu) => {
+        const parts = [];
+        if (edu.title) parts.push(edu.title);
+        if (edu.institution) parts.push(`en ${edu.institution}`);
+        if (edu.location_city || edu.location_country) {
+          const location = [edu.location_city, edu.location_country].filter(Boolean).join(', ');
+          parts.push(`(${location})`);
+        }
+        if (edu.start_date || edu.end_date) {
+          const dates = [edu.start_date, edu.end_date].filter(Boolean).join(' - ');
+          parts.push(`[${dates}]`);
+        }
+        return parts.join(' ');
+      })
+      .join('\n\n');
   }
 
   /**
@@ -128,33 +128,35 @@ export class ProfileComponent implements OnInit {
     if (typeof experience === 'string') return experience;
     if (!Array.isArray(experience)) return '';
 
-    return experience.map(exp => {
-      const lines = [];
-      // Primera línea: Empresa y ubicación
-      const header = [exp.company];
-      if (exp.location_city || exp.location_country) {
-        const location = [exp.location_city, exp.location_country].filter(Boolean).join(', ');
-        header.push(`(${location})`);
-      }
-      lines.push(header.join(' '));
-
-      // Segunda línea: Puesto y fechas
-      if (exp.position) {
-        const positionLine = [exp.position];
-        if (exp.start_date || exp.end_date) {
-          const dates = [exp.start_date, exp.end_date].filter(Boolean).join(' - ');
-          positionLine.push(`[${dates}]`);
+    return experience
+      .map((exp) => {
+        const lines = [];
+        // Primera línea: Empresa y ubicación
+        const header = [exp.company];
+        if (exp.location_city || exp.location_country) {
+          const location = [exp.location_city, exp.location_country].filter(Boolean).join(', ');
+          header.push(`(${location})`);
         }
-        lines.push(positionLine.join(' '));
-      }
+        lines.push(header.join(' '));
 
-      // Descripción
-      if (exp.description) {
-        lines.push(exp.description);
-      }
+        // Segunda línea: Puesto y fechas
+        if (exp.position) {
+          const positionLine = [exp.position];
+          if (exp.start_date || exp.end_date) {
+            const dates = [exp.start_date, exp.end_date].filter(Boolean).join(' - ');
+            positionLine.push(`[${dates}]`);
+          }
+          lines.push(positionLine.join(' '));
+        }
 
-      return lines.join('\n');
-    }).join('\n\n');
+        // Descripción
+        if (exp.description) {
+          lines.push(exp.description);
+        }
+
+        return lines.join('\n');
+      })
+      .join('\n\n');
   }
 
   onSubmit() {
@@ -177,7 +179,7 @@ export class ProfileComponent implements OnInit {
         this.errorMessage = 'Error al completar perfil';
         this.profileSaved = false;
       },
-      false // shouldRedirect: false para ir a /ats-cv
+      false, // shouldRedirect: false para ir a /ats-cv
     );
   }
 

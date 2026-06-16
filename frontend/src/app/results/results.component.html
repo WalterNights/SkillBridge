@@ -1,11 +1,14 @@
 <!-- Results Page -->
-<div class="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50/30 to-amber-50/20 dark:from-dark-bg-primary dark:via-dark-bg-primary dark:to-dark-bg-secondary pt-20 pb-12">
+<div
+  class="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50/30 to-amber-50/20 dark:from-dark-bg-primary dark:via-dark-bg-primary dark:to-dark-bg-secondary pt-20 pb-12"
+>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-
     <!-- Header Section with Button -->
     <div class="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div class="flex-1">
-        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+        <h1
+          class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent"
+        >
           Ofertas de Empleo
         </h1>
         <p class="text-sm sm:text-base text-gray-600 dark:text-dark-text-secondary">
@@ -17,9 +20,15 @@
       <div class="flex-shrink-0">
         <button
           (click)="obtainOffers()"
-          class="w-full sm:w-auto px-5 py-2.5 sm:px-6 sm:py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-sm sm:text-base font-semibold rounded-xl shadow-lg hover:shadow-xl cursor-pointer transition-all hover:scale-105 flex items-center justify-center gap-2">
+          class="w-full sm:w-auto px-5 py-2.5 sm:px-6 sm:py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-sm sm:text-base font-semibold rounded-xl shadow-lg hover:shadow-xl cursor-pointer transition-all hover:scale-105 flex items-center justify-center gap-2"
+        >
           <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
           </svg>
           <span>{{ offers.length > 0 ? 'Obtener más ofertas' : 'Obtener Ofertas' }}</span>
         </button>
@@ -27,7 +36,9 @@
     </div>
 
     <!-- Search & Filter Section -->
-    <div class="bg-white dark:bg-dark-bg-tertiary rounded-xl sm:rounded-2xl border border-gray-200 dark:border-dark-border shadow-xl p-4 sm:p-6 mb-6 sm:mb-8 backdrop-blur-sm bg-white/90 dark:bg-dark-bg-tertiary/90">
+    <div
+      class="bg-white dark:bg-dark-bg-tertiary rounded-xl sm:rounded-2xl border border-gray-200 dark:border-dark-border shadow-xl p-4 sm:p-6 mb-6 sm:mb-8 backdrop-blur-sm bg-white/90 dark:bg-dark-bg-tertiary/90"
+    >
       <!-- Search Bar -->
       <div class="mb-4 sm:mb-6">
         <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-dark-text-primary mb-2">
@@ -38,9 +49,19 @@
             type="text"
             class="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-sm sm:text-base bg-gray-50 dark:bg-dark-bg-secondary border border-gray-300 dark:border-dark-border rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 dark:text-dark-text-primary transition-all"
             placeholder="Buscar por título, empresa o ubicación..."
+          />
+          <svg
+            class="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-          <svg class="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
         </div>
       </div>
@@ -51,9 +72,10 @@
           (click)="setFilter('all')"
           [ngClass]="{
             'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg': selectedFilter === 'all',
-            'bg-gray-100 dark:bg-dark-bg-secondary text-gray-700 dark:text-dark-text-primary': selectedFilter !== 'all'
+            'bg-gray-100 dark:bg-dark-bg-secondary text-gray-700 dark:text-dark-text-primary': selectedFilter !== 'all',
           }"
-          class="px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-105">
+          class="px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-105"
+        >
           <span class="flex items-center gap-1.5 sm:gap-2">
             <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -67,12 +89,19 @@
           (click)="setFilter('good')"
           [ngClass]="{
             'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg': selectedFilter === 'good',
-            'bg-gray-100 dark:bg-dark-bg-secondary text-gray-700 dark:text-dark-text-primary': selectedFilter !== 'good'
+            'bg-gray-100 dark:bg-dark-bg-secondary text-gray-700 dark:text-dark-text-primary':
+              selectedFilter !== 'good',
           }"
-          class="px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-105">
+          class="px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-105"
+        >
           <span class="flex items-center gap-1.5 sm:gap-2">
             <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span class="hidden lg:inline">Excelente (100%)</span>
             <span class="lg:hidden">100%</span>
@@ -83,12 +112,19 @@
           (click)="setFilter('regular')"
           [ngClass]="{
             'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg': selectedFilter === 'regular',
-            'bg-gray-100 dark:bg-dark-bg-secondary text-gray-700 dark:text-dark-text-primary': selectedFilter !== 'regular'
+            'bg-gray-100 dark:bg-dark-bg-secondary text-gray-700 dark:text-dark-text-primary':
+              selectedFilter !== 'regular',
           }"
-          class="px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-105">
+          class="px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-105"
+        >
           <span class="flex items-center gap-1.5 sm:gap-2">
             <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span class="hidden lg:inline">Bueno (70-99%)</span>
             <span class="lg:hidden">70-99%</span>
@@ -99,9 +135,10 @@
           (click)="setFilter('bad')"
           [ngClass]="{
             'bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-lg': selectedFilter === 'bad',
-            'bg-gray-100 dark:bg-dark-bg-secondary text-gray-700 dark:text-dark-text-primary': selectedFilter !== 'bad'
+            'bg-gray-100 dark:bg-dark-bg-secondary text-gray-700 dark:text-dark-text-primary': selectedFilter !== 'bad',
           }"
-          class="px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-105">
+          class="px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-105"
+        >
           <span class="flex items-center gap-1.5 sm:gap-2">
             <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -115,8 +152,9 @@
       <!-- Results Count -->
       <div class="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200 dark:border-dark-border">
         <p class="text-xs sm:text-sm text-gray-600 dark:text-dark-text-secondary">
-          Mostrando <span class="font-semibold text-orange-600 dark:text-orange-400">{{ filteredOffer.length }}</span>
-          de <span class="font-semibold text-gray-900 dark:text-white">{{ offers.length }}</span> ofertas
+          Mostrando
+          <span class="font-semibold text-orange-600 dark:text-orange-400">{{ filteredOffer.length }}</span> de
+          <span class="font-semibold text-gray-900 dark:text-white">{{ offers.length }}</span> ofertas
         </p>
       </div>
     </div>
@@ -135,21 +173,25 @@
         [class.hover:border-amber-500]="offer.match_percentage >= 50 && offer.match_percentage < 70"
       >
         <!-- Card Header with Match Badge -->
-        <div class="relative h-28 sm:h-32 bg-gradient-to-br overflow-hidden"
-             [class.from-green-500]="offer.match_percentage === 100"
-             [class.to-emerald-600]="offer.match_percentage === 100"
-             [class.from-orange-500]="offer.match_percentage >= 70 && offer.match_percentage < 100"
-             [class.to-amber-600]="offer.match_percentage >= 70 && offer.match_percentage < 100"
-             [class.from-amber-500]="offer.match_percentage >= 50 && offer.match_percentage < 70"
-             [class.to-orange-600]="offer.match_percentage >= 50 && offer.match_percentage < 70"
+        <div
+          class="relative h-28 sm:h-32 bg-gradient-to-br overflow-hidden"
+          [class.from-green-500]="offer.match_percentage === 100"
+          [class.to-emerald-600]="offer.match_percentage === 100"
+          [class.from-orange-500]="offer.match_percentage >= 70 && offer.match_percentage < 100"
+          [class.to-amber-600]="offer.match_percentage >= 70 && offer.match_percentage < 100"
+          [class.from-amber-500]="offer.match_percentage >= 50 && offer.match_percentage < 70"
+          [class.to-orange-600]="offer.match_percentage >= 50 && offer.match_percentage < 70"
         >
           <div class="absolute inset-0 bg-gradient-to-br from-transparent to-black/10"></div>
           <div class="absolute top-3 sm:top-4 right-3 sm:right-4">
-            <div class="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/95 backdrop-blur-sm rounded-full shadow-lg border border-white/50">
-              <span class="text-xs sm:text-sm font-bold"
-                    [class.text-green-700]="offer.match_percentage === 100"
-                    [class.text-orange-700]="offer.match_percentage >= 70 && offer.match_percentage < 100"
-                    [class.text-amber-700]="offer.match_percentage >= 50 && offer.match_percentage < 70"
+            <div
+              class="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/95 backdrop-blur-sm rounded-full shadow-lg border border-white/50"
+            >
+              <span
+                class="text-xs sm:text-sm font-bold"
+                [class.text-green-700]="offer.match_percentage === 100"
+                [class.text-orange-700]="offer.match_percentage >= 70 && offer.match_percentage < 100"
+                [class.text-amber-700]="offer.match_percentage >= 50 && offer.match_percentage < 70"
               >
                 {{ offer.match_percentage }}% Match
               </span>
@@ -158,9 +200,13 @@
 
           <!-- Company Avatar -->
           <div class="absolute -bottom-6 sm:-bottom-8 left-4 sm:left-6">
-            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white dark:bg-dark-bg-tertiary rounded-xl sm:rounded-2xl shadow-lg flex items-center justify-center border-4 border-white dark:border-dark-bg-primary group-hover:scale-110 transition-transform duration-300">
-              <span class="text-lg sm:text-2xl font-bold bg-gradient-to-br from-orange-600 to-amber-600 bg-clip-text text-transparent">
-                {{ offer.company && offer.company.charAt(0).toUpperCase() || '?' }}
+            <div
+              class="w-12 h-12 sm:w-16 sm:h-16 bg-white dark:bg-dark-bg-tertiary rounded-xl sm:rounded-2xl shadow-lg flex items-center justify-center border-4 border-white dark:border-dark-bg-primary group-hover:scale-110 transition-transform duration-300"
+            >
+              <span
+                class="text-lg sm:text-2xl font-bold bg-gradient-to-br from-orange-600 to-amber-600 bg-clip-text text-transparent"
+              >
+                {{ (offer.company && offer.company.charAt(0).toUpperCase()) || '?' }}
               </span>
             </div>
           </div>
@@ -169,23 +215,44 @@
         <!-- Card Content -->
         <div class="pt-8 sm:pt-12 px-4 sm:px-6 pb-4 sm:pb-6">
           <!-- Job Title -->
-          <h3 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors line-clamp-2 leading-snug">
+          <h3
+            class="text-base sm:text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors line-clamp-2 leading-snug"
+          >
             {{ offer.title }}
           </h3>
 
           <!-- Company Name -->
-          <p class="text-xs sm:text-sm text-gray-600 dark:text-dark-text-secondary mb-3 sm:mb-4 flex items-center gap-1.5 sm:gap-2 line-clamp-1">
+          <p
+            class="text-xs sm:text-sm text-gray-600 dark:text-dark-text-secondary mb-3 sm:mb-4 flex items-center gap-1.5 sm:gap-2 line-clamp-1"
+          >
             <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+              />
             </svg>
             <span class="truncate">{{ offer.company }}</span>
           </p>
 
           <!-- Location -->
-          <div class="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary mb-3 sm:mb-4">
+          <div
+            class="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary mb-3 sm:mb-4"
+          >
             <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              />
             </svg>
             <span class="truncate">{{ offer.location }}</span>
           </div>
@@ -198,8 +265,15 @@
             <span class="text-xs sm:text-sm text-gray-500 dark:text-dark-text-tertiary font-medium">
               Ver detalles
             </span>
-            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-dark-bg-secondary dark:to-dark-bg-secondary rounded-lg sm:rounded-xl flex items-center justify-center group-hover:from-orange-500 group-hover:to-amber-500 dark:group-hover:from-orange-600 dark:group-hover:to-amber-600 transition-all duration-300 shadow-sm group-hover:shadow-lg">
-              <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-dark-text-secondary group-hover:text-white transition-all group-hover:translate-x-1 duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div
+              class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-dark-bg-secondary dark:to-dark-bg-secondary rounded-lg sm:rounded-xl flex items-center justify-center group-hover:from-orange-500 group-hover:to-amber-500 dark:group-hover:from-orange-600 dark:group-hover:to-amber-600 transition-all duration-300 shadow-sm group-hover:shadow-lg"
+            >
+              <svg
+                class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-dark-text-secondary group-hover:text-white transition-all group-hover:translate-x-1 duration-200"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </div>
@@ -209,11 +283,25 @@
 
       <!-- Empty State -->
       <div *ngIf="offers.length === 0" class="col-span-full">
-        <div class="bg-white dark:bg-dark-bg-tertiary rounded-xl sm:rounded-2xl border-2 border-dashed border-gray-300 dark:border-dark-border p-8 sm:p-12 text-center">
+        <div
+          class="bg-white dark:bg-dark-bg-tertiary rounded-xl sm:rounded-2xl border-2 border-dashed border-gray-300 dark:border-dark-border p-8 sm:p-12 text-center"
+        >
           <div class="flex flex-col items-center gap-3 sm:gap-4">
-            <div class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 rounded-full flex items-center justify-center">
-              <svg class="w-8 h-8 sm:w-10 sm:h-10 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            <div
+              class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-8 h-8 sm:w-10 sm:h-10 text-orange-600 dark:text-orange-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
               </svg>
             </div>
             <div>
@@ -236,18 +324,32 @@
 
       <!-- No Results for Filter -->
       <div *ngIf="offers.length > 0 && filteredOffer.length === 0" class="col-span-full">
-        <div class="bg-white dark:bg-dark-bg-tertiary rounded-xl sm:rounded-2xl border-2 border-dashed border-amber-300 dark:border-amber-800 p-8 sm:p-12 text-center">
+        <div
+          class="bg-white dark:bg-dark-bg-tertiary rounded-xl sm:rounded-2xl border-2 border-dashed border-amber-300 dark:border-amber-800 p-8 sm:p-12 text-center"
+        >
           <div class="flex flex-col items-center gap-3 sm:gap-4">
-            <div class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 rounded-full flex items-center justify-center">
-              <svg class="w-8 h-8 sm:w-10 sm:h-10 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <div
+              class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-8 h-8 sm:w-10 sm:h-10 text-amber-600 dark:text-amber-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
             </div>
             <div>
               <h3 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2">
                 Sin resultados para este filtro
               </h3>
-              <p class="text-sm sm:text-base text-gray-600 dark:text-dark-text-secondary px-4">
+              <p class="text-sm sm:text-base text-gray-600 dark:text-dark-text-secondary px-4"></p>
             </div>
           </div>
         </div>

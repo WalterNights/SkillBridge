@@ -17,9 +17,10 @@ class dashboardUserList(ListAPIView):
       - Filtrar por owner (cada usuario ve sólo el propio)
       - Filtrar por rol de reclutador (caso de uso de matching inverso)
     """
+
     permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
-    queryset = UserProfile.objects.all().order_by('-id')
+    queryset = UserProfile.objects.all().order_by("-id")
 
 
 class dashboardUserData(APIView):
@@ -29,4 +30,3 @@ class dashboardUserData(APIView):
         profile = request.user.profile
         serializer = UserProfileSerializer(profile)
         return Response(serializer.data, status=status.HTTP_200_OK)
-

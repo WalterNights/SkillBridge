@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable } from '@angular/core';
 import { MATCH_THRESHOLDS, MATCH_COLORS, UI_CONSTANTS } from '../../constants/match-thresholds';
 
 /**
@@ -6,7 +6,6 @@ import { MATCH_THRESHOLDS, MATCH_COLORS, UI_CONSTANTS } from '../../constants/ma
  */
 @Injectable({ providedIn: 'root' })
 export class HTMLChangesComponent {
-
   /**
    * Returns color based on match percentage
    * @param match - Match percentage (0-100)
@@ -33,7 +32,7 @@ export class HTMLChangesComponent {
    */
   getGradient(match: number, hovered: boolean): string {
     if (!hovered) return '';
-    
+
     const color = this.getColor(match);
     return `conic-gradient(from ${UI_CONSTANTS.GRADIENT_ANGLE}deg at 50% 50%, ${color} 0deg, ${color} ${UI_CONSTANTS.GRADIENT_END_ANGLE}deg, transparent 1turn)`;
   }

@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable } from '@angular/core';
 
 type StorageType = 'session' | 'local';
 
@@ -7,7 +7,6 @@ type StorageType = 'session' | 'local';
  */
 @Injectable({ providedIn: 'root' })
 export class StorageMethodComponent {
-
   /**
    * Sets an item in the specified storage
    * @param storageType - Type of storage to use

@@ -2,9 +2,10 @@
 
 // Smooth transitions
 * {
-  transition: background-color 0.2s ease-in-out,
-              border-color 0.2s ease-in-out,
-              color 0.2s ease-in-out;
+  transition:
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out,
+    color 0.2s ease-in-out;
 }
 
 // Custom scrollbar
@@ -16,20 +17,28 @@
   }
 
   &::-webkit-scrollbar-track {
-    background: theme('colors.gray.100');
+    background: theme("colors.gray.100");
     border-radius: 4px;
   }
 
   :host-context(.dark) &::-webkit-scrollbar-track {
-    background: theme('colors.gray.800');
+    background: theme("colors.gray.800");
   }
 
   &::-webkit-scrollbar-thumb {
-    background: linear-gradient(to bottom, theme('colors.primary.500'), theme('colors.secondary.500'));
+    background: linear-gradient(
+      to bottom,
+      theme("colors.primary.500"),
+      theme("colors.secondary.500")
+    );
     border-radius: 4px;
 
     &:hover {
-      background: linear-gradient(to bottom, theme('colors.primary.600'), theme('colors.secondary.600'));
+      background: linear-gradient(
+        to bottom,
+        theme("colors.primary.600"),
+        theme("colors.secondary.600")
+      );
     }
   }
 }
@@ -48,18 +57,13 @@ select:focus {
   overflow: hidden;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: -50%;
     left: -50%;
     width: 200%;
     height: 200%;
-    background: linear-gradient(
-      45deg,
-      transparent,
-      rgba(249, 115, 22, 0.05),
-      transparent
-    );
+    background: linear-gradient(45deg, transparent, rgba(249, 115, 22, 0.05), transparent);
     transform: rotate(45deg);
     transition: all 0.6s ease;
   }
@@ -115,7 +119,7 @@ select:focus {
   overflow: hidden;
 
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 50%;
     left: 50%;
@@ -124,7 +128,9 @@ select:focus {
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.3);
     transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
+    transition:
+      width 0.6s,
+      height 0.6s;
   }
 
   &:active::after {
@@ -151,15 +157,29 @@ select[formControlName="phone_code"] {
 
 // Required field indicator
 .required-field::after {
-  content: ' *';
-  color: theme('colors.red.500');
+  content: " *";
+  color: theme("colors.red.500");
 }
 
 // Validation error shake
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-  20%, 40%, 60%, 80% { transform: translateX(5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
 }
 
 .ng-invalid.ng-touched {
@@ -194,8 +214,8 @@ select[formControlName="phone_code"] {
   select:-webkit-autofill,
   select:-webkit-autofill:hover,
   select:-webkit-autofill:focus {
-    -webkit-text-fill-color: theme('colors.white');
-    -webkit-box-shadow: 0 0 0px 1000px theme('colors.gray.900') inset;
+    -webkit-text-fill-color: theme("colors.white");
+    -webkit-box-shadow: 0 0 0px 1000px theme("colors.gray.900") inset;
     transition: background-color 5000s ease-in-out 0s;
   }
 }

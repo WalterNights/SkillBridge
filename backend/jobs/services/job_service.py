@@ -1,11 +1,12 @@
 """
 Servicio para gestión de ofertas de trabajo.
 """
+
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Iterable, List, Optional
 
 from django.db.models import Q, QuerySet
 
@@ -22,10 +23,10 @@ class JobService:
     @staticmethod
     def get_all_jobs() -> QuerySet[JobOffer]:
         """Todas las ofertas, ordenadas de más nueva a más vieja."""
-        return JobOffer.objects.all().order_by('-created_at')
+        return JobOffer.objects.all().order_by("-created_at")
 
     @staticmethod
-    def get_job_by_id(job_id: int) -> Optional[JobOffer]:
+    def get_job_by_id(job_id: int) -> JobOffer | None:
         try:
             return JobOffer.objects.get(pk=job_id)
         except JobOffer.DoesNotExist:
@@ -36,12 +37,14 @@ class JobService:
     def scrape_new_jobs(
         query: str,
         location: str,
-        portal: str = 'computrabajo',
-    ) -> List[JobOffer]:
+        portal: str = "computrabajo",
+    ) -> list[JobOffer]:
         """Scrapea un único portal y persiste solo las ofertas nuevas."""
         logger.info(
             "Scraping job offers portal=%s query=%r location=%r",
-            portal, query, location,
+            portal,
+            query,
+            location,
         )
         scraper = get_scraper(portal)
         offers_data = scraper.search(query, location)
@@ -51,9 +54,9 @@ class JobService:
     def scrape_all_portals(
         query: str,
         location: str,
-        portals: Optional[List[str]] = None,
+        portals: list[str] | None = None,
         max_workers: int = 4,
-    ) -> List[JobOffer]:
+    ) -> list[JobOffer]:
         """Scrapea todos los portales registrados en paralelo.
 
         Usa un ThreadPoolExecutor — el trabajo es I/O bound (HTTP), así que
@@ -75,14 +78,15 @@ class JobService:
         target_portals = portals or available_portals()
         logger.info(
             "Scraping all portals=%s query=%r location=%r",
-            target_portals, query, location,
+            target_portals,
+            query,
+            location,
         )
 
-        all_offers_data: List[JobOfferData] = []
+        all_offers_data: list[JobOfferData] = []
         with ThreadPoolExecutor(max_workers=max_workers) as pool:
             future_to_portal = {
-                pool.submit(_scrape_one_portal, p, query, location): p
-                for p in target_portals
+                pool.submit(_scrape_one_portal, p, query, location): p for p in target_portals
             }
             for future in as_completed(future_to_portal):
                 portal_name = future_to_portal[future]
@@ -96,7 +100,7 @@ class JobService:
         return JobService.save_new_offers(all_offers_data)
 
     @staticmethod
-    def save_new_offers(offers_data: Iterable[JobOfferData]) -> List[JobOffer]:
+    def save_new_offers(offers_data: Iterable[JobOfferData]) -> list[JobOffer]:
         """Persiste DTOs en DB devolviendo solo las que se crearon ahora.
 
         Usa `get_or_create` por `url` (campo unique). Si una oferta ya
@@ -107,19 +111,19 @@ class JobService:
         la batch entera. Aprendido tras un `DataError` por una sola URL
         de Computrabajo > 200 chars que rompía todas las demás.
         """
-        created: List[JobOffer] = []
+        created: list[JobOffer] = []
         skipped = 0
         for data in offers_data:
             try:
                 obj, was_created = JobOffer.objects.get_or_create(
                     url=data.url,
                     defaults={
-                        'title': data.title,
-                        'company': data.company,
-                        'location': data.location,
-                        'summary': data.summary,
-                        'keywords': data.keywords,
-                        'portal': data.portal,
+                        "title": data.title,
+                        "company": data.company,
+                        "location": data.location,
+                        "summary": data.summary,
+                        "keywords": data.keywords,
+                        "portal": data.portal,
                     },
                 )
                 if was_created:
@@ -129,24 +133,25 @@ class JobService:
                 logger.exception("Skipping offer (url=%r)", data.url)
         logger.info(
             "save_new_offers: %d nuevas guardadas, %d saltadas",
-            len(created), skipped,
+            len(created),
+            skipped,
         )
         return created
 
     @staticmethod
     def get_recent_jobs(limit: int = 20) -> QuerySet[JobOffer]:
-        return JobOffer.objects.all().order_by('-created_at')[:limit]
+        return JobOffer.objects.all().order_by("-created_at")[:limit]
 
     @staticmethod
     def search_jobs(keyword: str) -> QuerySet[JobOffer]:
         """Busca ofertas por palabra clave en título, summary o keywords."""
         return JobOffer.objects.filter(
-            Q(title__icontains=keyword) |
-            Q(summary__icontains=keyword) |
-            Q(keywords__icontains=keyword)
-        ).order_by('-created_at')
+            Q(title__icontains=keyword)
+            | Q(summary__icontains=keyword)
+            | Q(keywords__icontains=keyword)
+        ).order_by("-created_at")
 
 
-def _scrape_one_portal(portal: str, query: str, location: str) -> List[JobOfferData]:
+def _scrape_one_portal(portal: str, query: str, location: str) -> list[JobOfferData]:
     """Helper top-level para ThreadPoolExecutor — debe ser pickleable."""
     return get_scraper(portal).search(query, location)

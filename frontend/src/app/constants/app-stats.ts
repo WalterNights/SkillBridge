@@ -4,7 +4,7 @@
 export const APP_STATS = {
   TOTAL_USERS: '1,500+',
   TOTAL_JOBS: '5,000+',
-  SATISFACTION_RATE: '95%'
+  SATISFACTION_RATE: '95%',
 } as const;
 
 /**
@@ -19,5 +19,5 @@ export const STORAGE_KEYS = {
   SELECTED_JOB: 'selected_job',
   REDIRECT_AFTER_LOGIN: 'redirect_after_login',
   MANUAL_PROFILE_DRAFT: 'manual_profile_draft',
-  THEME: 'skiltak-theme'
+  THEME: 'skiltak-theme',
 } as const;

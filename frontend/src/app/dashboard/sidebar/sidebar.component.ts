@@ -10,7 +10,7 @@ import { SidebarService } from '../services/sidebar.service';
   imports: [CommonModule],
   standalone: true,
   templateUrl: './sidebar.component.html',
-  styleUrls: ['./sidebar.component.scss']
+  styleUrls: ['./sidebar.component.scss'],
 })
 export class SidebarComponent {
   isCollapsed = false;
@@ -22,16 +22,16 @@ export class SidebarComponent {
     private authService: AuthService,
     private storageMethod: StorageMethodComponent,
     private sidebarService: SidebarService,
-  ){}
+  ) {}
 
   ngOnInit(): void {
     this.storage = localStorage.getItem('storage') === 'true' ? 'local' : 'session';
-    this.authService.isLoggedIn$.subscribe(status => {
+    this.authService.isLoggedIn$.subscribe((status) => {
       this.userName = this.storageMethod.getStorageItem(this.storage, 'user_name');
     });
 
     // Subscribe to sidebar state changes
-    this.sidebarService.isCollapsed$.subscribe(collapsed => {
+    this.sidebarService.isCollapsed$.subscribe((collapsed) => {
       this.isCollapsed = collapsed;
     });
   }
@@ -43,5 +43,4 @@ export class SidebarComponent {
   navigateTo(route: string): void {
     this.router.navigate([route]);
   }
-
 }

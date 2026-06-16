@@ -6,10 +6,11 @@
 
 // Smooth transitions
 * {
-  transition: background-color 0.2s ease-in-out,
-              border-color 0.2s ease-in-out,
-              color 0.2s ease-in-out,
-              transform 0.2s ease-in-out;
+  transition:
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out,
+    color 0.2s ease-in-out,
+    transform 0.2s ease-in-out;
 }
 
 // Custom scrollbar for navigation
@@ -35,11 +36,11 @@ nav {
 // Active link indicator
 a.active {
   background: linear-gradient(to right, rgba(249, 115, 22, 0.1), transparent);
-  border-left: 3px solid theme('colors.orange.500');
-  color: theme('colors.white');
+  border-left: 3px solid theme("colors.orange.500");
+  color: theme("colors.white");
 
   svg {
-    color: theme('colors.orange.500');
+    color: theme("colors.orange.500");
   }
 }
 
@@ -49,7 +50,8 @@ a.active {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -63,13 +65,13 @@ a {
   overflow: hidden;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     left: 0;
     top: 0;
     height: 100%;
     width: 3px;
-    background: linear-gradient(to bottom, theme('colors.orange.500'), theme('colors.orange.600'));
+    background: linear-gradient(to bottom, theme("colors.orange.500"), theme("colors.orange.600"));
     transform: scaleY(0);
     transition: transform 0.3s ease;
   }

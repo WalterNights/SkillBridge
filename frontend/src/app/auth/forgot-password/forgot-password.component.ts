@@ -10,7 +10,7 @@ import { HttpErrorResponse } from '@angular/common/http';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './forgot-password.component.html',
-  styleUrls: ['./forgot-password.component.scss']
+  styleUrls: ['./forgot-password.component.scss'],
 })
 export class ForgotPasswordComponent {
   forgotPasswordForm!: FormGroup;
@@ -21,12 +21,12 @@ export class ForgotPasswordComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
     this.forgotPasswordForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]]
+      email: ['', [Validators.required, Validators.email]],
     });
   }
 
@@ -47,7 +47,7 @@ export class ForgotPasswordComponent {
         // Redirigir a la página de verificación después de 2 segundos
         setTimeout(() => {
           this.router.navigate(['/auth/reset-password'], {
-            queryParams: { email }
+            queryParams: { email },
           });
         }, 2000);
       },
@@ -59,7 +59,7 @@ export class ForgotPasswordComponent {
         } else {
           this.errorMessage = 'Error al enviar el código. Intenta nuevamente';
         }
-      }
+      },
     });
   }
 }

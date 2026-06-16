@@ -7,7 +7,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './loader-modal.component.html',
-  styleUrls: ['./loader-modal.component.scss']
+  styleUrls: ['./loader-modal.component.scss'],
 })
 export class LoaderModalComponent {
   motivationalPhrases = [

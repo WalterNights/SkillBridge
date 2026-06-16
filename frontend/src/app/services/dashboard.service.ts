@@ -19,6 +19,6 @@ export class DashboardService {
   getUsers(): Observable<User[]> {
     return this.http
       .get<PaginatedResponse<User>>(`${environment.apiUrl}/dashboard/`)
-      .pipe(map(response => response.results));
+      .pipe(map((response) => response.results));
   }
 }

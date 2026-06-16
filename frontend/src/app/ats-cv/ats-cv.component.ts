@@ -15,7 +15,7 @@ import { STORAGE_KEYS } from '../constants/app-stats';
   imports: [CommonModule],
   standalone: true,
   templateUrl: './ats-cv.component.html',
-  styleUrls: ['./ats-cv.component.scss']
+  styleUrls: ['./ats-cv.component.scss'],
 })
 export class AtsCvComponent implements OnInit {
   profileData: any = null;
@@ -91,7 +91,7 @@ export class AtsCvComponent implements OnInit {
         console.error('Error loading profile:', err);
         this.errorMessage = 'Error al cargar el perfil';
         this.isLoading = false;
-      }
+      },
     });
   }
 
@@ -114,7 +114,7 @@ export class AtsCvComponent implements OnInit {
       portfolio_url: profile.portfolio_url || '',
       skills: profile.skills || '',
       experience: this.parseTextToArray(profile.experience),
-      education: this.parseTextToArray(profile.education)
+      education: this.parseTextToArray(profile.education),
     };
   }
 
@@ -140,7 +140,7 @@ export class AtsCvComponent implements OnInit {
       scale: 2,
       useCORS: true,
       logging: false,
-      backgroundColor: '#ffffff'
+      backgroundColor: '#ffffff',
     }).then((canvas) => {
       const imgData = canvas.toDataURL('image/png');
       const doc = new jsPDF('p', 'pt', 'a4');
@@ -167,7 +167,7 @@ export class AtsCvComponent implements OnInit {
   }
 
   goToResults() {
-    if (!this.authService.isAuthenticated()){
+    if (!this.authService.isAuthenticated()) {
       sessionStorage.setItem('redirect_after_login', '/results');
       this.router.navigate(['/auth/login']);
     } else {

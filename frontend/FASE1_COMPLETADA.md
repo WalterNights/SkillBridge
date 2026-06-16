@@ -19,6 +19,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 ```
 
 **Bibliotecas Instaladas:**
+
 - ✅ `lucide-angular` - Iconos modernos y ligeros
 - ✅ `aos` - Animaciones on scroll
 - ✅ `ngx-sonner` - Sistema de notificaciones toast
@@ -35,6 +36,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 #### Mejoras Implementadas:
 
 **Paleta de Colores Completa (50-950):**
+
 - ✅ Primary (Azul): 11 tonos
 - ✅ Secondary (Violeta): 11 tonos
 - ✅ Accent (Verde): 10 tonos
@@ -43,24 +45,29 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 - ✅ Dark Mode: Colores específicos para modo oscuro
 
 **Tipografía Moderna:**
+
 - ✅ Font Sans: Inter + Apple System Fonts
 - ✅ Font Display: Cal Sans
 - ✅ Font Mono: JetBrains Mono + Fira Code
 - ✅ Scale completa: xs a 6xl con line-height optimizado
 
 **Sistema de Espaciado:**
+
 - ✅ Scale de 0 a 24 (0px a 96px)
 - ✅ Consistente con múltiplos de 4px
 
 **Sombras y Elevaciones:**
+
 - ✅ 6 niveles de sombras (xs a 2xl)
 - ✅ 3 niveles de glow effects para destacados
 
 **Border Radius:**
+
 - ✅ 8 variantes (none a full)
 - ✅ Valores modernos (8px, 12px, 16px, 24px, 32px)
 
 **Animaciones:**
+
 - ✅ 6 animaciones base: fade-in, slide-in, scale-in, shimmer, pulse-glow, spin
 - ✅ Keyframes personalizados para cada animación
 - ✅ Backdrop blur configurado (xs a xl)
@@ -74,22 +81,26 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 #### Implementaciones:
 
 **Tipografía Global:**
+
 - ✅ Import de Google Fonts (Inter)
 - ✅ Reset CSS completo
 - ✅ Sistema de headings (h1-h6)
 - ✅ Line-height y font-smoothing optimizados
 
 **Dark Mode:**
+
 - ✅ Transiciones suaves entre temas
 - ✅ Variables CSS para colores de modo oscuro
 - ✅ Soporte completo para componentes
 
 **Scrollbar Personalizado:**
+
 - ✅ Diseño moderno para scrollbars
 - ✅ Estilos diferentes para light/dark mode
 - ✅ Hover states para mejor UX
 
 **Utilidades CSS:**
+
 - ✅ Container responsivo
 - ✅ Gradientes predefinidos (primary, secondary, accent)
 - ✅ Clase `.glass` para glassmorphism
@@ -97,12 +108,14 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 - ✅ Clase `.skeleton` con animación shimmer
 
 **Animaciones CSS:**
+
 - ✅ fadeIn, slideIn, scaleIn
 - ✅ pulseGlow para elementos destacados
 - ✅ shimmer para loading states
 - ✅ spin para loaders
 
 **Extras:**
+
 - ✅ Focus visible mejorado
 - ✅ Selection personalizada
 - ✅ Grid pattern background
@@ -120,6 +133,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 **Archivo:** `button/button.component.ts`
 
 **Features:**
+
 - ✅ 5 variantes: primary, secondary, outline, ghost, danger
 - ✅ 3 tamaños: sm, md, lg
 - ✅ Estados: normal, hover, disabled, loading
@@ -130,6 +144,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 - ✅ Focus ring accesible
 
 **Props:**
+
 ```typescript
 @Input() variant: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
 @Input() size: 'sm' | 'md' | 'lg'
@@ -144,6 +159,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 **Archivo:** `input/input.component.ts`
 
 **Features:**
+
 - ✅ ControlValueAccessor implementado
 - ✅ Soporte para FormControl
 - ✅ Label y hint text
@@ -154,6 +170,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 - ✅ Accesibilidad completa
 
 **Props:**
+
 ```typescript
 @Input() label: string
 @Input() type: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url'
@@ -170,6 +187,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 **Archivo:** `badge/badge.component.ts`
 
 **Features:**
+
 - ✅ 6 variantes: primary, secondary, accent, warning, error, gray
 - ✅ 3 tamaños: sm, md, lg
 - ✅ Dot indicator animado
@@ -178,6 +196,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 - ✅ Colores semánticos
 
 **Props:**
+
 ```typescript
 @Input() variant: 'primary' | 'secondary' | 'accent' | 'warning' | 'error' | 'gray'
 @Input() size: 'sm' | 'md' | 'lg'
@@ -190,6 +209,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 **Archivo:** `spinner/spinner.component.ts`
 
 **Features:**
+
 - ✅ 5 tamaños: xs, sm, md, lg, xl
 - ✅ 3 colores: primary, white, gray
 - ✅ Label opcional
@@ -198,6 +218,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 - ✅ Dark mode completo
 
 **Props:**
+
 ```typescript
 @Input() size: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 @Input() label: string
@@ -210,6 +231,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 **Archivo:** `avatar/avatar.component.ts`
 
 **Features:**
+
 - ✅ 5 tamaños: xs, sm, md, lg, xl
 - ✅ Soporte para imágenes
 - ✅ Fallback con iniciales
@@ -220,6 +242,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 - ✅ Dark mode completo
 
 **Props:**
+
 ```typescript
 @Input() src: string
 @Input() alt: string
@@ -234,6 +257,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 **Archivo:** `theme-toggle/theme-toggle.component.ts`
 
 **Features:**
+
 - ✅ Toggle suave entre light/dark
 - ✅ Iconos animados (sun/moon)
 - ✅ Transiciones fluidas
@@ -249,6 +273,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 #### Features Implementadas:
 
 **ThemeService:**
+
 - ✅ Angular Signals para reactividad
 - ✅ LocalStorage para persistencia
 - ✅ Detección de preferencia del sistema
@@ -257,6 +282,7 @@ npm install lucide-angular aos ngx-sonner ngx-skeleton-loader clsx tailwind-merg
 - ✅ Toggle, set y get theme methods
 
 **Funcionalidades:**
+
 ```typescript
 isDarkMode: signal<boolean>        // State reactivo
 toggleTheme(): void                // Alternar tema
@@ -265,6 +291,7 @@ getCurrentTheme(): 'light' | 'dark' // Obtener tema actual
 ```
 
 **Integración:**
+
 - ✅ Inicialización automática
 - ✅ Persistencia en localStorage
 - ✅ Sincronización con sistema
@@ -279,34 +306,40 @@ getCurrentTheme(): 'light' | 'dark' // Obtener tema actual
 #### Animaciones Implementadas:
 
 **Entrada/Salida:**
+
 - ✅ `fadeIn` - Fade in con translateY
 - ✅ `fadeOut` - Fade out con translateY
 - ✅ `scaleIn` - Scale in desde 0.9
 - ✅ `scaleOut` - Scale out a 0.9
 
 **Direccionales:**
+
 - ✅ `slideInLeft` - Desde la izquierda
 - ✅ `slideInRight` - Desde la derecha
 - ✅ `slideUp` - Desde abajo
 - ✅ `slideDown` - Desde arriba
 
 **Combinadas:**
+
 - ✅ `fadeSlide` - Fade + Slide combinados
 - ✅ `expandCollapse` - Para colapsables
 - ✅ `modalAnimation` - Para modales/dialogs
 
 **Especiales:**
+
 - ✅ `listStagger` - Animación escalonada para listas
 - ✅ `shake` - Para errores/validaciones
 - ✅ `rotate` - Rotación suave
 - ✅ `routeAnimation` - Para transiciones de ruta
 
 **Configuración:**
+
 - ✅ Timings optimizados (150ms-400ms)
 - ✅ Easing functions modernas (cubic-bezier)
 - ✅ Queries opcionales para flexibilidad
 
 **Integración:**
+
 - ✅ `provideAnimations()` en app.config.ts
 - ✅ Importaciones listas para usar en componentes
 
@@ -344,6 +377,7 @@ frontend/
 ```
 
 **Total de Archivos:**
+
 - ✅ Modificados: 4
 - ✅ Creados: 10
 - ✅ Total: 14 archivos
@@ -370,7 +404,7 @@ import { ButtonComponent, InputComponent, BadgeComponent } from '@shared/atoms';
 import { fadeIn, scaleIn, listStagger } from '@shared/animations/animations';
 
 @Component({
-  animations: [fadeIn, scaleIn, listStagger]
+  animations: [fadeIn, scaleIn, listStagger],
 })
 export class MyComponent {
   // ...
@@ -435,6 +469,7 @@ isDark = this.themeService.isDarkMode; // Signal
 Los siguientes componentes a implementar:
 
 **Componentes Moleculares:**
+
 1. Card Component
 2. FormField Component
 3. SearchBar Component
@@ -442,6 +477,7 @@ Los siguientes componentes a implementar:
 5. Toast/Notification System
 
 **Componentes Organism:**
+
 1. Navbar Component
 2. Sidebar Component
 3. Modal Component
@@ -453,6 +489,7 @@ Los siguientes componentes a implementar:
 ## 📈 Impacto
 
 **Antes:**
+
 - ❌ 6 colores planos
 - ❌ 2 fuentes básicas
 - ❌ 1 animación simple
@@ -460,6 +497,7 @@ Los siguientes componentes a implementar:
 - ❌ Sin componentes reutilizables
 
 **Después:**
+
 - ✅ 60+ colores con escalas completas
 - ✅ 3 familias de fuentes profesionales
 - ✅ 20+ animaciones modernas

@@ -6,33 +6,33 @@ seguir devolviendo exactamente la misma estructura JSON.
 
 El servicio Gemini se mockea — los tests no llaman a la API real.
 """
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-
 GEMINI_FAKE_RESPONSE = {
-    'first_name': 'Alice',
-    'last_name': 'Doe',
-    'phone_code': '+54',
-    'phone_number': '1112345678',
-    'country': 'Argentina',
-    'city': 'Buenos Aires',
-    'professional_title': 'Backend Developer',
-    'summary': 'Five years building Django services.',
-    'education': [{'degree': 'Lic. Informática', 'school': 'UBA'}],
-    'skills': 'python, django, postgresql',
-    'experience': [{'role': 'Backend Engineer', 'years': 5}],
-    'linkedin_url': 'https://linkedin.com/in/alice',
-    'portfolio_url': '',
-    'full_name': 'Alice Doe',
+    "first_name": "Alice",
+    "last_name": "Doe",
+    "phone_code": "+54",
+    "phone_number": "1112345678",
+    "country": "Argentina",
+    "city": "Buenos Aires",
+    "professional_title": "Backend Developer",
+    "summary": "Five years building Django services.",
+    "education": [{"degree": "Lic. Informática", "school": "UBA"}],
+    "skills": "python, django, postgresql",
+    "experience": [{"role": "Backend Engineer", "years": 5}],
+    "linkedin_url": "https://linkedin.com/in/alice",
+    "portfolio_url": "",
+    "full_name": "Alice Doe",
 }
 
 
 @pytest.fixture
 def fake_pdf():
     """PDF mínimo de 1KB. Suficiente para pasar la validación de tamaño."""
-    pdf_bytes = b'%PDF-1.4\n' + b' ' * 1024 + b'\n%%EOF'
-    return SimpleUploadedFile('cv.pdf', pdf_bytes, content_type='application/pdf')
+    pdf_bytes = b"%PDF-1.4\n" + b" " * 1024 + b"\n%%EOF"
+    return SimpleUploadedFile("cv.pdf", pdf_bytes, content_type="application/pdf")
 
 
 def _stub_analyzer(mocker, *, validate=(True, None), analyze=None, analyze_raises=None):
@@ -46,7 +46,7 @@ def _stub_analyzer(mocker, *, validate=(True, None), analyze=None, analyze_raise
         analyzer.analyze.side_effect = analyze_raises
     else:
         analyzer.analyze.return_value = analyze if analyze is not None else GEMINI_FAKE_RESPONSE
-    mocker.patch('users.views.get_cv_analyzer', return_value=analyzer)
+    mocker.patch("users.views.get_cv_analyzer", return_value=analyzer)
     return analyzer
 
 
@@ -54,45 +54,57 @@ def _stub_analyzer(mocker, *, validate=(True, None), analyze=None, analyze_raise
 @pytest.mark.django_db
 class TestResumeAnalyzer:
     def test_rejects_request_without_file(self, api_client):
-        response = api_client.post('/api/users/resume-analyzer/', {})
+        response = api_client.post("/api/users/resume-analyzer/", {})
         assert response.status_code == 400
-        assert 'error' in response.json()
+        assert "error" in response.json()
 
     def test_returns_extracted_data_on_success(self, api_client, fake_pdf, mocker):
         _stub_analyzer(mocker)
         response = api_client.post(
-            '/api/users/resume-analyzer/',
-            {'resume': fake_pdf},
-            format='multipart',
+            "/api/users/resume-analyzer/",
+            {"resume": fake_pdf},
+            format="multipart",
         )
         assert response.status_code == 200
         data = response.json()
 
         # Contrato público — el frontend espera estas claves.
         expected_keys = {
-            'first_name', 'last_name', 'number_id', 'phone_code', 'phone_number',
-            'country', 'city', 'professional_title', 'summary', 'education',
-            'skills', 'experience', 'linkedin_url', 'portfolio_url', 'full_name',
+            "first_name",
+            "last_name",
+            "number_id",
+            "phone_code",
+            "phone_number",
+            "country",
+            "city",
+            "professional_title",
+            "summary",
+            "education",
+            "skills",
+            "experience",
+            "linkedin_url",
+            "portfolio_url",
+            "full_name",
         }
         assert expected_keys.issubset(data.keys())
-        assert data['first_name'] == 'Alice'
-        assert data['skills'] == 'python, django, postgresql'
+        assert data["first_name"] == "Alice"
+        assert data["skills"] == "python, django, postgresql"
 
     def test_returns_400_on_validation_failure(self, api_client, fake_pdf, mocker):
-        _stub_analyzer(mocker, validate=(False, 'Archivo muy grande'))
+        _stub_analyzer(mocker, validate=(False, "Archivo muy grande"))
         response = api_client.post(
-            '/api/users/resume-analyzer/',
-            {'resume': fake_pdf},
-            format='multipart',
+            "/api/users/resume-analyzer/",
+            {"resume": fake_pdf},
+            format="multipart",
         )
         assert response.status_code == 400
-        assert response.json()['error'] == 'Archivo muy grande'
+        assert response.json()["error"] == "Archivo muy grande"
 
     def test_returns_500_on_analyzer_exception(self, api_client, fake_pdf, mocker):
-        _stub_analyzer(mocker, analyze_raises=RuntimeError('Gemini down'))
+        _stub_analyzer(mocker, analyze_raises=RuntimeError("Gemini down"))
         response = api_client.post(
-            '/api/users/resume-analyzer/',
-            {'resume': fake_pdf},
-            format='multipart',
+            "/api/users/resume-analyzer/",
+            {"resume": fake_pdf},
+            format="multipart",
         )
         assert response.status_code == 500

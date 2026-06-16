@@ -17,7 +17,7 @@ import { SidebarService } from './services/sidebar.service';
   imports: [CommonModule, HeaderDashboardComponent, SidebarComponent],
   standalone: true,
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.scss']
+  styleUrls: ['./dashboard.component.scss'],
 })
 export class DashboardComponent {
   users: User[] = [];
@@ -29,12 +29,12 @@ export class DashboardComponent {
     private router: Router,
     private dashboardService: DashboardService,
     private sidebarService: SidebarService,
-  ){}
+  ) {}
 
   ngOnInit(): void {
     this.loadUsers();
 
-    this.sidebarService.isCollapsed$.subscribe(collapsed => {
+    this.sidebarService.isCollapsed$.subscribe((collapsed) => {
       this.isSidebarCollapsed = collapsed;
     });
   }
@@ -51,7 +51,7 @@ export class DashboardComponent {
         this.errorMessage = 'Error al cargar usuarios';
         this.users = [];
         this.isLoading = false;
-      }
+      },
     });
   }
 }

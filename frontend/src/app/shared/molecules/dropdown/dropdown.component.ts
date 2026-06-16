@@ -36,7 +36,12 @@ export interface DropdownOption {
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 9l-7 7-7-7"
+          />
         </svg>
       </button>
 
@@ -92,7 +97,11 @@ export interface DropdownOption {
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
               </svg>
             </button>
           </ng-container>
@@ -116,14 +125,10 @@ export interface DropdownOption {
       </div>
 
       <!-- Backdrop -->
-      <div
-        *ngIf="isOpen"
-        (click)="closeDropdown()"
-        class="fixed inset-0 z-40"
-      ></div>
+      <div *ngIf="isOpen" (click)="closeDropdown()" class="fixed inset-0 z-40"></div>
     </div>
   `,
-  styles: []
+  styles: [],
 })
 export class DropdownComponent {
   @Input() options: DropdownOption[] = [];
@@ -150,7 +155,7 @@ export class DropdownComponent {
   }
 
   get selectedLabel(): string {
-    const selected = this.options.find(opt => opt.value === this.selectedValue);
+    const selected = this.options.find((opt) => opt.value === this.selectedValue);
     return selected?.label || '';
   }
 
@@ -183,35 +188,37 @@ export class DropdownComponent {
 
   onSearchChange(): void {
     const query = this.searchQuery.toLowerCase();
-    this.filteredOptions = this.options.filter(option =>
-      option.label.toLowerCase().includes(query)
+    this.filteredOptions = this.options.filter((option) =>
+      option.label.toLowerCase().includes(query),
     );
   }
 
   getButtonClasses(): string {
-    const baseClasses = 'inline-flex items-center justify-between w-full px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500';
-    
+    const baseClasses =
+      'inline-flex items-center justify-between w-full px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500';
+
     const variantClasses = {
-      default: 'bg-white dark:bg-dark-bg-tertiary border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text-primary hover:bg-gray-50 dark:hover:bg-dark-bg-primary',
-      outline: 'border-2 border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text-primary hover:border-primary-600 dark:hover:border-primary-500',
-      ghost: 'text-gray-700 dark:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary'
+      default:
+        'bg-white dark:bg-dark-bg-tertiary border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text-primary hover:bg-gray-50 dark:hover:bg-dark-bg-primary',
+      outline:
+        'border-2 border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text-primary hover:border-primary-600 dark:hover:border-primary-500',
+      ghost:
+        'text-gray-700 dark:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-bg-tertiary',
     };
-    
+
     const disabledClasses = this.disabled ? 'opacity-50 cursor-not-allowed' : '';
-    
+
     return `${baseClasses} ${variantClasses[this.variant]} ${disabledClasses}`.trim();
   }
 
   getOptionClasses(option: DropdownOption): string {
     const baseClasses = 'text-gray-700 dark:text-dark-text-primary';
     const hoverClasses = 'hover:bg-gray-50 dark:hover:bg-dark-bg-tertiary';
-    const selectedClasses = this.isSelected(option) 
-      ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' 
+    const selectedClasses = this.isSelected(option)
+      ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
       : '';
-    const disabledClasses = option.disabled 
-      ? 'opacity-50 cursor-not-allowed' 
-      : '';
-    
+    const disabledClasses = option.disabled ? 'opacity-50 cursor-not-allowed' : '';
+
     return `${baseClasses} ${hoverClasses} ${selectedClasses} ${disabledClasses}`.trim();
   }
 

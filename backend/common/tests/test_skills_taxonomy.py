@@ -5,6 +5,7 @@ Verifican el contrato público de la taxonomía única de skills:
   - `HARD_SKILLS` / `SOFT_SKILLS` / `ALIASES` son consistentes entre sí
   - `all_recognizable` cubre canónicas + aliases
 """
+
 import pytest
 
 from common.skills_taxonomy import (
@@ -19,31 +20,34 @@ from common.skills_taxonomy import (
 @pytest.mark.unit
 class TestNormalize:
     def test_lowercases_and_strips(self):
-        assert normalize('  Python  ') == 'python'
-        assert normalize('DJANGO') == 'django'
+        assert normalize("  Python  ") == "python"
+        assert normalize("DJANGO") == "django"
 
     def test_returns_input_when_no_alias(self):
-        assert normalize('python') == 'python'
+        assert normalize("python") == "python"
 
-    @pytest.mark.parametrize('alias,canonical', [
-        ('react.js', 'react'),
-        ('reactjs', 'react'),
-        ('Node.JS', 'node'),
-        ('next.js', 'next'),
-        ('postgres', 'postgresql'),
-        ('c#', 'csharp'),
-        ('.net', 'dotnet'),
-        ('asp.net', 'aspnet'),
-        ('ruby on rails', 'rails'),
-        ('golang', 'go'),
-        ('google cloud', 'gcp'),
-        ('restful', 'rest'),
-    ])
+    @pytest.mark.parametrize(
+        "alias,canonical",
+        [
+            ("react.js", "react"),
+            ("reactjs", "react"),
+            ("Node.JS", "node"),
+            ("next.js", "next"),
+            ("postgres", "postgresql"),
+            ("c#", "csharp"),
+            (".net", "dotnet"),
+            ("asp.net", "aspnet"),
+            ("ruby on rails", "rails"),
+            ("golang", "go"),
+            ("google cloud", "gcp"),
+            ("restful", "rest"),
+        ],
+    )
     def test_known_aliases_map_to_canonical(self, alias, canonical):
         assert normalize(alias) == canonical
 
     def test_unknown_skill_passes_through(self):
-        assert normalize('haskell') == 'haskell'
+        assert normalize("haskell") == "haskell"
 
 
 @pytest.mark.unit
@@ -71,9 +75,7 @@ class TestTaxonomyConsistency:
         """
         canonical_skills = HARD_SKILLS | SOFT_SKILLS
         overlap = set(ALIASES.keys()) & canonical_skills
-        assert overlap == set(), (
-            f"Estos términos están en ambos lados: {overlap}"
-        )
+        assert overlap == set(), f"Estos términos están en ambos lados: {overlap}"
 
     def test_canonical_names_are_lowercase(self):
         for skill in HARD_SKILLS | SOFT_SKILLS:
@@ -84,6 +86,6 @@ class TestTaxonomyConsistency:
 class TestAllRecognizable:
     def test_includes_canonical_and_aliases(self):
         recognized = all_recognizable()
-        assert 'react' in recognized       # canónica
-        assert 'react.js' in recognized    # alias
-        assert 'liderazgo' in recognized   # soft skill
+        assert "react" in recognized  # canónica
+        assert "react.js" in recognized  # alias
+        assert "liderazgo" in recognized  # soft skill

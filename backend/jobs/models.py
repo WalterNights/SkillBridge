@@ -3,14 +3,14 @@ from django.db import models
 
 class JobOffer(models.Model):
     PORTAL_CHOICES = [
-        ('computrabajo', 'Computrabajo'),
-        ('elempleo', 'Elempleo'),
-        ('infojobs', 'InfoJobs'),
-        ('magneto', 'Magneto'),
-        ('bumeran', 'Bumeran'),
-        ('indeed', 'Indeed'),
-        ('linkedin', 'LinkedIn'),
-        ('other', 'Otro'),
+        ("computrabajo", "Computrabajo"),
+        ("elempleo", "Elempleo"),
+        ("infojobs", "InfoJobs"),
+        ("magneto", "Magneto"),
+        ("bumeran", "Bumeran"),
+        ("indeed", "Indeed"),
+        ("linkedin", "LinkedIn"),
+        ("other", "Otro"),
     ]
 
     title = models.CharField(max_length=500)
@@ -23,7 +23,7 @@ class JobOffer(models.Model):
     portal = models.CharField(
         max_length=32,
         choices=PORTAL_CHOICES,
-        default='computrabajo',
+        default="computrabajo",
         db_index=True,
         help_text="Portal de origen de la oferta",
     )

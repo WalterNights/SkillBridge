@@ -13,7 +13,7 @@ import { SidebarService } from '../services/sidebar.service';
   standalone: true,
   imports: [CommonModule, FormsModule, HeaderDashboardComponent, SidebarComponent],
   templateUrl: './settings.component.html',
-  styleUrls: ['./settings.component.scss']
+  styleUrls: ['./settings.component.scss'],
 })
 export class SettingsComponent {
   userName: string | null = null;
@@ -34,7 +34,7 @@ export class SettingsComponent {
 
   ngOnInit(): void {
     this.storage = localStorage.getItem('storage') === 'true' ? 'local' : 'session';
-    this.authService.isLoggedIn$.subscribe(status => {
+    this.authService.isLoggedIn$.subscribe((status) => {
       this.userName = this.storageMethod.getStorageItem(this.storage, 'user_name');
       this.userEmail = this.storageMethod.getStorageItem(this.storage, 'user_email');
     });
@@ -44,7 +44,7 @@ export class SettingsComponent {
     this.isDarkMode = saveTheme === 'dark';
 
     // Subscribe to sidebar state changes
-    this.sidebarService.isCollapsed$.subscribe(collapsed => {
+    this.sidebarService.isCollapsed$.subscribe((collapsed) => {
       this.isSidebarCollapsed = collapsed;
     });
   }

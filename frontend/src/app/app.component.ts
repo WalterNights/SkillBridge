@@ -11,9 +11,16 @@ import { ToastContainerComponent } from './shared/molecules/toast-container/toas
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet, HeaderComponent, SidebarComponent, HeaderDashboardComponent, ToastContainerComponent],
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    HeaderComponent,
+    SidebarComponent,
+    HeaderDashboardComponent,
+    ToastContainerComponent,
+  ],
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements AfterViewInit, OnInit {
   title = 'SkilTak-front';
@@ -22,18 +29,18 @@ export class AppComponent implements AfterViewInit, OnInit {
   showHeaderDashboard = true;
   constructor(
     private authService: AuthService,
-    private router: Router
-  ){
+    private router: Router,
+  ) {
     this.router.events
-    .pipe(filter(event => event instanceof NavigationEnd))
-    .subscribe((event: any) => {
-      const noHeader = ['auth/login', '/dashboard'];
-      const SideBar = ['/dashboard'];
-      const headerDashboard = ['/dashboard'];
-      this.showHeader = !noHeader.includes(event.urlAfterRedirects);
-      this.showSideBar = SideBar.includes(event.urlAfterRedirects);
-      this.showHeaderDashboard = headerDashboard.includes(event.urlAfterRedirects);
-    })
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
+        const noHeader = ['auth/login', '/dashboard'];
+        const SideBar = ['/dashboard'];
+        const headerDashboard = ['/dashboard'];
+        this.showHeader = !noHeader.includes(event.urlAfterRedirects);
+        this.showSideBar = SideBar.includes(event.urlAfterRedirects);
+        this.showHeaderDashboard = headerDashboard.includes(event.urlAfterRedirects);
+      });
   }
   ngOnInit(): void {
     this.authService.syncAuthStatus();

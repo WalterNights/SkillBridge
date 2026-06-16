@@ -9,29 +9,30 @@ depender de servicios externos durante los tests:
   - Email: backend in-memory.
   - Password hashers: el más rápido (acelera ~3x los tests con usuarios).
 """
-from core.settings import *  # noqa: F401, F403
+
+from core.settings import *  # noqa: F403
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": ":memory:",
     }
 }
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 
-EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
-PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 # El hardening de producción no aplica en tests
 SECURE_SSL_REDIRECT = False

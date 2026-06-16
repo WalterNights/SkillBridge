@@ -12,20 +12,28 @@
   }
 
   &::-webkit-scrollbar-track {
-    background: theme('colors.gray.100');
+    background: theme("colors.gray.100");
     border-radius: 4px;
   }
 
   :host-context(.dark) &::-webkit-scrollbar-track {
-    background: theme('colors.gray.800');
+    background: theme("colors.gray.800");
   }
 
   &::-webkit-scrollbar-thumb {
-    background: linear-gradient(to right, theme('colors.primary.500'), theme('colors.secondary.500'));
+    background: linear-gradient(
+      to right,
+      theme("colors.primary.500"),
+      theme("colors.secondary.500")
+    );
     border-radius: 4px;
 
     &:hover {
-      background: linear-gradient(to right, theme('colors.primary.600'), theme('colors.secondary.600'));
+      background: linear-gradient(
+        to right,
+        theme("colors.primary.600"),
+        theme("colors.secondary.600")
+      );
     }
   }
 }
@@ -54,9 +62,9 @@ tr {
   animation: shimmer 2s infinite linear;
   background: linear-gradient(
     to right,
-    theme('colors.gray.200') 4%,
-    theme('colors.gray.300') 25%,
-    theme('colors.gray.200') 36%
+    theme("colors.gray.200") 4%,
+    theme("colors.gray.300") 25%,
+    theme("colors.gray.200") 36%
   );
   background-size: 1000px 100%;
 }
@@ -64,17 +72,18 @@ tr {
 :host-context(.dark) .loading-skeleton {
   background: linear-gradient(
     to right,
-    theme('colors.gray.800') 4%,
-    theme('colors.gray.700') 25%,
-    theme('colors.gray.800') 36%
+    theme("colors.gray.800") 4%,
+    theme("colors.gray.700") 25%,
+    theme("colors.gray.800") 36%
   );
 }
 
 // Smooth transitions for dark mode
 * {
-  transition: background-color 0.2s ease-in-out,
-              border-color 0.2s ease-in-out,
-              color 0.2s ease-in-out;
+  transition:
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out,
+    color 0.2s ease-in-out;
 }
 
 // Avatar gradient animation

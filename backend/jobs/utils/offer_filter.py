@@ -1,7 +1,7 @@
 def filter_offers_by_user_skill(offers, user_skills):
     if not user_skills:
         return offers
-    user_keywords = [skills.strip().lower() for skills in user_skills.split(',')]
+    user_keywords = [skills.strip().lower() for skills in user_skills.split(",")]
     filtered = []
     # print(offers, user_skills)
     for offer in offers:

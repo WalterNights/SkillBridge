@@ -6,9 +6,10 @@
 
 // Smooth transitions
 * {
-  transition: background-color 0.2s ease-in-out,
-              border-color 0.2s ease-in-out,
-              color 0.2s ease-in-out;
+  transition:
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out,
+    color 0.2s ease-in-out;
 }
 
 // Toggle switch animation
@@ -21,7 +22,9 @@ button[type="button"] {
 // Card hover effects
 .bg-white,
 .dark .bg-\[\#27272A\] {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 
   &:hover {
     transform: translateY(-2px);

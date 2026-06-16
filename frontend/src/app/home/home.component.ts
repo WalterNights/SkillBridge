@@ -13,7 +13,7 @@ import { STORAGE_KEYS } from '../constants/app-stats';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss']
+  styleUrls: ['./home.component.scss'],
 })
 export class HomeComponent {
   profileComplete = false;
@@ -21,7 +21,7 @@ export class HomeComponent {
   constructor(
     private titleService: Title,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
   ) {
     this.titleService.setTitle('SkilTak - Home');
   }
@@ -30,7 +30,7 @@ export class HomeComponent {
    * Navigates to manual profile page, redirecting to login if not authenticated
    */
   goToManualProfile(): void {
-    if (!this.authService.isAuthenticated()){
+    if (!this.authService.isAuthenticated()) {
       sessionStorage.setItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN, '/manual-profile');
       this.router.navigate(['/auth/login']);
     } else {
@@ -42,7 +42,7 @@ export class HomeComponent {
    * Navigates to profile page, redirecting to login if not authenticated
    */
   goToProfile(): void {
-    if (!this.authService.isAuthenticated()){
+    if (!this.authService.isAuthenticated()) {
       sessionStorage.setItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN, '/profile');
       this.router.navigate(['/auth/login']);
     } else {
@@ -54,7 +54,7 @@ export class HomeComponent {
    * Navigates to results page, redirecting to login if not authenticated
    */
   goToResults(): void {
-    if (!this.authService.isAuthenticated()){
+    if (!this.authService.isAuthenticated()) {
       sessionStorage.setItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN, '/results');
       this.router.navigate(['/auth/login']);
     } else {
@@ -63,8 +63,8 @@ export class HomeComponent {
   }
 
   ngOnInit(): void {
-    this.authService.isProfileComplete$.subscribe(status => {
+    this.authService.isProfileComplete$.subscribe((status) => {
       this.profileComplete = status;
-    })
+    });
   }
 }
