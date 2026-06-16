@@ -20,10 +20,10 @@ class GeminiCVService:
         api_key = config('GEMINI_API_KEY', default=None)
         if not api_key:
             raise ValueError("GEMINI_API_KEY no encontrada en las variables de entorno")
-        
+
         genai.configure(api_key=api_key)
-        # Usar gemini-2.5-flash - modelo más reciente y estable
-        self.model = genai.GenerativeModel('gemini-2.5-flash')
+        model_name = config('GEMINI_MODEL', default='gemini-2.0-flash-exp')
+        self.model = genai.GenerativeModel(model_name)
     
     def extract_text_from_file(self, cv_file) -> str:
         """

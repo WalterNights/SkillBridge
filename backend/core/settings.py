@@ -30,6 +30,7 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost', cast=Csv())
 INSTALLED_APPS = [
     'jobs',
     'users',
+    'dashboard',
     'corsheaders',
     'rest_framework',
     'django.contrib.admin',
