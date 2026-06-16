@@ -117,6 +117,7 @@ class ComputrabajoScraper(JobScraper):
             summary=summary,
             keywords=keywords,
             url=job_url,
+            portal=self.portal_name,
         )
 
     def _fetch_detail(self, offer_url: str) -> Tuple[str, str]:

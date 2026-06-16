@@ -4,12 +4,13 @@ Servicio para gestión de ofertas de trabajo.
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Iterable, List, Optional
 
 from django.db.models import Q, QuerySet
 
 from jobs.adapters.scrapers.base import JobOfferData
-from jobs.adapters.scrapers.registry import get_scraper
+from jobs.adapters.scrapers.registry import available_portals, get_scraper
 from jobs.models import JobOffer
 
 logger = logging.getLogger(__name__)
@@ -37,17 +38,7 @@ class JobService:
         location: str,
         portal: str = 'computrabajo',
     ) -> List[JobOffer]:
-        """Scrapea `portal` y persiste solo las ofertas nuevas.
-
-        Args:
-            query: Término de búsqueda (título profesional).
-            location: Ubicación.
-            portal: Identificador del scraper (default 'computrabajo').
-                Cuando agreguemos más, basta con cambiar este parámetro.
-
-        Returns:
-            JobOffers recién creados (no las que ya existían).
-        """
+        """Scrapea un único portal y persiste solo las ofertas nuevas."""
         logger.info(
             "Scraping job offers portal=%s query=%r location=%r",
             portal, query, location,
@@ -55,6 +46,54 @@ class JobService:
         scraper = get_scraper(portal)
         offers_data = scraper.search(query, location)
         return JobService.save_new_offers(offers_data)
+
+    @staticmethod
+    def scrape_all_portals(
+        query: str,
+        location: str,
+        portals: Optional[List[str]] = None,
+        max_workers: int = 4,
+    ) -> List[JobOffer]:
+        """Scrapea todos los portales registrados en paralelo.
+
+        Usa un ThreadPoolExecutor — el trabajo es I/O bound (HTTP), así que
+        threads son apropiados; evita la complejidad de Celery sin perder
+        paralelismo. Cada portal corre en su propio thread; si uno explota,
+        los otros siguen y devolvemos lo que se pudo obtener.
+
+        Args:
+            query: Término de búsqueda.
+            location: Ubicación.
+            portals: Lista de portales a scrapear. Si es None, usa todos
+                los registrados.
+            max_workers: Threads concurrentes. Default 4 (suficiente para
+                hasta ~6-8 portales sin saturar I/O del VPS).
+
+        Returns:
+            Lista de JobOffers recién creados (cross-portal, deduplicado por url).
+        """
+        target_portals = portals or available_portals()
+        logger.info(
+            "Scraping all portals=%s query=%r location=%r",
+            target_portals, query, location,
+        )
+
+        all_offers_data: List[JobOfferData] = []
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            future_to_portal = {
+                pool.submit(_scrape_one_portal, p, query, location): p
+                for p in target_portals
+            }
+            for future in as_completed(future_to_portal):
+                portal_name = future_to_portal[future]
+                try:
+                    offers = future.result()
+                    logger.info("%s: %d ofertas raw", portal_name, len(offers))
+                    all_offers_data.extend(offers)
+                except Exception:
+                    logger.exception("Portal %s failed completely", portal_name)
+
+        return JobService.save_new_offers(all_offers_data)
 
     @staticmethod
     def save_new_offers(offers_data: Iterable[JobOfferData]) -> List[JobOffer]:
@@ -80,6 +119,7 @@ class JobService:
                         'location': data.location,
                         'summary': data.summary,
                         'keywords': data.keywords,
+                        'portal': data.portal,
                     },
                 )
                 if was_created:
@@ -105,3 +145,8 @@ class JobService:
             Q(summary__icontains=keyword) |
             Q(keywords__icontains=keyword)
         ).order_by('-created_at')
+
+
+def _scrape_one_portal(portal: str, query: str, location: str) -> List[JobOfferData]:
+    """Helper top-level para ThreadPoolExecutor — debe ser pickleable."""
+    return get_scraper(portal).search(query, location)

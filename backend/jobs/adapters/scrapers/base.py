@@ -30,6 +30,7 @@ class JobOfferData:
     summary: str
     url: str
     keywords: str
+    portal: str = 'other'
 
 
 class JobScraper(ABC):

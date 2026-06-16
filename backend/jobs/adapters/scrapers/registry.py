@@ -10,10 +10,12 @@ from typing import Dict, List, Type
 
 from jobs.adapters.scrapers.base import JobScraper, ScraperError
 from jobs.adapters.scrapers.computrabajo import ComputrabajoScraper
+from jobs.adapters.scrapers.elempleo import ElempleoScraper
 
 
 _REGISTRY: Dict[str, Type[JobScraper]] = {
     ComputrabajoScraper.portal_name: ComputrabajoScraper,
+    ElempleoScraper.portal_name: ElempleoScraper,
 }
 
 

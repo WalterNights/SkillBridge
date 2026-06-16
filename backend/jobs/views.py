@@ -117,16 +117,16 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
             )
         
         try:
-            # Usar servicio de jobs
-            new_offers = JobService.scrape_new_jobs(query, location)
-            
+            # Scrapea TODOS los portales registrados en paralelo
+            new_offers = JobService.scrape_all_portals(query, location)
+
             # Filtrar por matching
             filtered_offers = JobMatchingService.filter_jobs_by_skills(
                 new_offers,
                 profile,
                 min_match_percentage=30
             )
-            
+
             serializer = self.get_serializer(filtered_offers, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
