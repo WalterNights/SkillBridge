@@ -16,8 +16,8 @@ from users.serializers import (
     PasswordResetRequestSerializer,
     PasswordResetVerifySerializer
 )
+from users.services.cv_analysis_service import get_cv_analyzer
 from users.services.profile_service import ProfileService
-from users.services.gemini_cv_service import GeminiCVService
 
 
 class UserRegisterView(APIView):
@@ -50,16 +50,13 @@ class AnalyzerResumeView(APIView):
             )
         
         try:
-            # Initialize Gemini service
-            gemini_service = GeminiCVService()
-            
-            # Validate file
-            is_valid, error_message = gemini_service.validate_cv_file(file)
+            analyzer = get_cv_analyzer()
+
+            is_valid, error_message = analyzer.validate(file)
             if not is_valid:
                 return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Analyze CV with Gemini AI
-            extracted_data = gemini_service.analyze_cv(file)
+
+            extracted_data = analyzer.analyze(file)
             
             # Formatear respuesta para mantener compatibilidad con el frontend
             response_data = {

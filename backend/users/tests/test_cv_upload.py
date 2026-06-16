@@ -35,14 +35,19 @@ def fake_pdf():
     return SimpleUploadedFile('cv.pdf', pdf_bytes, content_type='application/pdf')
 
 
-@pytest.fixture
-def mock_gemini(mocker):
-    """Reemplaza GeminiCVService en la vista para no llamar a la API real."""
-    mock_class = mocker.patch('users.views.GeminiCVService')
-    instance = mock_class.return_value
-    instance.validate_cv_file.return_value = (True, None)
-    instance.analyze_cv.return_value = GEMINI_FAKE_RESPONSE
-    return mock_class
+def _stub_analyzer(mocker, *, validate=(True, None), analyze=None, analyze_raises=None):
+    """Reemplaza `get_cv_analyzer` en la vista por un Mock configurable.
+
+    Hooks de seguridad: si `analyze` no se pasa, devuelve GEMINI_FAKE_RESPONSE.
+    """
+    analyzer = mocker.Mock()
+    analyzer.validate.return_value = validate
+    if analyze_raises is not None:
+        analyzer.analyze.side_effect = analyze_raises
+    else:
+        analyzer.analyze.return_value = analyze if analyze is not None else GEMINI_FAKE_RESPONSE
+    mocker.patch('users.views.get_cv_analyzer', return_value=analyzer)
+    return analyzer
 
 
 @pytest.mark.integration
@@ -53,7 +58,8 @@ class TestResumeAnalyzer:
         assert response.status_code == 400
         assert 'error' in response.json()
 
-    def test_returns_extracted_data_on_success(self, api_client, fake_pdf, mock_gemini):
+    def test_returns_extracted_data_on_success(self, api_client, fake_pdf, mocker):
+        _stub_analyzer(mocker)
         response = api_client.post(
             '/api/users/resume-analyzer/',
             {'resume': fake_pdf},
@@ -73,10 +79,7 @@ class TestResumeAnalyzer:
         assert data['skills'] == 'python, django, postgresql'
 
     def test_returns_400_on_validation_failure(self, api_client, fake_pdf, mocker):
-        mock_class = mocker.patch('users.views.GeminiCVService')
-        instance = mock_class.return_value
-        instance.validate_cv_file.return_value = (False, 'Archivo muy grande')
-
+        _stub_analyzer(mocker, validate=(False, 'Archivo muy grande'))
         response = api_client.post(
             '/api/users/resume-analyzer/',
             {'resume': fake_pdf},
@@ -85,12 +88,8 @@ class TestResumeAnalyzer:
         assert response.status_code == 400
         assert response.json()['error'] == 'Archivo muy grande'
 
-    def test_returns_500_on_gemini_exception(self, api_client, fake_pdf, mocker):
-        mock_class = mocker.patch('users.views.GeminiCVService')
-        instance = mock_class.return_value
-        instance.validate_cv_file.return_value = (True, None)
-        instance.analyze_cv.side_effect = RuntimeError('Gemini down')
-
+    def test_returns_500_on_analyzer_exception(self, api_client, fake_pdf, mocker):
+        _stub_analyzer(mocker, analyze_raises=RuntimeError('Gemini down'))
         response = api_client.post(
             '/api/users/resume-analyzer/',
             {'resume': fake_pdf},
