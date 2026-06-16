@@ -4,6 +4,7 @@ from django.db import models
 class JobOffer(models.Model):
     PORTAL_CHOICES = [
         ("computrabajo", "Computrabajo"),
+        ("weworkremotely", "We Work Remotely"),
         ("elempleo", "Elempleo"),
         ("infojobs", "InfoJobs"),
         ("magneto", "Magneto"),
