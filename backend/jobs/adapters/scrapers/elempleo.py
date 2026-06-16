@@ -115,9 +115,11 @@ class ElempleoScraper(JobScraper):
 
         location = self._extract_location(card)
 
-        # Resumen tomado de la card (Elempleo no muestra description en el listado)
-        summary = self._build_summary_from_card(card)
-
+        # La card en sí casi no tiene texto útil (solo ciudad, modalidad, contrato).
+        # La descripción real con skills vive en el detail page — sin esto el match
+        # es siempre 0 porque extract_keywords no encuentra nada relevante.
+        detail_text = self._fetch_detail(job_url)
+        summary = detail_text or self._build_summary_from_card(card)
         keywords = extract_keywords(summary)
 
         return JobOfferData(
@@ -129,6 +131,33 @@ class ElempleoScraper(JobScraper):
             url=job_url,
             portal=self.portal_name,
         )
+
+    def _fetch_detail(self, offer_url: str) -> str:
+        """Baja el detail page de una oferta y devuelve el texto de la
+        descripción (`.description-block` / `.offer-detail`).
+
+        Devuelve string vacío si falla la red o si la página no tiene los
+        selectores esperados — el caller usa el summary de la card como
+        fallback en ese caso.
+        """
+        try:
+            response = requests.get(
+                offer_url,
+                headers={"User-Agent": USER_AGENT},
+                timeout=self.request_timeout_seconds,
+            )
+        except requests.RequestException as e:
+            logger.warning("Elempleo detail %s falló: %s", offer_url, e)
+            return ""
+
+        soup = BeautifulSoup(response.content, "html.parser")
+        block = soup.select_one(".description-block") or soup.select_one(".offer-detail")
+        if not block:
+            return ""
+
+        text = block.get_text(" ", strip=True)
+        text = re.sub(r"\s+", " ", text).strip()
+        return text[:5000]
 
     @staticmethod
     def _clean_text(text: str) -> str:
