@@ -111,7 +111,9 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
 
         try:
             # Scrapea TODOS los portales registrados en paralelo
-            new_offers = JobService.scrape_all_portals(query, location)
+            new_offers, scrape_stats = JobService.scrape_all_portals_with_stats(
+                query, location
+            )
 
             # Filtrar por matching
             filtered_offers = JobMatchingService.filter_jobs_by_skills(
@@ -119,7 +121,10 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
             )
 
             serializer = self.get_serializer(filtered_offers, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(
+                {"offers": serializer.data, "scrape_stats": scrape_stats},
+                status=status.HTTP_200_OK,
+            )
         except Exception as e:
             return Response(
                 {"error": f"Scraping failed: {e!s}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR

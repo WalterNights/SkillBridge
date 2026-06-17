@@ -283,8 +283,8 @@ export class ProfileBuilderComponent {
 
           // Intentar obtener ofertas de trabajo, pero navegar independientemente del resultado
           this.jobService.getScrapedOffers().subscribe({
-            next: (jobRes: JobOffer[]) => {
-              this.jobService.setOffers(jobRes);
+            next: (jobRes) => {
+              this.jobService.setOffers(jobRes.offers ?? []);
             },
             error: (err: HttpErrorResponse) => {
               console.warn('Error fetching job offers, continuing anyway:', err);

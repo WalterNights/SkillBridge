@@ -57,6 +57,19 @@ class JobService:
         portals: list[str] | None = None,
         max_workers: int = 4,
     ) -> list[JobOffer]:
+        """Wrapper backward-compatible: devuelve sólo las ofertas creadas."""
+        created, _stats = JobService.scrape_all_portals_with_stats(
+            query, location, portals, max_workers
+        )
+        return created
+
+    @staticmethod
+    def scrape_all_portals_with_stats(
+        query: str,
+        location: str,
+        portals: list[str] | None = None,
+        max_workers: int = 4,
+    ) -> tuple[list[JobOffer], dict[str, dict]]:
         """Scrapea todos los portales registrados en paralelo.
 
         Usa un ThreadPoolExecutor — el trabajo es I/O bound (HTTP), así que
@@ -73,7 +86,10 @@ class JobService:
                 hasta ~6-8 portales sin saturar I/O del VPS).
 
         Returns:
-            Lista de JobOffers recién creados (cross-portal, deduplicado por url).
+            (offers, stats) — `offers` es la lista de JobOffers recién creados
+            (cross-portal, deduplicado por url). `stats` mapea portal → dict
+            `{"found": N, "error": str|None}` con lo que devolvió crudo el
+            scraper. Útil para diagnosticar qué portal falló silenciosamente.
         """
         target_portals = portals or available_portals()
         logger.info(
@@ -83,7 +99,10 @@ class JobService:
             location,
         )
 
+        stats: dict[str, dict] = {p: {"found": 0, "error": None} for p in target_portals}
         all_offers_data: list[JobOfferData] = []
+        portal_offers: dict[str, list[JobOfferData]] = {p: [] for p in target_portals}
+
         with ThreadPoolExecutor(max_workers=max_workers) as pool:
             future_to_portal = {
                 pool.submit(_scrape_one_portal, p, query, location): p for p in target_portals
@@ -93,11 +112,21 @@ class JobService:
                 try:
                     offers = future.result()
                     logger.info("%s: %d ofertas raw", portal_name, len(offers))
+                    stats[portal_name]["found"] = len(offers)
+                    portal_offers[portal_name] = offers
                     all_offers_data.extend(offers)
-                except Exception:
+                except Exception as exc:
                     logger.exception("Portal %s failed completely", portal_name)
+                    stats[portal_name]["error"] = f"{type(exc).__name__}: {exc}"
 
-        return JobService.save_new_offers(all_offers_data)
+        created = JobService.save_new_offers(all_offers_data)
+        # Cuántas de las nuevas vienen de cada portal — útil para ver si el
+        # portal scrapea pero las URLs ya estaban todas en DB.
+        for portal_name in target_portals:
+            stats[portal_name]["saved_new"] = sum(
+                1 for o in created if o.portal == portal_name
+            )
+        return created, stats
 
     @staticmethod
     def save_new_offers(offers_data: Iterable[JobOfferData]) -> list[JobOffer]:

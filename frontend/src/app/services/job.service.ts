@@ -8,6 +8,21 @@ import { PaginatedResponse } from '../models/paginated-response.model';
 import { STORAGE_KEYS } from '../constants/app-stats';
 
 /**
+ * Diagnóstico que devuelve el endpoint /scrape/ — útil para ver qué
+ * portal trajo cuántas ofertas y cuál (si alguno) falló silenciosamente.
+ */
+export interface ScrapePortalStat {
+  found: number;
+  saved_new: number;
+  error: string | null;
+}
+
+export interface ScrapeResponse {
+  offers: JobOffer[];
+  scrape_stats: Record<string, ScrapePortalStat>;
+}
+
+/**
  * Service for managing job offers and selected job state
  */
 @Injectable({ providedIn: 'root' })
@@ -37,10 +52,14 @@ export class JobService {
   }
 
   /**
-   * Fetches job offers from scraping service
+   * Dispara el scrape multi-portal en backend.
+   *
+   * El response incluye `scrape_stats` con diagnóstico por portal —
+   * cuántas ofertas trajo crudas, cuántas eran realmente nuevas, y si
+   * alguno falló. El caller puede usar esto para mostrar un breakdown.
    */
-  getScrapedOffers(): Observable<JobOffer[]> {
-    return this.http.get<JobOffer[]>(`${environment.apiUrl}/jobs/jobs/scrape/`);
+  getScrapedOffers(): Observable<ScrapeResponse> {
+    return this.http.get<ScrapeResponse>(`${environment.apiUrl}/jobs/jobs/scrape/`);
   }
 
   // ---- Estado en memoria + session storage --------------------------

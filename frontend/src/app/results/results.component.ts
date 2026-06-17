@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { HttpErrorResponse } from '@angular/common/http';
 import { JobOffer } from '../models/job-offer.model';
-import { JobService } from '../services/job.service';
+import { JobService, ScrapeResponse } from '../services/job.service';
 import { ToastService } from '../services/toast.service';
 import { Router, RouterModule } from '@angular/router';
 import { HTMLChangesComponent } from '../shared/html-changes/html-changes';
@@ -148,15 +148,25 @@ export class ResultsComponent {
   obtainOffers(): void {
     this.toast.info('Buscando ofertas en los portales...', 'Cargando');
     this.jobService.getScrapedOffers().subscribe({
-      next: (newOffers: JobOffer[]) => {
+      next: (response: ScrapeResponse) => {
+        const newOffers = response.offers ?? [];
+        const stats = response.scrape_stats ?? {};
+        const breakdown = Object.entries(stats)
+          .map(([portal, s]) => {
+            if (s.error) return `${portal}: error`;
+            if (s.found === 0) return `${portal}: 0`;
+            return `${portal}: ${s.found} (nuevas: ${s.saved_new})`;
+          })
+          .join(' · ');
+
         if (newOffers.length > 0) {
           this.toast.success(
-            `Se agregaron ${newOffers.length} ofertas nuevas para tu perfil.`,
+            `Se agregaron ${newOffers.length} ofertas nuevas. ${breakdown}`,
             '¡Listo!',
           );
         } else {
           this.toast.info(
-            'No hay ofertas nuevas por ahora. Mostrando las guardadas.',
+            `No hay ofertas nuevas. ${breakdown}`,
             'Sin novedades',
           );
         }
