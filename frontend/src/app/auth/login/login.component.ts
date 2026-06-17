@@ -96,7 +96,10 @@ export class LoginComponent {
             this.storageMethod.getStorageItem(this.storage, STORAGE_KEYS.PROFILE_COMPLETE) ===
             'true'
           ) {
-            this.router.navigate(['/results']);
+            // Si el perfil ya está armado, el usuario tiene su propio home
+            // (dashboard con métricas + match) — saltarse landing/results
+            // ahorra dos clicks y es lo que esperan los retornantes.
+            this.router.navigate(['/dashboard']);
           } else {
             this.router.navigate([redirectPath]);
           }
