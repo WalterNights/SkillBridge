@@ -1,577 +1,190 @@
-<!-- Hero Section Moderno -->
-<section class="relative min-h-screen flex items-center overflow-hidden bg-white dark:bg-dark-bg-primary">
-  <!-- Animated Background -->
-  <div
-    class="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-dark-bg-primary dark:via-dark-bg-secondary dark:to-dark-bg-primary"
-  >
-    <!-- Grid Pattern -->
-    <div class="absolute inset-0 bg-grid-pattern opacity-20"></div>
-
-    <!-- Animated Gradient Orbs -->
-    <div
-      class="absolute top-20 left-20 w-96 h-96 bg-primary-500/20 dark:bg-primary-500/10 rounded-full blur-3xl animate-pulse"
-    ></div>
-    <div
-      class="absolute bottom-20 right-20 w-96 h-96 bg-secondary-500/20 dark:bg-secondary-500/10 rounded-full blur-3xl animate-pulse"
-      style="animation-delay: 1s"
-    ></div>
-    <div
-      class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent-500/10 dark:bg-accent-500/5 rounded-full blur-3xl animate-pulse"
-      style="animation-delay: 0.5s"
-    ></div>
-  </div>
-
-  <!-- Content -->
-  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-    <div class="text-center space-y-8 animate-fade-in">
-      <!-- Main Headline -->
-      <h1 class="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white leading-tight">
-        Impulsa tu carrera con
-        <span class="block mt-2 bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-          tecnología de IA
-        </span>
-      </h1>
-
-      <!-- Subheadline -->
-      <p class="text-xl md:text-2xl text-gray-600 dark:text-dark-text-secondary max-w-3xl mx-auto">
-        Analiza tu CV con inteligencia artificial y encuentra las oportunidades perfectas que coinciden con tus
-        habilidades y experiencia
-      </p>
-
-      <!-- CTA Buttons -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-        <button
-          *ngIf="!profileComplete"
-          (click)="goToManualProfile()"
-          class="group relative px-8 py-4 bg-primary-600 dark:bg-primary-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-all duration-200 hover:scale-105 active:scale-95"
-        >
-          <span>Crear mi perfil</span>
-          <svg
-            class="inline-block ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-        </button>
-
-        <button
-          *ngIf="!profileComplete"
-          (click)="goToProfile()"
-          class="px-8 py-4 bg-white dark:bg-dark-bg-tertiary border-2 border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text-primary font-semibold rounded-xl hover:border-primary-600 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-all duration-200"
-        >
-          Subir mi CV
-        </button>
-
-        <button
-          *ngIf="profileComplete"
-          (click)="goToResults()"
-          class="group relative px-8 py-4 bg-primary-600 dark:bg-primary-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-all duration-200 hover:scale-105 active:scale-95"
-        >
-          <span>Ver ofertas de empleo</span>
-          <svg
-            class="inline-block ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-        </button>
-      </div>
-
-      <!-- Social Proof -->
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8">
-        <div class="flex -space-x-2">
-          <div
-            class="w-10 h-10 rounded-full ring-2 ring-white dark:ring-dark-bg-primary bg-gradient-to-br from-primary-400 to-primary-600"
-          ></div>
-          <div
-            class="w-10 h-10 rounded-full ring-2 ring-white dark:ring-dark-bg-primary bg-gradient-to-br from-secondary-400 to-secondary-600"
-          ></div>
-          <div
-            class="w-10 h-10 rounded-full ring-2 ring-white dark:ring-dark-bg-primary bg-gradient-to-br from-accent-400 to-accent-600"
-          ></div>
-          <div
-            class="w-10 h-10 rounded-full ring-2 ring-white dark:ring-dark-bg-primary bg-gradient-to-br from-warning-400 to-warning-600"
-          ></div>
-        </div>
-        <div class="text-left">
-          <div class="flex items-center gap-1 text-warning-400">
-            <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20">
-              <path
-                d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
-              />
-            </svg>
-            <span class="text-sm font-semibold text-gray-700 dark:text-dark-text-primary">4.9/5</span>
-          </div>
-          <p class="text-sm text-gray-500 dark:text-dark-text-secondary">Más de 1,500+ profesionales</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Scroll Indicator -->
-  <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
-    <svg class="w-6 h-6 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-    </svg>
-  </div>
-</section>
-
-<!-- Features Section -->
-<section class="py-20 bg-gray-50 dark:bg-dark-bg-secondary">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-16 animate-fade-in">
-      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">¿Por qué SkilTak?</h2>
-      <p class="text-lg text-gray-600 dark:text-dark-text-secondary max-w-2xl mx-auto">
-        Herramientas potenciadas con IA para llevar tu búsqueda de empleo al siguiente nivel
-      </p>
-    </div>
-
-    <div class="grid md:grid-cols-3 gap-8">
-      <!-- Feature 1 -->
-      <div
-        class="group p-8 bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border hover:border-primary-500 dark:hover:border-primary-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-      >
-        <div
-          class="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
-        >
-          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-        </div>
-        <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">CV Inteligente con IA</h3>
-        <p class="text-gray-600 dark:text-dark-text-secondary">
-          Genera un currículum optimizado para sistemas ATS con análisis automático de palabras clave y formato
-          profesional
-        </p>
-      </div>
-
-      <!-- Feature 2 -->
-      <div
-        class="group p-8 bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border hover:border-secondary-500 dark:hover:border-secondary-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-      >
-        <div
-          class="w-14 h-14 bg-gradient-to-br from-secondary-500 to-secondary-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
-        >
-          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </div>
-        <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Match Semántico Avanzado</h3>
-        <p class="text-gray-600 dark:text-dark-text-secondary">
-          Algoritmo de NLP que encuentra ofertas perfectamente alineadas con tu experiencia y habilidades únicas
-        </p>
-      </div>
-
-      <!-- Feature 3 -->
-      <div
-        class="group p-8 bg-white dark:bg-dark-bg-tertiary rounded-2xl border border-gray-200 dark:border-dark-border hover:border-accent-500 dark:hover:border-accent-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-      >
-        <div
-          class="w-14 h-14 bg-gradient-to-br from-accent-500 to-accent-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
-        >
-          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-            />
-          </svg>
-        </div>
-        <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Dashboard de Crecimiento</h3>
-        <p class="text-gray-600 dark:text-dark-text-secondary">
-          Visualiza tu progreso profesional, identifica gaps de habilidades y recibe recomendaciones personalizadas
-        </p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- How It Works Section -->
-<section class="py-20 bg-white dark:bg-dark-bg-primary">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-16">
-      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Cómo funciona</h2>
-      <p class="text-lg text-gray-600 dark:text-dark-text-secondary max-w-2xl mx-auto">
-        Tres simples pasos para encontrar tu próxima oportunidad
-      </p>
-    </div>
-
-    <div class="relative">
-      <!-- Connection Line -->
-      <div
-        class="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-200 via-secondary-200 to-accent-200 dark:from-primary-900 dark:via-secondary-900 dark:to-accent-900 transform -translate-y-1/2"
-      ></div>
-
-      <div class="grid md:grid-cols-3 gap-12 relative">
-        <!-- Step 1 -->
-        <div class="text-center">
-          <div class="relative inline-flex items-center justify-center mb-6">
-            <div class="absolute w-20 h-20 bg-primary-100 dark:bg-primary-900/30 rounded-full animate-pulse"></div>
-            <div
-              class="relative w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg"
-            >
-              1
-            </div>
-          </div>
-          <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Crea tu perfil</h3>
-          <p class="text-gray-600 dark:text-dark-text-secondary">
-            Sube tu CV o complétalo manualmente con análisis automático de IA
-          </p>
-        </div>
-
-        <!-- Step 2 -->
-        <div class="text-center">
-          <div class="relative inline-flex items-center justify-center mb-6">
-            <div
-              class="absolute w-20 h-20 bg-secondary-100 dark:bg-secondary-900/30 rounded-full animate-pulse"
-              style="animation-delay: 0.3s"
-            ></div>
-            <div
-              class="relative w-16 h-16 bg-gradient-to-br from-secondary-500 to-secondary-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg"
-            >
-              2
-            </div>
-          </div>
-          <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Recibe recomendaciones</h3>
-          <p class="text-gray-600 dark:text-dark-text-secondary">
-            Ofertas de empleo que encajan contigo, analizadas con algoritmos de NLP
-          </p>
-        </div>
-
-        <!-- Step 3 -->
-        <div class="text-center">
-          <div class="relative inline-flex items-center justify-center mb-6">
-            <div
-              class="absolute w-20 h-20 bg-accent-100 dark:bg-accent-900/30 rounded-full animate-pulse"
-              style="animation-delay: 0.6s"
-            ></div>
-            <div
-              class="relative w-16 h-16 bg-gradient-to-br from-accent-500 to-accent-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg"
-            >
-              3
-            </div>
-          </div>
-          <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Aprende y crece</h3>
-          <p class="text-gray-600 dark:text-dark-text-secondary">
-            Accede a tu ruta de aprendizaje personalizada con recomendaciones inteligentes
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Job Preview Section -->
-<section class="py-20 bg-gray-50 dark:bg-dark-bg-secondary">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center mb-12">
-      <div>
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-          Oportunidades que podrías recibir
-        </h2>
-        <p class="text-lg text-gray-600 dark:text-dark-text-secondary">Las mejores ofertas disponibles ahora</p>
-      </div>
-      <button
-        (click)="goToResults()"
-        class="hidden md:flex items-center gap-2 px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white font-semibold rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-all"
-      >
-        Ver todas
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-        </svg>
-      </button>
-    </div>
-
-    <div class="grid md:grid-cols-3 gap-6">
-      <!-- Job Card 1 -->
-      <div
-        class="group bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700/50 p-6 hover:border-primary-500 dark:hover:border-primary-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
-      >
-        <div class="flex justify-between items-start mb-4">
-          <div
-            class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl"
-          >
-            D
-          </div>
-          <span class="px-3 py-1 bg-green-500/20 text-green-400 text-sm font-medium rounded-full"> 95% Match </span>
-        </div>
-        <h3
-          class="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors"
-        >
-          Desarrollador Web Junior
-        </h3>
-        <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">Tech Innovations • Bogotá</p>
-        <div class="flex flex-wrap gap-2 mb-4">
-          <span class="px-3 py-1 bg-blue-500/20 text-blue-400 text-xs font-medium rounded-full">React</span>
-          <span class="px-3 py-1 bg-blue-500/20 text-blue-400 text-xs font-medium rounded-full">Node.js</span>
-          <span class="px-3 py-1 bg-blue-500/20 text-blue-400 text-xs font-medium rounded-full">MongoDB</span>
-        </div>
-        <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-          <span class="text-sm text-gray-500 dark:text-gray-400">$3M - $4.5M COP</span>
-          <span
-            class="text-sm font-medium text-primary-600 dark:text-primary-400 group-hover:translate-x-1 transition-transform"
-            >Ver detalles →</span
-          >
-        </div>
-      </div>
-
-      <!-- Job Card 2 -->
-      <div
-        class="group bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700/50 p-6 hover:border-secondary-500 dark:hover:border-secondary-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
-      >
-        <div class="flex justify-between items-start mb-4">
-          <div
-            class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl"
-          >
-            A
-          </div>
-          <span class="px-3 py-1 bg-green-500/20 text-green-400 text-sm font-medium rounded-full"> 88% Match </span>
-        </div>
-        <h3
-          class="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-secondary-600 dark:group-hover:text-secondary-400 transition-colors"
-        >
-          Analista de Datos
-        </h3>
-        <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">Data Corp • Medellín</p>
-        <div class="flex flex-wrap gap-2 mb-4">
-          <span class="px-3 py-1 bg-purple-500/20 text-purple-400 text-xs font-medium rounded-full">Python</span>
-          <span class="px-3 py-1 bg-purple-500/20 text-purple-400 text-xs font-medium rounded-full">SQL</span>
-          <span class="px-3 py-1 bg-purple-500/20 text-purple-400 text-xs font-medium rounded-full">Tableau</span>
-        </div>
-        <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-          <span class="text-sm text-gray-500 dark:text-gray-400">$4M - $5.5M COP</span>
-          <span
-            class="text-sm font-medium text-secondary-600 dark:text-secondary-400 group-hover:translate-x-1 transition-transform"
-            >Ver detalles →</span
-          >
-        </div>
-      </div>
-
-      <!-- Job Card 3 -->
-      <div
-        class="group bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700/50 p-6 hover:border-accent-500 dark:hover:border-accent-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
-      >
-        <div class="flex justify-between items-start mb-4">
-          <div
-            class="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center text-white font-bold text-xl"
-          >
-            U
-          </div>
-          <span class="px-3 py-1 bg-yellow-500/20 text-yellow-400 text-sm font-medium rounded-full"> 82% Match </span>
-        </div>
-        <h3
-          class="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors"
-        >
-          Diseñador UX
-        </h3>
-        <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">Creative Studio • Remoto</p>
-        <div class="flex flex-wrap gap-2 mb-4">
-          <span class="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-medium rounded-full">Figma</span>
-          <span class="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-medium rounded-full">Adobe XD</span>
-          <span class="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-medium rounded-full">Sketch</span>
-        </div>
-        <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-          <span class="text-sm text-gray-500 dark:text-gray-400">$3.5M - $4.8M COP</span>
-          <span
-            class="text-sm font-medium text-accent-600 dark:text-accent-400 group-hover:translate-x-1 transition-transform"
-            >Ver detalles →</span
-          >
-        </div>
-      </div>
-    </div>
-
-    <!-- Mobile CTA -->
-    <div class="md:hidden text-center mt-8">
-      <button
-        (click)="goToResults()"
-        class="w-full px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white font-semibold rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-all"
-      >
-        Ver todas las ofertas
-      </button>
-    </div>
-  </div>
-</section>
-
-<!-- CTA Section -->
-<section class="relative py-24 overflow-hidden">
-  <!-- Gradient Background -->
-  <div class="absolute inset-0 bg-gradient-to-br from-primary-600 via-secondary-600 to-accent-600"></div>
-  <div class="absolute inset-0 bg-grid-pattern opacity-10"></div>
-
-  <!-- Animated Orbs -->
-  <div class="absolute top-10 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
-  <div
-    class="absolute bottom-10 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse"
-    style="animation-delay: 1s"
-  ></div>
-
-  <!-- Content -->
-  <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-    <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">¿Listo para dar el siguiente paso en tu carrera?</h2>
-    <p class="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-      Únete a miles de profesionales que ya están impulsando su carrera con SkilTak
-    </p>
-    <a
-      routerLink="/auth/register"
-      class="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary-600 font-bold rounded-xl shadow-2xl hover:shadow-3xl hover:scale-105 transition-all duration-200 cursor-pointer"
-    >
-      Registrarme gratis
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-      </svg>
+<!-- Sticky navbar with backdrop blur. 3-col grid so the center links
+     stay visually centered regardless of the logo width on the left
+     or the actions on the right. -->
+<nav class="fixed top-0 inset-x-0 z-50 backdrop-blur-xl border-b border-white/[0.06] bg-canvas/80">
+  <div class="max-w-container-max mx-auto grid grid-cols-[1fr_auto_1fr] items-center px-gutter py-4">
+    <!-- Logo -->
+    <a routerLink="/" class="text-xl font-bold text-bone tracking-tight justify-self-start">
+      SkilTak<span class="text-primary">.</span>
     </a>
-    <p class="mt-4 text-white/70 text-sm">No requiere tarjeta de crédito • Configura tu perfil en 5 minutos</p>
-  </div>
-</section>
 
-<!-- About Section -->
-<section class="py-20 bg-white dark:bg-dark-bg-primary">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="max-w-4xl mx-auto">
-      <div class="text-center mb-12">
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">¿Qué es SkilTak?</h2>
-        <p class="text-lg text-gray-600 dark:text-dark-text-secondary">
-          Tu plataforma inteligente para el desarrollo profesional
-        </p>
+    <!-- Center nav links -->
+    <div class="hidden md:flex gap-8 items-center justify-self-center">
+      <a
+        class="nav-link"
+        href="#como-funciona"
+        (click)="setSection('como-funciona', $event)"
+        [class.is-current]="currentSection() === 'como-funciona'"
+        >Cómo funciona</a
+      >
+      <a
+        class="nav-link"
+        href="#recursos"
+        (click)="setSection('recursos', $event)"
+        [class.is-current]="currentSection() === 'recursos'"
+        >Recursos</a
+      >
+      <a
+        class="nav-link"
+        href="#blog"
+        (click)="setSection('blog', $event)"
+        [class.is-current]="currentSection() === 'blog'"
+        >Blog</a
+      >
+    </div>
+
+    <!-- Right actions -->
+    <div class="flex items-center gap-5 justify-self-end">
+      <a
+        routerLink="/auth/login"
+        *ngIf="!isLoggedIn()"
+        class="text-body text-warm-grey hover:text-bone transition-colors"
+        >Ingresar</a
+      >
+      <button (click)="startProfile()" class="btn-primary px-5 py-2 rounded-lg text-sm">
+        {{ isLoggedIn() ? (profileComplete() ? 'Ir al dashboard' : 'Completar perfil') : 'Empezar' }}
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<main class="relative pt-40 pb-24 px-gutter">
+  <div class="max-w-container-max mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+    <div class="lg:col-span-7 space-y-9">
+      <h1 class="text-[44px] sm:text-[60px] lg:text-display leading-[1.05] tracking-[-0.04em] font-black text-bone">
+        Encontrá tu próximo paso, no tu próximo
+        <span class="hero-accent">trabajo</span>.
+      </h1>
+      <p class="text-body-lg text-warm-grey max-w-xl">
+        Inteligencia artificial que entiende tu trayectoria y centraliza las mejores oportunidades. No más saltar entre
+        diez bolsas de empleo.
+      </p>
+      <div class="flex flex-wrap gap-4 pt-2 items-center">
+        <button (click)="startProfile()" class="btn-primary px-7 py-3.5 rounded-xl text-body-lg">
+          Crear mi perfil &nbsp;→
+        </button>
+      </div>
+    </div>
+
+    <!-- Hero photo + overlaid floating job card -->
+    <div class="lg:col-span-5 relative">
+      <div class="photo warm rounded-3xl aspect-[4/5] border border-white/[0.06]">
+        <img
+          src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=900&q=80"
+          alt="Profesional trabajando desde casa, revisando ofertas en su laptop"
+        />
       </div>
 
-      <div class="space-y-8">
-        <!-- What We Are -->
-        <div
-          class="p-6 bg-gray-50 dark:bg-dark-bg-secondary rounded-2xl border border-gray-200 dark:border-dark-border"
-        >
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
-            <span class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white text-sm">✓</span>
-            Lo que somos
-          </h3>
-          <ul class="space-y-3 text-gray-700 dark:text-dark-text-secondary">
-            <li class="flex items-start gap-3">
-              <svg
-                class="w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5 flex-shrink-0"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-              <span>El puente entre tu perfil profesional y las oportunidades perfectas para ti</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <svg
-                class="w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5 flex-shrink-0"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-              <span>Tu guía personalizada para mejorar tu perfil y alcanzar tus metas profesionales</span>
-            </li>
-          </ul>
+      <div
+        class="match-card absolute -bottom-6 -left-6 right-6 lg:left-auto lg:-right-6 lg:w-[360px] p-6 rounded-2xl animate-float-slow z-10 border border-white/[0.10]"
+      >
+        <div class="flex justify-between items-start mb-5">
+          <div>
+            <p class="text-[10px] font-mono uppercase tracking-widest text-primary mb-2 font-semibold">
+              Tu match #1 hoy
+            </p>
+            <h3 class="text-subhead text-bone leading-tight">Senior Frontend Engineer</h3>
+            <p class="text-body text-bone/75 mt-1">Stripe · Remoto · Global</p>
+          </div>
+          <div
+            class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/30 shrink-0"
+          >
+            <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+            <span class="font-mono text-[12px] text-primary font-semibold">94%</span>
+          </div>
         </div>
 
-        <!-- What We Do -->
-        <div
-          class="p-6 bg-gray-50 dark:bg-dark-bg-secondary rounded-2xl border border-gray-200 dark:border-dark-border"
-        >
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
-            <span class="w-8 h-8 bg-secondary-600 rounded-lg flex items-center justify-center text-white text-sm"
-              >⚡</span
-            >
-            Lo que hacemos
-          </h3>
-          <ul class="space-y-3 text-gray-700 dark:text-dark-text-secondary">
-            <li class="flex items-start gap-3">
-              <svg
-                class="w-5 h-5 text-secondary-600 dark:text-secondary-400 mt-0.5 flex-shrink-0"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-              <span>Te ayudamos a crear tu CV con formato ATS optimizado para sistemas de selección</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <svg
-                class="w-5 h-5 text-secondary-600 dark:text-secondary-400 mt-0.5 flex-shrink-0"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-              <span>Analizamos automáticamente tu CV existente y creamos tu perfil al instante</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <svg
-                class="w-5 h-5 text-secondary-600 dark:text-secondary-400 mt-0.5 flex-shrink-0"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-              <span>Traemos ofertas que más se adaptan a tu perfil con match semántico avanzado</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <svg
-                class="w-5 h-5 text-secondary-600 dark:text-secondary-400 mt-0.5 flex-shrink-0"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-              <span>Te indicamos dónde adquirir los conocimientos que te hacen falta para cada posición</span>
-            </li>
-          </ul>
+        <div class="space-y-2 pt-4 border-t border-white/[0.10]">
+          <div class="flex justify-between text-[11px] uppercase tracking-wider">
+            <span class="text-bone/60 font-semibold">Salario</span>
+            <span class="text-bone font-mono normal-case tracking-normal">$140k – $180k</span>
+          </div>
+          <div class="w-full h-1 bg-white/[0.08] rounded-full overflow-hidden">
+            <div class="h-full bg-primary" style="width: 94%"></div>
+          </div>
+          <div class="flex justify-between text-[11px] uppercase tracking-wider pt-1.5">
+            <span class="text-bone/60 font-semibold">Skills coincidentes</span>
+            <span class="font-mono text-bone normal-case tracking-normal">12 / 13</span>
+          </div>
         </div>
 
-        <!-- Target Audience -->
-        <div
-          class="p-6 bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-primary-900/10 dark:to-secondary-900/10 rounded-2xl border border-primary-200 dark:border-primary-800"
-        >
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
-            <span class="w-8 h-8 bg-accent-600 rounded-lg flex items-center justify-center text-white text-sm">👥</span>
-            ¿Para quién es SkilTak?
-          </h3>
-          <p class="text-gray-700 dark:text-dark-text-secondary">
-            Diseñado para personas recién graduadas o profesionales que, por diversos motivos, cambiaron de ámbito
-            profesional y buscan impulsar su nueva carrera con herramientas inteligentes.
+        <div class="flex flex-wrap gap-1.5 pt-4">
+          <span
+            class="px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/[0.10] font-mono text-[10px] text-bone/80"
+            >React</span
+          >
+          <span
+            class="px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/[0.10] font-mono text-[10px] text-bone/80"
+            >TypeScript</span
+          >
+          <span
+            class="px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/[0.10] font-mono text-[10px] text-bone/80"
+            >Design Systems</span
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- SECTION — Three steps -->
+<section id="como-funciona" class="px-gutter py-16">
+  <div class="max-w-container-max mx-auto">
+    <div class="text-center mb-16" appReveal>
+      <h2 class="text-[36px] sm:text-display-md text-bone leading-[1.1] tracking-[-0.03em] font-black mb-4">
+        Tres pasos. Cero ruido.
+      </h2>
+      <p class="text-body-lg text-warm-grey max-w-2xl mx-auto">
+        El motor de IA hace el trabajo pesado para que vos solo decidas dónde vale la pena ir.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="glass rounded-2xl overflow-hidden card-line-watermark" appReveal>
+        <div class="photo aspect-[16/10]">
+          <img
+            src="https://images.unsplash.com/photo-1551836022-deb4988cc6c0?auto=format&fit=crop&w=800&q=80"
+            alt="Manos sobre un teclado de laptop"
+          />
+        </div>
+        <div class="p-8 pb-10">
+          <span class="font-mono text-headline text-slate-accent block mb-5">01</span>
+          <h3 class="text-subhead text-bone mb-3">Subí tu CV o armá tu perfil</h3>
+          <p class="text-body text-warm-grey">
+            Conectá LinkedIn o subí tu CV. La IA extrae proyectos, stack y potencial.
+          </p>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl overflow-hidden card-line-watermark" appReveal style="transition-delay: 80ms">
+        <div class="photo aspect-[16/10]">
+          <img
+            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80"
+            alt="Pantalla con datos y gráficos de análisis"
+          />
+        </div>
+        <div class="p-8 pb-10">
+          <span class="font-mono text-headline text-slate-accent block mb-5">02</span>
+          <h3 class="text-subhead text-bone mb-3">La IA centraliza las mejores ofertas</h3>
+          <p class="text-body text-warm-grey">
+            Cruzamos tu perfil contra miles de ofertas de varios portales en tiempo real.
+          </p>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl overflow-hidden card-line-watermark" appReveal style="transition-delay: 160ms">
+        <div class="photo aspect-[16/10]">
+          <img
+            src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80"
+            alt="Persona sonriendo frente a su laptop"
+          />
+        </div>
+        <div class="p-8 pb-10">
+          <span class="font-mono text-headline text-slate-accent block mb-5">03</span>
+          <h3 class="text-subhead text-bone mb-3">Recibí matches con % real</h3>
+          <p class="text-body text-warm-grey">
+            Solo ofertas que valen la pena, con tu skills gap explícito. Cero spam.
           </p>
         </div>
       </div>
@@ -579,83 +192,234 @@
   </div>
 </section>
 
-<!-- Footer -->
-<footer class="py-16 bg-gray-900 dark:bg-dark-bg-tertiary">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="grid md:grid-cols-4 gap-8 mb-8">
-      <!-- Brand -->
-      <div class="md:col-span-2">
-        <h3 class="text-2xl font-bold text-white mb-4">SkilTak</h3>
-        <p class="text-gray-400 mb-4 max-w-md">
-          Plataforma inteligente de desarrollo profesional potenciada con IA para conectar talento con oportunidades
-          perfectas.
+<!-- SECTION — Comparison -->
+<section class="px-gutter py-16">
+  <div class="max-w-container-max mx-auto">
+    <div class="glass rounded-3xl overflow-hidden grid grid-cols-1 lg:grid-cols-2">
+      <div class="p-12 lg:p-16 border-b lg:border-b-0 lg:border-r border-white/[0.06]" appReveal>
+        <p class="text-label uppercase text-dim mb-3">Comparación</p>
+        <h3 class="text-headline text-dim mb-12">Saltar entre 10 bolsas</h3>
+        <ul class="space-y-5">
+          <li class="flex items-start gap-4 text-body-lg text-dim">
+            <span class="text-dim mt-1 select-none">—</span>
+            <span>Computrabajo + Indeed + LinkedIn + Bumeran…</span>
+          </li>
+          <li class="flex items-start gap-4 text-body-lg text-dim">
+            <span class="text-dim mt-1 select-none">—</span>
+            <span>Las mismas ofertas repetidas en cada portal</span>
+          </li>
+          <li class="flex items-start gap-4 text-body-lg text-dim">
+            <span class="text-dim mt-1 select-none">—</span>
+            <span>Aplicás a ciegas sin contexto</span>
+          </li>
+          <li class="flex items-start gap-4 text-body-lg text-dim">
+            <span class="text-dim mt-1 select-none">—</span>
+            <span>No sabés si vale la pena tu tiempo</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="p-12 lg:p-16" appReveal style="transition-delay: 120ms">
+        <p class="text-label uppercase text-warm-grey mb-3">El método SkilTak</p>
+        <h3 class="text-headline text-bone mb-12">Curaduría con IA</h3>
+        <ul class="space-y-5">
+          <li class="flex items-start gap-4 text-body-lg text-bone">
+            <span class="w-1.5 h-1.5 rounded-full bg-primary mt-3 shrink-0"></span>
+            <span>Matches calculados con IA real</span>
+          </li>
+          <li class="flex items-start gap-4 text-body-lg text-bone">
+            <span class="w-1.5 h-1.5 rounded-full bg-primary mt-3 shrink-0"></span>
+            <span>% de compatibilidad por oferta</span>
+          </li>
+          <li class="flex items-start gap-4 text-body-lg text-bone">
+            <span class="w-1.5 h-1.5 rounded-full bg-primary mt-3 shrink-0"></span>
+            <span>Solo ofertas que valen la pena</span>
+          </li>
+          <li class="flex items-start gap-4 text-body-lg text-bone">
+            <span class="w-1.5 h-1.5 rounded-full bg-primary mt-3 shrink-0"></span>
+            <span>Skills gap explícito por oferta</span>
+          </li>
+        </ul>
+        <a href="#" class="inline-block mt-12 text-body text-primary hover:opacity-80 font-semibold">
+          Cómo funciona el algoritmo &nbsp;→
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION — Resources preview -->
+<section id="recursos" class="px-gutter py-16">
+  <div class="max-w-container-max mx-auto">
+    <div class="mb-12" appReveal>
+      <h2 class="text-[36px] sm:text-display-md text-bone leading-[1.1] tracking-[-0.03em] font-black mb-3">
+        Recursos para tu búsqueda
+      </h2>
+      <p class="text-body-lg text-warm-grey">Lo que necesitás saber para encontrar trabajo hoy.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <a href="#" class="glass rounded-2xl p-8 hover:border-white/[0.10] transition-colors block group" appReveal>
+        <p class="text-label uppercase text-warm-grey mb-4">Guía · 7 min lectura</p>
+        <h3 class="text-subhead text-bone mb-3 group-hover:text-primary transition-colors">
+          Cómo escribir un CV que pase ATS en 2026
+        </h3>
+        <p class="text-body text-warm-grey mb-6">
+          La estructura, los keywords y los errores que te dejan fuera del primer filtro automatizado.
         </p>
-        <div class="flex gap-4">
-          <a
-            href="#"
-            class="w-10 h-10 bg-gray-800 hover:bg-primary-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all"
-          >
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path
-                d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"
-              />
-            </svg>
-          </a>
-          <a
-            href="#"
-            class="w-10 h-10 bg-gray-800 hover:bg-primary-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all"
-          >
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path
-                d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
-              />
-            </svg>
-          </a>
-          <a
-            href="#"
-            class="w-10 h-10 bg-gray-800 hover:bg-primary-600 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all"
-          >
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path
-                d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"
-              />
-            </svg>
-          </a>
+        <span class="text-body text-primary font-semibold">Leer →</span>
+      </a>
+
+      <a
+        href="#"
+        class="glass rounded-2xl p-8 hover:border-white/[0.10] transition-colors block group"
+        appReveal
+        style="transition-delay: 80ms"
+      >
+        <p class="text-label uppercase text-warm-grey mb-4">Reporte · 2026</p>
+        <h3 class="text-subhead text-bone mb-3 group-hover:text-primary transition-colors">
+          Las 12 skills más buscadas en LatAm
+        </h3>
+        <p class="text-body text-warm-grey mb-6">
+          Analizamos +50,000 ofertas para entender hacia dónde se mueve el mercado regional.
+        </p>
+        <span class="text-body text-primary font-semibold">Leer →</span>
+      </a>
+
+      <a
+        href="#"
+        class="glass rounded-2xl p-8 hover:border-white/[0.10] transition-colors block group"
+        appReveal
+        style="transition-delay: 160ms"
+      >
+        <p class="text-label uppercase text-warm-grey mb-4">Guía · 12 min lectura</p>
+        <h3 class="text-subhead text-bone mb-3 group-hover:text-primary transition-colors">
+          Preparación para entrevistas técnicas remotas
+        </h3>
+        <p class="text-body text-warm-grey mb-6">
+          Setup, cámara, performance bajo presión y cómo manejar al entrevistador difícil.
+        </p>
+        <span class="text-body text-primary font-semibold">Leer →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION — Testimonials -->
+<section class="px-gutter py-16">
+  <div class="max-w-container-max mx-auto">
+    <div class="text-center mb-14" appReveal>
+      <h2 class="text-headline text-bone">Profesionales que ya dieron el paso</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="glass rounded-2xl p-8" appReveal>
+        <p class="text-body-lg text-bone/90 italic leading-relaxed mb-7">
+          "SkilTak entendió mi carrera mejor que yo misma. El primer match fue exactamente el rol que estaba buscando."
+        </p>
+        <div class="flex items-center gap-3">
+          <div class="photo w-11 h-11 rounded-full shrink-0">
+            <img
+              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80"
+              alt=""
+            />
+          </div>
+          <div>
+            <p class="text-body text-bone font-semibold">Martina G.</p>
+            <p class="text-label uppercase text-warm-grey">Lead Developer · Buenos Aires</p>
+          </div>
         </div>
       </div>
 
-      <!-- Quick Links -->
-      <div>
-        <h4 class="text-white font-semibold mb-4">Navegación</h4>
-        <ul class="space-y-2">
-          <li><a routerLink="/" class="text-gray-400 hover:text-white transition-colors">Inicio</a></li>
-          <li><a routerLink="/results" class="text-gray-400 hover:text-white transition-colors">Ofertas</a></li>
-          <li><a routerLink="/login" class="text-gray-400 hover:text-white transition-colors">Iniciar sesión</a></li>
-          <li><a routerLink="/register" class="text-gray-400 hover:text-white transition-colors">Registrarse</a></li>
-        </ul>
+      <div class="glass rounded-2xl p-8" appReveal style="transition-delay: 80ms">
+        <p class="text-body-lg text-bone/90 italic leading-relaxed mb-7">
+          "Pasé de buscar trabajo a ser buscado. El match% me ahorra horas de leer descripciones que no aplican."
+        </p>
+        <div class="flex items-center gap-3">
+          <div class="photo w-11 h-11 rounded-full shrink-0">
+            <img
+              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
+              alt=""
+            />
+          </div>
+          <div>
+            <p class="text-body text-bone font-semibold">Julián R.</p>
+            <p class="text-label uppercase text-warm-grey">Senior PM · Bogotá</p>
+          </div>
+        </div>
       </div>
 
-      <!-- Resources -->
-      <div>
-        <h4 class="text-white font-semibold mb-4">Recursos</h4>
-        <ul class="space-y-2">
-          <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Centro de ayuda</a></li>
-          <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Blog</a></li>
-          <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Términos de uso</a></li>
-          <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Privacidad</a></li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- Bottom Bar -->
-    <div class="pt-8 border-t border-gray-800">
-      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-        <p class="text-gray-400 text-sm">© 2025 SkilTak. Todos los derechos reservados.</p>
-        <div class="flex items-center gap-6 text-sm text-gray-400">
-          <a href="#" class="hover:text-white transition-colors">Política de cookies</a>
-          <a href="#" class="hover:text-white transition-colors">Accesibilidad</a>
+      <div class="glass rounded-2xl p-8" appReveal style="transition-delay: 160ms">
+        <p class="text-body-lg text-bone/90 italic leading-relaxed mb-7">
+          "En una semana tuve 3 entrevistas con empresas que valoraban mi stack específico. Punto."
+        </p>
+        <div class="flex items-center gap-3">
+          <div class="photo w-11 h-11 rounded-full shrink-0">
+            <img
+              src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80"
+              alt=""
+            />
+          </div>
+          <div>
+            <p class="text-body text-bone font-semibold">Carla F.</p>
+            <p class="text-label uppercase text-warm-grey">Data Analyst · Ciudad de México</p>
+          </div>
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- SECTION — Final CTA -->
+<section class="px-gutter py-16">
+  <div class="max-w-container-max mx-auto" appReveal>
+    <div class="glass-strong rounded-3xl px-12 py-20 lg:py-24 text-center">
+      <h2
+        class="text-[32px] sm:text-display-md text-bone mb-6 max-w-3xl mx-auto leading-[1.15] tracking-[-0.03em] font-black"
+      >
+        Tu próxima oportunidad no está en una lista genérica.
+      </h2>
+      <p class="text-body-lg text-warm-grey mb-10">Empezá en 3 minutos.</p>
+      <button (click)="startProfile()" class="btn-primary px-9 py-4 rounded-2xl text-body-lg">Empezar &nbsp;→</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="px-gutter py-16 border-t border-white/[0.06]">
+  <div class="max-w-container-max mx-auto grid grid-cols-2 md:grid-cols-4 gap-10 mb-14">
+    <div class="col-span-2 md:col-span-1 space-y-5">
+      <span class="text-xl font-bold text-bone tracking-tight">SkilTak<span class="text-primary">.</span></span>
+      <p class="text-body text-warm-grey">Encontrá tu próximo paso, no tu próximo trabajo.</p>
+    </div>
+    <div class="space-y-3">
+      <h4 class="text-label uppercase text-warm-grey">Producto</h4>
+      <nav class="flex flex-col gap-2">
+        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#como-funciona">Cómo funciona</a>
+        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#">Algoritmo</a>
+        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#">Roadmap</a>
+      </nav>
+    </div>
+    <div class="space-y-3">
+      <h4 class="text-label uppercase text-warm-grey">Recursos</h4>
+      <nav class="flex flex-col gap-2">
+        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#recursos">Guías</a>
+        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#">Blog</a>
+        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#">Salarios LatAm 2026</a>
+      </nav>
+    </div>
+    <div class="space-y-3">
+      <h4 class="text-label uppercase text-warm-grey">Legal</h4>
+      <nav class="flex flex-col gap-2">
+        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#">Privacidad</a>
+        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#">Términos</a>
+        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#">Cookies</a>
+      </nav>
+    </div>
+  </div>
+  <div
+    class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center pt-8 border-t border-white/[0.06]"
+  >
+    <p class="text-body text-dim">© 2026 SkilTak. Hecho con foco en LatAm.</p>
   </div>
 </footer>

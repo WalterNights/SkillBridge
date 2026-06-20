@@ -1,70 +1,69 @@
-import { Router } from '@angular/router';
-import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { STORAGE_KEYS } from '../constants/app-stats';
+import { RevealDirective } from '../shared/directives/reveal.directive';
 
 /**
- * Home/Landing page component
+ * Where the landing CTA should send users right after they sign up.
+ * Stored under STORAGE_KEYS.REDIRECT_AFTER_LOGIN so /auth/login picks
+ * it up after credentials are entered.
+ */
+const POST_SIGNUP_REDIRECT = '/profile';
+
+type AnchorId = 'como-funciona' | 'recursos' | 'blog';
+
+/**
+ * Public landing page (/). Not behind AutoGuard.
+ *
+ * The primary CTA "Crear mi perfil" is role-aware:
+ *   - logged out                  → /auth/register
+ *   - logged in, profile pending  → /profile
+ *   - logged in, profile complete → /dashboard (skip the intro)
  */
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink, RevealDirective],
   templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss'],
+  styleUrl: './home.component.scss',
 })
 export class HomeComponent {
-  profileComplete = false;
-
-  constructor(
-    private titleService: Title,
-    private authService: AuthService,
-    private router: Router,
-  ) {
-    this.titleService.setTitle('SkilTak - Home');
-  }
+  private auth = inject(AuthService);
+  private router = inject(Router);
 
   /**
-   * Navigates to manual profile page, redirecting to login if not authenticated
+   * Signals derived from AuthService observables. `toSignal` handles
+   * the subscription teardown automatically when the component is
+   * destroyed, no manual unsubscribe needed.
    */
-  goToManualProfile(): void {
-    if (!this.authService.isAuthenticated()) {
-      sessionStorage.setItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN, '/manual-profile');
-      this.router.navigate(['/auth/login']);
-    } else {
-      this.router.navigate(['/manual-profile']);
-    }
+  isLoggedIn = toSignal(this.auth.isLoggedIn$, { initialValue: false });
+  profileComplete = toSignal(this.auth.isProfileComplete$, { initialValue: false });
+
+  /** Active anchor in the navbar, updated on click. */
+  currentSection = signal<AnchorId | null>(null);
+
+  constructor(title: Title) {
+    title.setTitle('SkilTak — Encontrá tu próximo paso');
   }
 
-  /**
-   * Navigates to profile page, redirecting to login if not authenticated
-   */
-  goToProfile(): void {
-    if (!this.authService.isAuthenticated()) {
-      sessionStorage.setItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN, '/profile');
-      this.router.navigate(['/auth/login']);
-    } else {
-      this.router.navigate(['/profile']);
-    }
+  /** Navbar link click: mark as active + smooth-scroll to the section. */
+  setSection(id: AnchorId, event: MouseEvent): void {
+    event.preventDefault();
+    this.currentSection.set(id);
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  /**
-   * Navigates to results page, redirecting to login if not authenticated
-   */
-  goToResults(): void {
-    if (!this.authService.isAuthenticated()) {
-      sessionStorage.setItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN, '/results');
-      this.router.navigate(['/auth/login']);
-    } else {
-      this.router.navigate(['/results']);
+  /** Primary CTA shared by hero, navbar and final block. */
+  startProfile(): void {
+    if (!this.isLoggedIn()) {
+      sessionStorage.setItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN, POST_SIGNUP_REDIRECT);
+      this.router.navigate(['/auth/register']);
+      return;
     }
-  }
-
-  ngOnInit(): void {
-    this.authService.isProfileComplete$.subscribe((status) => {
-      this.profileComplete = status;
-    });
+    this.router.navigate([this.profileComplete() ? '/dashboard' : '/profile']);
   }
 }

@@ -65,6 +65,27 @@ export class AuthService {
     return !!this.getToken();
   }
 
+  /**
+   * Read the user's display name honoring the storage preference.
+   * Returns the explicit 'Usuario' fallback when no session is set
+   * so the UI never shows an empty avatar/label.
+   */
+  getUserName(): string {
+    const useLocal = localStorage.getItem('storage') === 'true';
+    const value = useLocal
+      ? localStorage.getItem('user_name')
+      : sessionStorage.getItem('user_name');
+    return value ?? 'Usuario';
+  }
+
+  /**
+   * Read the user's email. `user_email` is always written to
+   * sessionStorage at login time, regardless of "remember me".
+   */
+  getUserEmail(): string {
+    return sessionStorage.getItem('user_email') ?? '';
+  }
+
   register(data: RegisterData): Observable<any> {
     return this.http.post(this.apiUrl, data);
   }

@@ -34,11 +34,15 @@ export class AppComponent implements AfterViewInit, OnInit {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((event: any) => {
-        const noHeader = ['auth/login', '/dashboard'];
-        const SideBar = ['/dashboard'];
+        // El landing nuevo (/) trae su propio navbar, no usar el legacy.
+        // /auth/login y /dashboard tampoco usan el header público.
+        // Los demás (resto de /auth/*, /jobs/:id, /profile, /cv, etc)
+        // van a perder el header legacy a medida que portemos cada uno.
+        const noHeader = ['/', '/auth/login', '/dashboard'];
+        const sideBar = ['/dashboard'];
         const headerDashboard = ['/dashboard'];
         this.showHeader = !noHeader.includes(event.urlAfterRedirects);
-        this.showSideBar = SideBar.includes(event.urlAfterRedirects);
+        this.showSideBar = sideBar.includes(event.urlAfterRedirects);
         this.showHeaderDashboard = headerDashboard.includes(event.urlAfterRedirects);
       });
   }

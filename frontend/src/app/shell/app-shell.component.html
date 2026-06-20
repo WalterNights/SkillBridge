@@ -1,0 +1,121 @@
+<div class="flex min-h-screen">
+  <!-- Drawer backdrop (mobile only, click to close) -->
+  <div class="drawer-backdrop" [class.show]="drawerOpen()" (click)="toggleDrawer(false)" aria-hidden="true"></div>
+
+  <!-- =============== SIDEBAR =============== -->
+  <aside
+    class="app-sidebar border-r border-white/[0.06] bg-canvas/40 backdrop-blur-xl flex flex-col"
+    [class.open]="drawerOpen()"
+  >
+    <div class="px-6 py-6 border-b border-white/[0.04]">
+      <span class="text-xl font-bold text-bone tracking-tight">SkilTak<span class="text-primary">.</span></span>
+    </div>
+
+    <nav class="flex-1 px-3 py-5 space-y-1">
+      <a
+        class="nav-item"
+        routerLink="/dashboard"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: false }"
+        (click)="toggleDrawer(false)"
+      >
+        <span class="material-symbols-outlined">home</span>
+        Inicio
+      </a>
+    </nav>
+
+    <div class="p-4">
+      <div class="glass rounded-xl p-4">
+        <span class="material-symbols-outlined text-primary" style="font-size: 18px; font-variation-settings: 'FILL' 1"
+          >tips_and_updates</span
+        >
+        <p class="text-sm text-bone font-semibold mt-2 mb-1 leading-snug">Tip del día</p>
+        <p class="text-xs text-warm-grey mb-3 leading-snug">
+          Personalizá el resumen del CV para cada match. La IA detecta keywords del job post.
+        </p>
+        <a href="#" class="text-xs text-primary font-semibold hover:underline underline-offset-4">
+          Ver más recursos →
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- =============== MAIN =============== -->
+  <main class="flex-1 min-w-0 flex flex-col">
+    <!-- Top bar -->
+    <header
+      class="h-16 px-4 lg:px-8 border-b border-white/[0.06] flex items-center justify-between gap-3 sticky top-0 bg-canvas/80 backdrop-blur-xl z-30"
+    >
+      <div class="flex items-center gap-3 min-w-0 flex-1">
+        <button class="hamburger" (click)="toggleDrawer(true)" aria-label="Abrir menú">
+          <span class="material-symbols-outlined" style="font-size: 20px; font-variation-settings: 'wght' 400"
+            >menu</span
+          >
+        </button>
+
+        <!-- Search input — desktop only; each page builds its own
+             contextual search if it needs one. -->
+        <div class="hidden md:flex items-center gap-3 flex-1 max-w-md">
+          <span
+            class="material-symbols-outlined text-warm-grey"
+            style="font-size: 18px; font-variation-settings: 'wght' 300"
+            >search</span
+          >
+          <input
+            type="text"
+            placeholder="Buscar por título, empresa, skill…"
+            class="flex-1 bg-transparent border-none text-sm text-bone placeholder:text-dim focus:outline-none"
+          />
+          <span class="hidden lg:inline font-mono text-[11px] text-dim border border-white/[0.08] rounded px-1.5 py-0.5"
+            >⌘ K</span
+          >
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 lg:gap-3">
+        <button
+          class="w-9 h-9 rounded-lg border border-white/[0.06] hover:border-white/[0.10] flex items-center justify-center text-warm-grey hover:text-bone relative"
+          aria-label="Notificaciones"
+        >
+          <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'wght' 300"
+            >notifications</span
+          >
+          <span class="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-primary"></span>
+        </button>
+
+        <!-- User menu -->
+        <div class="user-menu" [class.open]="userMenuOpen()">
+          <button class="user-trigger" (click)="toggleUserMenu($event)">
+            <span class="avatar">{{ userInitial() }}</span>
+            <span class="name hidden md:inline">{{ userName() }}</span>
+            <span class="material-symbols-outlined chev">expand_more</span>
+          </button>
+          <div class="user-dropdown" (click)="$event.stopPropagation()">
+            <div class="meta">
+              <p class="nm">{{ userName() }}</p>
+              <p class="em" *ngIf="userEmail()">{{ userEmail() }}</p>
+            </div>
+            <a routerLink="/profile" (click)="userMenuOpen.set(false)">
+              <span class="material-symbols-outlined">person_outline</span>
+              Mi perfil
+            </a>
+            <a routerLink="/settings" (click)="userMenuOpen.set(false)">
+              <span class="material-symbols-outlined">tune</span>
+              Configuración
+            </a>
+            <div class="divider"></div>
+            <button class="danger" (click)="logout()">
+              <span class="material-symbols-outlined">logout</span>
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content from child routes -->
+    <div class="flex-1 overflow-y-auto">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

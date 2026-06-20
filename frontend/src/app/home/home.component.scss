@@ -1,0 +1,80 @@
+/* Decorative orange line at the bottom of each step card in the
+ * "Tres pasos. Cero ruido." section. A brand watermark scoped to
+ * those cards — not promoted to a global utility. */
+.card-line-watermark {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.3), transparent);
+  }
+}
+
+/* Hero headline accent — the brand-orange word ("trabajo") with a
+ * soft glow. Kept here instead of styles.scss because no other page
+ * uses this exact treatment. */
+.hero-accent {
+  color: #f97316;
+  text-shadow: 0 0 30px rgba(249, 115, 22, 0.25);
+}
+
+/* Floating "match card" overlaid on the hero photo. Needs a more
+ * opaque, heavier backdrop than .glass-strong because it sits on
+ * top of a busy photo where transparency kills text contrast. */
+.match-card {
+  background: rgba(13, 17, 25, 0.78);
+  backdrop-filter: blur(32px) saturate(140%);
+  -webkit-backdrop-filter: blur(32px) saturate(140%);
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.55);
+}
+
+/* Landing navbar links. Hover and active ("current section" set on
+ * click) both go orange with an animated underline that grows from
+ * the center — avoids the visual jump of a full underline appearing
+ * at once. */
+.nav-link {
+  position: relative;
+  color: #8b8a85;
+  font-size: 16px;
+  padding: 4px 0;
+  text-decoration: none;
+  transition: color 200ms ease;
+  /* Suppresses the default :active flash some engines paint as a
+   * grey/white box on touch or click. */
+  -webkit-tap-highlight-color: transparent;
+  background: transparent;
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 0;
+    height: 2px;
+    background: #f97316;
+    transition:
+      width 220ms ease,
+      left 220ms ease;
+  }
+
+  &:hover,
+  &:focus,
+  &:focus-visible,
+  &.is-current {
+    color: #f97316;
+    background: transparent;
+    outline: none;
+  }
+
+  &:hover::after,
+  &:focus::after,
+  &.is-current::after {
+    width: 100%;
+    left: 0;
+  }
+}
