@@ -9,11 +9,10 @@ import { registerLocaleData } from '@angular/common';
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { ProfileService } from '../services/profile.service';
 import { STORAGE_KEYS } from '../constants/app-stats';
-import { UserNavComponent } from '../shared/user-nav/user-nav.component';
 
 @Component({
   selector: 'app-ats-cv',
-  imports: [CommonModule, RouterModule, UserNavComponent],
+  imports: [CommonModule, RouterModule],
   standalone: true,
   templateUrl: './ats-cv.component.html',
   styleUrls: ['./ats-cv.component.scss'],
@@ -131,19 +130,38 @@ export class AtsCvComponent implements OnInit {
       linkedin_url: profile.linkedin_url || '',
       portfolio_url: profile.portfolio_url || '',
       skills: profile.skills || '',
-      experience: this.parseTextToArray(profile.experience),
-      education: this.parseTextToArray(profile.education),
+      experience: this.parseExperienceOrEducation(profile.experience),
+      education: this.parseExperienceOrEducation(profile.education),
     };
   }
 
   /**
-   * Parse text-based experience/education to array format if needed
+   * Normaliza experience/education. El backend los guarda como TextField
+   * libre, pero el wizard de Gemini los puebla como JSON parseado a
+   * array de objetos. Soportamos los tres casos:
+   *   - array de objetos (Gemini): pasa tal cual → el HTML usa ngFor
+   *   - JSON string que parsea a array: lo parseamos a array
+   *   - string libre: lo devolvemos como string → el HTML cae al
+   *     fallback `*ngIf="!isXxxArray()"` que lo renderiza como texto
+   *
+   * Antes devolvíamos [] para cualquier string, lo que dejaba la
+   * sección rota porque el HTML cree que es un array vacío y no
+   * dispara el fallback de texto.
    */
-  parseTextToArray(text: string | any[]): any[] {
-    if (Array.isArray(text)) return text;
-    if (!text) return [];
-    // If it's a string, try to parse it or return empty
-    return [];
+  parseExperienceOrEducation(value: string | any[] | null | undefined): string | any[] {
+    if (Array.isArray(value)) return value;
+    if (!value) return '';
+    // Algunos perfiles legacy guardaron el JSON serializado como string.
+    const trimmed = value.trim();
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        // No es JSON válido — caemos al texto libre.
+      }
+    }
+    return value;
   }
 
   downloadCV(): void {

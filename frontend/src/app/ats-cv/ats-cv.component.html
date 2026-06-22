@@ -1,27 +1,9 @@
-<!-- Minimal page header (logo + back link + user nav). -->
-<header class="absolute top-0 inset-x-0 z-10">
-  <div class="max-w-6xl mx-auto flex items-center justify-between gap-4 px-6 py-6">
-    <a routerLink="/" class="text-xl font-bold text-bone tracking-tight">
-      SkilTak<span class="text-primary">.</span>
-    </a>
-    <div class="flex items-center gap-5">
-      <button
-        type="button"
-        (click)="goToDashboard()"
-        class="text-sm text-warm-grey hover:text-bone inline-flex items-center gap-1.5 transition-colors"
-      >
-        <span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: 'wght' 400"
-          >arrow_back</span
-        >
-        Volver al dashboard
-      </button>
-      <app-user-nav />
-    </div>
-  </div>
-</header>
+<!-- /cv ahora renderiza dentro de AppShell — el chrome (sidebar + topbar
+     con bell + avatar) lo provee el shell padre. No montamos header
+     propio acá. -->
 
 <!-- Loading state -->
-<div *ngIf="isLoading" class="min-h-screen flex items-center justify-center">
+<div *ngIf="isLoading" class="min-h-[60vh] flex items-center justify-center">
   <div class="glass-strong rounded-2xl px-8 py-6 flex items-center gap-4">
     <span class="loader-ring"></span>
     <span class="text-bone text-body">Cargando tu CV…</span>
@@ -29,7 +11,7 @@
 </div>
 
 <!-- Error state -->
-<div *ngIf="!isLoading && errorMessage" class="min-h-screen flex items-center justify-center px-6">
+<div *ngIf="!isLoading && errorMessage" class="min-h-[60vh] flex items-center justify-center px-6">
   <div class="glass-strong rounded-2xl p-8 max-w-md w-full text-center">
     <span
       class="inline-flex w-12 h-12 rounded-full bg-danger/15 items-center justify-center mb-4 material-symbols-outlined text-danger"
@@ -49,7 +31,7 @@
 </div>
 
 <!-- CV view -->
-<main *ngIf="!isLoading && !errorMessage && profileData" class="min-h-screen px-4 pt-28 pb-16">
+<main *ngIf="!isLoading && !errorMessage && profileData" class="px-4 py-8 lg:py-10">
   <!-- Action bar -->
   <div class="cv-container mx-auto mb-5 flex flex-wrap items-center justify-between gap-3">
     <div>

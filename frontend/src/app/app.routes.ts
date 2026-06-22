@@ -38,15 +38,12 @@ export const routes: Routes = [
   },
 
   // ===== Authenticated standalone (no shell) =====
+  // /profile sigue afuera porque es el wizard de onboarding — no
+  // queremos sidebar visible mientras el usuario completa los pasos.
   {
     path: 'profile',
     canActivate: [AutoGuard],
     loadComponent: () => import('./auth/profile/profile.component').then((m) => m.ProfileComponent),
-  },
-  {
-    path: 'cv',
-    canActivate: [AutoGuard],
-    loadComponent: () => import('./ats-cv/ats-cv.component').then((m) => m.AtsCvComponent),
   },
 
   // ===== Legacy redirects (must precede shell parent to match first) =====
@@ -74,6 +71,10 @@ export const routes: Routes = [
         path: 'me',
         loadComponent: () =>
           import('./account/my-profile/my-profile.component').then((m) => m.MyProfileComponent),
+      },
+      {
+        path: 'cv',
+        loadComponent: () => import('./ats-cv/ats-cv.component').then((m) => m.AtsCvComponent),
       },
       {
         path: 'settings',
