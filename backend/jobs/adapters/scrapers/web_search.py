@@ -27,8 +27,10 @@ Limitaciones aceptadas (decisiones explícitas, no bugs):
 
 from __future__ import annotations
 
+import ipaddress
 import logging
 import re
+import socket
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 
@@ -104,6 +106,54 @@ _LINKEDIN_CLOSED_MARKERS = (
 # expone a antibot de LinkedIn, así que mejor pocos en paralelo y rápido.
 _PROBE_MAX_WORKERS = 3
 _PROBE_TIMEOUT_SECONDS = 6
+
+# SEGURIDAD (SSRF): hosts cuyo subdominio aceptamos resolver y probar.
+# DDG nos da URLs que pasan el filtro `_JOB_SITES`, pero ese filtro es
+# substring — `https://attacker.com/linkedin.com/jobs/foo` lo pasaría.
+# Acá enforce-amos un match estricto sobre el host del URL. Sumado a
+# la denylist de IPs privadas en `_resolves_to_public_ip`, cierra el
+# vector de pedirle al backend que hablé con 127.0.0.1 o el endpoint
+# de metadata de cloud (169.254.169.254).
+_PROBE_ALLOWED_HOSTS = (
+    "linkedin.com",
+    "www.linkedin.com",
+    "co.linkedin.com",
+    "es.linkedin.com",
+)
+
+
+def _is_safe_probe_url(url: str) -> bool:
+    """Devuelve True si el URL apunta a un host de LinkedIn legítimo Y
+    resuelve a una IP pública. False ante cualquier duda."""
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return False
+    if parsed.scheme not in ("http", "https"):
+        return False
+    host = (parsed.hostname or "").lower()
+    if host not in _PROBE_ALLOWED_HOSTS:
+        return False
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except OSError:
+        return False
+    for info in infos:
+        ip_str = info[4][0]
+        try:
+            ip = ipaddress.ip_address(ip_str)
+        except ValueError:
+            return False
+        if (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_multicast
+            or ip.is_reserved
+            or ip.is_unspecified
+        ):
+            return False
+    return True
 
 
 class WebSearchJobsScraper(JobScraper):
@@ -211,7 +261,16 @@ class WebSearchJobsScraper(JobScraper):
     def _is_linkedin_offer_closed(url: str) -> bool:
         """Hace GET al URL de LinkedIn y busca markers de cerrado en el
         body. Devuelve False (mantener oferta) ante red caída, status
-        4xx/5xx o cualquier otra duda."""
+        4xx/5xx o cualquier otra duda.
+
+        SEGURIDAD (SSRF): el URL viene de DDG SERP, no es 100% confiable.
+        Antes del GET validamos host + resolución a IP pública via
+        `_is_safe_probe_url`. Si el chequeo falla, asumimos oferta viva
+        (devuelve False) y no tocamos el endpoint sospechoso.
+        """
+        if not _is_safe_probe_url(url):
+            logger.warning("Skipping unsafe probe URL: %s", url)
+            return False
         try:
             response = requests.get(
                 url,

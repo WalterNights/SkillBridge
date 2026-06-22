@@ -3,8 +3,58 @@ import string
 from datetime import timedelta
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+
+# SEGURIDAD: extensiones permitidas para imágenes de perfil. SVG queda
+# fuera a propósito — puede embed JS y, servido same-origin como `<img>`,
+# ejecutar XSS. Si en el futuro se necesita SVG, hay que sanitizarlo y
+# servirlo con Content-Disposition: attachment.
+_ALLOWED_IMAGE_EXTENSIONS = ("jpg", "jpeg", "png", "webp")
+_ALLOWED_IMAGE_FORMATS = ("JPEG", "PNG", "WEBP")
+_MAX_IMAGE_BYTES = 5 * 1024 * 1024  # 5 MB
+
+
+def validate_uploaded_image(value):
+    """Valida imágenes subidas (photo, banner) contra spoofing y bombs.
+
+    Tres capas:
+      1. Extensión en allow-list.
+      2. Tamaño máximo 5MB (anti decompression bomb + DoS de disco).
+      3. Magic bytes vía Pillow — la extensión sola no garantiza nada
+         (un atacante puede renombrar `evil.svg` a `evil.png`).
+    """
+    from PIL import Image, UnidentifiedImageError
+
+    name = getattr(value, "name", "") or ""
+    ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    if ext not in _ALLOWED_IMAGE_EXTENSIONS:
+        raise ValidationError(
+            f"Formato no permitido. Usá: {', '.join(_ALLOWED_IMAGE_EXTENSIONS)}."
+        )
+
+    size = getattr(value, "size", 0)
+    if size > _MAX_IMAGE_BYTES:
+        raise ValidationError(f"La imagen excede {_MAX_IMAGE_BYTES // (1024 * 1024)} MB.")
+
+    # Pillow lee el header y verifica el formato real (magic bytes).
+    try:
+        value.seek(0)
+        img = Image.open(value)
+        img.verify()
+    except (UnidentifiedImageError, OSError, ValueError) as exc:
+        raise ValidationError("El archivo no es una imagen válida.") from exc
+    finally:
+        try:
+            value.seek(0)
+        except Exception:
+            pass
+
+    if img.format not in _ALLOWED_IMAGE_FORMATS:
+        raise ValidationError(
+            "El contenido del archivo no coincide con un formato de imagen permitido."
+        )
 
 
 class UserManager(BaseUserManager):
@@ -62,8 +112,18 @@ class UserProfile(models.Model):
     skills = models.TextField(help_text="Lista de habilidades separadas por coma")
     experience = models.TextField(help_text="Descripción libre de experiencia")
     resume = models.FileField(upload_to="resumes/", null=True, blank=True)
-    photo = models.ImageField(upload_to="profile_photos/", null=True, blank=True)
-    banner = models.ImageField(upload_to="profile_banners/", null=True, blank=True)
+    photo = models.ImageField(
+        upload_to="profile_photos/",
+        null=True,
+        blank=True,
+        validators=[validate_uploaded_image],
+    )
+    banner = models.ImageField(
+        upload_to="profile_banners/",
+        null=True,
+        blank=True,
+        validators=[validate_uploaded_image],
+    )
     linkedin_url = models.URLField(null=True, blank=True)
     portfolio_url = models.URLField(null=True, blank=True)
     create_at = models.DateTimeField(auto_now_add=True)
@@ -95,5 +155,14 @@ class PasswordResetToken(models.Model):
 
     @staticmethod
     def generate_code():
-        """Genera un código aleatorio de 6 dígitos"""
-        return "".join(random.choices(string.digits, k=6))
+        """Genera un código de 8 dígitos usando un CSPRNG.
+
+        SEGURIDAD: 8 dígitos → 100M combos (vs 1M con 6). Con el rate
+        limit del endpoint verify (10/h por IP), atacar el código fuerza
+        bruta requeriría ~1000 años — efectivamente inviable. `secrets`
+        usa el CSPRNG del SO (vs `random` que es Mersenne Twister
+        predecible si conoce el seed).
+        """
+        import secrets
+
+        return "".join(str(secrets.randbelow(10)) for _ in range(8))

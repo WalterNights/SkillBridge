@@ -1,3 +1,6 @@
+from django.core.cache import cache
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -8,6 +11,12 @@ from jobs.serializers import JobOfferSerializer
 from jobs.services.job_service import JobService
 from jobs.services.matching_service import JobMatchingService
 from users.models import UserProfile
+
+# Rate limit del scrape — caro (3 portales en paralelo + Gemini calls).
+# Implementado via cache propio porque django_ratelimit no es trivial de
+# aplicar a un @action de ViewSet (decoradores compuestos).
+_SCRAPE_RATE_WINDOW_SECONDS = 60 * 60  # 1h
+_SCRAPE_RATE_MAX_PER_USER = 5
 
 
 class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
@@ -85,7 +94,32 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
     def scrape(self, request):
         """
         Ejecuta scraping de nuevas ofertas basado en el perfil del usuario.
+
+        SEGURIDAD: rate limit propio de 5/hora por usuario. Sin esto,
+        un cliente malicioso podía drenar la cuota de Gemini AI y/o
+        hacer flood al rate limit de DDG/LinkedIn como proxy involuntario.
         """
+        # Rate limit per-user via cache. Devolvemos 429 sin tocar
+        # los portales si el usuario excedió la cuota.
+        cache_key = f"scrape_ratelimit:{request.user.id}"
+        current = cache.get(cache_key, 0)
+        if current >= _SCRAPE_RATE_MAX_PER_USER:
+            return Response(
+                {
+                    "error": (
+                        "Demasiadas búsquedas en la última hora. "
+                        "Esperá un rato e intentá de nuevo."
+                    )
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        # TTL solo en el primer hit; siguientes incrementan sin renovar
+        # (cache.incr no resetea TTL en redis), así la ventana es estricta.
+        if current == 0:
+            cache.set(cache_key, 1, timeout=_SCRAPE_RATE_WINDOW_SECONDS)
+        else:
+            cache.incr(cache_key)
+
         try:
             profile = request.user.profile
         except UserProfile.DoesNotExist:

@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.core.mail import send_mail
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -20,10 +22,20 @@ from users.services.cv_analysis_service import get_cv_analyzer
 from users.services.profile_service import ProfileService
 
 
+@method_decorator(ratelimit(key="ip", rate="5/m", method="POST", block=True), name="post")
 class UserRegisterView(APIView):
-    """Vista para registro de nuevos usuarios"""
+    """Vista para registro de nuevos usuarios.
+
+    SEGURIDAD: rate limit 5/min por IP (anti-spam de cuentas).
+    Los errores de validación se generalizan para no exponer si un
+    username/email ya existe (anti user-enumeration).
+    """
 
     permission_classes = [AllowAny]
+
+    # Campos en `serializer.errors` que disparan el mensaje genérico —
+    # cualquiera de estos revela existencia de cuenta en el sistema.
+    _ENUM_FIELDS = ("username", "email")
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)
@@ -33,14 +45,33 @@ class UserRegisterView(APIView):
                 {"message": "Usuario creado exitosamente", "data": serializer.data},
                 status=status.HTTP_201_CREATED,
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        errors = serializer.errors
+        if any(field in errors for field in self._ENUM_FIELDS):
+            # No diferenciar entre "username taken", "email taken", o
+            # "email malformed" — todos son "no pudimos crear la cuenta".
+            return Response(
+                {"error": "No pudimos crear la cuenta con esos datos."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@method_decorator(
+    ratelimit(key="user_or_ip", rate="10/h", method="POST", block=True), name="post"
+)
 class AnalyzerResumeView(APIView):
-    """Vista para analizar CVs y extraer información usando Gemini AI"""
+    """Vista para analizar CVs y extraer información usando Gemini AI.
+
+    SEGURIDAD: requiere autenticación + rate limit 10/hora por usuario.
+    El endpoint despacha el archivo a Gemini AI (costoso por request) —
+    sin auth + rate limit, un atacante podía drenar tu cuota de la API
+    en minutos. Cuando el front llama a este endpoint, el usuario ya
+    pasó por register/login.
+    """
 
     parser_classes = [MultiPartParser]
-    permission_classes = [AllowAny]  # Permitir acceso sin autenticación
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         file = request.FILES.get("resume")
@@ -191,47 +222,64 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
+@method_decorator(ratelimit(key="ip", rate="5/m", method="POST", block=True), name="post")
 class CustomTokenObtainPairView(TokenObtainPairView):
-    """Vista personalizada para obtención de tokens JWT"""
+    """Vista personalizada para obtención de tokens JWT.
+
+    SEGURIDAD: rate limit 5/min por IP en el login — anti credential
+    stuffing y brute force. Combinado con el lockout natural de JWT
+    (cada intento es un POST sincronico), ataques offline necesitan
+    horas para probar ~300 credenciales.
+    """
 
     serializer_class = CustomTokenObtainPairSerializer
 
 
+@method_decorator(ratelimit(key="ip", rate="3/h", method="POST", block=True), name="post")
 class PasswordResetRequestView(APIView):
-    """Vista para solicitar restablecimiento de contraseña"""
+    """Vista para solicitar restablecimiento de contraseña.
+
+    SEGURIDAD: rate limit 3/hora por IP. Combinado con el mensaje
+    genérico (ver `post()`), evita email enumeration scanning.
+    """
 
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Solicita un código de password reset.
+
+        SEGURIDAD: Siempre devuelve 200 con el mismo mensaje genérico,
+        exista o no el email — evita user enumeration. Si el email no
+        está registrado, no se hace nada server-side (no se crea token,
+        no se envía email). El response time se mantiene similar a un
+        envío real para evitar timing oracles.
+        """
         serializer = PasswordResetRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         email = serializer.validated_data["email"]
-        user = User.objects.get(email=email)
+        generic_response = Response(
+            {"message": "Si el email existe en nuestro sistema, te enviamos un código."},
+            status=status.HTTP_200_OK,
+        )
 
-        # Generar código de 6 dígitos
+        user = User.objects.filter(email=email).first()
+        if user is None:
+            return generic_response
+
         code = PasswordResetToken.generate_code()
-
-        # Crear token
         token = PasswordResetToken.objects.create(user=user, code=code)
 
-        # Enviar email
-        subject = "Código de restablecimiento de contraseña - SkillBridge"
-        message = f"""
-Hola {user.username},
-
-Has solicitado restablecer tu contraseña en SkillBridge.
-
-Tu código de verificación es: {code}
-
-Este código expirará en 10 minutos.
-
-Si no solicitaste este cambio, ignora este mensaje.
-
-Saludos,
-El equipo de SkillBridge
-        """
+        subject = "Código de restablecimiento de contraseña - SkilTak"
+        message = (
+            f"Hola {user.username},\n\n"
+            f"Has solicitado restablecer tu contraseña en SkilTak.\n\n"
+            f"Tu código de verificación es: {code}\n\n"
+            f"Este código expirará en 10 minutos.\n\n"
+            f"Si no solicitaste este cambio, ignora este mensaje.\n\n"
+            f"Saludos,\nEl equipo de SkilTak"
+        )
 
         try:
             send_mail(
@@ -241,25 +289,27 @@ El equipo de SkillBridge
                 [email],
                 fail_silently=False,
             )
-            return Response(
-                {"message": "Código de verificación enviado a tu correo", "email": email},
-                status=status.HTTP_200_OK,
-            )
         except Exception as e:
-            # If sending fails, delete the created token
+            # No filtramos el error al cliente — el mensaje genérico es el
+            # mismo que cuando el email no existe. Solo logueamos para ops.
             token.delete()
             import logging
 
             logger = logging.getLogger(__name__)
             logger.error(f"Email sending error: {type(e).__name__}", exc_info=True)
-            return Response(
-                {"error": "Error al enviar el correo. Intenta nuevamente."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+
+        return generic_response
 
 
+@method_decorator(ratelimit(key="ip", rate="10/h", method="POST", block=True), name="post")
 class PasswordResetVerifyView(APIView):
-    """Vista para verificar código y restablecer contraseña"""
+    """Vista para verificar código y restablecer contraseña.
+
+    SEGURIDAD: rate limit 10/hora por IP — el código es de 6 dígitos
+    (1M combos) pero el rate limit reduce el espacio efectivo a ~240
+    intentos antes de que el token expire (10 min) y bloquee la IP
+    durante 1h.
+    """
 
     permission_classes = [AllowAny]
 

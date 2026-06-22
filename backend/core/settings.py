@@ -33,6 +33,8 @@ INSTALLED_APPS = [
     "dashboard",
     "corsheaders",
     "rest_framework",
+    # Necesario para invalidar refresh tokens al rotar (SEGURIDAD).
+    "rest_framework_simplejwt.token_blacklist",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -114,6 +116,18 @@ AUTH_USER_MODEL = "users.User"
 CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="http://localhost:4200", cast=Csv())
 CORS_ALLOW_CREDENTIALS = True
 
+# SEGURIDAD: prevenir misconfiguración de CORS en prod. La combinación
+# wildcard + credentials viola la spec del navegador y, si se logra
+# servir, expone los tokens del usuario a cualquier origen.
+if IS_PRODUCTION:
+    for _origin in CORS_ALLOWED_ORIGINS:
+        if "*" in _origin or _origin.strip() in ("", "null"):
+            from django.core.exceptions import ImproperlyConfigured
+
+            raise ImproperlyConfigured(
+                f"CORS_ALLOWED_ORIGINS contiene un valor inseguro en producción: {_origin!r}"
+            )
+
 
 # ----- DRF + JWT -----
 REST_FRAMEWORK = {
@@ -126,9 +140,16 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "ROTATE_REFRESH_TOKENS": False,
+    # SEGURIDAD:
+    # - Access token corto (15 min) limita ventana de explotación si
+    #   un atacante exfiltra el token via XSS o sniffing.
+    # - Refresh token rota en cada uso (`ROTATE_REFRESH_TOKENS=True`)
+    #   y el viejo se blacklistea (`BLACKLIST_AFTER_ROTATION=True`).
+    #   Si un refresh es robado, en cuanto el legítimo lo use el del
+    #   atacante queda invalidado.
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
 }
 
@@ -159,6 +180,20 @@ CACHES = {
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
+
+# SEGURIDAD: sesiones más cortas + cierre por browser close. La sesión
+# vive 8h (jornada laboral) y se invalida si el usuario cierra el
+# browser. Reduce ventana de explotación si una máquina compartida
+# queda sin lock.
+SESSION_COOKIE_AGE = 60 * 60 * 8  # 8 horas
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# SEGURIDAD: límite duro de body request para mitigar DoS por upload
+# masivo. Coincide con `_MAX_IMAGE_BYTES` del validator + margen para
+# multipart overhead. Para uploads de CV (10MB) usar un endpoint
+# dedicado con override local si es necesario.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 12 * 1024 * 1024  # 12 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 12 * 1024 * 1024
 
 
 # ----- Archivos estáticos y media -----
@@ -195,6 +230,7 @@ if IS_PRODUCTION:
     SECURE_HSTS_PRELOAD = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+    SECURE_BROWSER_XSS_FILTER = True  # legacy header, no daña (defense-in-depth)
     X_FRAME_OPTIONS = "DENY"
     CSRF_TRUSTED_ORIGINS = config(
         "CSRF_TRUSTED_ORIGINS",

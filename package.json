@@ -5,11 +5,11 @@
   "scripts": {
     "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
     "start:frontend": "cd frontend && npm start",
-    "start:backend": "cd backend && python manage.py runserver",
+    "start:backend": "cd backend && env/Scripts/python manage.py runserver 0.0.0.0:8000",
     "dev": "npm run start",
     "install:all": "npm install && cd frontend && npm install && cd ..",
     "frontend": "cd frontend && npm start",
-    "backend": "cd backend && python manage.py runserver"
+    "backend": "cd backend && env/Scripts/python manage.py runserver 0.0.0.0:8000"
   },
   "keywords": [
     "job-matching",

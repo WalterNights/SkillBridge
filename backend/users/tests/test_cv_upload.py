@@ -53,14 +53,26 @@ def _stub_analyzer(mocker, *, validate=(True, None), analyze=None, analyze_raise
 @pytest.mark.integration
 @pytest.mark.django_db
 class TestResumeAnalyzer:
-    def test_rejects_request_without_file(self, api_client):
-        response = api_client.post("/api/users/resume-analyzer/", {})
+    # El endpoint pasó a requerir autenticación (anti cost-bomb a Gemini).
+    # Todos los casos usan `authed_client` salvo el regression que valida
+    # que sin sesión devuelve 401 en lugar de procesar el PDF.
+
+    def test_rejects_unauthenticated(self, api_client, fake_pdf):
+        response = api_client.post(
+            "/api/users/resume-analyzer/",
+            {"resume": fake_pdf},
+            format="multipart",
+        )
+        assert response.status_code == 401
+
+    def test_rejects_request_without_file(self, authed_client):
+        response = authed_client.post("/api/users/resume-analyzer/", {})
         assert response.status_code == 400
         assert "error" in response.json()
 
-    def test_returns_extracted_data_on_success(self, api_client, fake_pdf, mocker):
+    def test_returns_extracted_data_on_success(self, authed_client, fake_pdf, mocker):
         _stub_analyzer(mocker)
-        response = api_client.post(
+        response = authed_client.post(
             "/api/users/resume-analyzer/",
             {"resume": fake_pdf},
             format="multipart",
@@ -90,9 +102,9 @@ class TestResumeAnalyzer:
         assert data["first_name"] == "Alice"
         assert data["skills"] == "python, django, postgresql"
 
-    def test_returns_400_on_validation_failure(self, api_client, fake_pdf, mocker):
+    def test_returns_400_on_validation_failure(self, authed_client, fake_pdf, mocker):
         _stub_analyzer(mocker, validate=(False, "Archivo muy grande"))
-        response = api_client.post(
+        response = authed_client.post(
             "/api/users/resume-analyzer/",
             {"resume": fake_pdf},
             format="multipart",
@@ -100,9 +112,9 @@ class TestResumeAnalyzer:
         assert response.status_code == 400
         assert response.json()["error"] == "Archivo muy grande"
 
-    def test_returns_500_on_analyzer_exception(self, api_client, fake_pdf, mocker):
+    def test_returns_500_on_analyzer_exception(self, authed_client, fake_pdf, mocker):
         _stub_analyzer(mocker, analyze_raises=RuntimeError("Gemini down"))
-        response = api_client.post(
+        response = authed_client.post(
             "/api/users/resume-analyzer/",
             {"resume": fake_pdf},
             format="multipart",

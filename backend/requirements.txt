@@ -14,6 +14,8 @@ asgiref==3.8.1
 
 whitenoise==6.8.2
 
+django-ratelimit==4.1.0
+
 
 
 # Celery & Task Queue

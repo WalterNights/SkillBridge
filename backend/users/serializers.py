@@ -5,7 +5,10 @@ from users.models import PasswordResetToken, User, UserProfile
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    rol = serializers.CharField(required=False, default="user")
+    # SEGURIDAD: `rol` es read-only para prevenir mass-assignment desde
+    # el endpoint público de register. Sin esto, cualquiera podía POSTear
+    # con `{"rol": "admin"}` y crearse cuenta privilegiada.
+    rol = serializers.CharField(read_only=True)
 
     class Meta:
         model = User
@@ -98,32 +101,42 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
-    """Serializer para solicitar restablecimiento de contraseña"""
+    """Serializer para solicitar restablecimiento de contraseña.
+
+    SEGURIDAD: NO validamos acá si el email existe. Devolver "no existe
+    usuario" sería un vector de user enumeration — un atacante podría
+    recorrer una lista de emails (de breaches públicas) y filtrar cuáles
+    tienen cuenta acá para targeted phishing. La view decide si mandar
+    o no el email basado en si el user existe, pero siempre responde
+    200 con mensaje genérico.
+    """
 
     email = serializers.EmailField()
-
-    def validate_email(self, value):
-        """Verifica que el email exista en el sistema"""
-        if not User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("No existe un usuario con este correo electrónico")
-        return value
 
 
 class PasswordResetVerifySerializer(serializers.Serializer):
     """Serializer para verificar código y establecer nueva contraseña"""
 
     email = serializers.EmailField()
-    code = serializers.CharField(max_length=6, min_length=6)
+    # Aceptamos tanto los códigos viejos de 6 dígitos (compat) como los
+    # nuevos de 8 hasta que vencen los emitidos antes del bump de entropía.
+    code = serializers.CharField(max_length=8, min_length=6)
     new_password = serializers.CharField(
         write_only=True, min_length=8, style={"input_type": "password"}
     )
 
     def validate(self, data):
-        """Valida que el usuario y el código sean correctos"""
+        """Valida que el usuario y el código sean correctos.
+
+        SEGURIDAD: si el email no existe O el código no matchea, devolvemos
+        el MISMO error genérico. Diferenciar "usuario no encontrado" vs
+        "código inválido" sería user enumeration via password reset.
+        """
+        generic_error = "Código inválido o expirado."
         try:
             user = User.objects.get(email=data["email"])
         except User.DoesNotExist as exc:
-            raise serializers.ValidationError("Usuario no encontrado") from exc
+            raise serializers.ValidationError(generic_error) from exc
 
         # Buscar el token más reciente no usado
         token = (
@@ -132,11 +145,8 @@ class PasswordResetVerifySerializer(serializers.Serializer):
             .first()
         )
 
-        if not token:
-            raise serializers.ValidationError("Código inválido o ya utilizado")
-
-        if not token.is_valid():
-            raise serializers.ValidationError("El código ha expirado. Solicita uno nuevo")
+        if not token or not token.is_valid():
+            raise serializers.ValidationError(generic_error)
 
         data["user"] = user
         data["token"] = token
