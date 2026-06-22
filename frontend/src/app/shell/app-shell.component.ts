@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
+import { TipService } from '../services/tip.service';
 import { UserNavComponent } from '../shared/user-nav/user-nav.component';
-import { getTipOfTheDay } from './daily-tips';
+import { getTipOfTheDay as getStaticTipOfTheDay } from './daily-tips';
 
 const SIDEBAR_COLLAPSED_KEY = 'shell_sidebar_collapsed';
 
@@ -30,6 +32,8 @@ const SIDEBAR_COLLAPSED_KEY = 'shell_sidebar_collapsed';
 })
 export class AppShellComponent {
   private auth = inject(AuthService);
+  private tipApi = inject(TipService);
+  private destroyRef = inject(DestroyRef);
 
   /** Mobile drawer open state. Ignored on desktop. */
   drawerOpen = signal(false);
@@ -37,10 +41,22 @@ export class AppShellComponent {
   /** Desktop sidebar collapsed (icon-only) state. Persisted to localStorage. */
   sidebarCollapsed = signal(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true');
 
-  /** Tip de hoy para el widget del sidebar. Computado una vez al
-   * montar el componente — la rotación es por día del año, no por
-   * minuto, así que no hay razón para reactividad. */
-  tipOfTheDay = getTipOfTheDay();
+  /** Tip de hoy para el widget del sidebar.
+   *
+   * Inicializo con el static (sync, instantáneo, sin flicker en first
+   * paint) y después dejo que el service intente refrescar desde el
+   * endpoint. Si el endpoint trae uno distinto (porque el pool de DB
+   * incluye tips AI-generated nuevos), reemplazo. Si falla, se queda
+   * con el static que ya estaba.
+   */
+  tipOfTheDay = signal(getStaticTipOfTheDay());
+
+  constructor() {
+    this.tipApi
+      .getTipOfTheDay()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((text) => this.tipOfTheDay.set(text));
+  }
 
   /**
    * Whether the current user has admin privileges. Placeholder until

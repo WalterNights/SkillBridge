@@ -40,6 +40,11 @@ cd ..
 echo "==> Restarting services"
 sudo systemctl restart skiltak-gunicorn
 sudo systemctl restart skiltak-celery
+# Beat es opcional — si el unit no está instalado, no fallar el deploy.
+# El usuario corre el provision.sh una vez para enable+start el unit.
+if systemctl list-unit-files skiltak-celerybeat.service &>/dev/null; then
+    sudo systemctl restart skiltak-celerybeat || true
+fi
 
 echo "==> Health check"
 sleep 2

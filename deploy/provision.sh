@@ -67,14 +67,17 @@ python manage.py collectstatic --noinput
 EOF
 
 echo "==> 7/8 Servicios systemd"
-install -m 644 "$APP_DIR/deploy/systemd/skiltak-gunicorn.socket"  /etc/systemd/system/
-install -m 644 "$APP_DIR/deploy/systemd/skiltak-gunicorn.service" /etc/systemd/system/
-install -m 644 "$APP_DIR/deploy/systemd/skiltak-celery.service"   /etc/systemd/system/
+install -m 644 "$APP_DIR/deploy/systemd/skiltak-gunicorn.socket"   /etc/systemd/system/
+install -m 644 "$APP_DIR/deploy/systemd/skiltak-gunicorn.service"  /etc/systemd/system/
+install -m 644 "$APP_DIR/deploy/systemd/skiltak-celery.service"    /etc/systemd/system/
+install -m 644 "$APP_DIR/deploy/systemd/skiltak-celerybeat.service" /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now skiltak-gunicorn.socket skiltak-gunicorn.service skiltak-celery.service
+systemctl enable --now \
+    skiltak-gunicorn.socket skiltak-gunicorn.service \
+    skiltak-celery.service skiltak-celerybeat.service
 
 cat >/etc/sudoers.d/skiltak-deploy <<EOF
-$APP_USER ALL=(root) NOPASSWD: /bin/systemctl restart skiltak-gunicorn, /bin/systemctl restart skiltak-celery
+$APP_USER ALL=(root) NOPASSWD: /bin/systemctl restart skiltak-gunicorn, /bin/systemctl restart skiltak-celery, /bin/systemctl restart skiltak-celerybeat
 EOF
 chmod 440 /etc/sudoers.d/skiltak-deploy
 

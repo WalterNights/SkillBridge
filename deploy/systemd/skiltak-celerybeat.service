@@ -1,0 +1,23 @@
+[Unit]
+Description=SkilTak Celery beat scheduler
+After=network.target redis-server.service skiltak-celery.service
+
+[Service]
+Type=simple
+User=skiltak
+Group=www-data
+WorkingDirectory=/var/www/skiltak/backend
+EnvironmentFile=/var/www/skiltak/.env
+# `--pidfile=` vacío evita que beat escriba un pidfile (systemd se
+# encarga). `--schedule=/var/www/skiltak/celerybeat-schedule` guarda
+# el state entre restarts (qué tareas se corrieron, evita doble
+# ejecución si se reinicia justo en la ventana).
+ExecStart=/var/www/skiltak/venv/bin/celery -A core beat \
+    --loglevel=info \
+    --pidfile= \
+    --schedule=/var/www/skiltak/celerybeat-schedule
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

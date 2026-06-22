@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "users",
     "dashboard",
     "notifications",
+    "tips",
     "corsheaders",
     "rest_framework",
     # Necesario para invalidar refresh tokens al rotar (SEGURIDAD).
@@ -211,6 +212,19 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutos
+
+# Beat schedule — tareas recurrentes. Requiere `skiltak-celerybeat.service`
+# corriendo en el VPS además del worker. En dev se levanta a mano con
+# `celery -A core beat`.
+from celery.schedules import crontab  # noqa: E402
+
+CELERY_BEAT_SCHEDULE = {
+    # Lunes 06:00 UTC (03:00 ART, 01:00 COT): horario de baja carga.
+    "generate-weekly-tips": {
+        "task": "tips.generate_weekly_tips",
+        "schedule": crontab(hour=6, minute=0, day_of_week=1),
+    },
+}
 
 
 # ----- Redis cache + sesiones -----
