@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { UserNavComponent } from '../shared/user-nav/user-nav.component';
+import { getTipOfTheDay } from './daily-tips';
 
 const SIDEBAR_COLLAPSED_KEY = 'shell_sidebar_collapsed';
 
@@ -35,6 +36,11 @@ export class AppShellComponent {
 
   /** Desktop sidebar collapsed (icon-only) state. Persisted to localStorage. */
   sidebarCollapsed = signal(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true');
+
+  /** Tip de hoy para el widget del sidebar. Computado una vez al
+   * montar el componente — la rotación es por día del año, no por
+   * minuto, así que no hay razón para reactividad. */
+  tipOfTheDay = getTipOfTheDay();
 
   /**
    * Whether the current user has admin privileges. Placeholder until
