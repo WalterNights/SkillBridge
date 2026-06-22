@@ -42,15 +42,37 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "skills",
             "experience",
             "resume",
+            "photo",
+            "banner",
             "linkedin_url",
             "portfolio_url",
         ]
         read_only_fields = ["phone"]
 
     def validate_linkedin_url(self, value):
-        if value and not value.startswith("https://www"):
-            value = f"https://www.{value}"
-        return value
+        """Normaliza el URL de LinkedIn sin romper los que ya vienen bien.
+
+        Casos:
+          - `https://linkedin.com/in/x`   → se respeta (ya tiene scheme)
+          - `https://www.linkedin.com/.`  → se respeta
+          - `www.linkedin.com/in/x`       → `https://www.linkedin.com/...`
+          - `linkedin.com/in/x`           → `https://www.linkedin.com/...`
+          - vacío                         → vacío
+
+        La regla anterior (`if not value.startswith("https://www")`)
+        prependía `https://www.` a cualquier cosa que no fuese ya
+        canonical, lo cual le pegaba el prefijo DOS VECES a URLs ya
+        válidas tipo `https://linkedin.com/in/x` y las dejaba como
+        `https://www.https://linkedin.com/in/x`.
+        """
+        if not value:
+            return value
+        value = value.strip()
+        if value.startswith(("http://", "https://")):
+            return value
+        if value.startswith("www."):
+            return f"https://{value}"
+        return f"https://www.{value}"
 
     def create(self, validate_data):
         phone_code = validate_data.pop("phone_code")
@@ -100,8 +122,8 @@ class PasswordResetVerifySerializer(serializers.Serializer):
         """Valida que el usuario y el código sean correctos"""
         try:
             user = User.objects.get(email=data["email"])
-        except User.DoesNotExist:
-            raise serializers.ValidationError("Usuario no encontrado")
+        except User.DoesNotExist as exc:
+            raise serializers.ValidationError("Usuario no encontrado") from exc
 
         # Buscar el token más reciente no usado
         token = (

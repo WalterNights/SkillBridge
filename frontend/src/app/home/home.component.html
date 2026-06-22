@@ -33,17 +33,23 @@
       >
     </div>
 
-    <!-- Right actions -->
+    <!-- Right actions —
+         logged out: Ingresar + Empezar CTA
+         logged in:  bell + avatar dropdown (Inicio, Perfil, CV, Cerrar sesión) -->
     <div class="flex items-center gap-5 justify-self-end">
-      <a
-        routerLink="/auth/login"
-        *ngIf="!isLoggedIn()"
-        class="text-body text-warm-grey hover:text-bone transition-colors"
-        >Ingresar</a
-      >
-      <button (click)="startProfile()" class="btn-primary px-5 py-2 rounded-lg text-sm">
-        {{ isLoggedIn() ? (profileComplete() ? 'Ir al dashboard' : 'Completar perfil') : 'Empezar' }}
-      </button>
+      <ng-container *ngIf="!isLoggedIn(); else loggedActions">
+        <a
+          routerLink="/auth/login"
+          class="text-body text-warm-grey hover:text-bone transition-colors"
+          >Ingresar</a
+        >
+        <button (click)="startProfile()" class="btn-primary px-5 py-2 rounded-lg text-sm">
+          Empezar
+        </button>
+      </ng-container>
+      <ng-template #loggedActions>
+        <app-user-nav />
+      </ng-template>
     </div>
   </div>
 </nav>
@@ -62,7 +68,7 @@
       </p>
       <div class="flex flex-wrap gap-4 pt-2 items-center">
         <button (click)="startProfile()" class="btn-primary px-7 py-3.5 rounded-xl text-body-lg">
-          Crear mi perfil &nbsp;→
+          {{ isLoggedIn() ? 'Ir al dashboard' : 'Crear mi perfil' }} &nbsp;→
         </button>
       </div>
     </div>
@@ -370,18 +376,63 @@
   </div>
 </section>
 
-<!-- SECTION — Final CTA -->
+<!-- SECTION — Final block.
+     Logged out: CTA "Empezar" (registro).
+     Logged in:  muro de comentarios positivos de la comunidad — el CTA
+                 no le aporta a alguien que ya está dentro del producto. -->
 <section class="px-gutter py-16">
   <div class="max-w-container-max mx-auto" appReveal>
-    <div class="glass-strong rounded-3xl px-12 py-20 lg:py-24 text-center">
-      <h2
-        class="text-[32px] sm:text-display-md text-bone mb-6 max-w-3xl mx-auto leading-[1.15] tracking-[-0.03em] font-black"
-      >
-        Tu próxima oportunidad no está en una lista genérica.
-      </h2>
-      <p class="text-body-lg text-warm-grey mb-10">Empezá en 3 minutos.</p>
-      <button (click)="startProfile()" class="btn-primary px-9 py-4 rounded-2xl text-body-lg">Empezar &nbsp;→</button>
+    <div *ngIf="!isLoggedIn(); else commentsWall">
+      <div class="glass-strong rounded-3xl px-12 py-20 lg:py-24 text-center">
+        <h2
+          class="text-[32px] sm:text-display-md text-bone mb-6 max-w-3xl mx-auto leading-[1.15] tracking-[-0.03em] font-black"
+        >
+          Tu próxima oportunidad no está en una lista genérica.
+        </h2>
+        <p class="text-body-lg text-warm-grey mb-10">Empezá en 3 minutos.</p>
+        <button (click)="startProfile()" class="btn-primary px-9 py-4 rounded-2xl text-body-lg">
+          Empezar &nbsp;→
+        </button>
+      </div>
     </div>
+
+    <ng-template #commentsWall>
+      <div class="glass-strong rounded-3xl px-8 sm:px-12 py-14 lg:py-16">
+        <div class="text-center mb-12">
+          <p class="text-xs uppercase tracking-[0.18em] text-primary font-semibold mb-3">
+            Lo que dice nuestra comunidad
+          </p>
+          <h2
+            class="text-[28px] sm:text-[40px] text-bone leading-[1.15] tracking-[-0.02em] font-black max-w-2xl mx-auto"
+          >
+            Conversaciones reales de gente que ya encontró su próximo paso.
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <article
+            *ngFor="let c of positiveComments"
+            class="rounded-2xl border-l-2 border-primary bg-canvas/40 backdrop-blur p-6 flex flex-col"
+          >
+            <div class="flex gap-1 mb-4" [attr.aria-label]="'Calificación ' + c.rating + ' de 5'">
+              <span
+                *ngFor="let _ of [].constructor(c.rating)"
+                class="material-symbols-outlined text-primary"
+                style="font-size: 14px; font-variation-settings: 'FILL' 1"
+                >star</span
+              >
+            </div>
+            <p class="text-base text-bone italic font-light leading-snug mb-5 flex-1">"{{ c.quote }}"</p>
+            <div class="flex items-center gap-3 pt-4 border-t border-white/[0.06]">
+              <span class="block w-6 h-px bg-primary shrink-0" aria-hidden="true"></span>
+              <p class="text-xs text-warm-grey uppercase tracking-[0.12em]">
+                {{ c.name }} — {{ c.role }} · {{ c.city }}
+              </p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </ng-template>
   </div>
 </section>
 

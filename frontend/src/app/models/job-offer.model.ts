@@ -6,6 +6,7 @@ export interface JobOffer {
   summary: string;
   keywords: string;
   url: string;
+  portal?: string;
   //Fields read Only
   matched_skills: string[];
   missing_skills: string[];

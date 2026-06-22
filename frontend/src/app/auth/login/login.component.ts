@@ -79,7 +79,16 @@ export class LoginComponent {
   }
 
   /**
-   * Handles form submission and login process
+   * Handles form submission and login process.
+   *
+   * Redirect priority post-login:
+   *   1. Intent explícito (REDIRECT_AFTER_LOGIN) — el AutoGuard lo
+   *      setea cuando el usuario intentaba abrir una ruta privada y
+   *      lo bouncearon al login. Respetar lo que quería ver.
+   *   2. Si el perfil ya está completo → /dashboard (home del usuario).
+   *   3. Si el perfil NO está completo → /profile, para que arme su
+   *      perfil sin dar un click extra. Antes íbamos al landing y el
+   *      usuario tenía que descubrir "Mi perfil" por su cuenta.
    */
   onSubmit(): void {
     if (this.loginForm.invalid) return;
@@ -89,21 +98,23 @@ export class LoginComponent {
       next: () => {
         setTimeout(() => {
           this.isLoading = false;
-          const redirectPath = sessionStorage.getItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN) || '';
-          sessionStorage.removeItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN);
 
-          if (
-            this.storageMethod.getStorageItem(this.storage, STORAGE_KEYS.PROFILE_COMPLETE) ===
-            'true'
-          ) {
-            // Si el perfil ya está armado, el usuario tiene su propio home
-            // (dashboard con métricas + match) — saltarse landing/results
-            // ahorra dos clicks y es lo que esperan los retornantes.
-            this.router.navigate(['/dashboard']);
-          } else {
-            this.router.navigate([redirectPath]);
+          const intendedRedirect = sessionStorage.getItem(
+            STORAGE_KEYS.REDIRECT_AFTER_LOGIN,
+          );
+          sessionStorage.removeItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN);
+          if (intendedRedirect) {
+            this.router.navigateByUrl(intendedRedirect);
+            return;
           }
-        }, 1200);
+
+          const profileComplete =
+            this.storageMethod.getStorageItem(
+              this.storage,
+              STORAGE_KEYS.PROFILE_COMPLETE,
+            ) === 'true';
+          this.router.navigate([profileComplete ? '/dashboard' : '/profile']);
+        }, 400);
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading = false;

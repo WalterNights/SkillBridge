@@ -1,0 +1,25 @@
+/* Brand-orange accent for the hero word ("gratis"). Shared visual
+ * convention with the landing hero — defined locally because no
+ * other module promotes it to a global utility yet. */
+.hero-accent {
+  color: #f97316;
+  text-shadow: 0 0 30px rgba(249, 115, 22, 0.25);
+}
+
+/* Loading spinner used inside the overlay shown while register is
+ * in-flight. Sized to match the .btn-* family's visual weight. */
+.loader-ring {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(249, 115, 22, 0.2);
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: loader-spin 800ms linear infinite;
+}
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

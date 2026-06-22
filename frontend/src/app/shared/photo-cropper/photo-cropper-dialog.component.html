@@ -1,0 +1,65 @@
+<div class="cropper-backdrop" (click)="cancel()"></div>
+
+<div class="cropper-dialog" [class.wide]="isWide" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+  <header class="cropper-header">
+    <h2 class="cropper-title">{{ title }}</h2>
+    <button type="button" class="cropper-close" (click)="cancel()" aria-label="Cerrar">
+      <span class="material-symbols-outlined" style="font-size: 18px">close</span>
+    </button>
+  </header>
+
+  <div class="cropper-stage">
+    <div
+      class="viewport"
+      [class.round]="roundCropper"
+      [style.width.px]="viewportW"
+      [style.height.px]="viewportH"
+      (mousedown)="onDragStart($event)"
+      (mousemove)="onDragMove($event)"
+      (mouseup)="onDragEnd()"
+      (mouseleave)="onDragEnd()"
+      (touchstart)="onDragStart($event)"
+      (touchmove)="onDragMove($event)"
+      (touchend)="onDragEnd()"
+    >
+      <img
+        *ngIf="imageUrl"
+        [src]="imageUrl"
+        [style.transform]="cssTransform"
+        (load)="onImageLoad($event)"
+        draggable="false"
+        alt=""
+      />
+      <div class="mask" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <div class="cropper-controls">
+    <span class="zoom-label">
+      <span class="material-symbols-outlined" style="font-size: 14px">zoom_out</span>
+    </span>
+    <input
+      type="range"
+      class="zoom-slider"
+      min="1"
+      max="3"
+      step="0.05"
+      [value]="zoomFactor"
+      (input)="onZoomChange($event)"
+    />
+    <span class="zoom-label">
+      <span class="material-symbols-outlined" style="font-size: 14px">zoom_in</span>
+    </span>
+  </div>
+
+  <p class="cropper-hint">Arrastrá la imagen para reposicionarla y usá el zoom para ajustar.</p>
+
+  <footer class="cropper-footer">
+    <button type="button" class="footer-btn ghost" (click)="cancel()" [disabled]="isProcessing">Cancelar</button>
+    <button type="button" class="footer-btn primary" (click)="apply()" [disabled]="isProcessing || !imageUrl">
+      <span class="loader-ring" *ngIf="isProcessing"></span>
+      <span class="material-symbols-outlined" *ngIf="!isProcessing" style="font-size: 14px"> check </span>
+      {{ applyLabel }}
+    </button>
+  </footer>
+</div>

@@ -4,15 +4,16 @@ import { CommonModule, Location } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { LoaderModalComponent } from '../../shared/loader-modal/loader-modal.component';
 import { ProfileBuilderComponent } from '../../shared/profile-builder/profile-builder.component';
 import { CountryCode } from '../../models/country-code.model';
 import { CountryCodeService } from '../../services/country-code.service';
+import { AuthService } from '../auth.service';
+import { UserNavComponent } from '../../shared/user-nav/user-nav.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, LoaderModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, UserNavComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss'],
 })
@@ -21,9 +22,7 @@ export class ProfileComponent implements OnInit {
   selectedFile: File | null = null;
   errorMessage = '';
   isLoading = false;
-  showLoader = false;
   successMessage = '';
-  profileSaved = false;
   countryCodes: CountryCode[] = [];
   countries = Country.getAllCountries();
   cities: any[] = [];
@@ -31,6 +30,7 @@ export class ProfileComponent implements OnInit {
   constructor(
     private countryCodeService: CountryCodeService,
     private profileBuldier: ProfileBuilderComponent,
+    private authService: AuthService,
     private titleService: Title,
     private location: Location,
     private router: Router,
@@ -39,6 +39,14 @@ export class ProfileComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // /profile es el wizard de onboarding (corre una sola vez post-registro).
+    // Si el usuario ya completó su perfil y vuelve acá (refresh, bookmark,
+    // link viejo), lo redirigimos a /me que es la pantalla de edición
+    // continua. Evita confusión + previene crear un perfil duplicado.
+    if (this.authService.isProfileComplete$ && sessionStorage.getItem('is_profile_complete') === 'true') {
+      this.router.navigate(['/me']);
+      return;
+    }
     this.countryCodeService.getCountryCodes().subscribe((data) => {
       this.countryCodes = data;
     });
@@ -67,6 +75,7 @@ export class ProfileComponent implements OnInit {
         this.profileForm.patchValue({
           first_name: data.first_name,
           last_name: data.last_name,
+          email: data.email,
           phone_code: data.phone_code,
           phone_number: data.phone_number,
           country: country_code,
@@ -165,35 +174,23 @@ export class ProfileComponent implements OnInit {
       this.selectedFile,
       () => {
         this.isLoading = true;
-        this.profileSaved = false;
       },
       () => {
-        setTimeout(() => {
-          this.isLoading = false;
-          this.profileSaved = true;
-          this.successMessage = '¡Perfil guardado exitosamente!';
-        }, 1500);
+        this.isLoading = false;
+        // Sync the BehaviorSubject so the AppShell user menu reflects the
+        // newly-complete profile immediately, instead of after a reload.
+        this.authService.updateProfileStatus();
+        this.router.navigate(['/dashboard']);
       },
-      (err) => {
+      () => {
         this.isLoading = false;
         this.errorMessage = 'Error al completar perfil';
-        this.profileSaved = false;
       },
-      false, // shouldRedirect: false para ir a /ats-cv
+      false,
     );
   }
 
-  /**
-   * Navigate back to previous page
-   */
   goBack(): void {
     this.location.back();
-  }
-
-  /**
-   * Navigate to ATS CV page
-   */
-  goToAtsCv(): void {
-    this.router.navigate(['/ats-cv']);
   }
 }

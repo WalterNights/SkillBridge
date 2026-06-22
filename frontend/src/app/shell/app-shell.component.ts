@@ -1,77 +1,55 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, inject, signal } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
+import { UserNavComponent } from '../shared/user-nav/user-nav.component';
+
+const SIDEBAR_COLLAPSED_KEY = 'shell_sidebar_collapsed';
 
 /**
- * Wrapper for authenticated routes (/dashboard, /jobs/:id, /profile,
- * /cv, /settings, /admin/*).
- *
- * Renders a minimal sidebar ("Inicio" + Tip card) and a topbar with
- * search/CTAs and a user dropdown. Page content is projected through
- * the `<router-outlet>`.
+ * Wrapper for authenticated routes (/dashboard, /jobs/:id, /settings,
+ * /admin/*). Renders a slim collapsible sidebar with utility nav for
+ * both user and admin roles, plus a topbar that delegates the bell +
+ * avatar dropdown to the shared `<app-user-nav>` widget (so the same
+ * chrome shows on landing, /profile, /cv too).
  *
  * On mobile (<lg) the sidebar collapses into a drawer toggled by the
- * hamburger in the topbar.
+ * hamburger in the topbar. On desktop the user can collapse the
+ * sidebar to icon-only width — preference persisted in localStorage.
  *
- * When the admin role lands, this shell will conditionally render the
- * admin sidebar (with extra items) instead of the minimal user one.
+ * `/profile` and `/cv` are NOT wrapped in this shell — they're
+ * full-page editorial layouts with their own header.
  */
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, UserNavComponent],
   templateUrl: './app-shell.component.html',
   styleUrl: './app-shell.component.scss',
 })
 export class AppShellComponent {
+  private auth = inject(AuthService);
+
   /** Mobile drawer open state. Ignored on desktop. */
   drawerOpen = signal(false);
 
-  /** Top-right user dropdown open state. */
-  userMenuOpen = signal(false);
+  /** Desktop sidebar collapsed (icon-only) state. Persisted to localStorage. */
+  sidebarCollapsed = signal(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true');
 
   /**
-   * Reactive user display data. Re-reads from storage whenever
-   * AuthService emits a login state change so the topbar stays
-   * in sync with logout/login without a hard reload.
+   * Whether the current user has admin privileges. Placeholder until
+   * the backend role flag lands — once `AuthService` exposes a real
+   * role, swap this default out.
    */
-  userName = signal(this.auth.getUserName());
-  userEmail = signal(this.auth.getUserEmail());
-  userInitial = computed(() => this.userName().charAt(0).toUpperCase() || 'U');
-
-  private destroyRef = inject(DestroyRef);
-
-  constructor(
-    private auth: AuthService,
-    private router: Router,
-  ) {
-    this.auth.isLoggedIn$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.userName.set(this.auth.getUserName());
-      this.userEmail.set(this.auth.getUserEmail());
-    });
-  }
+  isAdmin = signal(false);
 
   toggleDrawer(open?: boolean): void {
     this.drawerOpen.set(open ?? !this.drawerOpen());
   }
 
-  toggleUserMenu(event?: MouseEvent): void {
-    event?.stopPropagation();
-    this.userMenuOpen.set(!this.userMenuOpen());
-  }
-
-  @HostListener('document:click')
-  closeUserMenu(): void {
-    if (this.userMenuOpen()) {
-      this.userMenuOpen.set(false);
-    }
-  }
-
-  logout(): void {
-    this.auth.logout();
-    this.userMenuOpen.set(false);
-    this.router.navigate(['/']);
+  toggleCollapse(): void {
+    const next = !this.sidebarCollapsed();
+    this.sidebarCollapsed.set(next);
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
   }
 }

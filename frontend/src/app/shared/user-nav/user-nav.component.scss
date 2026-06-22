@@ -1,0 +1,445 @@
+/* User-nav widget — bell + avatar dropdown.
+ * Diseño extraído del AppShell topbar para reuso en landing,
+ * /profile, /cv y cualquier otro header. */
+
+.bell {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  color: #8b8a85;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #e8e5dd;
+  }
+}
+
+.bell-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f97316;
+}
+
+/* =========================
+   User menu trigger
+   ========================= */
+.user-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px 4px 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #e8e5dd;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    border-color 200ms ease,
+    background 200ms ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+
+.user-trigger .avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.user-trigger .name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.user-trigger .chev {
+  color: #8b8a85;
+  font-size: 16px;
+  font-variation-settings: "wght" 400;
+}
+
+/* =========================
+   Dropdown panel
+   ========================= */
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 240px;
+  background: rgba(17, 21, 29, 0.92);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 6px;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  pointer-events: none;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+  z-index: 100;
+}
+
+.user-menu.open .user-dropdown {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.user-dropdown a,
+.user-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: #8b8a85;
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: #e8e5dd;
+  }
+}
+
+.user-dropdown .divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 4px 6px;
+}
+
+.user-dropdown .danger {
+  color: #ef6f6f;
+
+  &:hover {
+    color: #ef6f6f;
+    background: rgba(239, 111, 111, 0.06);
+  }
+}
+
+.user-dropdown .material-symbols-outlined {
+  font-size: 18px;
+  font-variation-settings: "wght" 300;
+}
+
+.user-dropdown .meta {
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 4px;
+}
+
+.user-dropdown .meta .nm {
+  color: #e8e5dd;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.user-dropdown .meta .em {
+  color: #8b8a85;
+  font-size: 12px;
+  margin: 2px 0 0;
+}
+
+/* ===========================================
+   Notifications drawer.
+   El backdrop oscurece la página y captura clicks para cerrar.
+   El panel slide-in desde la derecha, ancho 380 desktop / 100% mobile.
+   z-index alto para quedar sobre el sticky topbar.
+   =========================================== */
+.notif-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 280ms ease;
+  z-index: 110;
+
+  &.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.notif-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 380px;
+  /* Surface-1 sólido — el "lifting" lo aporta el border-left naranja
+   * + la sombra. Antes usábamos un gradient suave que daba la falsa
+   * impresión de transparencia. */
+  background-color: #11151d;
+  border-left: 1px solid rgba(249, 115, 22, 0.25);
+  box-shadow: -32px 0 64px -16px rgba(0, 0, 0, 0.7);
+  transform: translateX(100%);
+  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+
+  &.open {
+    transform: translateX(0);
+  }
+}
+
+/* Header — compacto, una línea horizontal con ícono + título + close.
+ * Antes tenía un eyebrow + h2 grande que rompía la jerarquía del
+ * resto del drawer; un título 14px es más que suficiente para una
+ * side panel y deja más espacio para la lista. */
+.notif-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.notif-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px !important;
+  font-weight: 600;
+  color: #e8e5dd;
+  letter-spacing: 0.01em;
+  margin: 0;
+  line-height: 1.2;
+
+  .material-symbols-outlined {
+    color: #f97316;
+  }
+}
+
+.notif-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  color: #8b8a85;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #e8e5dd;
+  }
+}
+
+/* Tabs — 3 pildoras compactas distribuidas con el ancho disponible. */
+.notif-tabs {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.notif-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 6px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #8b8a85;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+
+  &:hover {
+    color: #e8e5dd;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  &.active {
+    color: #e8e5dd;
+    background: rgba(249, 115, 22, 0.1);
+    border-color: rgba(249, 115, 22, 0.35);
+  }
+}
+
+.notif-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  background: #f97316;
+  color: #0b0e14;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* List */
+.notif-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.notif-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  &.unread {
+    background: rgba(249, 115, 22, 0.05);
+    border-color: rgba(249, 115, 22, 0.18);
+  }
+}
+
+.notif-icon {
+  font-size: 18px;
+  color: #f97316;
+  font-variation-settings: "FILL" 1;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(249, 115, 22, 0.1);
+}
+
+.notif-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-item-title {
+  color: #e8e5dd;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 4px;
+  line-height: 1.35;
+}
+
+.notif-item-text {
+  color: #8b8a85;
+  font-size: 12.5px;
+  line-height: 1.45;
+  margin: 0 0 8px;
+}
+
+.notif-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 0;
+  font-size: 11px;
+  color: #54534f;
+
+  .sep {
+    color: #2a2e38;
+  }
+}
+
+.notif-action {
+  background: transparent;
+  border: none;
+  color: #8b8a85;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: color 150ms ease;
+
+  &:hover {
+    color: #f97316;
+  }
+
+  &.is-saved {
+    color: #f97316;
+  }
+}
+
+.notif-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}

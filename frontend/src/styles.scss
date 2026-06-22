@@ -246,6 +246,69 @@ button {
 }
 
 /* ===================================
+   Portal avatar — brand-colored mark identifying the source job
+   board of an offer (LinkedIn, Elempleo, Bumeran, etc).
+   Used in the dashboard feed cards and the job-detail header.
+   Size defaults to 38px; size override per-component if needed.
+   ===================================*/
+.portal-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  /* Generic fallback — dark surface + briefcase icon */
+  background: linear-gradient(135deg, #161a24, #0b0e14);
+  color: #f97316;
+}
+
+.portal-avatar[data-portal='linkedin'] {
+  background: #0a66c2;
+  color: #fff;
+}
+.portal-avatar[data-portal='elempleo'] {
+  background: #ff6b35;
+  color: #fff;
+}
+.portal-avatar[data-portal='bumeran'] {
+  background: #d72638;
+  color: #fff;
+}
+.portal-avatar[data-portal='indeed'] {
+  background: #003a9b;
+  color: #fff;
+}
+.portal-avatar[data-portal='computrabajo'] {
+  background: #f47521;
+  color: #fff;
+}
+.portal-avatar[data-portal='weworkremotely'] {
+  background: #5cb558;
+  color: #fff;
+}
+.portal-avatar[data-portal='getonbrd'] {
+  background: #16243a;
+  color: #fff;
+}
+.portal-avatar[data-portal='magneto'] {
+  background: #00a3d9;
+  color: #fff;
+}
+
+.portal-avatar .material-symbols-outlined {
+  font-size: 18px;
+  font-variation-settings: 'wght' 400;
+}
+
+/* ===================================
    Editorial photography — desaturated with a warm tint so photos
    sit well on the dark canvas. Apply .photo to the <img> wrapper.
    The .photo.warm variant adds a light sepia for the hero.

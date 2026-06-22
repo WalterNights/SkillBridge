@@ -19,11 +19,13 @@ from __future__ import annotations
 
 from jobs.adapters.scrapers.base import JobScraper, ScraperError
 from jobs.adapters.scrapers.computrabajo import ComputrabajoScraper
+from jobs.adapters.scrapers.web_search import WebSearchJobsScraper
 from jobs.adapters.scrapers.weworkremotely import WeWorkRemotelyScraper
 
 _REGISTRY: dict[str, type[JobScraper]] = {
     ComputrabajoScraper.portal_name: ComputrabajoScraper,
     WeWorkRemotelyScraper.portal_name: WeWorkRemotelyScraper,
+    WebSearchJobsScraper.portal_name: WebSearchJobsScraper,
 }
 
 

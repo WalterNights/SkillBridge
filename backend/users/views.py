@@ -63,6 +63,7 @@ class AnalyzerResumeView(APIView):
             response_data = {
                 "first_name": extracted_data.get("first_name", ""),
                 "last_name": extracted_data.get("last_name", ""),
+                "email": extracted_data.get("email", ""),
                 "number_id": "",  # Este campo se llena manualmente
                 "phone_code": extracted_data.get("phone_code", ""),
                 "phone_number": extracted_data.get("phone_number", ""),
@@ -112,20 +113,35 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         return UserProfile.objects.filter(user=self.request.user).select_related("user")
 
     def create(self, request):
-        """Crea o actualiza el perfil del usuario"""
-        user = request.user
-        profile_data = request.data.copy()
+        """Crea o actualiza el perfil del usuario.
 
-        # Usar servicio de perfil
-        if ProfileService.profile_exists(user):
-            profile = ProfileService.get_profile_by_user(user)
-            updated_profile = ProfileService.update_profile(profile, profile_data)
-            serializer = self.get_serializer(updated_profile)
+        Delega en `UserProfileSerializer` (que ya mapea todos los campos
+        del modelo + combina phone_code/phone_number en `phone`). El
+        path POST/profiles/ funciona como upsert: si el usuario ya
+        tiene perfil — siempre tiene uno vacío creado al registro —
+        hacemos partial update para que un payload incompleto no
+        nullee campos que ya estaban llenos.
+
+        Esto reemplaza el `ProfileService.create_profile/update_profile`
+        anterior que silenciosamente descartaba ~10 campos (sólo
+        persistía `skills/city/summary`) y mapeaba a una columna
+        inexistente `title` en lugar de `professional_title`.
+        """
+        user = request.user
+        existing = ProfileService.get_profile_by_user(user)
+
+        if existing is not None:
+            serializer = self.get_serializer(
+                existing, data=request.data, partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            new_profile = ProfileService.create_profile(user, profile_data)
-            serializer = self.get_serializer(new_profile)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=["get"])
     def check(self, request):
@@ -154,10 +170,20 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data["email"] = user.email
         data["rol"] = user.rol
 
-        # Usar servicio de perfil
+        # Mismo gate que el endpoint /profiles/check/ — más realista
+        # que `number_id is not None`: ese campo es opcional en el
+        # modelo y el form no siempre lo manda, así que muchos perfiles
+        # con datos válidos quedaban marcados como incompletos y el
+        # frontend bouncea al wizard de /profile en cada login.
         profile = ProfileService.get_profile_by_user(user)
         if profile:
-            data["is_profile_complete"] = profile.number_id is not None
+            data["is_profile_complete"] = bool(
+                profile.first_name
+                and profile.last_name
+                and profile.city
+                and profile.phone
+                and profile.professional_title
+            )
             data["user_name"] = profile.first_name
         else:
             data["is_profile_complete"] = False

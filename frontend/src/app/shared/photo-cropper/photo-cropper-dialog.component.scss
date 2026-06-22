@@ -1,0 +1,260 @@
+/* Backdrop oscurece la pantalla y captura clicks para cerrar. */
+.cropper-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+}
+
+/* Dialog centrado, compacto.
+ * En modo `wide` (banner: aspect ratio ≥ 2) el modal se ensancha para
+ * que el viewport horizontal entre sin apretarse. */
+.cropper-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 210;
+  width: min(92vw, 460px);
+  max-height: 92vh;
+  background: #11151d;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &.wide {
+    width: min(94vw, 520px);
+  }
+}
+
+.cropper-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cropper-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #e8e5dd;
+  margin: 0;
+}
+
+.cropper-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #8b8a85;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #e8e5dd;
+  }
+}
+
+/* Stage — área donde vive el viewport. Background dark neutro para
+ * que el contraste de la máscara funcione bien.
+ * En modo `wide` (banner) reducimos el padding vertical: el viewport
+ * es bajo (95px) así que no necesita 24px arriba y abajo. */
+.cropper-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 24px;
+  background: #0b0e14;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  .cropper-dialog.wide & {
+    padding: 36px 24px;
+  }
+}
+
+/* Viewport — caja fija que define qué porción de la imagen se ve.
+ * Posición relative para que la imagen (absolute) calce dentro.
+ * overflow:hidden corta la imagen fuera del marco. */
+.viewport {
+  position: relative;
+  background: #0b0e14;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    /* Sin width/height: usamos las naturales y dejamos que el
+     * `transform: scale()` defina el tamaño visible. transform-origin
+     * en el centro para que el zoom crezca desde ahí. */
+    transform-origin: center center;
+    max-width: none;
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+}
+
+/* Máscara — overlay que oscurece todo fuera del crop area y dibuja
+ * el borde. Con .round usa border-radius: 50% para crear el círculo. */
+.viewport .mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* box-shadow inset para tinta sutil dentro del frame, mientras el
+   * exterior ya está oscurecido por el stage background. */
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18);
+}
+
+.viewport.round .mask {
+  border-radius: 50%;
+}
+
+.viewport.round {
+  border-radius: 50%;
+}
+
+/* Zoom slider. */
+.cropper-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.zoom-label {
+  color: #8b8a85;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.zoom-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #f97316;
+    border: 2px solid #11151d;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.4);
+  }
+
+  &::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #f97316;
+    border: 2px solid #11151d;
+    cursor: pointer;
+  }
+}
+
+.cropper-hint {
+  text-align: center;
+  font-size: 12px;
+  color: #8b8a85;
+  padding: 8px 16px 12px;
+  margin: 0;
+}
+
+.cropper-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.footer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  border: 1px solid transparent;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &.ghost {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #8b8a85;
+
+    &:hover:not(:disabled) {
+      border-color: rgba(255, 255, 255, 0.16);
+      color: #e8e5dd;
+    }
+  }
+
+  &.primary {
+    background: #f97316;
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: #ea580c;
+    }
+  }
+}
+
+.loader-ring {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: cropper-loader-spin 800ms linear infinite;
+}
+
+@keyframes cropper-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

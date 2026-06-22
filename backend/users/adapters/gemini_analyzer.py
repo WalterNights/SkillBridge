@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any
 
 import google.generativeai as genai
@@ -19,6 +20,11 @@ logger = logging.getLogger(__name__)
 MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 ALLOWED_EXTENSIONS = ("pdf", "docx")
 MIN_TEXT_LENGTH = 50
+
+# domain.tld optionally followed by /path — matches "linkedin.com/in/x" but
+# not free text like "ver mi LinkedIn". Used to rescue schemeless URLs that
+# the LLM forgot to prefix with https://.
+_URL_LIKE = re.compile(r"^[\w.-]+\.[a-z]{2,}(?:/.*)?$", re.IGNORECASE)
 
 _PROMPT_TEMPLATE = """Analiza el siguiente CV y extrae la información en formato JSON estrictamente estructurado.
 
@@ -40,6 +46,7 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
     "first_name": "nombre",
     "last_name": "apellido",
     "full_name": "nombre completo",
+    "email": "dirección de correo electrónico",
     "phone_code": "código de país con +",
     "phone_number": "número sin código de país",
     "country": "país",
@@ -68,8 +75,8 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
             "description": "descripción breve de responsabilidades y logros"
         }}
     ],
-    "linkedin_url": "URL de LinkedIn si existe",
-    "portfolio_url": "URL de portafolio o GitHub si existe"
+    "linkedin_url": "URL de LinkedIn si existe (incluye https://)",
+    "portfolio_url": "URL de portafolio o GitHub si existe (incluye https://)"
 }}
 
 Responde SOLO con el JSON, sin texto adicional, sin markdown, sin explicaciones."""
@@ -159,6 +166,7 @@ def _normalize_extracted_data(data: dict) -> dict:
         "first_name",
         "last_name",
         "full_name",
+        "email",
         "phone_code",
         "phone_number",
         "country",
@@ -195,9 +203,17 @@ def _normalize_extracted_data(data: dict) -> dict:
     elif out["title"] and not out["professional_title"]:
         out["professional_title"] = out["title"]
 
-    # URLs deben ser absolutas
+    # URLs deben ser absolutas. Si Gemini devuelve algo schemeless pero
+    # claramente URL-like (linkedin.com/in/x, github.com/y) le prependemos
+    # https:// en vez de tirarlo — el caso del usuario que pone su LinkedIn
+    # como "linkedin.com/in/usuario" en el CV es el común, no el raro.
     for url_key in ("linkedin_url", "portfolio_url"):
-        if out[url_key] and not out[url_key].startswith("http"):
+        val = out[url_key]
+        if not val or val.startswith("http"):
+            continue
+        if _URL_LIKE.match(val):
+            out[url_key] = f"https://{val}"
+        else:
             out[url_key] = ""
 
     return out

@@ -1,30 +1,74 @@
 <div class="flex min-h-screen">
-  <!-- Drawer backdrop (mobile only, click to close) -->
+  <!-- Mobile drawer backdrop -->
   <div class="drawer-backdrop" [class.show]="drawerOpen()" (click)="toggleDrawer(false)" aria-hidden="true"></div>
 
   <!-- =============== SIDEBAR =============== -->
   <aside
     class="app-sidebar border-r border-white/[0.06] bg-canvas/40 backdrop-blur-xl flex flex-col"
     [class.open]="drawerOpen()"
+    [class.collapsed]="sidebarCollapsed()"
   >
-    <div class="px-6 py-6 border-b border-white/[0.04]">
-      <span class="text-xl font-bold text-bone tracking-tight">SkilTak<span class="text-primary">.</span></span>
+    <!-- Brand header -->
+    <div class="brand">
+      <a routerLink="/dashboard" class="brand-mark" aria-label="SkilTak">
+        <span class="brand-dot">ST</span>
+        <span class="brand-text">SkilTak<span class="text-primary">.</span></span>
+      </a>
     </div>
 
-    <nav class="flex-1 px-3 py-5 space-y-1">
+    <!-- Nav (shared utility for user + admin) -->
+    <nav class="nav-group" aria-label="Principal">
+      <p class="nav-section-label">Menú</p>
       <a
         class="nav-item"
         routerLink="/dashboard"
         routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: false }"
         (click)="toggleDrawer(false)"
+        title="Inicio"
       >
         <span class="material-symbols-outlined">home</span>
-        Inicio
+        <span class="nav-label">Inicio</span>
+      </a>
+      <a
+        class="nav-item"
+        routerLink="/cv"
+        routerLinkActive="active"
+        (click)="toggleDrawer(false)"
+        title="Mi CV"
+      >
+        <span class="material-symbols-outlined">description</span>
+        <span class="nav-label">Mi CV</span>
       </a>
     </nav>
 
-    <div class="p-4">
+    <!-- Admin-only group -->
+    <nav *ngIf="isAdmin()" class="nav-group" aria-label="Administración">
+      <p class="nav-section-label">Administración</p>
+      <a
+        class="nav-item"
+        routerLink="/admin/users"
+        routerLinkActive="active"
+        (click)="toggleDrawer(false)"
+        title="Usuarios"
+      >
+        <span class="material-symbols-outlined">group</span>
+        <span class="nav-label">Usuarios</span>
+      </a>
+      <a
+        class="nav-item"
+        routerLink="/admin/stats"
+        routerLinkActive="active"
+        (click)="toggleDrawer(false)"
+        title="Estadísticas"
+      >
+        <span class="material-symbols-outlined">bar_chart</span>
+        <span class="nav-label">Estadísticas</span>
+      </a>
+    </nav>
+
+    <!-- Tip widget (utility footer, hidden when collapsed) -->
+    <div class="sidebar-tip">
       <div class="glass rounded-xl p-4">
         <span class="material-symbols-outlined text-primary" style="font-size: 18px; font-variation-settings: 'FILL' 1"
           >tips_and_updates</span
@@ -53,6 +97,19 @@
           >
         </button>
 
+        <!-- Collapse toggle (desktop only) — chevron a la izquierda del
+             search bar. Cambia dirección según el estado del sidebar. -->
+        <button
+          class="collapse-toggle"
+          (click)="toggleCollapse()"
+          [attr.aria-label]="sidebarCollapsed() ? 'Expandir menú' : 'Contraer menú'"
+          [title]="sidebarCollapsed() ? 'Expandir menú' : 'Contraer menú'"
+        >
+          <span class="material-symbols-outlined" style="font-size: 20px; font-variation-settings: 'wght' 400">{{
+            sidebarCollapsed() ? 'chevron_right' : 'chevron_left'
+          }}</span>
+        </button>
+
         <!-- Search input — desktop only; each page builds its own
              contextual search if it needs one. -->
         <div class="hidden md:flex items-center gap-3 flex-1 max-w-md">
@@ -72,45 +129,7 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-2 lg:gap-3">
-        <button
-          class="w-9 h-9 rounded-lg border border-white/[0.06] hover:border-white/[0.10] flex items-center justify-center text-warm-grey hover:text-bone relative"
-          aria-label="Notificaciones"
-        >
-          <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'wght' 300"
-            >notifications</span
-          >
-          <span class="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-primary"></span>
-        </button>
-
-        <!-- User menu -->
-        <div class="user-menu" [class.open]="userMenuOpen()">
-          <button class="user-trigger" (click)="toggleUserMenu($event)">
-            <span class="avatar">{{ userInitial() }}</span>
-            <span class="name hidden md:inline">{{ userName() }}</span>
-            <span class="material-symbols-outlined chev">expand_more</span>
-          </button>
-          <div class="user-dropdown" (click)="$event.stopPropagation()">
-            <div class="meta">
-              <p class="nm">{{ userName() }}</p>
-              <p class="em" *ngIf="userEmail()">{{ userEmail() }}</p>
-            </div>
-            <a routerLink="/profile" (click)="userMenuOpen.set(false)">
-              <span class="material-symbols-outlined">person_outline</span>
-              Mi perfil
-            </a>
-            <a routerLink="/settings" (click)="userMenuOpen.set(false)">
-              <span class="material-symbols-outlined">tune</span>
-              Configuración
-            </a>
-            <div class="divider"></div>
-            <button class="danger" (click)="logout()">
-              <span class="material-symbols-outlined">logout</span>
-              Cerrar sesión
-            </button>
-          </div>
-        </div>
-      </div>
+      <app-user-nav />
     </header>
 
     <!-- Content from child routes -->

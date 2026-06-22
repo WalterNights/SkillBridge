@@ -62,6 +62,8 @@ class UserProfile(models.Model):
     skills = models.TextField(help_text="Lista de habilidades separadas por coma")
     experience = models.TextField(help_text="Descripción libre de experiencia")
     resume = models.FileField(upload_to="resumes/", null=True, blank=True)
+    photo = models.ImageField(upload_to="profile_photos/", null=True, blank=True)
+    banner = models.ImageField(upload_to="profile_banners/", null=True, blank=True)
     linkedin_url = models.URLField(null=True, blank=True)
     portfolio_url = models.URLField(null=True, blank=True)
     create_at = models.DateTimeField(auto_now_add=True)

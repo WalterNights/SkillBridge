@@ -1,0 +1,168 @@
+/* Loading spinner used inside the overlay shown while the job detail
+ * is in-flight. Sized to match the .btn-* family's visual weight. */
+.loader-ring {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(249, 115, 22, 0.2);
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: jobdetail-loader-spin 800ms linear infinite;
+}
+
+@keyframes jobdetail-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===========================================
+   Match badge (top right of the page header).
+   Tier color shared with the feed cards in /dashboard so the
+   user reads the ranking the same way across screens.
+   =========================================== */
+.match-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #e8e5dd;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.match-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #8b8a85;
+  flex-shrink: 0;
+}
+
+.match-badge[data-match="excellent"] {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.08);
+  border-color: rgba(74, 222, 128, 0.25);
+
+  .match-dot {
+    background: #4ade80;
+    box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.18);
+  }
+}
+
+.match-badge[data-match="good"] {
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.08);
+  border-color: rgba(249, 115, 22, 0.25);
+
+  .match-dot {
+    background: #f97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
+  }
+}
+
+.match-badge[data-match="regular"] {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(251, 191, 36, 0.25);
+
+  .match-dot {
+    background: #fbbf24;
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.18);
+  }
+}
+
+/* ===========================================
+   Main offer card — accent border-left tinted by match tier,
+   same pattern as the feed cards for continuity.
+   =========================================== */
+article.glass-strong[data-match="excellent"] {
+  border-left: 2px solid #4ade80;
+}
+
+article.glass-strong[data-match="good"] {
+  border-left: 2px solid #f97316;
+}
+
+article.glass-strong[data-match="regular"] {
+  border-left: 2px solid #fbbf24;
+}
+
+/* ===========================================
+   Portal avatar — size override for the job-detail header.
+   The global .portal-avatar defaults to 38px (used in the dashboard
+   feed cards); here we bump it to 52px for the page hero.
+   =========================================== */
+.portal-avatar--lg {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  font-size: 16px;
+}
+
+.portal-avatar--lg .material-symbols-outlined {
+  font-size: 22px;
+}
+
+/* ===========================================
+   Section eyebrow — small uppercase label that opens each block
+   (Detalle, Habilidades requeridas).
+   =========================================== */
+.section-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f97316;
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ===========================================
+   Skill chips.
+   `.skill-chip` neutral (habilidades requeridas).
+   `.missing-chip` orange-bordered + interactive (te faltan, click
+   para ir a cursos).
+   =========================================== */
+.skill-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e8e5dd;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.missing-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: rgba(249, 115, 22, 0.06);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  color: #f97316;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 120ms ease;
+
+  &:hover {
+    background: rgba(249, 115, 22, 0.12);
+    border-color: rgba(249, 115, 22, 0.6);
+    transform: translateY(-1px);
+  }
+}

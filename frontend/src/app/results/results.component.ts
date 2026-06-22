@@ -8,6 +8,7 @@ import { ToastService } from '../services/toast.service';
 import { Router, RouterModule } from '@angular/router';
 import { HTMLChangesComponent } from '../shared/html-changes/html-changes';
 import { MATCH_THRESHOLDS } from '../constants/match-thresholds';
+import { portalMeta } from '../shared/portal';
 
 /**
  * Results component for displaying job offers with filtering
@@ -135,6 +136,11 @@ export class ResultsComponent {
    */
   setWidth(hovered: boolean): string {
     return this.changes.getWidth(hovered);
+  }
+
+  /** Portal de origen del offer (LinkedIn, Elempleo, …) para el avatar. */
+  portalMeta(offer: JobOffer) {
+    return portalMeta(offer);
   }
 
   /**

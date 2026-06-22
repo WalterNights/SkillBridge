@@ -1,6 +1,14 @@
-/* AppShell — minimal sidebar + topbar + mobile drawer.
+/* AppShell — slim collapsible sidebar + topbar + mobile drawer.
  * Inherits the global visual language from styles.scss; only
- * shell-specific patterns live here. */
+ * shell-specific patterns live here.
+ *
+ * Width tokens: --sidebar-w (expanded) and --sidebar-w-collapsed,
+ * declared on the host so the children's transitions can read them. */
+
+:host {
+  --sidebar-w: 232px;
+  --sidebar-w-collapsed: 68px;
+}
 
 /* =========================
    Sidebar — drawer on mobile, static on desktop
@@ -9,7 +17,7 @@
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 90;
-  width: 280px;
+  width: var(--sidebar-w);
   transform: translateX(-100%);
   transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
   background: #0b0e14;
@@ -21,11 +29,41 @@
 
 @media (min-width: 1024px) {
   .app-sidebar {
-    position: static;
+    /* sticky en lugar de static + altura viewport-bound — así NO crece
+     * con el contenido del main (job feed largo, perfil, etc) y queda
+     * pinneado mientras el body scrollea aparte. */
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
     transform: translateX(0);
-    width: 240px;
-    transition: none;
+    width: var(--sidebar-w);
+    transition: width 240ms cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
+  }
+
+  /* Desktop collapsed: icon-only rail */
+  .app-sidebar.collapsed {
+    width: var(--sidebar-w-collapsed);
+
+    .brand-text,
+    .nav-label,
+    .nav-section-label,
+    .sidebar-tip {
+      display: none;
+    }
+
+    .nav-item,
+    .collapse-toggle {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .nav-item.active {
+      box-shadow: none;
+      background: rgba(249, 115, 22, 0.10);
+    }
   }
 }
 
@@ -78,16 +116,77 @@
 }
 
 /* =========================
-   Nav items (sidebar)
+   Brand mark — altura fija 64px para que su border-bottom alinee
+   con el border-bottom del topbar (también h-16 = 64px), formando
+   una sola línea horizontal continua entre sidebar y main.
+   Color del border igualado al del topbar por la misma razón.
    ========================= */
+.brand {
+  height: 64px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #e8e5dd;
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.brand-dot {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-text {
+  font-size: 16px;
+}
+
+/* =========================
+   Nav groups
+   ========================= */
+.nav-group {
+  padding: 14px 12px 6px;
+
+  &:first-of-type {
+    flex: 0 0 auto;
+  }
+}
+
+.nav-section-label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #54534f;
+  font-weight: 600;
+  padding: 0 6px 8px;
+}
+
 .nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 9px 12px;
+  border-radius: 9px;
   color: #8b8a85;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
   transition:
     background 200ms ease,
@@ -109,10 +208,51 @@
   .material-symbols-outlined {
     font-size: 20px;
     font-variation-settings: "wght" 300;
+    flex-shrink: 0;
   }
 
   &.active .material-symbols-outlined {
     color: #f97316;
+  }
+}
+
+/* =========================
+   Sidebar tip footer
+   ========================= */
+.sidebar-tip {
+  margin-top: auto;
+  padding: 12px;
+}
+
+/* =========================
+   Collapse toggle — chevron al lado izquierdo del search bar en el
+   topbar (desktop only). Visualmente igual al hamburguesa pero
+   semánticamente para expand/collapse, no para drawer.
+   ========================= */
+.collapse-toggle {
+  display: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  color: #8b8a85;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+  transition: border-color 200ms ease, color 200ms ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #e8e5dd;
+  }
+}
+
+@media (min-width: 1024px) {
+  .collapse-toggle {
+    display: inline-flex;
   }
 }
 
@@ -148,13 +288,13 @@
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #8b8a85, #54534f);
+    background: linear-gradient(135deg, #f97316, #ea580c);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #e8e5dd;
+    color: #fff;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
   }
 
   .name {
@@ -173,7 +313,7 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  min-width: 220px;
+  min-width: 240px;
   background: rgba(17, 21, 29, 0.92);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);

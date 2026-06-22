@@ -1,0 +1,143 @@
+<div *ngIf="isLoggedIn()" class="flex items-center gap-2 lg:gap-3">
+  <!-- Notifications bell -->
+  <button
+    type="button"
+    class="bell"
+    [class.has-unread]="unreadCount() > 0"
+    (click)="toggleNotifications($event)"
+    aria-label="Notificaciones"
+  >
+    <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'wght' 300"
+      >notifications</span
+    >
+    <span *ngIf="unreadCount() > 0" class="bell-dot"></span>
+  </button>
+
+  <!-- User dropdown -->
+  <div class="user-menu" [class.open]="userMenuOpen()">
+    <button type="button" class="user-trigger" (click)="toggleUserMenu($event)">
+      <span class="avatar">{{ userInitial() }}</span>
+      <span class="name hidden md:inline">{{ userName() }}</span>
+      <span class="material-symbols-outlined chev">expand_more</span>
+    </button>
+    <div class="user-dropdown" (click)="$event.stopPropagation()">
+      <div class="meta">
+        <p class="nm">{{ userName() }}</p>
+        <p class="em" *ngIf="userEmail()">{{ userEmail() }}</p>
+      </div>
+      <a routerLink="/dashboard" (click)="userMenuOpen.set(false)">
+        <span class="material-symbols-outlined">home</span>
+        Inicio
+      </a>
+      <a routerLink="/me" (click)="userMenuOpen.set(false)">
+        <span class="material-symbols-outlined">person_outline</span>
+        Mi perfil
+      </a>
+      <a routerLink="/cv" (click)="userMenuOpen.set(false)">
+        <span class="material-symbols-outlined">description</span>
+        Mi CV
+      </a>
+      <a routerLink="/settings" (click)="userMenuOpen.set(false)">
+        <span class="material-symbols-outlined">tune</span>
+        Configuración
+      </a>
+      <div class="divider"></div>
+      <button type="button" class="danger" (click)="logout()">
+        <span class="material-symbols-outlined">logout</span>
+        Cerrar sesión
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- =============== NOTIFICATIONS DRAWER ===============
+     Right-side drawer triggered by the bell. Backdrop sits on top of
+     the page; the panel slides from the right edge. -->
+<div
+  *ngIf="isLoggedIn()"
+  class="notif-backdrop"
+  [class.show]="notificationsOpen()"
+  (click)="closeNotifications()"
+  aria-hidden="true"
+></div>
+
+<aside
+  *ngIf="isLoggedIn()"
+  class="notif-drawer"
+  [class.open]="notificationsOpen()"
+  role="dialog"
+  aria-label="Notificaciones"
+  (click)="$event.stopPropagation()"
+>
+  <div class="notif-header">
+    <p class="notif-title">
+      <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'FILL' 1"
+        >notifications</span
+      >
+      Notificaciones
+    </p>
+    <button type="button" class="notif-close" (click)="closeNotifications()" aria-label="Cerrar">
+      <span class="material-symbols-outlined" style="font-size: 16px">close</span>
+    </button>
+  </div>
+
+  <div class="notif-tabs" role="tablist">
+    <button
+      type="button"
+      role="tab"
+      class="notif-tab"
+      [class.active]="notifTab() === 'unread'"
+      (click)="setNotifTab('unread', $event)"
+    >
+      <span>No leídas</span>
+      <span *ngIf="unreadCount() > 0" class="notif-tab-count">{{ unreadCount() }}</span>
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="notif-tab"
+      [class.active]="notifTab() === 'read'"
+      (click)="setNotifTab('read', $event)"
+    >
+      <span>Leídas</span>
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="notif-tab"
+      [class.active]="notifTab() === 'saved'"
+      (click)="setNotifTab('saved', $event)"
+    >
+      <span>Guardadas</span>
+    </button>
+  </div>
+
+  <div class="notif-list">
+    <article *ngFor="let n of visibleNotifications()" class="notif-item" [class.unread]="!n.read">
+      <span class="notif-icon material-symbols-outlined">{{ iconForKind(n.kind) }}</span>
+      <div class="notif-body">
+        <p class="notif-item-title">{{ n.title }}</p>
+        <p class="notif-item-text">{{ n.body }}</p>
+        <p class="notif-meta">
+          <span>{{ n.createdAt }}</span>
+          <span class="sep">·</span>
+          <button type="button" class="notif-action" *ngIf="!n.read" (click)="markAsRead(n.id, $event)">
+            Marcar como leída
+          </button>
+          <button type="button" class="notif-action" [class.is-saved]="n.saved" (click)="toggleSaved(n.id, $event)">
+            {{ n.saved ? 'Guardada' : 'Guardar' }}
+          </button>
+        </p>
+      </div>
+    </article>
+
+    <div *ngIf="visibleNotifications().length === 0" class="notif-empty">
+      <span
+        class="material-symbols-outlined text-warm-grey"
+        style="font-size: 28px; font-variation-settings: 'wght' 200"
+        >notifications_off</span
+      >
+      <p class="text-sm text-warm-grey mt-3">No hay notificaciones en esta vista.</p>
+    </div>
+  </div>
+</aside>

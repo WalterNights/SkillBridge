@@ -26,4 +26,4 @@ class TestRegistry:
             get_scraper("linkedin")
 
     def test_available_portals_lists_all_registered(self):
-        assert set(available_portals()) == {"computrabajo", "weworkremotely"}
+        assert set(available_portals()) == {"computrabajo", "weworkremotely", "websearch"}

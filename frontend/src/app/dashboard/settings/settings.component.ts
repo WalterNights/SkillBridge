@@ -1,64 +1,51 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Title } from '@angular/platform-browser';
 import { AuthService } from '../../auth/auth.service';
 import { StorageMethodComponent } from '../../shared/storage-method/storage-method';
-import { HeaderDashboardComponent } from '../header-dashboard/header-dashboard.component';
-import { SidebarComponent } from '../sidebar/sidebar.component';
-import { SidebarService } from '../services/sidebar.service';
 
+/**
+ * Configuración del usuario. Vive dentro del AppShell así que el
+ * componente solo renderiza contenido — el sidebar y topbar los
+ * provee el shell padre.
+ *
+ * Política dark-only: ya no exponemos toggle de modo claro. Toda la
+ * UI vive en el canvas oscuro y los toggles legacy fueron removidos
+ * para evitar arrastrar un modo que ya no soportamos.
+ */
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderDashboardComponent, SidebarComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnInit {
+  private router = inject(Router);
+  private authService = inject(AuthService);
+  private storageMethod = inject(StorageMethodComponent);
+  private titleService = inject(Title);
+
   userName: string | null = null;
   userEmail: string | null = null;
   storage: 'session' | 'local' = 'session';
-  isDarkMode = false;
+
   enableNotifications = true;
   enableEmailAlerts = false;
   language = 'es';
-  isSidebarCollapsed = false;
 
-  constructor(
-    private router: Router,
-    private authService: AuthService,
-    private storageMethod: StorageMethodComponent,
-    private sidebarService: SidebarService,
-  ) {}
+  constructor() {
+    this.titleService.setTitle('SkilTak — Configuración');
+  }
 
   ngOnInit(): void {
     this.storage = localStorage.getItem('storage') === 'true' ? 'local' : 'session';
-    this.authService.isLoggedIn$.subscribe((status) => {
+    this.authService.isLoggedIn$.subscribe(() => {
       this.userName = this.storageMethod.getStorageItem(this.storage, 'user_name');
       this.userEmail = this.storageMethod.getStorageItem(this.storage, 'user_email');
     });
-
-    // Load theme preference
-    const saveTheme = localStorage.getItem('theme');
-    this.isDarkMode = saveTheme === 'dark';
-
-    // Subscribe to sidebar state changes
-    this.sidebarService.isCollapsed$.subscribe((collapsed) => {
-      this.isSidebarCollapsed = collapsed;
-    });
-  }
-
-  toggleDarkMode(): void {
-    this.isDarkMode = !this.isDarkMode;
-    const root = document.documentElement;
-    if (this.isDarkMode) {
-      root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
   }
 
   saveSettings(): void {

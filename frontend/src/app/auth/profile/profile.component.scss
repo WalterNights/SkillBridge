@@ -1,221 +1,47 @@
-// Profile Component Styles
-
-// Smooth transitions
-* {
-  transition:
-    background-color 0.2s ease-in-out,
-    border-color 0.2s ease-in-out,
-    color 0.2s ease-in-out;
+/* Loading spinner used inside the overlay shown while the profile save
+ * is in-flight. Sized to match the .btn-* family's visual weight. */
+.loader-ring {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(249, 115, 22, 0.2);
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: loader-spin 800ms linear infinite;
 }
 
-// Custom scrollbar
-:host {
-  display: block;
-
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: theme("colors.gray.100");
-    border-radius: 4px;
-  }
-
-  :host-context(.dark) &::-webkit-scrollbar-track {
-    background: theme("colors.gray.800");
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: linear-gradient(
-      to bottom,
-      theme("colors.primary.500"),
-      theme("colors.primary.700")
-    );
-    border-radius: 4px;
-
-    &:hover {
-      background: linear-gradient(
-        to bottom,
-        theme("colors.primary.600"),
-        theme("colors.primary.800")
-      );
-    }
-  }
-}
-
-// Form input focus effects
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
-}
-
-// File upload animation
-.upload-zone {
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(249, 115, 22, 0.05), transparent);
-    transform: rotate(45deg);
-    transition: all 0.6s ease;
-  }
-
-  &:hover::before {
-    left: 100%;
-  }
-}
-
-// Success message animation
-@keyframes slideInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.success-message {
-  animation: slideInDown 0.3s ease-out;
-}
-
-// Loading spinner
-.spinner {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
+@keyframes loader-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-// Info card hover effect
-.info-card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px -10px rgba(249, 115, 22, 0.2);
-  }
-}
-
-// Button ripple effect
-.btn-ripple {
-  position: relative;
-  overflow: hidden;
-
-  &::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-    transition:
-      width 0.6s,
-      height 0.6s;
-  }
-
-  &:active::after {
-    width: 300px;
-    height: 300px;
-  }
-}
-
-// Textarea auto-resize
-textarea {
-  resize: vertical;
-  min-height: 100px;
-}
-
-// Phone code select styling
-select[formControlName="country"],
-select[formControlName="phone_code"] {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+/* Native <select> dropdown chevron — the platform arrow disappears on
+ * the dark canvas, so we paint our own using the warm-grey ink. */
+select.field-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b8a85' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 0.5rem center;
-  background-size: 1.5em 1.5em;
+  background-position: right 1rem center;
+  background-size: 16px;
   padding-right: 2.5rem;
 }
 
-// Required field indicator
-.required-field::after {
-  content: " *";
-  color: theme("colors.red.500");
+/* Render the native <option> list with the dark canvas, so the dropdown
+ * doesn't switch to the OS-default white background. */
+select.field-input option {
+  background: #11151d;
+  color: #e8e5dd;
 }
 
-// Validation error shake
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  10%,
-  30%,
-  50%,
-  70%,
-  90% {
-    transform: translateX(-5px);
-  }
-  20%,
-  40%,
-  60%,
-  80% {
-    transform: translateX(5px);
-  }
-}
-
-.ng-invalid.ng-touched {
-  animation: shake 0.5s ease-in-out;
-}
-
-// Grid responsive improvements
-.form-grid {
-  display: grid;
-  gap: 1.5rem;
-
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-// Sticky header smooth scroll
-.sticky {
-  position: sticky;
-  top: 6rem;
-  z-index: 10;
-}
-
-// Dark mode specific adjustments
-:host-context(.dark) {
-  input:-webkit-autofill,
-  input:-webkit-autofill:hover,
-  input:-webkit-autofill:focus,
-  textarea:-webkit-autofill,
-  textarea:-webkit-autofill:hover,
-  textarea:-webkit-autofill:focus,
-  select:-webkit-autofill,
-  select:-webkit-autofill:hover,
-  select:-webkit-autofill:focus {
-    -webkit-text-fill-color: theme("colors.white");
-    -webkit-box-shadow: 0 0 0px 1000px theme("colors.gray.900") inset;
-    transition: background-color 5000s ease-in-out 0s;
-  }
+/* Preserve dark fill when the browser autofills a form input —
+ * Chrome's default light-yellow defeats the dark canvas otherwise. */
+input.field-input:-webkit-autofill,
+input.field-input:-webkit-autofill:hover,
+input.field-input:-webkit-autofill:focus,
+textarea.field-input:-webkit-autofill {
+  -webkit-text-fill-color: #e8e5dd;
+  -webkit-box-shadow: 0 0 0 1000px #11151d inset;
+  transition: background-color 5000s ease-in-out 0s;
 }

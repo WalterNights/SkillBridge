@@ -4,6 +4,7 @@
 export interface ResumeAnalysisData {
   first_name: string;
   last_name: string;
+  email?: string;
   number_id?: string;
   phone_code: string;
   phone_number: string;

@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
 import { AuthService } from '../auth/auth.service';
@@ -9,10 +9,11 @@ import { registerLocaleData } from '@angular/common';
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { ProfileService } from '../services/profile.service';
 import { STORAGE_KEYS } from '../constants/app-stats';
+import { UserNavComponent } from '../shared/user-nav/user-nav.component';
 
 @Component({
   selector: 'app-ats-cv',
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule, UserNavComponent],
   standalone: true,
   templateUrl: './ats-cv.component.html',
   styleUrls: ['./ats-cv.component.scss'],
@@ -166,12 +167,12 @@ export class AtsCvComponent implements OnInit {
     });
   }
 
-  goToResults() {
+  goToDashboard() {
     if (!this.authService.isAuthenticated()) {
-      sessionStorage.setItem('redirect_after_login', '/results');
+      sessionStorage.setItem('redirect_after_login', '/dashboard');
       this.router.navigate(['/auth/login']);
     } else {
-      this.router.navigate(['/results']);
+      this.router.navigate(['/dashboard']);
     }
   }
 

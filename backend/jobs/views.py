@@ -95,18 +95,22 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
         location = profile.city
 
         if not query or not location:
-            # En lugar de retornar error, retornar lista vacía con mensaje informativo
-            missing_fields = []
+            # El frontend muestra `err.error.error` como toast cuando el
+            # status es 400 — usamos esa convención para que el usuario
+            # vea de inmediato qué le falta, no un genérico "sin novedades".
+            missing = []
             if not query:
-                missing_fields.append("título profesional")
+                missing.append("título profesional")
             if not location:
-                missing_fields.append("ciudad")
+                missing.append("ciudad")
             return Response(
                 {
-                    "message": f"Completa tu perfil con {', '.join(missing_fields)} para obtener ofertas personalizadas",
-                    "jobs": [],
+                    "error": (
+                        f"Completá tu perfil con {', '.join(missing)} para "
+                        "obtener ofertas personalizadas."
+                    )
                 },
-                status=status.HTTP_200_OK,
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
@@ -115,9 +119,9 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
                 query, location
             )
 
-            # Filtrar por matching
+            # Filtrar por matching (cargo + skills, ver matching_service)
             filtered_offers = JobMatchingService.filter_jobs_by_skills(
-                new_offers, profile, min_match_percentage=30
+                new_offers, profile, min_match_percentage=25
             )
 
             serializer = self.get_serializer(filtered_offers, many=True)

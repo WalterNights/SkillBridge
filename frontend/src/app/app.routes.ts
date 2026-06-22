@@ -9,23 +9,27 @@ import { AdminGuard } from './auth/admin.guard';
  *     /                      Landing
  *     /auth/*                register, login, password reset
  *
- *   AUTHENTICATED (AutoGuard, shared AppShell):
+ *   AUTHENTICATED STANDALONE (AutoGuard, no shell):
+ *     /profile               Onboarding wizard (first-time — runs once)
+ *     /cv                    ATS CV viewer (print-preview style)
+ *
+ *   AUTHENTICATED IN SHELL (AutoGuard + AppShell):
  *     /dashboard             role-aware home (user → offers, admin → panel)
  *     /jobs/:id              Job offer detail
- *     /profile               Profile editor (replaces /profile + /manual-profile)
- *     /cv                    ATS CV viewer
+ *     /me                    Mi perfil — view + update (post-onboarding)
  *     /settings              Settings
  *
- *   ADMIN (AutoGuard + AdminGuard):
+ *   ADMIN IN SHELL (AutoGuard + AppShell + AdminGuard):
  *     /admin/users           User list
- *     /admin/stats           Platform stats
+ *     /admin/stats           Platform stats (TODO)
  *
  * Legacy paths keep redirects so existing bookmarks/emails still work.
  */
 export const routes: Routes = [
-  // Public
+  // ===== Public =====
   {
     path: '',
+    pathMatch: 'full',
     loadComponent: () => import('./home/home.component').then((m) => m.HomeComponent),
   },
   {
@@ -33,18 +37,7 @@ export const routes: Routes = [
     loadChildren: () => import('./auth/auth.module').then((m) => m.AuthModule),
   },
 
-  // Authenticated app
-  {
-    path: 'dashboard',
-    canActivate: [AutoGuard],
-    loadComponent: () => import('./results/results.component').then((m) => m.ResultsComponent),
-  },
-  {
-    path: 'jobs/:id',
-    canActivate: [AutoGuard],
-    loadComponent: () =>
-      import('./job-detail/job-detail.component').then((m) => m.JobDetailComponent),
-  },
+  // ===== Authenticated standalone (no shell) =====
   {
     path: 'profile',
     canActivate: [AutoGuard],
@@ -55,34 +48,53 @@ export const routes: Routes = [
     canActivate: [AutoGuard],
     loadComponent: () => import('./ats-cv/ats-cv.component').then((m) => m.AtsCvComponent),
   },
-  {
-    path: 'settings',
-    canActivate: [AutoGuard],
-    loadComponent: () =>
-      import('./dashboard/settings/settings.component').then((m) => m.SettingsComponent),
-  },
 
-  // Admin
-  {
-    path: 'admin',
-    canActivate: [AutoGuard, AdminGuard],
-    children: [
-      { path: '', redirectTo: 'users', pathMatch: 'full' },
-      {
-        path: 'users',
-        loadComponent: () =>
-          import('./dashboard/dashboard.component').then((m) => m.DashboardComponent),
-      },
-    ],
-  },
-
-  // Redirects from legacy paths. Old bookmarks/emails keep working
-  // until we confirm nothing external still references them.
+  // ===== Legacy redirects (must precede shell parent to match first) =====
   { path: 'manual-profile', redirectTo: 'profile', pathMatch: 'full' },
   { path: 'results', redirectTo: 'dashboard', pathMatch: 'full' },
   { path: 'ats-cv', redirectTo: 'cv', pathMatch: 'full' },
   { path: 'dashboard/settings', redirectTo: 'settings', pathMatch: 'full' },
 
-  // 404 → landing. AutoGuard handles redirecting to login when needed.
+  // ===== Authenticated routes wrapped in AppShell =====
+  {
+    path: '',
+    canActivate: [AutoGuard],
+    loadComponent: () => import('./shell/app-shell.component').then((m) => m.AppShellComponent),
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./results/results.component').then((m) => m.ResultsComponent),
+      },
+      {
+        path: 'jobs/:id',
+        loadComponent: () =>
+          import('./job-detail/job-detail.component').then((m) => m.JobDetailComponent),
+      },
+      {
+        path: 'me',
+        loadComponent: () =>
+          import('./account/my-profile/my-profile.component').then((m) => m.MyProfileComponent),
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./dashboard/settings/settings.component').then((m) => m.SettingsComponent),
+      },
+      {
+        path: 'admin',
+        canActivate: [AdminGuard],
+        children: [
+          { path: '', redirectTo: 'users', pathMatch: 'full' },
+          {
+            path: 'users',
+            loadComponent: () =>
+              import('./dashboard/dashboard.component').then((m) => m.DashboardComponent),
+          },
+        ],
+      },
+    ],
+  },
+
+  // ===== 404 → landing. AutoGuard handles redirecting to login when needed. =====
   { path: '**', redirectTo: '' },
 ];
