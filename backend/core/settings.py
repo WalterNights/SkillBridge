@@ -148,6 +148,45 @@ REST_FRAMEWORK = {
 # vivo y se loguea el problema. En prod monitor en Grafana el up/down.
 RATELIMIT_FAIL_OPEN = True
 
+
+# OBSERVABILIDAD: el default de Django manda `django.request` a
+# `mail_admins`, y como no tenemos ADMINS configurado los 500 se pierden
+# sin dejar rastro. Mandamos todo a stderr — gunicorn (--error-logfile -)
+# lo captura → journalctl → diagnóstico real cuando algo revienta.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} [{levelname}] {name}: {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        # Stack traces de 500s — el motivo de este bloque.
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        # DB queries solo si DEBUG, demasiado ruidoso en prod.
+        "django.db.backends": {
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+}
+
 SIMPLE_JWT = {
     # SEGURIDAD:
     # - Access token corto (15 min) limita ventana de explotación si
