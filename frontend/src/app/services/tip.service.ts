@@ -30,23 +30,33 @@ export class TipService {
   private cache: string | null = null;
   private cacheDate: string | null = null;
 
-  getTipOfTheDay(): Observable<string> {
+  /**
+   * @param profession Macro-categoría del usuario ('tech', 'design', 'marketing',
+   *   'sales', 'finance', 'hr', 'operations', 'health', 'education', 'legal').
+   *   Si se omite, el endpoint devuelve solo tips universales.
+   *   El frontend infiere el valor con `inferProfessionCategory()`.
+   */
+  getTipOfTheDay(profession?: string): Observable<string> {
     const today = new Date().toISOString().slice(0, 10);
-    if (this.cache && this.cacheDate === today) {
+    const cacheKey = `${today}:${profession || 'all'}`;
+    if (this.cache && this.cacheDate === cacheKey) {
       return of(this.cache);
     }
-    return this.http.get<TipDto>(`${environment.apiUrl}/tips/today/`).pipe(
+    const url = profession
+      ? `${environment.apiUrl}/tips/today/?profession=${encodeURIComponent(profession)}`
+      : `${environment.apiUrl}/tips/today/`;
+    return this.http.get<TipDto>(url).pipe(
       map((dto) => {
         this.cache = dto.text;
-        this.cacheDate = today;
+        this.cacheDate = cacheKey;
         return dto.text;
       }),
       catchError(() => {
         // Fallback offline-first: el frontend tiene su propia copia de los
-        // tips iniciales en daily-tips.ts.
+        // tips iniciales en daily-tips.ts (todos universales, sin filtro).
         const fallback = getStaticTipOfTheDay();
         this.cache = fallback;
-        this.cacheDate = today;
+        this.cacheDate = cacheKey;
         return of(fallback);
       }),
     );

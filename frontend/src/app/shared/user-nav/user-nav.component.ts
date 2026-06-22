@@ -84,6 +84,7 @@ export class UserNavComponent {
 
   userName = signal(this.auth.getUserName());
   userEmail = signal(this.auth.getUserEmail());
+  userPhotoUrl = signal(this.auth.getProfilePhotoUrl());
   userInitial = computed(() => this.userName().charAt(0).toUpperCase() || 'U');
 
   notifications = signal<UiNotification[]>([]);
@@ -102,6 +103,7 @@ export class UserNavComponent {
       this.isLoggedIn.set(loggedIn);
       this.userName.set(this.auth.getUserName());
       this.userEmail.set(this.auth.getUserEmail());
+      this.userPhotoUrl.set(this.auth.getProfilePhotoUrl());
       if (!loggedIn) {
         this.userMenuOpen.set(false);
         this.notificationsOpen.set(false);

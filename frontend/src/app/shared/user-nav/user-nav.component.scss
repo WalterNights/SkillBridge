@@ -75,6 +75,19 @@
   color: #fff;
   font-size: 13px;
   font-weight: 700;
+  overflow: hidden; /* recorta la <img> al círculo */
+}
+
+.user-trigger .avatar.has-photo {
+  /* Quitamos el gradiente — la foto cubre todo el espacio. */
+  background: transparent;
+}
+
+.user-trigger .avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .user-trigger .name {

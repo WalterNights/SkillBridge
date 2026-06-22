@@ -22,9 +22,12 @@ from jobs.adapters.scrapers.computrabajo import ComputrabajoScraper
 from jobs.adapters.scrapers.web_search import WebSearchJobsScraper
 from jobs.adapters.scrapers.weworkremotely import WeWorkRemotelyScraper
 
+# WeWorkRemotelyScraper queda implementado pero FUERA del registro por
+# defecto porque es 100% remoto/tech — para un contador, diseñador o
+# vendedor era ruido garantizado en el feed. Cuando agreguemos perfiles
+# "remote-first" o un toggle en el wizard de profile, lo activamos opt-in.
 _REGISTRY: dict[str, type[JobScraper]] = {
     ComputrabajoScraper.portal_name: ComputrabajoScraper,
-    WeWorkRemotelyScraper.portal_name: WeWorkRemotelyScraper,
     WebSearchJobsScraper.portal_name: WebSearchJobsScraper,
 }
 

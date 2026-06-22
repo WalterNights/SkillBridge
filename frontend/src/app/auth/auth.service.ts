@@ -26,6 +26,8 @@ export class AuthService {
     'user',
     'user_id',
     'user_name',
+    'professional_title',
+    'profile_photo',
     'is_profile_complete',
     'manual_profile_draft',
   ];
@@ -86,6 +88,39 @@ export class AuthService {
     return sessionStorage.getItem('user_email') ?? '';
   }
 
+  /**
+   * Read the user's professional title (e.g. "Senior Backend Developer").
+   * Used by the AppShell tip widget to fetch tips relevant to the user's
+   * vertical without an extra request to /profiles/. Returns '' when
+   * unknown so callers can fall back to universal tips.
+   */
+  getProfessionalTitle(): string {
+    const useLocal = localStorage.getItem('storage') === 'true';
+    const value = useLocal
+      ? localStorage.getItem('professional_title')
+      : sessionStorage.getItem('professional_title');
+    return value ?? '';
+  }
+
+  /**
+   * URL absoluta de la foto de perfil del user para el avatar del topbar.
+   * Vacío si el user no subió foto o el cliente todavía no recibió el
+   * dato (login muy viejo previo a la feature). El consumidor cae al
+   * initial cuando esto está vacío.
+   *
+   * Limitación conocida: el valor se cachea desde el login. Si el user
+   * sube una foto nueva en /me, va a ver el initial (o la foto vieja)
+   * hasta el próximo login. Aceptable para v1 — agregar un setter via
+   * Subject cuando empiece a molestar.
+   */
+  getProfilePhotoUrl(): string {
+    const useLocal = localStorage.getItem('storage') === 'true';
+    const value = useLocal
+      ? localStorage.getItem('profile_photo')
+      : sessionStorage.getItem('profile_photo');
+    return value ?? '';
+  }
+
   register(data: RegisterData): Observable<any> {
     return this.http.post(this.apiUrl, data);
   }
@@ -103,6 +138,16 @@ export class AuthService {
           res.is_profile_complete,
         );
         this.storageMethod.setStorageItem(this.storage, 'user_name', userName);
+        this.storageMethod.setStorageItem(
+          this.storage,
+          'professional_title',
+          res.professional_title ?? '',
+        );
+        this.storageMethod.setStorageItem(
+          this.storage,
+          'profile_photo',
+          res.profile_photo ?? '',
+        );
         sessionStorage.setItem('user_email', res.email);
         this.isLoggedInSubject.next(true);
         this.updateProfileStatus();

@@ -216,8 +216,22 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 and profile.professional_title
             )
             data["user_name"] = profile.first_name
+            # Sumamos professional_title al payload del login para que el
+            # frontend pueda inferir la profesión del usuario sin un
+            # roundtrip extra a /profiles/ — usado al menos por el widget
+            # de tips del sidebar para pedir tips de su vertical.
+            data["professional_title"] = profile.professional_title or ""
+            # URL absoluta de la foto para el avatar del topbar. None si
+            # el user no subió foto — el frontend cae al initial.
+            request = self.context.get("request")
+            if profile.photo and request is not None:
+                data["profile_photo"] = request.build_absolute_uri(profile.photo.url)
+            else:
+                data["profile_photo"] = ""
         else:
             data["is_profile_complete"] = False
+            data["professional_title"] = ""
+            data["profile_photo"] = ""
 
         return data
 

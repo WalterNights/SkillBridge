@@ -26,4 +26,7 @@ class TestRegistry:
             get_scraper("linkedin")
 
     def test_available_portals_lists_all_registered(self):
-        assert set(available_portals()) == {"computrabajo", "weworkremotely", "websearch"}
+        # WWR queda implementado pero fuera del registro por defecto
+        # (es dev-only/remoto, ruido para perfiles no-tech). Si se
+        # vuelve a habilitar, sumarlo acá.
+        assert set(available_portals()) == {"computrabajo", "websearch"}

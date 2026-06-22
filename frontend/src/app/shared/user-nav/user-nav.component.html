@@ -16,7 +16,16 @@
   <!-- User dropdown -->
   <div class="user-menu" [class.open]="userMenuOpen()">
     <button type="button" class="user-trigger" (click)="toggleUserMenu($event)">
-      <span class="avatar">{{ userInitial() }}</span>
+      <!-- Avatar: foto si la subió, sino el initial. La foto viene del
+           backend en el login response y se cachea en storage. -->
+      <span class="avatar" [class.has-photo]="userPhotoUrl()">
+        <img
+          *ngIf="userPhotoUrl(); else initialFallback"
+          [src]="userPhotoUrl()"
+          [alt]="userName()"
+        />
+        <ng-template #initialFallback>{{ userInitial() }}</ng-template>
+      </span>
       <span class="name hidden md:inline">{{ userName() }}</span>
       <span class="material-symbols-outlined chev">expand_more</span>
     </button>

@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { TipService } from '../services/tip.service';
+import { inferProfessionCategory } from '../shared/profession-classifier';
 import { UserNavComponent } from '../shared/user-nav/user-nav.component';
 import { getTipOfTheDay as getStaticTipOfTheDay } from './daily-tips';
 
@@ -52,8 +53,15 @@ export class AppShellComponent {
   tipOfTheDay = signal(getStaticTipOfTheDay());
 
   constructor() {
+    // Pasa la profession del user al endpoint así devuelve tips de su
+    // vertical (no solo universales). Si no hay profile_title (user
+    // recién registrado), inferProfessionCategory devuelve 'general'
+    // y mandamos undefined al service → endpoint default = solo
+    // tips universales.
+    const category = inferProfessionCategory(this.auth.getProfessionalTitle());
+    const professionParam = category === 'general' ? undefined : category;
     this.tipApi
-      .getTipOfTheDay()
+      .getTipOfTheDay(professionParam)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((text) => this.tipOfTheDay.set(text));
   }

@@ -26,8 +26,28 @@ class Tip(models.Model):
         ("other", "Otro"),
     ]
 
+    # Profession scope — para filtrar tips por la vertical del usuario.
+    # `all` aplica a todos. Las demás son las macro categorías que
+    # devuelve `users.services.profession_classifier`.
+    PROFESSION_SCOPE_CHOICES = [
+        ("all", "Todos"),
+        ("tech", "Tech"),
+        ("design", "Diseño"),
+        ("marketing", "Marketing"),
+        ("sales", "Ventas"),
+        ("finance", "Finanzas"),
+        ("hr", "RRHH"),
+        ("operations", "Operaciones"),
+        ("health", "Salud"),
+        ("education", "Educación"),
+        ("legal", "Legal"),
+    ]
+
     text = models.CharField(max_length=300, unique=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="other")
+    profession_scope = models.CharField(
+        max_length=20, choices=PROFESSION_SCOPE_CHOICES, default="all", db_index=True
+    )
     source = models.CharField(max_length=10, choices=SOURCE_CHOICES, default="manual")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
