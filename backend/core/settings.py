@@ -148,6 +148,17 @@ REST_FRAMEWORK = {
 # vivo y se loguea el problema. En prod monitor en Grafana el up/down.
 RATELIMIT_FAIL_OPEN = True
 
+# Cuando nginx habla con gunicorn por unix socket, REMOTE_ADDR queda
+# vacío y django-ratelimit con key='ip' explota con ImproperlyConfigured.
+# Nginx reenvía la IP del cliente real en X-Real-IP — le decimos a
+# ratelimit que mire ese header.
+#
+# SEGURIDAD: spoofear este header requiere bypass de nginx (que rebinda
+# el valor a $remote_addr, descartando lo que mande el cliente). Como
+# gunicorn solo escucha en el socket unix local, no hay vector externo
+# para inyectar X-Real-IP falso.
+RATELIMIT_IP_META_KEY = "HTTP_X_REAL_IP"
+
 
 # OBSERVABILIDAD: el default de Django manda `django.request` a
 # `mail_admins`, y como no tenemos ADMINS configurado los 500 se pierden
