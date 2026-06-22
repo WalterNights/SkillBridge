@@ -71,9 +71,15 @@ export class AtsCvComponent implements OnInit {
   /**
    * Fetch profile data from backend.
    * El token se inyecta automáticamente por `TokenInterceptor`.
+   *
+   * Se chequea via AuthService.isAuthenticated() en vez de
+   * `localStorage.getItem(ACCESS_TOKEN)` porque el AuthService puede
+   * guardar el token en sessionStorage si "remember me" está apagado.
+   * Hardcodear localStorage rompía el flow para usuarios que no
+   * tildaban remember-me.
    */
   fetchProfileFromBackend(): void {
-    if (!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)) {
+    if (!this.authService.isAuthenticated()) {
       this.errorMessage = 'No se encontraron datos del perfil';
       this.isLoading = false;
       return;
@@ -81,10 +87,21 @@ export class AtsCvComponent implements OnInit {
 
     this.profileService.getMyProfile().subscribe({
       next: (response) => {
-        // El endpoint puede devolver array (viewset list) u objeto puntual
-        const profile = Array.isArray(response) ? response[0] : response;
+        // El endpoint puede devolver:
+        //   - DRF paginated: {count, next, previous, results: [{...}]}
+        //   - array crudo (cuando no hay pagination): [{...}]
+        //   - objeto puntual (cuando se pide /profiles/{id}/): {...}
+        // Cubrimos los tres casos en orden de probabilidad.
+        let profile: any = response;
+        if (response && Array.isArray(response.results)) {
+          profile = response.results[0];
+        } else if (Array.isArray(response)) {
+          profile = response[0];
+        }
         if (profile) {
           this.profileData = this.formatProfileData(profile);
+        } else {
+          this.errorMessage = 'No se encontraron datos del perfil';
         }
         this.isLoading = false;
       },
