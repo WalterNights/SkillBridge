@@ -1,14 +1,87 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>SkilTak</title>
+    <title>SkilTak — Encontrá tu próximo paso profesional</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
+    <!-- ===== SEO core ===== -->
+    <meta
+      name="description"
+      content="SkilTak es la plataforma que centraliza ofertas de empleo y las matchea con tu perfil usando IA. Subí tu CV, conseguí matches inteligentes con LinkedIn, Elempleo, Computrabajo, Bumeran y más, y descargá tu CV optimizado para ATS."
+    />
+    <meta
+      name="keywords"
+      content="empleo, trabajo, ofertas de trabajo, bolsa de trabajo, CV ATS, matching de empleos, IA empleo, Colombia, Latam, LinkedIn, Elempleo, Computrabajo, Bumeran, recursos humanos, búsqueda laboral"
+    />
+    <meta name="author" content="SkilTak" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+    <meta name="theme-color" content="#0B0E14" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="canonical" href="https://skiltak.com/" />
+
+    <!-- ===== Icons ===== -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico?v=2" />
+    <link rel="icon" type="image/png" sizes="any" href="assets/image/skiltak_isotipo.png" />
+    <link rel="apple-touch-icon" href="assets/image/skiltak_isotipo.png" />
+
+    <!-- ===== Open Graph (Facebook / LinkedIn previews) ===== -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SkilTak" />
+    <meta property="og:title" content="SkilTak — Encontrá tu próximo paso profesional" />
+    <meta
+      property="og:description"
+      content="Subí tu CV y dejá que la IA te traiga las ofertas que mejor calzan con tu perfil. Match semántico contra LinkedIn, Elempleo, Computrabajo, Bumeran y más, sin saltar entre bolsas."
+    />
+    <meta property="og:image" content="https://skiltak.com/assets/image/skiltak_isotipo.png" />
+    <meta property="og:image:alt" content="Isotipo de SkilTak" />
+    <meta property="og:url" content="https://skiltak.com/" />
+    <meta property="og:locale" content="es_AR" />
+
+    <!-- ===== Twitter Card ===== -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="SkilTak — Encontrá tu próximo paso profesional" />
+    <meta
+      name="twitter:description"
+      content="La plataforma que centraliza ofertas y las matchea con tu CV usando IA. Match semántico, CV ATS-ready, todo en un solo lugar."
+    />
+    <meta name="twitter:image" content="https://skiltak.com/assets/image/skiltak_isotipo.png" />
+
+    <!-- ===== Structured data (JSON-LD) — ayuda al rich snippet de Google ===== -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "SkilTak",
+        "url": "https://skiltak.com/",
+        "description": "Plataforma de matching de empleos con IA, centraliza ofertas de múltiples bolsas y genera CV ATS-ready.",
+        "inLanguage": "es",
+        "publisher": {
+          "@type": "Organization",
+          "name": "SkilTak",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://skiltak.com/assets/image/skiltak_isotipo.png"
+          }
+        },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://skiltak.com/dashboard?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+
+    <!-- ===== Fonts ===== -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
     <link
       href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
       rel="stylesheet"

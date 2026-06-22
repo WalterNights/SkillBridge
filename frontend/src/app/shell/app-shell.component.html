@@ -11,7 +11,7 @@
     <!-- Brand header -->
     <div class="brand">
       <a routerLink="/dashboard" class="brand-mark" aria-label="SkilTak">
-        <span class="brand-dot">ST</span>
+        <img class="brand-icon" src="assets/image/skiltak_isotipo.png" alt="" aria-hidden="true" />
         <span class="brand-text">SkilTak<span class="text-primary">.</span></span>
       </a>
     </div>
@@ -86,9 +86,13 @@
 
   <!-- =============== MAIN =============== -->
   <main class="flex-1 min-w-0 flex flex-col">
-    <!-- Top bar -->
+    <!-- Top bar.
+         Background SÓLIDO (sin backdrop-blur) — los filters crean un
+         containing block para position:fixed, lo que hacía que el
+         drawer de notificaciones quedara atrapado dentro del header
+         de 64px en vez de cubrir todo el viewport. -->
     <header
-      class="h-16 px-4 lg:px-8 border-b border-white/[0.06] flex items-center justify-between gap-3 sticky top-0 bg-canvas/80 backdrop-blur-xl z-30"
+      class="h-16 px-4 lg:px-8 border-b border-white/[0.06] flex items-center justify-between gap-3 sticky top-0 bg-canvas z-30"
     >
       <div class="flex items-center gap-3 min-w-0 flex-1">
         <button class="hamburger" (click)="toggleDrawer(true)" aria-label="Abrir menú">

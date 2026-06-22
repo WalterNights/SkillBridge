@@ -1,0 +1,29 @@
+# SkilTak — robots.txt
+# Documentación: https://www.robotstxt.org/robotstxt.html
+
+User-agent: *
+
+# Páginas públicas indexables
+Allow: /$
+Allow: /auth/login$
+Allow: /auth/register$
+Allow: /auth/forgot-password$
+Allow: /auth/reset-password$
+
+# Rutas privadas — requieren auth, no aportan al SEO público
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /jobs/
+Disallow: /profile
+Disallow: /me
+Disallow: /cv
+Disallow: /settings
+Disallow: /admin/
+
+# Permitir assets (íconos, imágenes públicas, sitemap, etc.)
+Allow: /assets/
+Allow: /favicon.ico
+Allow: /sitemap.xml
+
+Sitemap: https://skiltak.com/sitemap.xml

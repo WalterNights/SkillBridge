@@ -1,7 +1,10 @@
 <!-- Sticky navbar with backdrop blur. 3-col grid so the center links
      stay visually centered regardless of the logo width on the left
      or the actions on the right. -->
-<nav class="fixed top-0 inset-x-0 z-50 backdrop-blur-xl border-b border-white/[0.06] bg-canvas/80">
+<!-- Navbar — bg sólido sin backdrop-blur. Los filters crean un containing
+     block que rompía el drawer de notificaciones (position:fixed quedaba
+     atrapado en el nav de 80px en vez de cubrir el viewport). -->
+<nav class="fixed top-0 inset-x-0 z-50 border-b border-white/[0.06] bg-canvas">
   <div class="max-w-container-max mx-auto grid grid-cols-[1fr_auto_1fr] items-center px-gutter py-4">
     <!-- Logo -->
     <a routerLink="/" class="text-xl font-bold text-bone tracking-tight justify-self-start">
