@@ -64,49 +64,84 @@
   <div class="max-w-6xl mx-auto">
     <div *ngIf="filteredOffer.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <article
-        *ngFor="let offer of filteredOffer"
+        *ngFor="let offer of filteredOffer; let i = index; trackBy: trackOffer"
         (click)="goToDetail(offer)"
-        class="job-card glass-strong rounded-2xl p-5 cursor-pointer transition-all"
-        [attr.data-match]="
-          offer.match_percentage === 100
-            ? 'excellent'
-            : offer.match_percentage >= 70
-            ? 'good'
-            : 'regular'
-        "
+        class="job-card glass-strong rounded-2xl p-5 cursor-pointer transition-all flex flex-col"
+        [attr.data-match]="matchTier(offer.match_percentage)"
       >
-        <!-- Header: portal avatar + match -->
-        <div class="flex items-start justify-between mb-4">
-          <div
-            class="portal-avatar"
+        <!-- Rank badge — top 3 by orden actual del feed -->
+        <div class="flex items-center justify-between mb-3">
+          <span *ngIf="i < 3" class="rank-badge">
+            <span class="rank-dot"></span>
+            Tu match #{{ i + 1 }} hoy
+          </span>
+          <span *ngIf="i >= 3" class="text-[10px] uppercase tracking-[0.15em] text-dim font-semibold">
+            {{ portalMeta(offer).label }}
+          </span>
+          <span class="match-pill">{{ offer.match_percentage }}%</span>
+        </div>
+
+        <!-- Title -->
+        <h3 class="text-lg font-semibold text-bone leading-snug line-clamp-2 mb-1">
+          {{ offer.title }}
+        </h3>
+
+        <!-- Portal · location — separados con middots como el mock -->
+        <p class="text-sm text-warm-grey mb-4 flex items-center gap-2">
+          <span
+            class="portal-avatar portal-avatar-sm"
             [attr.data-portal]="portalMeta(offer).key"
             [title]="portalMeta(offer).label"
           >
-            <span *ngIf="portalMeta(offer).mark; else genericIcon">
+            <span *ngIf="portalMeta(offer).mark; else genericIcon2">
               {{ portalMeta(offer).mark }}
             </span>
-            <ng-template #genericIcon>
+            <ng-template #genericIcon2>
               <span class="material-symbols-outlined">work</span>
             </ng-template>
+          </span>
+          <span class="truncate">
+            {{ portalMeta(offer).label }}
+            <span *ngIf="offer.location" class="text-dim mx-1">·</span>
+            {{ offer.location }}
+          </span>
+        </p>
+
+        <!-- Salario (solo si el backend pudo parsearlo del summary) -->
+        <div *ngIf="offer.salary" class="salary-row mb-4">
+          <span class="material-symbols-outlined salary-icon" style="font-size: 14px">payments</span>
+          <span class="text-sm font-medium text-bone">{{ offer.salary }}</span>
+        </div>
+
+        <!-- Skills coincidentes: número + barra -->
+        <div class="mt-auto">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[10px] uppercase tracking-[0.12em] text-warm-grey font-semibold">
+              Skills coincidentes
+            </span>
+            <span class="text-xs font-semibold text-bone tabular-nums">
+              {{ skillsMatched(offer) }} / {{ skillsTotal(offer) }}
+            </span>
           </div>
-          <span class="match-badge">{{ offer.match_percentage }}% match</span>
+          <div class="skills-bar">
+            <span class="skills-bar-fill" [style.width.%]="skillsFillPct(offer)"></span>
+          </div>
+
+          <!-- Chips con los primeros 3 skills coincidentes -->
+          <div *ngIf="offer.matched_skills && offer.matched_skills.length" class="flex flex-wrap gap-1.5 mt-3">
+            <span *ngFor="let s of offer.matched_skills.slice(0, 3)" class="skill-chip">{{ s }}</span>
+            <span *ngIf="offer.matched_skills.length > 3" class="skill-chip skill-chip-more">
+              +{{ offer.matched_skills.length - 3 }}
+            </span>
+          </div>
         </div>
 
-        <h3 class="text-base font-semibold text-bone leading-snug line-clamp-2 mb-1.5">
-          {{ offer.title }}
-        </h3>
-        <p class="text-sm text-warm-grey line-clamp-1 mb-3">{{ portalMeta(offer).label }}</p>
-
-        <div class="flex items-center gap-1.5 text-xs text-dim">
-          <span class="material-symbols-outlined" style="font-size: 14px; font-variation-settings: 'wght' 300"
-            >location_on</span
-          >
-          <span class="truncate">{{ offer.location }}</span>
-        </div>
-
-        <div class="mt-5 pt-4 border-t border-white/[0.05] flex items-center justify-between">
-          <span class="text-xs text-warm-grey font-medium">Ver detalle</span>
-          <span class="card-arrow material-symbols-outlined" style="font-size: 18px">arrow_forward</span>
+        <!-- Footer: botón Ver detalles (separado para no detonar el click del card) -->
+        <div class="mt-5 pt-4 border-t border-white/[0.05]">
+          <button type="button" class="detail-btn w-full" (click)="goToDetail(offer); $event.stopPropagation()">
+            Ver detalles
+            <span class="material-symbols-outlined" style="font-size: 16px">arrow_forward</span>
+          </button>
         </div>
       </article>
     </div>

@@ -1,0 +1,35 @@
+# Infra local de SkilTak para dev. NO usar en producción —
+# el VPS corre Redis nativo via systemd.
+#
+# Levantar:    docker compose up -d
+# Apagar:      docker compose down
+# Logs:        docker compose logs -f
+# Datos en:    volumen `skiltak_redis_data` (persistente entre restarts)
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: skiltak-redis
+    restart: unless-stopped
+    ports:
+      # Bindeado solo a 127.0.0.1 — no aceptamos conexiones desde la LAN.
+      # Dev box sin password en Redis: aceptable si nadie más en la red
+      # puede conectar al puerto.
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - skiltak_redis_data:/data
+    command:
+      - redis-server
+      - --save
+      - "60"
+      - "1"
+      - --appendonly
+      - "yes"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  skiltak_redis_data:

@@ -28,127 +28,183 @@
 
 <!-- Job detail -->
 <section *ngIf="!isLoading && !errorMessage && job" class="px-4 lg:px-8 py-8 lg:py-10">
-  <div class="max-w-4xl mx-auto">
-    <!-- Back link + match badge -->
-    <div class="flex items-center justify-between gap-3 mb-6">
-      <button
-        type="button"
-        (click)="goBack()"
-        class="text-sm text-warm-grey hover:text-bone inline-flex items-center gap-1.5 transition-colors"
+  <div class="max-w-6xl mx-auto">
+    <!-- Back link -->
+    <button
+      type="button"
+      (click)="goBack()"
+      class="text-sm text-warm-grey hover:text-bone inline-flex items-center gap-1.5 transition-colors mb-6"
+    >
+      <span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: 'wght' 400"
+        >arrow_back</span
       >
-        <span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: 'wght' 400"
-          >arrow_back</span
-        >
-        Volver al feed
-      </button>
+      Volver al feed
+    </button>
 
-      <span class="match-badge" [attr.data-match]="matchTier()">
-        <span class="match-dot" aria-hidden="true"></span>
-        {{ job.match_percentage }}% match
-      </span>
-    </div>
+    <!-- ============= HERO ROW (left main + right compat sidebar) ============= -->
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 mb-5">
+      <!-- LEFT: Match circle + title + meta + actions -->
+      <article class="glass-strong rounded-2xl p-7 lg:p-9" [attr.data-match]="matchTier()">
+        <div class="flex flex-col lg:flex-row items-start gap-6">
+          <!-- Match circle -->
+          <div class="match-circle" [attr.data-match]="matchTier()">
+            <span class="match-circle-pct">{{ job.match_percentage }}%</span>
+            <span class="match-circle-label">match</span>
+          </div>
 
-    <!-- Main card -->
-    <article class="glass-strong rounded-2xl p-7 lg:p-9 mb-5" [attr.data-match]="matchTier()">
-      <!-- Header: portal avatar + title + meta -->
-      <header class="flex items-start gap-4 mb-6">
-        <div
-          class="portal-avatar portal-avatar--lg"
-          [attr.data-portal]="portalMeta().key"
-          [title]="portalMeta().label"
-        >
-          <span *ngIf="portalMeta().mark; else genericIcon">
-            {{ portalMeta().mark }}
-          </span>
-          <ng-template #genericIcon>
-            <span class="material-symbols-outlined">work</span>
-          </ng-template>
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-1.5">
-            {{ portalMeta().label }}
-          </p>
-          <h1 class="text-2xl lg:text-3xl font-black text-bone tracking-tight leading-tight mb-2">
-            {{ job.title }}
-          </h1>
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-warm-grey">
-            <span class="inline-flex items-center gap-1.5">
-              <span class="material-symbols-outlined" style="font-size: 14px; font-variation-settings: 'wght' 300"
-                >business</span
+          <div class="min-w-0 flex-1">
+            <!-- Top label (solo en matches altos) -->
+            <p *ngIf="topLabel()" class="hero-label">{{ topLabel() }}</p>
+
+            <h1 class="text-2xl lg:text-3xl font-black text-bone tracking-tight leading-tight mb-3">
+              {{ job.title }}
+            </h1>
+
+            <!-- Meta line: company · location · published -->
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-warm-grey mb-5">
+              <span class="inline-flex items-center gap-1.5">
+                <span class="material-symbols-outlined" style="font-size: 14px; font-variation-settings: 'wght' 300"
+                  >business</span
+                >
+                {{ job.company || '—' }}
+              </span>
+              <span *ngIf="job.location" class="inline-flex items-center gap-1.5">
+                <span class="material-symbols-outlined" style="font-size: 14px; font-variation-settings: 'wght' 300"
+                  >location_on</span
+                >
+                {{ job.location }}
+              </span>
+              <span *ngIf="publishedRelative()" class="inline-flex items-center gap-1.5">
+                <span class="material-symbols-outlined" style="font-size: 14px; font-variation-settings: 'wght' 300"
+                  >schedule</span
+                >
+                Publicado {{ publishedRelative() }}
+              </span>
+            </div>
+
+            <!-- Actions row -->
+            <div class="flex items-center gap-2">
+              <a
+                [href]="job.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-primary px-5 py-3 rounded-xl text-sm inline-flex items-center gap-2 flex-1 sm:flex-initial justify-center"
               >
-              {{ job.company || '—' }}
-            </span>
-            <span class="text-dim">·</span>
-            <span class="inline-flex items-center gap-1.5">
-              <span class="material-symbols-outlined" style="font-size: 14px; font-variation-settings: 'wght' 300"
-                >location_on</span
+                <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'FILL' 1"
+                  >play_arrow</span
+                >
+                {{ applyLabel() }}
+              </a>
+
+              <button
+                type="button"
+                class="icon-btn"
+                [class.is-active]="isBookmarked"
+                (click)="toggleBookmark()"
+                [attr.aria-label]="isBookmarked ? 'Quitar de guardadas' : 'Guardar oferta'"
               >
-              {{ job.location || '—' }}
-            </span>
+                <span class="material-symbols-outlined" [style.font-variation-settings]="isBookmarked ? '\'FILL\' 1' : '\'wght\' 400'"
+                  >bookmark</span
+                >
+              </button>
+
+              <button type="button" class="icon-btn" (click)="share()" aria-label="Compartir">
+                <span class="material-symbols-outlined">share</span>
+              </button>
+
+              <button
+                type="button"
+                class="icon-btn"
+                [class.is-active]="isHidden"
+                (click)="toggleHide()"
+                aria-label="Ocultar oferta"
+              >
+                <span class="material-symbols-outlined">visibility_off</span>
+              </button>
+            </div>
           </div>
         </div>
-      </header>
+      </article>
 
-      <!-- Description -->
-      <section class="mb-7">
-        <h2 class="section-eyebrow">Detalle de la oferta</h2>
+      <!-- RIGHT: Resumen de compatibilidad — solo rows con data real -->
+      <aside class="glass-strong rounded-2xl p-6">
+        <p class="compat-eyebrow">Resumen de compatibilidad</p>
+        <dl class="compat-list">
+          <div class="compat-row" *ngIf="skillsTotal() > 0">
+            <dt>Habilidades</dt>
+            <dd class="tabular-nums">{{ skillsMatched() }} / {{ skillsTotal() }}</dd>
+          </div>
+          <div class="compat-row" *ngIf="modality()">
+            <dt>Modalidad</dt>
+            <dd>{{ modality() }}</dd>
+          </div>
+          <div class="compat-row" *ngIf="job.salary">
+            <dt>Salario</dt>
+            <dd>{{ job.salary }}</dd>
+          </div>
+          <div class="compat-row">
+            <dt>Portal</dt>
+            <dd>{{ portalMeta().label }}</dd>
+          </div>
+        </dl>
+      </aside>
+    </div>
+
+    <!-- ============= BODY ROW (left description + right missing skills) ============= -->
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
+      <!-- LEFT: Sobre el rol -->
+      <article class="glass-strong rounded-2xl p-7 lg:p-9">
+        <h2 class="section-title">Sobre el rol</h2>
         <p class="text-sm text-warm-grey leading-relaxed whitespace-pre-line">
           {{ job.summary || 'Esta oferta no incluye una descripción extendida.' }}
         </p>
-      </section>
 
-      <!-- Required skills -->
-      <section class="mb-7" *ngIf="keywordChips().length > 0">
-        <h2 class="section-eyebrow">Habilidades requeridas</h2>
-        <div class="flex flex-wrap gap-2">
-          <span *ngFor="let skill of keywordChips()" class="skill-chip">{{ skill }}</span>
+        <!-- Habilidades requeridas (keywords del scraper) -->
+        <div *ngIf="keywordChips().length > 0" class="mt-7">
+          <h3 class="section-eyebrow">Habilidades mencionadas</h3>
+          <div class="flex flex-wrap gap-2">
+            <span *ngFor="let skill of keywordChips()" class="skill-chip">{{ skill }}</span>
+          </div>
         </div>
-      </section>
+      </article>
 
-      <!-- Apply CTA -->
-      <a
-        [href]="job.url"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="btn-primary w-full py-3.5 rounded-xl text-base inline-flex items-center justify-center gap-2"
+      <!-- RIGHT: Skills faltantes -->
+      <aside
+        *ngIf="(job.missing_skills?.length || 0) > 0 && job.match_percentage < 100"
+        class="missing-card"
       >
-        <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'wght' 400"
-          >open_in_new</span
-        >
-        Aplicar a esta oferta
-      </a>
-    </article>
-
-    <!-- Missing skills card (solo cuando hay gap real) -->
-    <aside
-      *ngIf="(job.missing_skills?.length || 0) > 0 && job.match_percentage < 100"
-      class="glass-strong rounded-2xl p-7"
-    >
-      <div class="flex items-start gap-3 mb-5">
-        <span
-          class="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary shrink-0"
-          style="font-size: 18px; font-variation-settings: 'FILL' 1"
-          >school</span
-        >
-        <div>
-          <h2 class="text-base font-semibold text-bone leading-snug">
-            Te faltan estas habilidades para esta oferta
-          </h2>
-          <p class="text-xs text-warm-grey mt-1">
-            Hacé click en una para encontrar cursos de nuestros aliados.
-          </p>
+        <p class="missing-eyebrow">Skills faltantes</p>
+        <p class="text-xs text-warm-grey mb-4">
+          Click en una para encontrar cursos de nuestros aliados.
+        </p>
+        <div class="flex flex-col gap-2">
+          <button
+            *ngFor="let skill of job.missing_skills"
+            type="button"
+            class="missing-chip missing-chip--block"
+          >
+            <span>{{ skill }}</span>
+            <span class="missing-chip-badge">Nivel requerido</span>
+          </button>
         </div>
-      </div>
+      </aside>
 
-      <div class="flex flex-wrap gap-2">
-        <button
-          *ngFor="let skill of job.missing_skills"
-          type="button"
-          class="missing-chip"
-        >
-          {{ skill }}
-        </button>
-      </div>
-    </aside>
+      <!-- Fallback cuando no hay skills faltantes (match perfecto) -->
+      <aside
+        *ngIf="(job.missing_skills?.length || 0) === 0 || job.match_percentage === 100"
+        class="glass-strong rounded-2xl p-6 self-start"
+      >
+        <p class="compat-eyebrow">Cumplís el perfil</p>
+        <div class="flex items-center gap-3 mb-3">
+          <span
+            class="w-9 h-9 rounded-lg bg-emerald-500/15 flex items-center justify-center material-symbols-outlined text-emerald-400 shrink-0"
+            style="font-size: 18px; font-variation-settings: 'FILL' 1"
+            >check_circle</span
+          >
+          <p class="text-sm text-bone font-semibold">No te faltan skills para esta oferta.</p>
+        </div>
+        <p class="text-xs text-warm-grey">Postulá y avisanos cómo te fue.</p>
+      </aside>
+    </div>
   </div>
 </section>

@@ -1,3 +1,5 @@
+import logging
+
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
@@ -10,13 +12,46 @@ from jobs.models import JobOffer
 from jobs.serializers import JobOfferSerializer
 from jobs.services.job_service import JobService
 from jobs.services.matching_service import JobMatchingService
+from notifications.models import Notification
 from users.models import UserProfile
+
+# Umbral arriba del cual una oferta nueva dispara notif de match. Por
+# debajo de esto consideramos que la coincidencia es débil y no vale la
+# pena spamear al usuario — el feed igual la muestra ordenada.
+_NOTIF_MATCH_THRESHOLD = 70
+
+logger = logging.getLogger(__name__)
 
 # Rate limit del scrape — caro (3 portales en paralelo + Gemini calls).
 # Implementado via cache propio porque django_ratelimit no es trivial de
 # aplicar a un @action de ViewSet (decoradores compuestos).
 _SCRAPE_RATE_WINDOW_SECONDS = 60 * 60  # 1h
 _SCRAPE_RATE_MAX_PER_USER = 5
+
+
+def _check_and_bump_scrape_rate(user_id: int) -> bool:
+    """Devuelve True si se permite seguir, False si excedió el límite.
+
+    SEGURIDAD/RESILIENCIA: si el cache backend (Redis) no responde,
+    fail-open — logueamos el problema y dejamos pasar la request en
+    vez de devolver 500. Lo mismo que `RATELIMIT_FAIL_OPEN` hace para
+    django-ratelimit, replicado a mano acá porque este path usa cache
+    directo. Sin esto, una caída de Redis tumba el endpoint completo.
+    """
+    cache_key = f"scrape_ratelimit:{user_id}"
+    try:
+        current = cache.get(cache_key, 0)
+        if current >= _SCRAPE_RATE_MAX_PER_USER:
+            return False
+        # TTL solo en el primer hit; siguientes incrementan sin renovar
+        # (cache.incr no resetea TTL en redis), así la ventana es estricta.
+        if current == 0:
+            cache.set(cache_key, 1, timeout=_SCRAPE_RATE_WINDOW_SECONDS)
+        else:
+            cache.incr(cache_key)
+    except Exception as exc:
+        logger.warning("Scrape rate-limit cache unavailable, failing open: %s", exc)
+    return True
 
 
 class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
@@ -37,6 +72,42 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         """Optimiza queries con select_related"""
         return JobOffer.objects.all().order_by("-created_at")
+
+    def _maybe_create_match_notification(self, user, offers):
+        """Crea una notif `kind=match` si hay ≥1 oferta con match alto.
+
+        Reglas:
+          - Solo cuenta ofertas con `match_percentage >= _NOTIF_MATCH_THRESHOLD`.
+          - `title` = "N nuevas ofertas calzan con tu perfil".
+          - `body` = primeros 3 títulos truncados (anti-noisy).
+          - `metadata` guarda la lista de offer ids — útil cuando un
+            futuro click en la notif lleva al feed prefiltered.
+
+        No-op silencioso si no hay match alto — no spamear al usuario con
+        notifs vacías cada vez que da click a "Buscar ofertas".
+        """
+        high_match = [
+            o for o in offers
+            if getattr(o, "match_percentage", 0) >= _NOTIF_MATCH_THRESHOLD
+        ]
+        if not high_match:
+            return
+
+        # Tomamos los 3 títulos para el body. Truncados a 60 chars
+        # cada uno para que el preview en el drawer no rompa el layout.
+        sample_titles = [(o.title or "")[:60] for o in high_match[:3]]
+        if len(high_match) > 3:
+            body = f"{', '.join(sample_titles)} y {len(high_match) - 3} más — todas con +{_NOTIF_MATCH_THRESHOLD}% match."
+        else:
+            body = f"{', '.join(sample_titles)} — todas con +{_NOTIF_MATCH_THRESHOLD}% match."
+
+        Notification.objects.create(
+            user=user,
+            kind="match",
+            title=f"{len(high_match)} {'nueva oferta calza' if len(high_match) == 1 else 'nuevas ofertas calzan'} con tu perfil",
+            body=body,
+            metadata={"offer_ids": [o.id for o in high_match]},
+        )
 
     def _enrich_with_user_match(self, offers):
         """Adjunta match_percentage / matched_skills / missing_skills usando
@@ -99,11 +170,8 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
         un cliente malicioso podía drenar la cuota de Gemini AI y/o
         hacer flood al rate limit de DDG/LinkedIn como proxy involuntario.
         """
-        # Rate limit per-user via cache. Devolvemos 429 sin tocar
-        # los portales si el usuario excedió la cuota.
-        cache_key = f"scrape_ratelimit:{request.user.id}"
-        current = cache.get(cache_key, 0)
-        if current >= _SCRAPE_RATE_MAX_PER_USER:
+        # Rate limit per-user via cache (fail-open si Redis down).
+        if not _check_and_bump_scrape_rate(request.user.id):
             return Response(
                 {
                     "error": (
@@ -113,12 +181,6 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
                 },
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
-        # TTL solo en el primer hit; siguientes incrementan sin renovar
-        # (cache.incr no resetea TTL en redis), así la ventana es estricta.
-        if current == 0:
-            cache.set(cache_key, 1, timeout=_SCRAPE_RATE_WINDOW_SECONDS)
-        else:
-            cache.incr(cache_key)
 
         try:
             profile = request.user.profile
@@ -157,6 +219,11 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
             filtered_offers = JobMatchingService.filter_jobs_by_skills(
                 new_offers, profile, min_match_percentage=25
             )
+
+            # Notif de match — solo si hay ofertas arriba del umbral.
+            # Pongo el create al final del happy path para no romper el
+            # scrape si la tabla Notification tiene un problema.
+            self._maybe_create_match_notification(request.user, filtered_offers)
 
             serializer = self.get_serializer(filtered_offers, many=True)
             return Response(

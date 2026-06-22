@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "jobs",
     "users",
     "dashboard",
+    "notifications",
     "corsheaders",
     "rest_framework",
     # Necesario para invalidar refresh tokens al rotar (SEGURIDAD).
@@ -138,6 +139,14 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
 }
+
+# SEGURIDAD: si el cache backend (Redis) está down, django-ratelimit
+# por defecto tira ConnectionError → 500 en cada endpoint decorado. Eso
+# es un DoS auto-infligido: si Redis se cae, no podés ni loguearte.
+# FAIL_OPEN=True deja pasar la request cuando no se puede consultar el
+# rate limit. Trade: perdemos el limit temporal, pero el sitio sigue
+# vivo y se loguea el problema. En prod monitor en Grafana el up/down.
+RATELIMIT_FAIL_OPEN = True
 
 SIMPLE_JWT = {
     # SEGURIDAD:

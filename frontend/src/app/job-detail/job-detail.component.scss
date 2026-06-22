@@ -17,101 +17,202 @@
 }
 
 /* ===========================================
-   Match badge (top right of the page header).
-   Tier color shared with the feed cards in /dashboard so the
-   user reads the ranking the same way across screens.
-   =========================================== */
-.match-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  color: #e8e5dd;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  white-space: nowrap;
-}
-
-.match-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #8b8a85;
-  flex-shrink: 0;
-}
-
-.match-badge[data-match="excellent"] {
-  color: #4ade80;
-  background: rgba(74, 222, 128, 0.08);
-  border-color: rgba(74, 222, 128, 0.25);
-
-  .match-dot {
-    background: #4ade80;
-    box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.18);
-  }
-}
-
-.match-badge[data-match="good"] {
-  color: #f97316;
-  background: rgba(249, 115, 22, 0.08);
-  border-color: rgba(249, 115, 22, 0.25);
-
-  .match-dot {
-    background: #f97316;
-    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
-  }
-}
-
-.match-badge[data-match="regular"] {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.08);
-  border-color: rgba(251, 191, 36, 0.25);
-
-  .match-dot {
-    background: #fbbf24;
-    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.18);
-  }
-}
-
-/* ===========================================
    Main offer card — accent border-left tinted by match tier,
-   same pattern as the feed cards for continuity.
+   continuidad visual con las cards del feed.
    =========================================== */
-article.glass-strong[data-match="excellent"] {
+article.glass-strong[data-match='excellent'] {
   border-left: 2px solid #4ade80;
 }
 
-article.glass-strong[data-match="good"] {
+article.glass-strong[data-match='good'] {
   border-left: 2px solid #f97316;
 }
 
-article.glass-strong[data-match="regular"] {
+article.glass-strong[data-match='regular'] {
   border-left: 2px solid #fbbf24;
 }
 
 /* ===========================================
-   Portal avatar — size override for the job-detail header.
-   The global .portal-avatar defaults to 38px (used in the dashboard
-   feed cards); here we bump it to 52px for the page hero.
+   Match circle (hero) — anillo coloreado + número grande adentro.
+   Replica el círculo del mockup. Tier-coloreado por data-match.
    =========================================== */
-.portal-avatar--lg {
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
-  font-size: 16px;
+.match-circle {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border: 3px solid #f97316;
+  position: relative;
+  box-shadow: 0 0 0 6px rgba(249, 115, 22, 0.08);
 }
 
-.portal-avatar--lg .material-symbols-outlined {
+.match-circle-pct {
   font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #f97316;
+  line-height: 1;
+}
+
+.match-circle-label {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #f97316;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.match-circle[data-match='excellent'] {
+  border-color: #4ade80;
+  box-shadow: 0 0 0 6px rgba(74, 222, 128, 0.10);
+
+  .match-circle-pct,
+  .match-circle-label {
+    color: #4ade80;
+  }
+}
+
+.match-circle[data-match='regular'] {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.10);
+
+  .match-circle-pct,
+  .match-circle-label {
+    color: #fbbf24;
+  }
+}
+
+.match-circle[data-match='low'] {
+  border-color: #8b8a85;
+  box-shadow: 0 0 0 6px rgba(139, 138, 133, 0.10);
+
+  .match-circle-pct,
+  .match-circle-label {
+    color: #8b8a85;
+  }
 }
 
 /* ===========================================
-   Section eyebrow — small uppercase label that opens each block
-   (Detalle, Habilidades requeridas).
+   Hero label encima del título ("TOP MATCH · ...")
+   =========================================== */
+.hero-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #f97316;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+/* ===========================================
+   Icon buttons en la action row (bookmark, share, hide)
+   =========================================== */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #8b8a85;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+    color: #e8e5dd;
+  }
+
+  &.is-active {
+    color: #f97316;
+    background: rgba(249, 115, 22, 0.10);
+    border-color: rgba(249, 115, 22, 0.30);
+  }
+
+  .material-symbols-outlined {
+    font-size: 20px;
+  }
+}
+
+/* ===========================================
+   Compat sidebar — "Resumen de compatibilidad"
+   =========================================== */
+.compat-eyebrow,
+.missing-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #8b8a85;
+  margin-bottom: 16px;
+}
+
+.missing-eyebrow {
+  color: #f97316;
+  margin-bottom: 4px;
+}
+
+.compat-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.compat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+
+  &:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  dt {
+    font-size: 13px;
+    color: #8b8a85;
+    font-weight: 500;
+  }
+
+  dd {
+    font-size: 14px;
+    color: #e8e5dd;
+    font-weight: 700;
+    margin: 0;
+  }
+}
+
+/* ===========================================
+   Section title (h2 dentro del body card)
+   =========================================== */
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #e8e5dd;
+  margin-bottom: 16px;
+}
+
+/* ===========================================
+   Section eyebrow — small uppercase label dentro del body
    =========================================== */
 .section-eyebrow {
   font-size: 11px;
@@ -125,10 +226,7 @@ article.glass-strong[data-match="regular"] {
 }
 
 /* ===========================================
-   Skill chips.
-   `.skill-chip` neutral (habilidades requeridas).
-   `.missing-chip` orange-bordered + interactive (te faltan, click
-   para ir a cursos).
+   Skill chips — neutral (mencionadas) y missing (faltantes con CTA)
    =========================================== */
 .skill-chip {
   display: inline-flex;
@@ -141,6 +239,16 @@ article.glass-strong[data-match="regular"] {
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.02em;
+}
+
+/* Card de skills faltantes — borde naranja sutil, fondo más cargado
+   en el orange para diferenciarse del resto del layout. */
+.missing-card {
+  border-radius: 16px;
+  padding: 24px;
+  background: linear-gradient(180deg, rgba(249, 115, 22, 0.06), rgba(249, 115, 22, 0.02));
+  border: 1px solid rgba(249, 115, 22, 0.20);
+  align-self: start; /* no estirar al height del card de descripción */
 }
 
 .missing-chip {
@@ -165,4 +273,37 @@ article.glass-strong[data-match="regular"] {
     border-color: rgba(249, 115, 22, 0.6);
     transform: translateY(-1px);
   }
+}
+
+/* Variante block — full-width row con badge "NIVEL REQUERIDO" al lado.
+   Útil para sidebar vertical (mockup nuevo). */
+.missing-chip--block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(249, 115, 22, 0.40);
+  color: #e8e5dd;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 14px;
+
+  &:hover {
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.60);
+  }
+}
+
+.missing-chip-badge {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #fff;
+  background: #f97316;
+  padding: 3px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
 }

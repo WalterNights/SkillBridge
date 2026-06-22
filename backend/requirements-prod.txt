@@ -58,6 +58,7 @@ requests==2.32.4
 cryptography==45.0.4
 PyJWT==2.9.0
 certifi==2025.4.26
+django-ratelimit==4.1.0
 
 # ----- HTTP -----
 httpx==0.28.1

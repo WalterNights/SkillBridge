@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from users.models import PasswordResetToken, User, UserProfile
+from users.models import PasswordResetToken, User, UserProfile, strip_image_metadata
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -51,6 +51,20 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "portfolio_url",
         ]
         read_only_fields = ["phone"]
+
+    def validate_photo(self, value):
+        """SEGURIDAD: stripa EXIF/XMP. Las fotos de cámara mobile traen
+        GPS y modelo de dispositivo, leak pasivo cuando se sirven public."""
+        if not value:
+            return value
+        return strip_image_metadata(value)
+
+    def validate_banner(self, value):
+        """Mismo motivo que `validate_photo` — algunos banners vienen
+        de cámaras y arrastran metadata sensible."""
+        if not value:
+            return value
+        return strip_image_metadata(value)
 
     def validate_linkedin_url(self, value):
         """Normaliza el URL de LinkedIn sin romper los que ya vienen bien.

@@ -1,57 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
-
-/**
- * Stub local de notificaciones — desaparece cuando exista el modelo
- * `Notification` en el backend. Mantenemos las tres categorías que
- * pidió el producto (No leídas / Leídas / Guardadas) y un `read` flag
- * para validar la UX de marcar como leído antes de tener el endpoint.
- */
-type NotifKind = 'match' | 'reminder' | 'system';
-interface Notification {
-  id: number;
-  kind: NotifKind;
-  title: string;
-  body: string;
-  createdAt: string;
-  read: boolean;
-  saved: boolean;
-}
-
-const STUB_NOTIFICATIONS: Notification[] = [
-  {
-    id: 1,
-    kind: 'match',
-    title: '5 nuevas ofertas calzan con tu perfil',
-    body: 'Senior Full Stack, Backend Lead y 3 más — todas con +70% match.',
-    createdAt: 'hace 1 hora',
-    read: false,
-    saved: false,
-  },
-  {
-    id: 2,
-    kind: 'reminder',
-    title: 'Completá tu portafolio',
-    body: 'Sumar tu URL personal aumenta las visitas al perfil un 30%.',
-    createdAt: 'hace 3 días',
-    read: false,
-    saved: true,
-  },
-  {
-    id: 3,
-    kind: 'system',
-    title: 'Tu CV ATS quedó actualizado',
-    body: 'La última edición se aplicó al PDF descargable.',
-    createdAt: 'hace 5 días',
-    read: true,
-    saved: false,
-  },
-];
-
-type NotifTab = 'unread' | 'read' | 'saved';
+import {
+  NotificationDto,
+  NotificationKind,
+  NotificationService,
+  NotificationTab,
+} from '../../services/notification.service';
 
 /**
  * User chrome compartido: campanita + avatar dropdown.
@@ -60,9 +17,53 @@ type NotifTab = 'unread' | 'read' | 'saved';
  * (No leídas / Leídas / Guardadas). El dot rojo en el bell aparece
  * solo cuando hay al menos una notif no leída.
  *
- * Data stub hasta que el backend de Notification esté listo — el
- * contrato del array es lo único que tendría que cambiar.
+ * Datos reales via `NotificationService` — el modelo de backend (kind,
+ * is_read, is_saved, created_at) viaja casi 1:1 a la UI. El timestamp
+ * se renderiza con `Intl.RelativeTimeFormat` (built-in del browser, sin
+ * libreria) para "hace 1 hora", "hace 3 días", etc.
  */
+
+const _RELATIVE_FMT = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
+
+function formatRelative(iso: string): string {
+  if (!iso) return '';
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const diffMs = then - Date.now();
+  const diffSec = Math.round(diffMs / 1000);
+  const absSec = Math.abs(diffSec);
+  // Escalado por unidad — el threshold es generoso, no exacto. Para el
+  // drawer la precisión absoluta no importa.
+  if (absSec < 60) return _RELATIVE_FMT.format(Math.round(diffSec), 'second');
+  if (absSec < 3600) return _RELATIVE_FMT.format(Math.round(diffSec / 60), 'minute');
+  if (absSec < 86400) return _RELATIVE_FMT.format(Math.round(diffSec / 3600), 'hour');
+  if (absSec < 2592000) return _RELATIVE_FMT.format(Math.round(diffSec / 86400), 'day');
+  if (absSec < 31536000) return _RELATIVE_FMT.format(Math.round(diffSec / 2592000), 'month');
+  return _RELATIVE_FMT.format(Math.round(diffSec / 31536000), 'year');
+}
+
+interface UiNotification {
+  id: number;
+  kind: NotificationKind;
+  title: string;
+  body: string;
+  createdAt: string; // string ya formateado para el template
+  read: boolean;
+  saved: boolean;
+}
+
+function toUi(dto: NotificationDto): UiNotification {
+  return {
+    id: dto.id,
+    kind: dto.kind,
+    title: dto.title,
+    body: dto.body,
+    createdAt: formatRelative(dto.created_at),
+    read: dto.is_read,
+    saved: dto.is_saved,
+  };
+}
+
 @Component({
   selector: 'app-user-nav',
   standalone: true,
@@ -74,17 +75,18 @@ export class UserNavComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
+  private notifApi = inject(NotificationService);
 
   isLoggedIn = signal(this.auth.isAuthenticated());
   userMenuOpen = signal(false);
   notificationsOpen = signal(false);
-  notifTab = signal<NotifTab>('unread');
+  notifTab = signal<NotificationTab>('unread');
 
   userName = signal(this.auth.getUserName());
   userEmail = signal(this.auth.getUserEmail());
   userInitial = computed(() => this.userName().charAt(0).toUpperCase() || 'U');
 
-  notifications = signal<Notification[]>(STUB_NOTIFICATIONS);
+  notifications = signal<UiNotification[]>([]);
   unreadCount = computed(() => this.notifications().filter((n) => !n.read).length);
   visibleNotifications = computed(() => {
     const tab = this.notifTab();
@@ -103,7 +105,31 @@ export class UserNavComponent {
       if (!loggedIn) {
         this.userMenuOpen.set(false);
         this.notificationsOpen.set(false);
+        this.notifications.set([]);
+      } else {
+        // Carga inicial al loguearse — el bell muestra el dot apenas hay
+        // notifs sin necesidad de abrir el drawer.
+        this.refresh();
       }
+    });
+
+    // Re-fetch cada vez que el drawer pasa a open. Suficiente por
+    // ahora — sin polling, sin SSE. El user abre el bell, ve lo último.
+    effect(() => {
+      if (this.notificationsOpen() && this.isLoggedIn()) {
+        this.refresh();
+      }
+    });
+  }
+
+  private refresh(): void {
+    this.notifApi.list().subscribe({
+      next: (list) => this.notifications.set(list.map(toUi)),
+      error: (err) => {
+        // Soft-fail: si el backend tira 401/500 no rompemos el chrome.
+        // Solo logueamos, el drawer queda vacío.
+        console.warn('Failed to load notifications', err);
+      },
     });
   }
 
@@ -123,24 +149,43 @@ export class UserNavComponent {
     this.notificationsOpen.set(false);
   }
 
-  setNotifTab(tab: NotifTab, event?: MouseEvent): void {
+  setNotifTab(tab: NotificationTab, event?: MouseEvent): void {
     event?.stopPropagation();
     this.notifTab.set(tab);
   }
 
   markAsRead(id: number, event?: MouseEvent): void {
     event?.stopPropagation();
-    this.notifications.update((list) => list.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    // Optimistic update — flip el flag local y reverse on error. Hace
+    // la UX instantánea y el roundtrip a backend transparente.
+    this.notifications.update((list) =>
+      list.map((n) => (n.id === id ? { ...n, read: true } : n)),
+    );
+    this.notifApi.markRead(id).subscribe({
+      error: () => {
+        this.notifications.update((list) =>
+          list.map((n) => (n.id === id ? { ...n, read: false } : n)),
+        );
+      },
+    });
   }
 
   toggleSaved(id: number, event?: MouseEvent): void {
     event?.stopPropagation();
+    const previous = this.notifications().find((n) => n.id === id)?.saved ?? false;
     this.notifications.update((list) =>
       list.map((n) => (n.id === id ? { ...n, saved: !n.saved } : n)),
     );
+    this.notifApi.toggleSave(id).subscribe({
+      error: () => {
+        this.notifications.update((list) =>
+          list.map((n) => (n.id === id ? { ...n, saved: previous } : n)),
+        );
+      },
+    });
   }
 
-  iconForKind(kind: NotifKind): string {
+  iconForKind(kind: NotificationKind): string {
     switch (kind) {
       case 'match':
         return 'work';

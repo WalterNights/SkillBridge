@@ -65,69 +65,247 @@
 /* =========================
    Job cards
    ========================= */
+
+/* @property registra `--led-angle` como angle CSS, lo que lo hace
+   animable. Sin esto, CSS trata cualquier custom prop como string y la
+   transición sería un step instantáneo en vez de un sweep continuo.
+   Chrome/Edge/Safari modernos soportan @property; Firefox 128+ también.
+   Si un browser viejo entra, el conic-gradient queda quieto (graceful). */
+@property --led-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes led-rotate {
+  to {
+    --led-angle: 360deg;
+  }
+}
+
 .job-card {
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.06);
+  transition:
+    border-color 200ms ease,
+    transform 200ms ease,
+    box-shadow 200ms ease;
 
   &:hover {
     border-color: rgba(255, 255, 255, 0.12);
     transform: translateY(-2px);
     box-shadow: 0 16px 32px -16px rgba(0, 0, 0, 0.5);
-
-    .card-arrow {
-      color: #f97316;
-      transform: translateX(2px);
-    }
   }
 
-  &[data-match="excellent"] {
-    border-left: 2px solid #4ade80;
+  /* LED border: pseudo-element con conic-gradient + mask trick que
+     pinta SOLO el anillo (no el interior). Inactivo a opacity 0 y se
+     prende al hover. Tier-coloreado para reforzar el match. */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -1px; /* cubre el border de 1px del card */
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 220ms ease;
+    /* `linear-gradient(#000) content-box` rellena el área interior,
+       el segundo gradient cubre todo. `composite: xor/exclude` resta —
+       resultado: solo el anillo de 1px queda visible. */
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    background: conic-gradient(
+      from var(--led-angle),
+      transparent 0deg,
+      var(--led-color, #f97316) 60deg,
+      rgba(249, 115, 22, 0.4) 110deg,
+      transparent 160deg,
+      transparent 360deg
+    );
   }
 
-  &[data-match="good"] {
-    border-left: 2px solid #f97316;
+  &:hover::before {
+    opacity: 1;
+    animation: led-rotate 2.4s linear infinite;
   }
 
-  &[data-match="regular"] {
-    border-left: 2px solid #fbbf24;
+  &[data-match='excellent'] {
+    --led-color: #4ade80;
+  }
+
+  &[data-match='good'] {
+    --led-color: #f97316;
+  }
+
+  &[data-match='regular'] {
+    --led-color: #fbbf24;
   }
 }
 
-.match-badge {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+/* =========================
+   Match pill (top-right)
+   ========================= */
+.match-pill {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   color: #e8e5dd;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 9999px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.job-card[data-match="excellent"] .match-pill {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.10);
+  border-color: rgba(74, 222, 128, 0.30);
+}
+
+.job-card[data-match="good"] .match-pill {
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.30);
+}
+
+.job-card[data-match="regular"] .match-pill {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.10);
+  border-color: rgba(251, 191, 36, 0.28);
+}
+
+/* =========================
+   Rank badge ("Tu match #1 hoy")
+   ========================= */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #f97316;
+}
+
+.rank-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.20);
+  flex-shrink: 0;
+}
+
+/* =========================
+   Skills bar + chips
+   ========================= */
+.skills-bar {
+  position: relative;
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.skills-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f97316, #fbbf24);
+  transition: width 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.job-card[data-match="excellent"] .skills-bar-fill {
+  background: linear-gradient(90deg, #4ade80, #86efac);
+}
+
+.skill-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #cfcfc8;
+  font-size: 11px;
+  font-weight: 500;
   white-space: nowrap;
 }
 
-.job-card[data-match="excellent"] .match-badge {
-  color: #4ade80;
-  background: rgba(74, 222, 128, 0.08);
-  border-color: rgba(74, 222, 128, 0.25);
-}
-
-.job-card[data-match="good"] .match-badge {
+.skill-chip-more {
   color: #f97316;
   background: rgba(249, 115, 22, 0.08);
-  border-color: rgba(249, 115, 22, 0.25);
+  border-color: rgba(249, 115, 22, 0.20);
 }
 
-.job-card[data-match="regular"] .match-badge {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.08);
-  border-color: rgba(251, 191, 36, 0.25);
+/* =========================
+   Portal avatar (small variant — usado inline en el subtítulo)
+   ========================= */
+.portal-avatar-sm {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  flex-shrink: 0;
+
+  /* Override del global — el material icon era 18px, demasiado para 20px */
+  .material-symbols-outlined {
+    font-size: 12px;
+  }
 }
 
-.card-arrow {
-  color: #8b8a85;
+/* =========================
+   "Ver detalles" button (footer del card)
+   ========================= */
+.detail-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #cfcfc8;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  font-family: inherit;
   transition:
-    color 180ms ease,
-    transform 180ms ease;
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+
+  &:hover {
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.30);
+    color: #f97316;
+  }
+}
+
+/* =========================
+   Salary row (opcional — solo aparece si offer.salary está poblado)
+   ========================= */
+.salary-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(249, 115, 22, 0.06);
+  border: 1px solid rgba(249, 115, 22, 0.18);
+}
+
+.salary-icon {
+  color: #f97316;
 }
 
 /* Line clamp helpers — fall back gracefully on older browsers. */

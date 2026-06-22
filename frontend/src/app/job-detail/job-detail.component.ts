@@ -6,14 +6,31 @@ import { JobOffer } from '../models/job-offer.model';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { portalMeta } from '../shared/portal';
 
+const _RELATIVE_FMT = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
+
+function _formatRelative(iso: string | undefined): string {
+  if (!iso) return '';
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const diffSec = Math.round((then - Date.now()) / 1000);
+  const abs = Math.abs(diffSec);
+  if (abs < 60) return _RELATIVE_FMT.format(Math.round(diffSec), 'second');
+  if (abs < 3600) return _RELATIVE_FMT.format(Math.round(diffSec / 60), 'minute');
+  if (abs < 86400) return _RELATIVE_FMT.format(Math.round(diffSec / 3600), 'hour');
+  if (abs < 2592000) return _RELATIVE_FMT.format(Math.round(diffSec / 86400), 'day');
+  return _RELATIVE_FMT.format(Math.round(diffSec / 2592000), 'month');
+}
+
 /**
  * Detalle de una oferta de trabajo (/jobs/:id).
  *
- * Renderiza dentro del AppShell, así que no monta header/sidebar
- * propio. La fuente única de datos es `job` (el backend devuelve la
- * oferta enriquecida con `match_percentage`, `matched_skills` y
- * `missing_skills` via `_enrich_with_user_match`), así no dependemos
- * del cache de selección en sesión.
+ * Layout split estilo Stitch mockup:
+ *   - Hero row con match circle (left) + sidebar de compatibilidad (right)
+ *   - Body row con "Sobre el rol" (left) + skills faltantes (right)
+ *
+ * Renderiza dentro del AppShell, así que no monta header/sidebar propio.
+ * Data viene de /api/jobs/{id} enriquecida con `match_percentage`,
+ * `matched_skills` y `missing_skills` por el backend.
  */
 @Component({
   selector: 'app-job-detail',
@@ -26,6 +43,8 @@ export class JobDetailComponent implements OnInit {
   job: JobOffer | null = null;
   isLoading = true;
   errorMessage = '';
+  isBookmarked = false;
+  isHidden = false;
 
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -60,11 +79,7 @@ export class JobDetailComponent implements OnInit {
     this.location.back();
   }
 
-  /**
-   * Tier visual del match. Empareja con los dots/borders del feed
-   * en /dashboard para que el usuario reconozca el ranking de
-   * inmediato sin tener que leer el número.
-   */
+  /** Tier visual del match — mismo mapeo que el feed para continuidad. */
   matchTier(): 'excellent' | 'good' | 'regular' | 'low' {
     const m = this.job?.match_percentage ?? 0;
     if (m >= 100) return 'excellent';
@@ -73,17 +88,71 @@ export class JobDetailComponent implements OnInit {
     return 'low';
   }
 
-  /** Lista de keywords como array para renderizar como pills. */
-  keywordChips(): string[] {
-    if (!this.job?.keywords) return [];
-    return this.job.keywords
-      .split(',')
-      .map((k) => k.trim())
-      .filter(Boolean);
+  /** Label del "header" sobre el título — solo aparece en matches altos. */
+  topLabel(): string | null {
+    const m = this.job?.match_percentage ?? 0;
+    if (m >= 90) return 'Top match · Tu mejor coincidencia';
+    if (m >= 70) return 'Match alto · Vale la pena postular';
+    return null;
   }
 
-  /** Portal de origen (LinkedIn, Elempleo, …) para el avatar del header. */
+  /** Texto del CTA — "Aplicar en {portal}" si conocemos el portal. */
+  applyLabel(): string {
+    const label = this.portalMeta().label;
+    if (!label || label === 'Oferta') return 'Aplicar a esta oferta';
+    return `Aplicar en ${label}`;
+  }
+
+  /** Conteo X / Y para la row "Habilidades" del sidebar de compat. */
+  skillsMatched(): number {
+    return this.job?.matched_skills?.length ?? 0;
+  }
+  skillsTotal(): number {
+    const m = this.job?.matched_skills?.length ?? 0;
+    const x = this.job?.missing_skills?.length ?? 0;
+    return m + x;
+  }
+
+  /** Modalidad heurística — detecta "remoto" en la location string. */
+  modality(): string | null {
+    const loc = (this.job?.location || '').toLowerCase();
+    if (/\bremot/.test(loc)) return 'Remoto';
+    if (/\bhibrid|\bh[ií]brid/.test(loc)) return 'Híbrido';
+    if (/\bpresencial|\bon[\s-]?site/.test(loc)) return 'Presencial';
+    return null;
+  }
+
+  /** Fecha relativa de publicación (aprox = fecha de scrape). */
+  publishedRelative(): string {
+    return _formatRelative(this.job?.created_at);
+  }
+
+  /** Lista de keywords del backend como pills (no-deduplicada). */
+  keywordChips(): string[] {
+    if (!this.job?.keywords) return [];
+    return this.job.keywords.split(',').map((k) => k.trim()).filter(Boolean);
+  }
+
+  /** Portal de origen (LinkedIn, Elempleo, …) para el avatar + CTA copy. */
   portalMeta() {
     return portalMeta(this.job);
+  }
+
+  toggleBookmark(): void {
+    this.isBookmarked = !this.isBookmarked;
+  }
+
+  toggleHide(): void {
+    this.isHidden = !this.isHidden;
+  }
+
+  share(): void {
+    if (!this.job) return;
+    const url = window.location.href;
+    if (navigator.share) {
+      navigator.share({ title: this.job.title, url }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(url);
+    }
   }
 }

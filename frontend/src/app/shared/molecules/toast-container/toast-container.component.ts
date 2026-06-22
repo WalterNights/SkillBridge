@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { animate, style, transition, trigger } from '@angular/animations';
 import { ToastService, Toast } from '../../../services/toast.service';
 import { Subscription } from 'rxjs';
 
@@ -7,11 +8,39 @@ import { Subscription } from 'rxjs';
   selector: 'app-toast-container',
   standalone: true,
   imports: [CommonModule],
+  animations: [
+    // Enter: desliza desde la derecha + fade + escala muy sutil.
+    // Leave: invierte el gesto y se acompasa con un fade más rápido
+    // para que la salida no se quede colgada en la atención del user.
+    // La curva (0.22, 1, 0.36, 1) es un ease-out-expo suave —
+    // arranca enseguida, frena lento al final, sin overshoot.
+    trigger('toastAnimation', [
+      transition(':enter', [
+        style({
+          opacity: 0,
+          transform: 'translateX(110%) scale(0.96)',
+          filter: 'blur(2px)',
+        }),
+        animate(
+          '360ms cubic-bezier(0.22, 1, 0.36, 1)',
+          style({ opacity: 1, transform: 'translateX(0) scale(1)', filter: 'blur(0)' }),
+        ),
+      ]),
+      transition(':leave', [
+        style({ opacity: 1, transform: 'translateX(0) scale(1)' }),
+        animate(
+          '260ms cubic-bezier(0.4, 0, 1, 1)',
+          style({ opacity: 0, transform: 'translateX(110%) scale(0.96)' }),
+        ),
+      ]),
+    ]),
+  ],
   template: `
     <div class="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
       <div
-        *ngFor="let toast of toasts"
-        class="pointer-events-auto w-96 max-w-full bg-white dark:bg-dark-bg-secondary rounded-xl shadow-xl border border-gray-200 dark:border-dark-border overflow-hidden animate-slide-in"
+        *ngFor="let toast of toasts; trackBy: trackById"
+        @toastAnimation
+        class="pointer-events-auto w-96 max-w-full bg-white dark:bg-dark-bg-secondary rounded-xl shadow-xl border border-gray-200 dark:border-dark-border overflow-hidden"
         [class]="getToastClasses(toast)"
       >
         <div class="flex items-start gap-3 p-4">
@@ -155,6 +184,10 @@ export class ToastContainerComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscription?.unsubscribe();
+  }
+
+  trackById(_index: number, toast: Toast): string {
+    return toast.id;
   }
 
   closeToast(id: string): void {

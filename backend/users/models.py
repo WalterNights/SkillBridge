@@ -57,6 +57,73 @@ def validate_uploaded_image(value):
         )
 
 
+def strip_image_metadata(uploaded_file):
+    """Devuelve un nuevo InMemoryUploadedFile sin EXIF/metadata.
+
+    Las fotos de teléfono suelen incluir coordenadas GPS y modelo de
+    dispositivo en EXIF. Servidos same-origin como avatar, son un leak
+    de privacidad pasivo. Re-codificamos via Pillow.save() sin pasarle
+    el bloque `exif`, lo que descarta también XMP y comentarios.
+
+    Idempotente sobre archivos ya limpios. Si Pillow no puede abrir el
+    archivo devolvemos el original — el validator ya corrió antes y
+    debería haber rechazado un archivo inválido.
+    """
+    import io
+
+    from django.core.files.uploadedfile import InMemoryUploadedFile
+    from PIL import Image
+
+    try:
+        uploaded_file.seek(0)
+        img = Image.open(uploaded_file)
+        # `load()` fuerza el decode completo; sin esto el save() puede
+        # arrastrar el header del archivo original con su EXIF intacto.
+        img.load()
+    except Exception:
+        try:
+            uploaded_file.seek(0)
+        except Exception:
+            pass
+        return uploaded_file
+
+    fmt = img.format or "JPEG"
+    if fmt not in _ALLOWED_IMAGE_FORMATS:
+        uploaded_file.seek(0)
+        return uploaded_file
+
+    # `getexif()` existe en JPEG/PNG/WEBP modernos pero no en todos
+    # los modos. Si el archivo no tiene EXIF (ya limpio), evitamos el
+    # re-encode para no perder calidad innecesariamente.
+    has_exif = bool(getattr(img, "_getexif", lambda: None)()) or bool(img.info.get("exif"))
+    has_xmp = bool(img.info.get("xmp") or img.info.get("XML:com.adobe.xmp"))
+    if not has_exif and not has_xmp:
+        uploaded_file.seek(0)
+        return uploaded_file
+
+    if fmt == "JPEG" and img.mode not in ("RGB", "L"):
+        img = img.convert("RGB")
+
+    buffer = io.BytesIO()
+    save_kwargs = {"format": fmt}
+    if fmt == "JPEG":
+        save_kwargs["quality"] = 90
+        save_kwargs["optimize"] = True
+    img.save(buffer, **save_kwargs)
+    size = buffer.tell()
+    buffer.seek(0)
+
+    content_type_map = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp"}
+    return InMemoryUploadedFile(
+        file=buffer,
+        field_name=getattr(uploaded_file, "field_name", None),
+        name=uploaded_file.name,
+        content_type=content_type_map.get(fmt, "application/octet-stream"),
+        size=size,
+        charset=None,
+    )
+
+
 class UserManager(BaseUserManager):
     def create_user(self, username, email, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", False)

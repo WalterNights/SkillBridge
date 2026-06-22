@@ -71,7 +71,7 @@ backend/
 **Problema:** `settings.py` expone credenciales y configuración insegura
 ```python
 # ❌ PROBLEMA
-SECRET_KEY = 'django-insecure-^%jjoou+0w6#s!j4_cut=w7)0g0e_as8@)x^ug_=3&7#1n_met'
+SECRET_KEY = 'django-insecure-<REDACTED>'  # valor real estaba hardcoded
 DEBUG = True
 ALLOWED_HOSTS = []
 CORS_ALLOW_ALL_ORIGIN = True  # Muy inseguro

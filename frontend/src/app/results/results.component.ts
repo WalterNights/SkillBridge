@@ -143,6 +143,36 @@ export class ResultsComponent {
     return portalMeta(offer);
   }
 
+  /** Tier de match — usado como atributo CSS para colorear borde + pill. */
+  matchTier(percentage: number): 'excellent' | 'good' | 'regular' {
+    if (percentage === this.MATCH_THRESHOLD.EXCELLENT) return 'excellent';
+    if (percentage >= this.MATCH_THRESHOLD.GOOD_MIN) return 'good';
+    return 'regular';
+  }
+
+  /** Skills que matchearon contra el perfil. */
+  skillsMatched(offer: JobOffer): number {
+    return offer.matched_skills?.length ?? 0;
+  }
+
+  /** Total = matched + missing. Si no hay data del backend (oferta sin
+   * keywords parseadas), devolvemos 1 para que la barra no se rompa. */
+  skillsTotal(offer: JobOffer): number {
+    const m = offer.matched_skills?.length ?? 0;
+    const x = offer.missing_skills?.length ?? 0;
+    return m + x || 1;
+  }
+
+  /** Porcentaje de fill para la barra de skills. Capeado a [0, 100]. */
+  skillsFillPct(offer: JobOffer): number {
+    return Math.max(0, Math.min(100, (this.skillsMatched(offer) / this.skillsTotal(offer)) * 100));
+  }
+
+  /** trackBy para el *ngFor del feed — evita rebuild completo al filtrar. */
+  trackOffer(_index: number, offer: JobOffer): number {
+    return offer.id;
+  }
+
   /**
    * Dispara un scrape nuevo y refresca la lista visible.
    *
