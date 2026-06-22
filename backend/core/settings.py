@@ -224,6 +224,21 @@ CELERY_BEAT_SCHEDULE = {
         "task": "tips.generate_weekly_tips",
         "schedule": crontab(hour=6, minute=0, day_of_week=1),
     },
+    # 04:00 UTC todos los días (01:00 ART, 23:00 COT del día anterior).
+    # Antes del horario en que los usuarios chequean ofertas. La tarea
+    # serializa los users — con ~100 usuarios y ~30s por scrape, cabe en
+    # la ventana sin saturar.
+    "daily-scrape-for-active-users": {
+        "task": "jobs.daily_scrape_for_active_users",
+        "schedule": crontab(hour=4, minute=0),
+    },
+    # Limpieza de ofertas de más de 30 días — los portales descontinúan
+    # constantemente y el feed con cosas viejas pierde relevancia.
+    # 05:00 UTC, después del scrape diario.
+    "clean-old-offers": {
+        "task": "jobs.clean_old_offers",
+        "schedule": crontab(hour=5, minute=0),
+    },
 }
 
 
