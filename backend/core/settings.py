@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "dashboard",
     "notifications",
     "tips",
+    "applications",
     "corsheaders",
     "rest_framework",
     # Necesario para invalidar refresh tokens al rotar (SEGURIDAD).

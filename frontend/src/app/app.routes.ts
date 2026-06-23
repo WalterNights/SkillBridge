@@ -77,6 +77,11 @@ export const routes: Routes = [
         loadComponent: () => import('./ats-cv/ats-cv.component').then((m) => m.AtsCvComponent),
       },
       {
+        path: 'applications',
+        loadComponent: () =>
+          import('./applications/applications.component').then((m) => m.ApplicationsComponent),
+      },
+      {
         path: 'settings',
         loadComponent: () =>
           import('./dashboard/settings/settings.component').then((m) => m.SettingsComponent),

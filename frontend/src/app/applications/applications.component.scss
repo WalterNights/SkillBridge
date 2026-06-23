@@ -1,0 +1,63 @@
+.loader-ring {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(249, 115, 22, 0.2);
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: apps-loader-spin 800ms linear infinite;
+}
+
+@keyframes apps-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.application-card {
+  transition: border-color 200ms ease, transform 200ms ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+  }
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 9999px;
+}
+
+.status-applied {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.10);
+  border: 1px solid rgba(74, 222, 128, 0.30);
+}
+
+.application-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #cfcfc8;
+  white-space: nowrap;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
+
+  &:hover {
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.30);
+    color: #f97316;
+  }
+}

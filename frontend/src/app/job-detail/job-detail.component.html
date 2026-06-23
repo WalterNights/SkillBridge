@@ -82,19 +82,20 @@
               </span>
             </div>
 
-            <!-- Actions row -->
-            <div class="flex items-center gap-2">
-              <a
-                [href]="job.url"
-                target="_blank"
-                rel="noopener noreferrer"
+            <!-- Action row con state machine de aplicar -->
+
+            <!-- IDLE: botón "Aplicar en {portal}" + utility icons -->
+            <div *ngIf="applyState() === 'idle'" class="flex items-center gap-2">
+              <button
+                type="button"
+                (click)="onApplyClick()"
                 class="btn-primary px-5 py-3 rounded-xl text-sm inline-flex items-center gap-2 flex-1 sm:flex-initial justify-center"
               >
                 <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'FILL' 1"
                   >play_arrow</span
                 >
                 {{ applyLabel() }}
-              </a>
+              </button>
 
               <button
                 type="button"
@@ -120,6 +121,54 @@
                 aria-label="Ocultar oferta"
               >
                 <span class="material-symbols-outlined">visibility_off</span>
+              </button>
+            </div>
+
+            <!-- ASKING: "¿Aplicaste?" con [Sí] / [No] -->
+            <div *ngIf="applyState() === 'asking'" class="apply-confirm">
+              <p class="apply-confirm-title">¿Aplicaste a esta oferta?</p>
+              <p class="apply-confirm-help">
+                Si confirmás, la guardamos en tus postulaciones para que les hagas seguimiento.
+              </p>
+              <div class="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  (click)="onConfirmApplied()"
+                  class="btn-primary px-5 py-3 rounded-xl text-sm inline-flex items-center gap-2"
+                >
+                  <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'FILL' 1"
+                    >check_circle</span
+                  >
+                  Sí, registrar postulación
+                </button>
+                <button
+                  type="button"
+                  (click)="onCancelApplied()"
+                  class="apply-cancel-btn"
+                >
+                  No, todavía no
+                </button>
+              </div>
+            </div>
+
+            <!-- CONFIRMED: banner verde + link a "Mis postulaciones" -->
+            <div *ngIf="applyState() === 'confirmed'" class="apply-confirmed">
+              <span class="material-symbols-outlined apply-confirmed-icon" style="font-variation-settings: 'FILL' 1">
+                check_circle
+              </span>
+              <div class="flex-1 min-w-0">
+                <p class="apply-confirmed-title">Postulación registrada</p>
+                <p class="apply-confirmed-help">
+                  Te avisaremos cuando aparezcan ofertas similares.
+                </p>
+              </div>
+              <button
+                type="button"
+                (click)="goToApplications()"
+                class="apply-confirmed-link"
+              >
+                Mis postulaciones
+                <span class="material-symbols-outlined" style="font-size: 14px">arrow_forward</span>
               </button>
             </div>
           </div>

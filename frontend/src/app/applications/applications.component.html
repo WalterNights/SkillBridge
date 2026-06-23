@@ -1,0 +1,107 @@
+<section class="px-4 lg:px-8 py-8 lg:py-10">
+  <div class="max-w-4xl mx-auto">
+    <header class="mb-6">
+      <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-1.5">
+        Tus postulaciones
+      </p>
+      <h1 class="text-2xl lg:text-3xl font-black text-bone tracking-tight">
+        Ofertas a las que aplicaste
+      </h1>
+      <p class="text-sm text-warm-grey mt-2">
+        Hacé seguimiento del proceso. Te avisamos cuando aparezcan ofertas similares.
+      </p>
+    </header>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading()" class="glass-strong rounded-2xl p-8 flex items-center gap-3">
+      <span class="loader-ring"></span>
+      <span class="text-sm text-bone">Cargando tus postulaciones…</span>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="!isLoading() && errorMessage()" class="glass-strong rounded-2xl p-8 text-center">
+      <span
+        class="inline-flex w-12 h-12 rounded-full bg-danger/15 items-center justify-center mb-3 material-symbols-outlined text-danger"
+        style="font-size: 22px"
+        >error</span
+      >
+      <p class="text-sm text-warm-grey">{{ errorMessage() }}</p>
+    </div>
+
+    <!-- Empty state -->
+    <div
+      *ngIf="!isLoading() && !errorMessage() && applications().length === 0"
+      class="glass-strong rounded-2xl p-10 text-center"
+    >
+      <span
+        class="inline-flex w-14 h-14 rounded-full bg-primary/15 items-center justify-center mb-4 material-symbols-outlined text-primary"
+        style="font-size: 24px; font-variation-settings: 'FILL' 1"
+        >work_history</span
+      >
+      <h3 class="text-lg font-semibold text-bone mb-1">Todavía no aplicaste a ninguna oferta</h3>
+      <p class="text-sm text-warm-grey mb-5">
+        Cuando apliques desde el detalle de una oferta, la registramos acá.
+      </p>
+      <a
+        routerLink="/dashboard"
+        class="btn-primary px-5 py-2.5 rounded-xl text-sm inline-flex items-center gap-2"
+      >
+        <span class="material-symbols-outlined" style="font-size: 18px">work</span>
+        Explorar el feed
+      </a>
+    </div>
+
+    <!-- List -->
+    <div
+      *ngIf="!isLoading() && !errorMessage() && applications().length > 0"
+      class="flex flex-col gap-3"
+    >
+      <article
+        *ngFor="let app of applications()"
+        class="application-card glass-strong rounded-2xl p-5"
+      >
+        <div class="flex items-start gap-4">
+          <span
+            class="portal-avatar"
+            [attr.data-portal]="portalMetaFor(app).key"
+            [title]="portalMetaFor(app).label"
+          >
+            <span *ngIf="portalMetaFor(app).mark; else genericIcon">
+              {{ portalMetaFor(app).mark }}
+            </span>
+            <ng-template #genericIcon>
+              <span class="material-symbols-outlined">work</span>
+            </ng-template>
+          </span>
+
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
+              <span class="status-badge status-applied">
+                <span class="material-symbols-outlined" style="font-size: 12px; font-variation-settings: 'FILL' 1">check_circle</span>
+                Aplicaste
+              </span>
+              <span class="text-xs text-dim" *ngIf="appliedRelative(app)">
+                · {{ appliedRelative(app) }}
+              </span>
+            </div>
+            <h3 class="text-base font-semibold text-bone leading-snug">
+              {{ app.offer.title }}
+            </h3>
+            <p class="text-sm text-warm-grey mt-0.5">
+              {{ app.offer.company || portalMetaFor(app).label }}
+              <span *ngIf="app.offer.location" class="text-dim">· {{ app.offer.location }}</span>
+            </p>
+          </div>
+
+          <a
+            [routerLink]="['/jobs', app.offer.id]"
+            class="application-link"
+          >
+            Ver detalle
+            <span class="material-symbols-outlined" style="font-size: 14px">arrow_forward</span>
+          </a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>

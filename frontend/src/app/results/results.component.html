@@ -69,15 +69,23 @@
         class="job-card glass-strong rounded-2xl p-5 cursor-pointer transition-all flex flex-col"
         [attr.data-match]="matchTier(offer.match_percentage)"
       >
-        <!-- Rank badge — top 3 by orden actual del feed -->
+        <!-- Rank badge — top 3 by orden actual del feed (o "Aplicado") -->
         <div class="flex items-center justify-between mb-3">
-          <span *ngIf="i < 3" class="rank-badge">
-            <span class="rank-dot"></span>
-            Tu match #{{ i + 1 }} hoy
+          <span *ngIf="isApplied(offer); else rankSlot" class="applied-badge">
+            <span class="material-symbols-outlined" style="font-size: 11px; font-variation-settings: 'FILL' 1">check_circle</span>
+            Aplicado
           </span>
-          <span *ngIf="i >= 3" class="text-[10px] uppercase tracking-[0.15em] text-dim font-semibold">
-            {{ portalMeta(offer).label }}
-          </span>
+          <ng-template #rankSlot>
+            <span *ngIf="i < 3; else portalSlot" class="rank-badge">
+              <span class="rank-dot"></span>
+              Tu match #{{ i + 1 }} hoy
+            </span>
+            <ng-template #portalSlot>
+              <span class="text-[10px] uppercase tracking-[0.15em] text-dim font-semibold">
+                {{ portalMeta(offer).label }}
+              </span>
+            </ng-template>
+          </ng-template>
           <span class="match-pill">{{ offer.match_percentage }}%</span>
         </div>
 

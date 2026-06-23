@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { HttpErrorResponse } from '@angular/common/http';
 import { JobOffer } from '../models/job-offer.model';
 import { JobService, ScrapeResponse } from '../services/job.service';
+import { ApplicationService } from '../services/application.service';
 import { ToastService } from '../services/toast.service';
 import { Router, RouterModule } from '@angular/router';
 import { HTMLChangesComponent } from '../shared/html-changes/html-changes';
@@ -25,11 +26,17 @@ export class ResultsComponent {
   hoverState: { [offerId: number]: boolean } = {};
   selectedFilter: 'all' | 'good' | 'regular' | 'bad' = 'all';
 
+  /** Set de offer_ids ya aplicados por el user — usado para mostrar el
+   * badge "Aplicado" en las cards. Se llena al loguear / al volver al
+   * feed. Lo mantenemos como Signal<Set> para lookup O(1) en el ngFor. */
+  appliedOfferIds = signal<Set<number>>(new Set());
+
   private readonly MATCH_THRESHOLD = MATCH_THRESHOLDS;
 
   constructor(
     private router: Router,
     private jobService: JobService,
+    private applicationService: ApplicationService,
     private toast: ToastService,
     private titleService: Title,
     private changes: HTMLChangesComponent,
@@ -39,6 +46,21 @@ export class ResultsComponent {
 
   ngOnInit(): void {
     this.loadOffers();
+    this.loadAppliedIds();
+  }
+
+  private loadAppliedIds(): void {
+    this.applicationService.appliedOfferIds().subscribe({
+      next: (res) => this.appliedOfferIds.set(new Set(res.applied_offer_ids)),
+      error: () => {
+        /* Soft-fail: feed se renderiza sin badges. */
+      },
+    });
+  }
+
+  /** Usado por el template para condicionar el badge "Aplicado". */
+  isApplied(offer: JobOffer): boolean {
+    return this.appliedOfferIds().has(offer.id);
   }
 
   private loadOffers(): void {
