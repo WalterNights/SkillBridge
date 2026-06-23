@@ -1,0 +1,40 @@
+<app-public-nav />
+
+<main class="pt-32 pb-24 px-gutter">
+  <div class="max-w-container-max mx-auto">
+    <!-- HEADER -->
+    <header class="mb-14 max-w-3xl">
+      <p class="text-label uppercase text-primary font-semibold mb-3 tracking-widest">
+        Recursos
+      </p>
+      <h1 class="text-[40px] sm:text-[56px] leading-[1.05] tracking-[-0.03em] font-black text-bone mb-6">
+        Guías sin relleno para encontrar trabajo en Latam.
+      </h1>
+      <p class="text-body-lg text-warm-grey">
+        Contenido curado por nuestro equipo y datos del mercado regional. Sin clickbait,
+        sin promociones — solo lo que vas a usar en tu próxima búsqueda.
+      </p>
+    </header>
+
+    <!-- GRID -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <a
+        *ngFor="let article of articles"
+        [routerLink]="['/recursos', article.slug]"
+        class="article-card glass rounded-2xl p-6 flex flex-col"
+      >
+        <p class="text-label uppercase text-warm-grey mb-3 tracking-wider">
+          {{ article.category }} · {{ article.readMinutes }} min lectura
+        </p>
+        <h2 class="article-title">{{ article.title }}</h2>
+        <p class="article-excerpt">{{ article.excerpt }}</p>
+        <span class="article-read">
+          Leer
+          <span class="material-symbols-outlined" style="font-size: 14px">arrow_forward</span>
+        </span>
+      </a>
+    </div>
+  </div>
+</main>
+
+<app-public-footer />

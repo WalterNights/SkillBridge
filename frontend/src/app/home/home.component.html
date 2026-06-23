@@ -11,29 +11,14 @@
       SkilTak<span class="text-primary">.</span>
     </a>
 
-    <!-- Center nav links -->
+    <!-- Center nav links — apuntan a las rutas full de marketing en
+         vez de anchors dentro del home. Una vez que el user entra a
+         una landing dedicada, la nav se comporta consistente con
+         las demás páginas (públic-nav). -->
     <div class="hidden md:flex gap-8 items-center justify-self-center">
-      <a
-        class="nav-link"
-        href="#como-funciona"
-        (click)="setSection('como-funciona', $event)"
-        [class.is-current]="currentSection() === 'como-funciona'"
-        >Cómo funciona</a
-      >
-      <a
-        class="nav-link"
-        href="#recursos"
-        (click)="setSection('recursos', $event)"
-        [class.is-current]="currentSection() === 'recursos'"
-        >Recursos</a
-      >
-      <a
-        class="nav-link"
-        href="#blog"
-        (click)="setSection('blog', $event)"
-        [class.is-current]="currentSection() === 'blog'"
-        >Blog</a
-      >
+      <a class="nav-link" routerLink="/como-funciona">Cómo funciona</a>
+      <a class="nav-link" routerLink="/recursos">Recursos</a>
+      <a class="nav-link" routerLink="/blog">Blog</a>
     </div>
 
     <!-- Right actions —
@@ -249,7 +234,11 @@
             <span>Skills gap explícito por oferta</span>
           </li>
         </ul>
-        <a href="#" class="inline-block mt-12 text-body text-primary hover:opacity-80 font-semibold">
+        <a
+          routerLink="/como-funciona"
+          fragment="algoritmo"
+          class="inline-block mt-12 text-body text-primary hover:opacity-80 font-semibold"
+        >
           Cómo funciona el algoritmo &nbsp;→
         </a>
       </div>
@@ -268,7 +257,11 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <a href="#" class="glass rounded-2xl p-8 hover:border-white/[0.10] transition-colors block group" appReveal>
+      <a
+        routerLink="/recursos/cv-ats-2026"
+        class="glass rounded-2xl p-8 hover:border-white/[0.10] transition-colors block group"
+        appReveal
+      >
         <p class="text-label uppercase text-warm-grey mb-4">Guía · 7 min lectura</p>
         <h3 class="text-subhead text-bone mb-3 group-hover:text-primary transition-colors">
           Cómo escribir un CV que pase ATS en 2026
@@ -280,7 +273,7 @@
       </a>
 
       <a
-        href="#"
+        routerLink="/recursos/skills-latam-2026"
         class="glass rounded-2xl p-8 hover:border-white/[0.10] transition-colors block group"
         appReveal
         style="transition-delay: 80ms"
@@ -296,14 +289,14 @@
       </a>
 
       <a
-        href="#"
+        routerLink="/recursos/entrevistas-remotas"
         class="glass rounded-2xl p-8 hover:border-white/[0.10] transition-colors block group"
         appReveal
         style="transition-delay: 160ms"
       >
         <p class="text-label uppercase text-warm-grey mb-4">Guía · 12 min lectura</p>
         <h3 class="text-subhead text-bone mb-3 group-hover:text-primary transition-colors">
-          Preparación para entrevistas técnicas remotas
+          Preparación para entrevistas remotas
         </h3>
         <p class="text-body text-warm-grey mb-6">
           Setup, cámara, performance bajo presión y cómo manejar al entrevistador difícil.

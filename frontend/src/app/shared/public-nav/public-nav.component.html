@@ -1,0 +1,53 @@
+<nav class="fixed top-0 inset-x-0 z-50 border-b border-white/[0.06] bg-canvas">
+  <div class="max-w-container-max mx-auto grid grid-cols-[1fr_auto_1fr] items-center px-gutter py-4">
+    <!-- Logo -->
+    <a routerLink="/" class="text-xl font-bold text-bone tracking-tight justify-self-start">
+      SkilTak<span class="text-primary">.</span>
+    </a>
+
+    <!-- Center nav links — apuntan a las rutas full, no a anchors. -->
+    <div class="hidden md:flex gap-8 items-center justify-self-center">
+      <a
+        routerLink="/como-funciona"
+        routerLinkActive="is-current"
+        class="nav-link"
+      >
+        Cómo funciona
+      </a>
+      <a
+        routerLink="/recursos"
+        routerLinkActive="is-current"
+        class="nav-link"
+      >
+        Recursos
+      </a>
+      <a
+        routerLink="/blog"
+        routerLinkActive="is-current"
+        class="nav-link"
+      >
+        Blog
+      </a>
+    </div>
+
+    <!-- Right actions —
+         logged out: Ingresar + Empezar CTA
+         logged in:  user-nav (bell + avatar dropdown) -->
+    <div class="flex items-center gap-5 justify-self-end">
+      <ng-container *ngIf="!isLoggedIn(); else loggedActions">
+        <a
+          routerLink="/auth/login"
+          class="text-body text-warm-grey hover:text-bone transition-colors"
+        >
+          Ingresar
+        </a>
+        <button (click)="startProfile()" class="btn-primary px-5 py-2 rounded-lg text-sm">
+          {{ ctaLabel() }}
+        </button>
+      </ng-container>
+      <ng-template #loggedActions>
+        <app-user-nav />
+      </ng-template>
+    </div>
+  </div>
+</nav>

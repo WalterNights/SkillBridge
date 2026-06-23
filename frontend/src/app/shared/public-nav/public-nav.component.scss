@@ -1,0 +1,44 @@
+/* Replica del nav-link de la home — los enlaces del navbar tienen un
+ * underline animado que se expande del centro hacia los bordes al hover
+ * o cuando la ruta está activa (`is-current` lo dispara via
+ * routerLinkActive). Mantenerlo en el componente — el shared/public-nav
+ * lo trae consigo wherever que se use. */
+.nav-link {
+  position: relative;
+  color: #8b8a85;
+  font-size: 16px;
+  padding: 4px 0;
+  text-decoration: none;
+  transition: color 200ms ease;
+  -webkit-tap-highlight-color: transparent;
+  background: transparent;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 0;
+    height: 2px;
+    background: #f97316;
+    transition:
+      width 220ms ease,
+      left 220ms ease;
+  }
+
+  &:hover,
+  &:focus,
+  &:focus-visible,
+  &.is-current {
+    color: #f97316;
+    background: transparent;
+    outline: none;
+  }
+
+  &:hover::after,
+  &:focus::after,
+  &.is-current::after {
+    width: 100%;
+    left: 0;
+  }
+}

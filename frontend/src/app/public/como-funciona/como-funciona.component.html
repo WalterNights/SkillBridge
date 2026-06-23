@@ -1,0 +1,129 @@
+<app-public-nav />
+
+<main class="pt-32 pb-24 px-gutter">
+  <div class="max-w-3xl mx-auto">
+    <!-- HEADER -->
+    <header class="mb-14">
+      <p class="text-label uppercase text-primary font-semibold mb-3 tracking-widest">
+        Cómo funciona
+      </p>
+      <h1 class="text-[40px] sm:text-[56px] leading-[1.05] tracking-[-0.03em] font-black text-bone mb-6">
+        Un solo lugar para encontrar el trabajo que va con tu perfil.
+      </h1>
+      <p class="text-body-lg text-warm-grey">
+        SkilTak conecta los portales más grandes de Latam y te muestra solo las ofertas
+        que de verdad coinciden con lo que sabes hacer. Sin spam, sin postular a ciegas.
+      </p>
+    </header>
+
+    <!-- SECTION 1 — Problema -->
+    <section class="content-section">
+      <span class="section-num">01</span>
+      <h2 class="section-title">El problema con buscar trabajo en 2026</h2>
+      <p>
+        Buscar empleo hoy implica abrir cinco pestañas distintas, repetir tu información
+        en cada una, y leer cientos de ofertas que no se parecen ni remotamente a lo que
+        sabes hacer. El 80% del tiempo lo gastas filtrando ruido. El 20% que sobra,
+        postulando con la misma plantilla a empresas que ni vas a recordar.
+      </p>
+      <p>
+        Las bolsas de empleo viven de volumen — entre más ofertas listadas, mejor para
+        ellas. Pero para ti es lo contrario: a más ruido, más fatiga y menos calidad en
+        cada postulación.
+      </p>
+    </section>
+
+    <!-- SECTION 2 — Cómo funciona el matching (anchor target) -->
+    <section id="algoritmo" class="content-section">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Cómo funciona el matching</h2>
+      <p>
+        SkilTak combina tres señales para decidir si una oferta vale la pena para ti:
+      </p>
+
+      <ol class="step-list">
+        <li>
+          <strong>Subes tu perfil o conectas tu LinkedIn.</strong>
+          La IA extrae tu cargo, años de experiencia, ubicación y stack de skills. Si
+          subes un CV, lee el PDF y autocompleta los campos.
+        </li>
+        <li>
+          <strong>Cada noche, el motor escanea los portales.</strong>
+          LinkedIn, Computrabajo, Magneto, Indeed, Elempleo, Bumeran. Trae cada oferta
+          nueva con su título, empresa, ubicación, y descripción completa.
+        </li>
+        <li>
+          <strong>Calcula la compatibilidad con tu perfil.</strong>
+          Combina el título de la oferta (peso 60%) con las skills que pide vs las
+          tuyas (peso 40%). Solo te muestra las que pasan el 25% — el resto es ruido.
+        </li>
+      </ol>
+
+      <p>
+        El resultado lo ves en tu dashboard ordenado por % de match. Cada oferta tiene
+        explícito qué skills tuyas coinciden y qué te falta para llegar al 100%. Eso es
+        lo que llamamos <strong>skill gap explícito</strong>: nunca te quedas con la duda
+        de por qué una oferta tiene 67% en vez de 100%.
+      </p>
+    </section>
+
+    <!-- SECTION 3 — Privacidad -->
+    <section class="content-section">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Qué hacemos con tu información</h2>
+      <p>
+        Tu CV y tus datos personales viven en nuestra base de datos privada. Nunca los
+        compartimos con los portales scrapeados ni con terceros. Cuando aplicas a una
+        oferta, te llevamos al portal original — la postulación final la haces tú, en
+        sus términos, con su formulario.
+      </p>
+      <ul class="bullet-list">
+        <li>Tu sesión se autentica con JWT con rotación cada 7 días.</li>
+        <li>Las contraseñas se almacenan hasheadas con bcrypt — nadie en SkilTak puede leerlas.</li>
+        <li>Puedes borrar tu cuenta y todos tus datos en cualquier momento desde Configuración.</li>
+        <li>No vendemos data ni inyectamos tracking de terceros en el dashboard.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 4 — Roadmap -->
+    <section id="roadmap" class="content-section">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Qué viene</h2>
+      <p>
+        Estamos enfocados en hacer que el matching sea más preciso y la experiencia más
+        clara. Lo que está en el roadmap próximo:
+      </p>
+      <ul class="bullet-list">
+        <li>
+          <strong>Alertas por correo</strong> cuando aparece una oferta con +85% match
+          para tu perfil. Sin spam — solo las que realmente importan.
+        </li>
+        <li>
+          <strong>Plantillas de carta de presentación</strong> autogeneradas por oferta,
+          alineadas con tu CV y el JD.
+        </li>
+        <li>
+          <strong>Tracking de postulaciones</strong> con estado (aplicada, en revisión,
+          entrevista, rechazada). Ya está la base; pulimos el seguimiento por estado.
+        </li>
+        <li>
+          <strong>Más portales</strong> regionales: Trabajando.com, Hireline, BNE
+          México, BNE Chile.
+        </li>
+      </ul>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-block">
+      <h2 class="text-headline text-bone mb-3">Listo para dejar de saltar entre portales.</h2>
+      <p class="text-body-lg text-warm-grey mb-6">
+        Crea tu perfil en 2 minutos y empieza a ver las ofertas que valen la pena.
+      </p>
+      <button (click)="startCta()" class="btn-primary px-7 py-3.5 rounded-xl text-body-lg">
+        Crear mi perfil &nbsp;→
+      </button>
+    </section>
+  </div>
+</main>
+
+<app-public-footer />

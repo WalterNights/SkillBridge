@@ -1,0 +1,87 @@
+<app-public-nav />
+
+<main class="pt-32 pb-24 px-gutter">
+  <!-- 404 inline -->
+  <div *ngIf="!article()" class="max-w-2xl mx-auto text-center">
+    <h1 class="text-headline text-bone mb-3">Artículo no encontrado</h1>
+    <p class="text-body-lg text-warm-grey mb-6">
+      El enlace parece estar roto o el artículo fue movido.
+    </p>
+    <a routerLink="/recursos" class="btn-primary px-5 py-3 rounded-xl text-sm inline-flex items-center gap-2">
+      Ver todos los recursos
+    </a>
+  </div>
+
+  <!-- Artículo -->
+  <div *ngIf="article() as a" class="max-w-3xl mx-auto">
+    <!-- Breadcrumb -->
+    <button
+      type="button"
+      (click)="goBack()"
+      class="text-sm text-warm-grey hover:text-bone inline-flex items-center gap-1.5 transition-colors mb-8"
+    >
+      <span class="material-symbols-outlined" style="font-size: 16px">arrow_back</span>
+      Volver a Recursos
+    </button>
+
+    <!-- Header del artículo -->
+    <header class="mb-12">
+      <p class="text-label uppercase text-primary font-semibold mb-3 tracking-widest">
+        {{ a.category }} · {{ a.readMinutes }} min lectura
+      </p>
+      <h1 class="text-[36px] sm:text-[48px] leading-[1.1] tracking-[-0.03em] font-black text-bone mb-6">
+        {{ a.title }}
+      </h1>
+      <p class="text-body-lg text-warm-grey">{{ a.excerpt }}</p>
+    </header>
+
+    <!-- Intro -->
+    <section class="article-intro">
+      <p *ngFor="let para of a.intro">{{ para }}</p>
+    </section>
+
+    <!-- Secciones -->
+    <article class="article-body">
+      <section *ngFor="let section of a.sections" class="article-section">
+        <h2>{{ section.heading }}</h2>
+        <p *ngFor="let para of section.body">{{ para }}</p>
+
+        <ul *ngIf="section.bullets && section.bullets.length > 0" class="article-bullets">
+          <li *ngFor="let bullet of section.bullets">{{ bullet }}</li>
+        </ul>
+
+        <blockquote *ngIf="section.callout" class="article-callout">
+          {{ section.callout }}
+        </blockquote>
+      </section>
+    </article>
+
+    <!-- Cierre opcional -->
+    <section *ngIf="a.closing && a.closing.length > 0" class="article-closing">
+      <p *ngFor="let para of a.closing">{{ para }}</p>
+    </section>
+
+    <!-- Relacionados -->
+    <section *ngIf="related().length > 0" class="related-section">
+      <p class="text-label uppercase text-warm-grey mb-6 tracking-widest">Artículos relacionados</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <a
+          *ngFor="let r of related()"
+          [routerLink]="['/recursos', r.slug]"
+          class="related-card glass rounded-2xl p-5 flex flex-col"
+        >
+          <p class="text-xs uppercase text-dim mb-2 tracking-wider">
+            {{ r.category }} · {{ r.readMinutes }} min
+          </p>
+          <h3 class="related-title">{{ r.title }}</h3>
+          <span class="related-link">
+            Leer
+            <span class="material-symbols-outlined" style="font-size: 14px">arrow_forward</span>
+          </span>
+        </a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<app-public-footer />

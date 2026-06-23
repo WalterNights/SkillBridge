@@ -1,0 +1,138 @@
+/* Layout editorial — long-form content. La idea es leer cómodo, no
+ * marketing. Por eso max-width 3xl en el container y line-height holgado.
+ */
+
+.content-section {
+  position: relative;
+  padding: 36px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+
+  &:first-of-type {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  /* La numeración de sección flota a la izquierda en desktop, queda
+     inline en mobile para no quitar espacio horizontal a la copia. */
+  .section-num {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.10em;
+    color: #f97316;
+    margin-bottom: 10px;
+  }
+
+  .section-title {
+    font-size: 28px;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: #e8e5dd;
+    font-weight: 800;
+    margin-bottom: 20px;
+  }
+
+  p {
+    color: #b3b1aa;
+    font-size: 17px;
+    line-height: 1.7;
+    margin-bottom: 16px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    strong {
+      color: #e8e5dd;
+      font-weight: 700;
+    }
+  }
+}
+
+.step-list {
+  list-style: none;
+  padding: 0;
+  margin: 22px 0;
+  counter-reset: step;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  li {
+    position: relative;
+    padding: 18px 22px 18px 56px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: #b3b1aa;
+    font-size: 15.5px;
+    line-height: 1.6;
+    counter-increment: step;
+
+    &::before {
+      content: counter(step);
+      position: absolute;
+      left: 18px;
+      top: 18px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(249, 115, 22, 0.12);
+      border: 1px solid rgba(249, 115, 22, 0.30);
+      color: #f97316;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    strong {
+      color: #e8e5dd;
+      font-weight: 700;
+    }
+  }
+}
+
+.bullet-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  li {
+    position: relative;
+    padding-left: 20px;
+    color: #b3b1aa;
+    font-size: 16px;
+    line-height: 1.6;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 11px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #f97316;
+    }
+
+    strong {
+      color: #e8e5dd;
+      font-weight: 700;
+    }
+  }
+}
+
+.cta-block {
+  margin-top: 60px;
+  padding: 40px 32px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.10), rgba(249, 115, 22, 0.02));
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  text-align: center;
+}

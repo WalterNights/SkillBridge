@@ -36,6 +36,27 @@ export const routes: Routes = [
     path: 'auth',
     loadChildren: () => import('./auth/auth.module').then((m) => m.AuthModule),
   },
+  // Public marketing pages — no auth required. Comparten <app-public-nav>
+  // + <app-public-footer> internamente.
+  {
+    path: 'como-funciona',
+    loadComponent: () =>
+      import('./public/como-funciona/como-funciona.component').then((m) => m.ComoFuncionaComponent),
+  },
+  {
+    path: 'recursos',
+    loadComponent: () =>
+      import('./public/recursos/recursos.component').then((m) => m.RecursosComponent),
+  },
+  {
+    path: 'recursos/:slug',
+    loadComponent: () =>
+      import('./public/articulo/articulo.component').then((m) => m.ArticuloComponent),
+  },
+  {
+    path: 'blog',
+    loadComponent: () => import('./public/blog/blog.component').then((m) => m.BlogComponent),
+  },
 
   // ===== Authenticated standalone (no shell) =====
   // /profile sigue afuera porque es el wizard de onboarding — no
