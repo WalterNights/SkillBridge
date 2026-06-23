@@ -58,15 +58,17 @@ _PROMPT_TEMPLATE = """Eres un experto en orientación laboral para profesionales
 Tu tarea: generar EXACTAMENTE 5 tips nuevos en JSON, específicamente dirigidos a {audience}.
 
 REGLAS DE ESTILO:
-- Voseo argentino, tono accionable.
-- Empezá cada tip con verbo en imperativo (Personalizá, Sumá, Pedí, Guardá, Investigá).
+- Español neutro (NO voseo argentino). Usa "tú/tu" y verbos como
+  Personaliza, Suma, Pide, Guarda, Investiga, Usa, Lleva, Muestra.
+  El producto apunta a toda Latam, no solo a Argentina.
+- Tono accionable: empieza cada tip con verbo en imperativo.
 - Entre 80 y 160 caracteres por tip.
-- Una idea por tip — si necesita "y además", partilo en dos.
+- Una idea por tip — si necesita "y además", divídelo en dos.
 - Sin emojis, sin markdown, sin comillas dentro del texto.
 
 REGLAS DE CONTENIDO:
 - Los tips deben ser ESPECÍFICOS a la vertical "{scope}", no genéricos.
-  Ej: para marketing mencioná funnel, CTR, attribution, no "buscá empleo activamente".
+  Ej: para marketing menciona funnel, CTR, attribution, no "busca empleo activamente".
 - Cada tip debe ser ÚNICO — no repitas conceptos ya cubiertos en la lista de abajo.
 - Categorías permitidas para el field "category": cv, search, interview, networking, soft, tech, product, wellness.
 

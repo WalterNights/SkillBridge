@@ -93,7 +93,7 @@ export class HomeComponent {
   positiveComments: readonly UserComment[] = POSITIVE_COMMENTS_STUB;
 
   constructor(title: Title) {
-    title.setTitle('SkilTak — Encontrá tu próximo paso');
+    title.setTitle('SkilTak — Deja de buscar en mil portales');
   }
 
   /** Navbar link click: mark as active + smooth-scroll to the section. */
