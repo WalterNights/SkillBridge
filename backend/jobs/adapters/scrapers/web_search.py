@@ -37,6 +37,7 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
+from jobs.adapters.scrapers._linkedin_card import parse_linkedin_card
 from jobs.adapters.scrapers.base import (
     MAX_OFFER_AGE_DAYS,
     JobOfferData,
@@ -502,71 +503,15 @@ class WebSearchJobsScraper(JobScraper):
         offers: list[JobOfferData] = []
         for card in cards:
             try:
-                offer = self._parse_linkedin_card(card)
+                # Mantenemos `portal="websearch"` cuando el origen es
+                # un listing devuelto por DDG — para distinguir del
+                # path del scraper directo de LinkedIn.
+                offer = parse_linkedin_card(card, portal=self.portal_name)
                 if offer is not None:
                     offers.append(offer)
             except Exception:
                 logger.exception("LinkedIn card parse failed, skipping")
         return offers
-
-    def _parse_linkedin_card(self, card) -> JobOfferData | None:
-        """Extrae un JobOfferData de un single card de listing LinkedIn.
-
-        Selectors basados en el guest-mode HTML público de LinkedIn (sin
-        login). Si el layout cambia, fallback a None — el caller skipea.
-        """
-        link_tag = (
-            card.select_one("a.base-card__full-link")
-            or card.select_one("a[href*='/jobs/view/']")
-        )
-        if not link_tag:
-            return None
-        href = link_tag.get("href", "").split("?")[0]  # strip tracking
-        if "/jobs/view/" not in href:
-            return None
-
-        title_tag = card.select_one("h3.base-search-card__title")
-        company_tag = card.select_one(
-            "h4.base-search-card__subtitle a"
-        ) or card.select_one("h4.base-search-card__subtitle")
-        location_tag = card.select_one("span.job-search-card__location")
-        time_tag = card.select_one("time")
-
-        title = title_tag.get_text(strip=True) if title_tag else ""
-        if not title:
-            return None
-        company = company_tag.get_text(strip=True) if company_tag else ""
-        location = location_tag.get_text(strip=True) if location_tag else ""
-
-        # Filtro de edad usando el texto del <time> ("hace 4 semanas").
-        posted_text = time_tag.get_text(strip=True) if time_tag else ""
-        age_days = extract_age_days(posted_text)
-        if age_days is not None and age_days > MAX_OFFER_AGE_DAYS:
-            logger.info(
-                "Skipping old LinkedIn card (%d days): %s", age_days, title[:60]
-            )
-            return None
-
-        # Summary armado: no fetchamos el detalle de la oferta para no
-        # multiplicar requests a LinkedIn (rate-limit agresivo). El
-        # detail view del frontend lleva al user al portal donde están
-        # los requisitos completos.
-        summary_parts = [title]
-        if company:
-            summary_parts.append(f"en {company}")
-        if location:
-            summary_parts.append(f"— {location}")
-        summary = " ".join(summary_parts)
-
-        return JobOfferData(
-            title=title[:500],
-            company=company[:255],
-            location=location[:255],
-            summary=summary[:2000],
-            keywords=extract_keywords(f"{title} {company}"),
-            url=href,
-            portal=self.portal_name,
-        )
 
     @staticmethod
     def _unwrap_url(href: str) -> str:

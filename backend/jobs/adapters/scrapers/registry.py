@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from jobs.adapters.scrapers.base import JobScraper, ScraperError
 from jobs.adapters.scrapers.computrabajo import ComputrabajoScraper
+from jobs.adapters.scrapers.linkedin import LinkedInGuestScraper
 from jobs.adapters.scrapers.web_search import WebSearchJobsScraper
 from jobs.adapters.scrapers.weworkremotely import WeWorkRemotelyScraper
 
@@ -26,8 +27,14 @@ from jobs.adapters.scrapers.weworkremotely import WeWorkRemotelyScraper
 # defecto porque es 100% remoto/tech — para un contador, diseñador o
 # vendedor era ruido garantizado en el feed. Cuando agreguemos perfiles
 # "remote-first" o un toggle en el wizard de profile, lo activamos opt-in.
+#
+# LinkedInGuestScraper pega directo a la API guest de LinkedIn (paginada,
+# ~100 offers por scrape). Antes solo accedíamos a LinkedIn via DDG
+# (~10 offers). Mantenemos WebSearchJobsScraper porque cubre los demás
+# portales (magneto, indeed, elempleo, bumeran).
 _REGISTRY: dict[str, type[JobScraper]] = {
     ComputrabajoScraper.portal_name: ComputrabajoScraper,
+    LinkedInGuestScraper.portal_name: LinkedInGuestScraper,
     WebSearchJobsScraper.portal_name: WebSearchJobsScraper,
 }
 

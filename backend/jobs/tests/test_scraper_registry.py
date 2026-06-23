@@ -23,10 +23,10 @@ class TestRegistry:
         with pytest.raises(ScraperError, match="no soportado"):
             get_scraper("elempleo")
         with pytest.raises(ScraperError, match="no soportado"):
-            get_scraper("linkedin")
+            get_scraper("noexiste")
 
     def test_available_portals_lists_all_registered(self):
         # WWR queda implementado pero fuera del registro por defecto
         # (es dev-only/remoto, ruido para perfiles no-tech). Si se
         # vuelve a habilitar, sumarlo acá.
-        assert set(available_portals()) == {"computrabajo", "websearch"}
+        assert set(available_portals()) == {"computrabajo", "linkedin", "websearch"}
