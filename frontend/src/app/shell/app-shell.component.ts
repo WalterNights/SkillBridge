@@ -5,6 +5,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { TipService } from '../services/tip.service';
 import { inferProfessionCategory } from '../shared/profession-classifier';
+import { ScrapeNotifierComponent } from '../shared/scrape-notifier/scrape-notifier.component';
 import { UserNavComponent } from '../shared/user-nav/user-nav.component';
 import { getTipOfTheDay as getStaticTipOfTheDay } from './daily-tips';
 
@@ -27,7 +28,14 @@ const SIDEBAR_COLLAPSED_KEY = 'shell_sidebar_collapsed';
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, UserNavComponent],
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    UserNavComponent,
+    ScrapeNotifierComponent,
+  ],
   templateUrl: './app-shell.component.html',
   styleUrl: './app-shell.component.scss',
 })

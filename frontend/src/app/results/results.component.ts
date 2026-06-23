@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { JobOffer } from '../models/job-offer.model';
 import { JobService, ScrapeResponse } from '../services/job.service';
 import { ApplicationService } from '../services/application.service';
+import { ScrapeProgressService } from '../services/scrape-progress.service';
 import { ToastService } from '../services/toast.service';
 import { Router, RouterModule } from '@angular/router';
 import { HTMLChangesComponent } from '../shared/html-changes/html-changes';
@@ -37,6 +38,7 @@ export class ResultsComponent {
     private router: Router,
     private jobService: JobService,
     private applicationService: ApplicationService,
+    private scrapeProgress: ScrapeProgressService,
     private toast: ToastService,
     private titleService: Title,
     private changes: HTMLChangesComponent,
@@ -204,52 +206,33 @@ export class ResultsComponent {
    * el listado completo via `getJobs()` para reflejar el estado real.
    */
   obtainOffers(): void {
-    this.toast.info('Buscando ofertas en los portales...', 'Cargando');
+    // El scrape ahora tiene su propio notifier persistente bottom-right
+    // con barra de progreso y ETA. Los toasts efímeros del top-right ya
+    // no son apropiados para una operación que tarda 15-30s.
+    this.scrapeProgress.start();
     this.jobService.getScrapedOffers().subscribe({
       next: (response: ScrapeResponse) => {
         const newOffers = response.offers ?? [];
         const stats = response.scrape_stats ?? {};
-        const breakdown = Object.entries(stats)
-          .map(([portal, s]) => {
-            if (s.error) return `${portal}: error`;
-            if (s.found === 0) return `${portal}: 0`;
-            return `${portal}: ${s.found} (nuevas: ${s.saved_new})`;
-          })
-          .join(' · ');
-
-        if (newOffers.length > 0) {
-          this.toast.success(
-            `Se agregaron ${newOffers.length} ofertas nuevas. ${breakdown}`,
-            '¡Listo!',
-          );
-        } else {
-          this.toast.info(
-            `No hay ofertas nuevas. ${breakdown}`,
-            'Sin novedades',
-          );
-        }
+        this.scrapeProgress.complete({
+          newOffersCount: newOffers.length,
+          stats,
+        });
         this.loadOffers();
       },
       error: (err: HttpErrorResponse) => {
         console.error('Error fetching job offers:', err);
+        let message: string;
         if (err.status === 400 && err.error?.error) {
-          this.toast.warning(err.error.error, 'Completá tu perfil');
+          message = err.error.error;
         } else if (err.status === 400) {
-          this.toast.warning(
-            'Necesitamos tu título profesional y ciudad antes de buscar ofertas.',
-            'Completá tu perfil',
-          );
+          message = 'Necesitamos tu título profesional y ciudad antes de buscar ofertas.';
         } else if (err.status === 404) {
-          this.toast.warning(
-            'No se encontró tu perfil. Por favor creá uno primero.',
-            'Perfil no encontrado',
-          );
+          message = 'No se encontró tu perfil. Creá uno primero.';
         } else {
-          this.toast.error(
-            'No pudimos obtener ofertas en este momento. Intentá de nuevo en unos segundos.',
-            'Algo falló',
-          );
+          message = 'No pudimos obtener ofertas. Intentá de nuevo en unos segundos.';
         }
+        this.scrapeProgress.fail(message);
       },
     });
   }

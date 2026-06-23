@@ -1,0 +1,130 @@
+<!-- Container fijo bottom-right. La animación de entrada/salida la
+     maneja el @slideIn trigger. -->
+<div *ngIf="visible()" class="scrape-notifier" @slideIn>
+  <!-- COLLAPSED: pill compacto. Click expande. -->
+  <button
+    *ngIf="collapsed()"
+    type="button"
+    class="notifier-pill"
+    [class.is-loading]="state() === 'loading'"
+    [class.is-success]="state() === 'success'"
+    [class.is-error]="state() === 'error'"
+    (click)="toggleCollapse()"
+    [attr.aria-label]="'Expandir ' + headerText()"
+  >
+    <span class="pill-icon material-symbols-outlined" [style.font-variation-settings]="'FILL 1'">
+      {{
+        state() === 'loading'
+          ? 'sync'
+          : state() === 'success'
+            ? 'check_circle'
+            : 'error'
+      }}
+    </span>
+    <span class="pill-text">
+      {{ state() === 'loading' ? progressPct() + '%' : headerText() }}
+    </span>
+    <!-- Mini barra de progreso visible solo en loading -->
+    <span *ngIf="state() === 'loading'" class="pill-bar">
+      <span class="pill-bar-fill" [style.width.%]="progressPct()"></span>
+    </span>
+  </button>
+
+  <!-- EXPANDED: card completo. -->
+  <article
+    *ngIf="!collapsed()"
+    class="notifier-card"
+    [class.is-loading]="state() === 'loading'"
+    [class.is-success]="state() === 'success'"
+    [class.is-error]="state() === 'error'"
+    role="status"
+    aria-live="polite"
+  >
+    <header class="notifier-header">
+      <div class="header-left">
+        <span class="header-icon material-symbols-outlined" [style.font-variation-settings]="'FILL 1'">
+          {{
+            state() === 'loading'
+              ? 'sync'
+              : state() === 'success'
+                ? 'check_circle'
+                : 'error'
+          }}
+        </span>
+        <div class="min-w-0">
+          <p class="header-title">{{ headerText() }}</p>
+          <p class="header-sub">{{ subText() }}</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button
+          type="button"
+          class="header-btn"
+          (click)="toggleCollapse()"
+          aria-label="Minimizar"
+          title="Minimizar"
+        >
+          <span class="material-symbols-outlined" style="font-size: 16px">remove</span>
+        </button>
+        <button
+          *ngIf="canDismiss()"
+          type="button"
+          class="header-btn"
+          (click)="onDismiss()"
+          aria-label="Cerrar"
+          title="Cerrar"
+        >
+          <span class="material-symbols-outlined" style="font-size: 16px">close</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Barra de progreso + % cuando loading -->
+    <div *ngIf="state() === 'loading'" class="progress-section">
+      <div class="progress-bar">
+        <span class="progress-bar-fill" [style.width.%]="progressPct()"></span>
+      </div>
+      <p class="progress-meta">
+        <span class="progress-pct tabular-nums">{{ progressPct() }}%</span>
+        <span class="progress-portals">{{
+          progressPct() < 30
+            ? 'Conectando con los portales…'
+            : progressPct() < 70
+              ? 'Trayendo ofertas…'
+              : 'Calculando matches…'
+        }}</span>
+      </p>
+    </div>
+
+    <!-- Breakdown de portales cuando success -->
+    <div *ngIf="state() === 'success' && portalBreakdown().length > 0" class="result-section">
+      <p class="result-eyebrow">Detalle por portal</p>
+      <ul class="portal-list">
+        <li *ngFor="let p of portalBreakdown()" class="portal-row">
+          <span class="portal-name">{{ p.portal }}</span>
+          <span class="portal-stats">
+            <ng-container *ngIf="p.error">
+              <span class="portal-stat error">{{ p.error }}</span>
+            </ng-container>
+            <ng-container *ngIf="!p.error">
+              <span class="portal-stat">
+                {{ p.found }} encontradas
+              </span>
+              <span *ngIf="p.savedNew > 0" class="portal-stat new">
+                · {{ p.savedNew }} nueva{{ p.savedNew === 1 ? '' : 's' }}
+              </span>
+            </ng-container>
+          </span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Mensaje extra cuando error -->
+    <div *ngIf="state() === 'error'" class="result-section">
+      <p class="result-eyebrow">Detalle</p>
+      <p class="text-xs text-warm-grey leading-relaxed">
+        {{ errorMessage() }}
+      </p>
+    </div>
+  </article>
+</div>

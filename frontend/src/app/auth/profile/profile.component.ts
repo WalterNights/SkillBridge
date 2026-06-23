@@ -39,18 +39,33 @@ export class ProfileComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Inicializamos el form PRIMERO. Aunque después redirijamos, Angular
+    // renderiza el template por un frame antes de que la navegación
+    // dispare; sin el form inicializado, `[formGroup]="profileForm"`
+    // tira NG01052 + una cascada de "Cannot read 'get' of undefined".
+    this.profileForm = this.profileBuldier.buildProfileForm();
+
     // /profile es el wizard de onboarding (corre una sola vez post-registro).
     // Si el usuario ya completó su perfil y vuelve acá (refresh, bookmark,
     // link viejo), lo redirigimos a /me que es la pantalla de edición
     // continua. Evita confusión + previene crear un perfil duplicado.
-    if (this.authService.isProfileComplete$ && sessionStorage.getItem('is_profile_complete') === 'true') {
+    //
+    // Checkeamos AMBOS storages — el flag está en localStorage si el
+    // user tildó "mantener sesión iniciada", o en sessionStorage si no.
+    // El check anterior solo miraba sessionStorage → users con remember-me
+    // nunca redirigían y veían el wizard.
+    const useLocal = localStorage.getItem('storage') === 'true';
+    const profileComplete = useLocal
+      ? localStorage.getItem('is_profile_complete') === 'true'
+      : sessionStorage.getItem('is_profile_complete') === 'true';
+    if (profileComplete) {
       this.router.navigate(['/me']);
       return;
     }
+
     this.countryCodeService.getCountryCodes().subscribe((data) => {
       this.countryCodes = data;
     });
-    this.profileForm = this.profileBuldier.buildProfileForm();
   }
 
   onCountryChange(countryCode: string): void {
