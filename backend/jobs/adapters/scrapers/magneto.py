@@ -38,11 +38,14 @@ logger = logging.getLogger(__name__)
 
 
 _BASE_URL = "https://www.magneto365.com/co/trabajos/buscar"
-_LOAD_TIMEOUT_MS = 30000
+_LOAD_TIMEOUT_MS = 45000
 # Después del page.goto() esperamos a que aparezcan los cards en el DOM.
 # Si no aparecen en este tiempo, asumimos que no hay resultados o
 # Magneto cambió el layout — devolvemos vacío sin romper.
-_CARDS_WAIT_TIMEOUT_MS = 12000
+_CARDS_WAIT_TIMEOUT_MS = 20000
+# Settle time post-render: aunque el primer card aparece rápido, el SPA
+# sigue hidratando más cards después. 3s nos da el 90% de los visibles.
+_POST_CARDS_SETTLE_MS = 3000
 
 
 class MagnetoScraper(JobScraper):
@@ -69,19 +72,24 @@ class MagnetoScraper(JobScraper):
         html: str | None = None
         try:
             with playwright_page(timeout_ms=_LOAD_TIMEOUT_MS) as page:
+                # `domcontentloaded` en vez de `networkidle` porque
+                # Magneto deja conexiones long-lived (analytics, ws) y
+                # networkidle nunca llega → timeout duro.
                 page.goto(url, wait_until="domcontentloaded")
-                # Esperar a que los cards se rendereen. Probamos varios
-                # selectors comunes; alguno debería matchear.
+                # Esperar a que aparezca AL MENOS un anchor a oferta.
+                # El SPA puede tardar ~5-15s en hidratar el listado.
                 try:
                     page.wait_for_selector(
-                        "[data-testid*='offer'], "
-                        "article a[href*='/trabajo'], "
-                        "a[href*='/co/trabajos/']:not([href$='/buscar']):not([href*='/inicio'])",
+                        "a[href*='/co/trabajos/']",
                         timeout=_CARDS_WAIT_TIMEOUT_MS,
                     )
                 except Exception:
                     logger.warning("Magneto: no cards detected within timeout")
                     return []
+                # Settle time — el primer card aparece rápido pero el
+                # SPA sigue agregando más después. 3s captura el 90%
+                # de los visibles.
+                page.wait_for_timeout(_POST_CARDS_SETTLE_MS)
                 html = page.content()
         except Exception as exc:
             # Playwright puede fallar por Chromium no instalado, RAM
