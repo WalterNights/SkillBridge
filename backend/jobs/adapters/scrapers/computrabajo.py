@@ -18,9 +18,11 @@ from bs4 import BeautifulSoup
 from unidecode import unidecode
 
 from jobs.adapters.scrapers.base import (
+    MAX_OFFER_AGE_DAYS,
     JobOfferData,
     JobScraper,
     ScraperError,
+    extract_age_days,
     extract_keywords,
 )
 
@@ -109,6 +111,18 @@ class ComputrabajoScraper(JobScraper):
         location_tag = paragraphs[1] if len(paragraphs) > 1 else None
 
         if not title_tag:
+            return None
+
+        # Filtro de edad: el card de Computrabajo suele incluir un
+        # texto tipo "Hoy", "Ayer" o "Hace 5 días" en alguno de sus
+        # paragraphs. Escaneamos el article entero porque la posición
+        # varía entre layouts (mobile vs desktop, premium vs orgánico).
+        age_days = extract_age_days(article.get_text(" ", strip=True))
+        if age_days is not None and age_days > MAX_OFFER_AGE_DAYS:
+            logger.info(
+                "Skipping old Computrabajo offer (%d days): %s",
+                age_days, title_tag.get_text(strip=True)[:60],
+            )
             return None
 
         job_url = BASE_URL + title_tag["href"]

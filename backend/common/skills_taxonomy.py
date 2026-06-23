@@ -590,6 +590,10 @@ ALIASES: dict[str, str] = {
     "nextjs": "next",
     "nuxt.js": "nuxt",
     "nuxtjs": "nuxt",
+    "angular.js": "angular",
+    "angularjs": "angular",
+    "svelte.js": "svelte",
+    "sveltejs": "svelte",
     "html5": "html",
     "css3": "css",
     # ===== Tech: Backend =====
@@ -654,15 +658,31 @@ ALIASES: dict[str, str] = {
 def normalize(skill: str) -> str:
     """Normaliza un nombre de skill: lowercase, strip, aplica aliases.
 
+    Si después de aplicar ALIASES el término sigue terminando en `.js`
+    o `js` y la versión sin sufijo está en HARD_SKILLS, devolvemos la
+    versión sin sufijo. Cubre el caso "Tailwind.js", "Express.js" y
+    cualquier framework JS nuevo que aparezca antes de que lo agreguemos
+    explícitamente a ALIASES.
+
     >>> normalize('  React.js ')
     'react'
+    >>> normalize('Angular.js')
+    'angular'
     >>> normalize('Node.JS')
     'node'
     >>> normalize('python')
     'python'
     """
     cleaned = skill.strip().lower()
-    return ALIASES.get(cleaned, cleaned)
+    aliased = ALIASES.get(cleaned, cleaned)
+    if aliased not in HARD_SKILLS and aliased not in SOFT_SKILLS:
+        # Fallback: strippear .js / js trailing si el resto matchea.
+        for suffix in (".js", "js"):
+            if aliased.endswith(suffix):
+                stem = aliased[: -len(suffix)].rstrip(".")
+                if stem and stem in HARD_SKILLS:
+                    return stem
+    return aliased
 
 
 def all_recognizable() -> frozenset[str]:

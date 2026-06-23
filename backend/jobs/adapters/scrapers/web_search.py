@@ -38,9 +38,11 @@ import requests
 from bs4 import BeautifulSoup
 
 from jobs.adapters.scrapers.base import (
+    MAX_OFFER_AGE_DAYS,
     JobOfferData,
     JobScraper,
     ScraperError,
+    extract_age_days,
     extract_keywords,
 )
 
@@ -107,6 +109,7 @@ _LINKEDIN_CLOSED_MARKERS = (
 _PROBE_MAX_WORKERS = 3
 _PROBE_TIMEOUT_SECONDS = 6
 
+
 # SEGURIDAD (SSRF): hosts cuyo subdominio aceptamos resolver y probar.
 # DDG nos da URLs que pasan el filtro `_JOB_SITES`, pero ese filtro es
 # substring — `https://attacker.com/linkedin.com/jobs/foo` lo pasaría.
@@ -165,13 +168,58 @@ class WebSearchJobsScraper(JobScraper):
         if not query:
             raise ScraperError("query es obligatorio")
 
-        ddg_query = self._build_query(query, location)
-        url = "https://html.duckduckgo.com/html/"
-        logger.info("WebSearch scrape: query=%r", ddg_query)
+        # Doble pasada: la primera saca el mix natural (suele dominar
+        # LinkedIn), la segunda excluye LinkedIn explícitamente para
+        # forzar que afloren Magneto, Indeed, Elempleo y Bumeran que en
+        # la SERP default quedan tapados. Dedup por URL al final.
+        all_offers: list[JobOfferData] = []
+        seen_urls: set[str] = set()
 
+        for label, ddg_query in (
+            ("primary", self._build_query(query, location)),
+            ("non-linkedin", self._build_query(query, location, exclude_linkedin=True)),
+        ):
+            logger.info("WebSearch scrape (%s): query=%r", label, ddg_query)
+            html = self._fetch_serp(ddg_query)
+            if html is None:
+                continue
+            for offer in self._parse_serp(html):
+                if offer.url in seen_urls:
+                    continue
+                seen_urls.add(offer.url)
+                all_offers.append(offer)
+
+        offers = all_offers
+        # Probe activo solo para LinkedIn: el snippet pre-filter ya pasó,
+        # pero LinkedIn suele tener ofertas indexadas que indexaron vivas
+        # y hoy están cerradas. Costo: 1 GET por oferta de LinkedIn.
+        offers = self._filter_closed_linkedin(offers)
+        return offers
+
+    # ---- Query / detection ---------------------------------------------
+
+    @staticmethod
+    def _build_query(query: str, location: str, exclude_linkedin: bool = False) -> str:
+        """Arma el query con quotes en el rol + ubicación + clause de sites.
+
+        Si `exclude_linkedin=True`, omite LinkedIn de la lista de sites y
+        agrega un `-site:linkedin.com` explícito — DDG a veces lo cuela
+        igual aunque no esté en el OR si tiene mucha relevancia.
+        """
+        sites = [s for s in _JOB_SITES if not (exclude_linkedin and "linkedin" in s)]
+        sites_clause = " OR ".join(f"site:{s}" for s in sites)
+        loc = f'"{location}"' if location else ""
+        base = f'"{query}" {loc} ({sites_clause})'.strip()
+        if exclude_linkedin:
+            base += " -site:linkedin.com"
+        return base
+
+    def _fetch_serp(self, ddg_query: str) -> str | None:
+        """Pega a DDG HTML y devuelve el body o None si falla / rate-limit."""
+        url = "https://html.duckduckgo.com/html/"
         try:
-            # DDG HTML acepta POST y GET — usamos POST porque GET con el
-            # query largo a veces dispara su detector de scrapers.
+            # POST porque GET con el query largo a veces dispara el
+            # detector de scrapers de DDG.
             response = requests.post(
                 url,
                 data={"q": ddg_query, "kl": "co-es"},  # kl = region:lang
@@ -186,31 +234,14 @@ class WebSearchJobsScraper(JobScraper):
             )
         except requests.RequestException as e:
             logger.error("WebSearch fetch failed: %s", e)
-            return []
-
+            return None
         if response.status_code >= 400:
             logger.warning("WebSearch responded %d", response.status_code)
-            return []
-
+            return None
         if self._is_rate_limited(response.text):
             logger.warning("WebSearch returned rate-limit page — aborting")
-            return []
-
-        offers = self._parse_serp(response.text)
-        # Probe activo solo para LinkedIn: el snippet pre-filter ya pasó,
-        # pero LinkedIn suele tener ofertas indexadas que indexaron vivas
-        # y hoy están cerradas. Costo: 1 GET por oferta de LinkedIn.
-        offers = self._filter_closed_linkedin(offers)
-        return offers
-
-    # ---- Query / detection ---------------------------------------------
-
-    @staticmethod
-    def _build_query(query: str, location: str) -> str:
-        """Arma el query con quotes en el rol + ubicación + clause de sites."""
-        sites_clause = " OR ".join(f"site:{s}" for s in _JOB_SITES)
-        loc = f'"{location}"' if location else ""
-        return f'"{query}" {loc} ({sites_clause})'.strip()
+            return None
+        return response.text
 
     @staticmethod
     def _is_rate_limited(html: str) -> bool:
@@ -333,6 +364,14 @@ class WebSearchJobsScraper(JobScraper):
 
         snippet_tag = block.select_one(".result__snippet")
         snippet = snippet_tag.get_text(" ", strip=True) if snippet_tag else ""
+
+        # Pre-filter por edad: si el snippet/título dice "hace N
+        # semanas" o más, descartamos. Mantenemos las que NO declaran
+        # edad (asumir reciente — si DDG las indexó hoy, probable).
+        age_days = extract_age_days(f"{title} {snippet}")
+        if age_days is not None and age_days > MAX_OFFER_AGE_DAYS:
+            logger.info("Skipping old offer (%d days): %s", age_days, href)
+            return None
 
         # Pre-filter por snippet/título: si DDG indexó la oferta con un
         # marker claro de cerrado, la descartamos antes de meterla a la DB.

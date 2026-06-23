@@ -68,3 +68,49 @@ def extract_keywords(text: str) -> str:
         if re.search(r"(?<!\w)" + re.escape(kw) + r"(?!\w)", text_lower)
     }
     return ", ".join(sorted(found))
+
+
+# Compartido entre scrapers para filtrar ofertas viejas al parse time.
+# Ofertas con >7 días tienen mucha menos probabilidad de respuesta del HR.
+MAX_OFFER_AGE_DAYS = 7
+
+_AGE_PATTERN = re.compile(
+    r"\b(?:hace|posted|publicado(?:\s+hace)?)\s+"
+    r"(\d+)\s+"
+    r"(d[íi]a|day|semana|week|mes|month|hour|hora|minute|minuto)",
+    re.IGNORECASE,
+)
+
+# Palabras sueltas que indican "hoy" / "ayer" — comunes en HTML de
+# Computrabajo/Bumeran que muestran "Hoy" arriba de la card sin "hace".
+_RECENT_WORDS = re.compile(r"\b(hoy|ayer|today|yesterday)\b", re.IGNORECASE)
+
+
+def extract_age_days(text: str) -> int | None:
+    """Estima días desde publicación. Devuelve None si no detecta nada
+    (caller asume "reciente"; no descartar).
+
+    Solo la PRIMERA mención cuenta — las ofertas suelen poner la fecha
+    al inicio del snippet ("hace 2 días · Empresa X · …").
+    """
+    if not text:
+        return None
+    lowered = text.lower()
+    if _RECENT_WORDS.search(lowered):
+        # Prioridad sobre "hace N días" que podría aparecer también en el
+        # cuerpo (ej. "requisito: experiencia hace 5 años").
+        return 0 if ("hoy" in lowered or "today" in lowered) else 1
+    match = _AGE_PATTERN.search(text)
+    if not match:
+        return None
+    qty = int(match.group(1))
+    unit = match.group(2).lower()
+    if unit.startswith(("min", "hour", "hora")):
+        return 0
+    if unit.startswith(("d", "day")):
+        return qty
+    if unit.startswith(("semana", "week")):
+        return qty * 7
+    if unit.startswith(("mes", "month")):
+        return qty * 30
+    return None

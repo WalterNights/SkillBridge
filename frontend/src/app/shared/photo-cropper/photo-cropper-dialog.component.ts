@@ -180,9 +180,14 @@ export class PhotoCropperDialogComponent implements OnChanges {
     if (!this.imageUrl || !this.imgNaturalW) return;
     this.isProcessing = true;
 
-    // Canvas: 512px en el lado mayor para mantener calidad sin que
-    // los avatares pesen mucho.
-    const outputLong = 512;
+    // Resolución de output adaptada al uso:
+    //   - Avatar (1:1):     1024px lado → ~150KB PNG, retina-ready hasta 256px display
+    //   - Banner (no 1:1):  1920px lado → cubre desktop hero a retina sin pixelarse
+    // Antes era 512 fijo → banner se veía borroso al renderizarse a
+    // 1200px de ancho con upscale del browser.
+    const isSquare = this.aspectRatio === 1;
+    const outputLong = isSquare ? 1024 : 1920;
+
     const canvas = document.createElement('canvas');
     if (this.aspectRatio >= 1) {
       canvas.width = outputLong;
@@ -212,13 +217,18 @@ export class PhotoCropperDialogComponent implements OnChanges {
     const img = new Image();
     img.onload = () => {
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+      // Avatar como PNG (lossless, ~150KB a 1024). Banner como JPEG
+      // (a 1920px un PNG pesa varios MB y revienta el cap de 5MB del
+      // backend; JPEG quality 0.92 es indistinguible visualmente).
+      const mimeType = isSquare ? 'image/png' : 'image/jpeg';
+      const quality = isSquare ? undefined : 0.92;
       canvas.toBlob(
         (blob) => {
           this.isProcessing = false;
           if (blob) this.applied.emit(blob);
         },
-        'image/png',
-        0.92,
+        mimeType,
+        quality,
       );
     };
     img.onerror = () => {
