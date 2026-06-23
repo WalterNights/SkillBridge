@@ -22,6 +22,14 @@ source venv/bin/activate
 pip install --quiet --upgrade pip
 pip install --quiet -r backend/requirements-prod.txt
 
+# Chromium para Playwright. `playwright install chromium` es
+# idempotente (skip si ya está instalado). El `|| true` evita que
+# tumbe el deploy si falla — los scrapers que lo necesitan degradan
+# a vacío sin romper a los demás.
+echo "==> Ensuring Playwright Chromium is installed"
+python -m playwright install chromium 2>/dev/null || \
+    echo "  [!] playwright chromium install failed, run manually if Magneto/Indeed scrapers are needed"
+
 # El build de Angular corre en el VPS para evitar el rsync runner→VPS que
 # Hostinger filtra intermitentemente (TCP timeout en :22 sin patrón claro).
 # Build local + git pull es 100% confiable; tradeoff: ~2 min más por deploy.

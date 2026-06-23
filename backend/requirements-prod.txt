@@ -53,6 +53,13 @@ beautifulsoup4==4.13.4
 lxml==5.4.0
 soupsieve==2.7
 requests==2.32.4
+# Playwright para portales que requieren JS rendering (Magneto SPA) o
+# Cloudflare anti-bot (Indeed). Después del `pip install`, hay que
+# instalar Chromium one-time con:
+#   sudo -u skiltak bash -c 'cd /var/www/skiltak && source venv/bin/activate && python -m playwright install chromium'
+# Cuesta ~280MB de disco one-time. Si no se instala, los scrapers que
+# lo usan devuelven [] silenciosamente — el resto del scrape sigue.
+playwright==1.49.0
 
 # ----- Auth / Seguridad -----
 cryptography==45.0.4

@@ -24,7 +24,15 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
     build-essential libpq-dev postgresql-client \
     redis-server \
     poppler-utils tesseract-ocr \
-    rsync
+    rsync \
+    libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
+    libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 \
+    libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2t64 \
+    libgtk-3-0 libxshmfence1
+# Las libs después de tesseract-ocr son las dependencias de runtime de
+# Chromium headless (las que Playwright pone via "playwright install-deps").
+# Lo declaramos acá para no depender de un comando con sudo dentro del
+# venv del usuario unprivileged.
 
 echo "==> 2/8 Habilitando Redis"
 systemctl enable --now redis-server
@@ -55,6 +63,11 @@ cd "$APP_DIR"
 source venv/bin/activate
 pip install --quiet --upgrade pip
 pip install --quiet -r backend/requirements-prod.txt
+# Chromium one-time install para los scrapers Playwright (Magneto/Indeed).
+# Cuesta ~280MB pero solo una vez. Si falla (ej. red caída), los
+# scrapers afectados devuelven [] sin tumbar el scrape general — vale
+# la pena reintentarlo manual después con \`python -m playwright install chromium\`.
+python -m playwright install chromium || echo "  [!] playwright chromium install failed, run manually later"
 EOF
 
 echo "==> 6/8 Django migrate + collectstatic"

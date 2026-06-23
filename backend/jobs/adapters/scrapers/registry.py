@@ -19,7 +19,9 @@ from __future__ import annotations
 
 from jobs.adapters.scrapers.base import JobScraper, ScraperError
 from jobs.adapters.scrapers.computrabajo import ComputrabajoScraper
+from jobs.adapters.scrapers.indeed import IndeedScraper
 from jobs.adapters.scrapers.linkedin import LinkedInGuestScraper
+from jobs.adapters.scrapers.magneto import MagnetoScraper
 from jobs.adapters.scrapers.web_search import WebSearchJobsScraper
 from jobs.adapters.scrapers.weworkremotely import WeWorkRemotelyScraper
 
@@ -28,13 +30,17 @@ from jobs.adapters.scrapers.weworkremotely import WeWorkRemotelyScraper
 # vendedor era ruido garantizado en el feed. Cuando agreguemos perfiles
 # "remote-first" o un toggle en el wizard de profile, lo activamos opt-in.
 #
-# LinkedInGuestScraper pega directo a la API guest de LinkedIn (paginada,
-# ~100 offers por scrape). Antes solo accedíamos a LinkedIn via DDG
-# (~10 offers). Mantenemos WebSearchJobsScraper porque cubre los demás
-# portales (magneto, indeed, elempleo, bumeran).
+# LinkedInGuestScraper pega directo a la API guest de LinkedIn (HTTP plano).
+# MagnetoScraper / IndeedScraper requieren Playwright (Chromium headless)
+# porque son SPAs / tienen Cloudflare. Si Playwright no está instalado en
+# el entorno (ej. CI sin chromium), esos scrapers devuelven [] sin tirar.
+# WebSearchJobsScraper cubre los portales sin scraper dedicado
+# (elempleo, bumeran, getonbrd) via DDG.
 _REGISTRY: dict[str, type[JobScraper]] = {
     ComputrabajoScraper.portal_name: ComputrabajoScraper,
     LinkedInGuestScraper.portal_name: LinkedInGuestScraper,
+    MagnetoScraper.portal_name: MagnetoScraper,
+    IndeedScraper.portal_name: IndeedScraper,
     WebSearchJobsScraper.portal_name: WebSearchJobsScraper,
 }
 

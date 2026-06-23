@@ -29,4 +29,10 @@ class TestRegistry:
         # WWR queda implementado pero fuera del registro por defecto
         # (es dev-only/remoto, ruido para perfiles no-tech). Si se
         # vuelve a habilitar, sumarlo acá.
-        assert set(available_portals()) == {"computrabajo", "linkedin", "websearch"}
+        assert set(available_portals()) == {
+            "computrabajo",
+            "linkedin",
+            "magneto",
+            "indeed",
+            "websearch",
+        }
