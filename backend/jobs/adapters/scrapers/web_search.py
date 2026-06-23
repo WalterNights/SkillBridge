@@ -122,7 +122,51 @@ _PROBE_ALLOWED_HOSTS = (
     "www.linkedin.com",
     "co.linkedin.com",
     "es.linkedin.com",
+    "ar.linkedin.com",
+    "mx.linkedin.com",
 )
+
+
+# Patrones URL para distinguir páginas individuales de listings por portal.
+# DDG mezcla los dos tipos y antes guardábamos los listings como si fueran
+# ofertas — el user clickeaba y caía en una lista, no en una oferta.
+_INDIVIDUAL_PATTERNS: dict[str, str] = {
+    "linkedin.com": "/jobs/view/",
+    "computrabajo.com": "/ofertas-de-trabajo/oferta-",
+    "indeed.com": "/viewjob",
+}
+
+
+def _is_individual_offer_url(url: str) -> bool:
+    """True si el URL apunta a una oferta puntual, False si es un listing.
+
+    Para portales en `_INDIVIDUAL_PATTERNS` exige que matchee el patrón.
+    Para el resto (bumeran, magneto, getonbrd, weworkremotely, elempleo)
+    aceptamos cualquier URL del dominio — todavía no audité sus
+    patrones de listing vs detalle, mejor permitir que demasiado-filtrar.
+    """
+    lowered = url.lower()
+    for domain, pattern in _INDIVIDUAL_PATTERNS.items():
+        if domain in lowered:
+            return pattern in lowered
+    return True
+
+
+def _is_linkedin_listing(url: str) -> bool:
+    """True si el URL es una página de búsqueda/listado de LinkedIn.
+
+    Listings son la mina de oro: contienen 25 jobs cada una, con sus
+    fechas reales y URLs individuales. En vez de descartarlas,
+    `_extract_linkedin_listing` las fan-outs.
+    """
+    lowered = url.lower()
+    if "linkedin.com" not in lowered:
+        return False
+    if "/jobs/view/" in lowered:
+        return False
+    # Listings conocidos: /jobs/search, /jobs/in-XXX, /jobs/empleos-de-XXX,
+    # /jobs/<keyword>-jobs-in-<location>
+    return "/jobs/" in lowered
 
 
 def _is_safe_probe_url(url: str) -> bool:
@@ -330,37 +374,52 @@ class WebSearchJobsScraper(JobScraper):
         seen_urls: set[str] = set()
         for block in result_blocks:
             try:
-                offer = self._parse_block(block)
-                if offer is None or offer.url in seen_urls:
-                    continue
-                seen_urls.add(offer.url)
-                offers.append(offer)
+                # `_parse_block` ahora devuelve list (1 oferta normal o N
+                # cuando expande un listing de LinkedIn) — más simple que
+                # mantener dos paths en el caller.
+                for offer in self._parse_block(block):
+                    if offer.url in seen_urls:
+                        continue
+                    seen_urls.add(offer.url)
+                    offers.append(offer)
             except Exception:
                 logger.exception("WebSearch block parse failed, skipping")
         logger.info("WebSearch valid offers: %d", len(offers))
         return offers
 
-    def _parse_block(self, block) -> JobOfferData | None:
+    def _parse_block(self, block) -> list[JobOfferData]:
         link = block.select_one("a.result__a")
         if not link:
-            return None
+            return []
 
         href = link.get("href", "")
         # DDG envuelve algunas URLs en un redirect propio (/l/?uddg=...);
         # extraemos la URL real. Para ads (`y.js?ad_domain=...`) descartamos.
         href = self._unwrap_url(href)
         if not href:
-            return None
+            return []
 
         # Whitelist por dominio: DDG mezcla resultados orgánicos con ads
         # de Bing al principio. Si la URL no es a un portal de empleo
         # conocido, no nos interesa.
         if not any(site in href for site in _JOB_SITES):
-            return None
+            return []
+
+        # Listings de LinkedIn → fanout. Cada listing tiene ~25 jobs
+        # con fechas y URLs reales. Mucho mejor que descartar el block.
+        if _is_linkedin_listing(href):
+            return self._extract_linkedin_listing(href)
+
+        # Filtro defensivo: para los portales donde sabemos el patrón
+        # de oferta individual, rechazamos URLs que no matchean
+        # (probablemente son listings/search pages).
+        if not _is_individual_offer_url(href):
+            logger.info("Skipping non-individual URL: %s", href)
+            return []
 
         title = link.get_text(strip=True)
         if not title:
-            return None
+            return []
 
         snippet_tag = block.select_one(".result__snippet")
         snippet = snippet_tag.get_text(" ", strip=True) if snippet_tag else ""
@@ -371,25 +430,140 @@ class WebSearchJobsScraper(JobScraper):
         age_days = extract_age_days(f"{title} {snippet}")
         if age_days is not None and age_days > MAX_OFFER_AGE_DAYS:
             logger.info("Skipping old offer (%d days): %s", age_days, href)
-            return None
+            return []
 
         # Pre-filter por snippet/título: si DDG indexó la oferta con un
         # marker claro de cerrado, la descartamos antes de meterla a la DB.
         if self._is_closed_by_snippet(title, snippet):
             logger.info("Skipping closed offer (snippet marker): %s", href)
-            return None
+            return []
 
         domain = urlparse(href).netloc.lower()
         company = self._infer_company(snippet, fallback=self._domain_label(domain))
         location_hint = self._infer_location(snippet)
         keywords = extract_keywords(f"{title} {snippet}")
 
+        return [
+            JobOfferData(
+                title=title[:500],
+                company=company[:255],
+                location=location_hint[:255],
+                summary=snippet[:2000],
+                keywords=keywords,
+                url=href,
+                portal=self.portal_name,
+            )
+        ]
+
+    # ---- LinkedIn listing extraction -----------------------------------
+
+    def _extract_linkedin_listing(self, listing_url: str) -> list[JobOfferData]:
+        """GET el listing de LinkedIn y parsea cada job card.
+
+        LinkedIn renderiza las cards inline en el HTML del guest mode
+        (sin JS), bajo `li.base-card`. Por cada card extraemos title,
+        company, location, posted-date y URL individual del job.
+
+        Devuelve lista vacía ante red caída / status >= 400 / SSRF block
+        — la falla de un listing no debe tumbar el scrape entero.
+        """
+        if not _is_safe_probe_url(listing_url):
+            logger.warning("Skipping unsafe LinkedIn listing URL: %s", listing_url)
+            return []
+        try:
+            response = requests.get(
+                listing_url,
+                headers={
+                    "User-Agent": USER_AGENT,
+                    "Accept-Language": "es-CO,es;q=0.9,en;q=0.8",
+                },
+                timeout=_PROBE_TIMEOUT_SECONDS,
+                allow_redirects=True,
+            )
+        except requests.RequestException as exc:
+            logger.warning("LinkedIn listing fetch failed: %s", exc)
+            return []
+        if response.status_code >= 400:
+            logger.warning(
+                "LinkedIn listing returned %d for %s", response.status_code, listing_url
+            )
+            return []
+
+        soup = BeautifulSoup(response.text, "html.parser")
+        # Selectors defensivos — LinkedIn cambia las clases sin avisar.
+        # Probamos varios; si todos fallan, devuelve vacío.
+        cards = (
+            soup.select("li div.base-card")
+            or soup.select("div.base-card")
+            or soup.select("li.jobs-search-results__list-item")
+        )
+        logger.info("LinkedIn listing %s: %d cards", listing_url, len(cards))
+
+        offers: list[JobOfferData] = []
+        for card in cards:
+            try:
+                offer = self._parse_linkedin_card(card)
+                if offer is not None:
+                    offers.append(offer)
+            except Exception:
+                logger.exception("LinkedIn card parse failed, skipping")
+        return offers
+
+    def _parse_linkedin_card(self, card) -> JobOfferData | None:
+        """Extrae un JobOfferData de un single card de listing LinkedIn.
+
+        Selectors basados en el guest-mode HTML público de LinkedIn (sin
+        login). Si el layout cambia, fallback a None — el caller skipea.
+        """
+        link_tag = (
+            card.select_one("a.base-card__full-link")
+            or card.select_one("a[href*='/jobs/view/']")
+        )
+        if not link_tag:
+            return None
+        href = link_tag.get("href", "").split("?")[0]  # strip tracking
+        if "/jobs/view/" not in href:
+            return None
+
+        title_tag = card.select_one("h3.base-search-card__title")
+        company_tag = card.select_one(
+            "h4.base-search-card__subtitle a"
+        ) or card.select_one("h4.base-search-card__subtitle")
+        location_tag = card.select_one("span.job-search-card__location")
+        time_tag = card.select_one("time")
+
+        title = title_tag.get_text(strip=True) if title_tag else ""
+        if not title:
+            return None
+        company = company_tag.get_text(strip=True) if company_tag else ""
+        location = location_tag.get_text(strip=True) if location_tag else ""
+
+        # Filtro de edad usando el texto del <time> ("hace 4 semanas").
+        posted_text = time_tag.get_text(strip=True) if time_tag else ""
+        age_days = extract_age_days(posted_text)
+        if age_days is not None and age_days > MAX_OFFER_AGE_DAYS:
+            logger.info(
+                "Skipping old LinkedIn card (%d days): %s", age_days, title[:60]
+            )
+            return None
+
+        # Summary armado: no fetchamos el detalle de la oferta para no
+        # multiplicar requests a LinkedIn (rate-limit agresivo). El
+        # detail view del frontend lleva al user al portal donde están
+        # los requisitos completos.
+        summary_parts = [title]
+        if company:
+            summary_parts.append(f"en {company}")
+        if location:
+            summary_parts.append(f"— {location}")
+        summary = " ".join(summary_parts)
+
         return JobOfferData(
             title=title[:500],
             company=company[:255],
-            location=location_hint[:255],
-            summary=snippet[:2000],
-            keywords=keywords,
+            location=location[:255],
+            summary=summary[:2000],
+            keywords=extract_keywords(f"{title} {company}"),
             url=href,
             portal=self.portal_name,
         )
