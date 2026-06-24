@@ -22,6 +22,18 @@ export interface ScrapeResponse {
   scrape_stats: Record<string, ScrapePortalStat>;
 }
 
+export interface FilterOptionsResponse {
+  countries: { value: string; count: number }[];
+  modalities: { value: string; label: string; count: number }[];
+}
+
+export interface JobFilters {
+  /** Lista de ISO codes (MX, CO, AR…). Vacío = sin filtro. */
+  countries: string[];
+  /** Lista de modalidades (remote, hybrid, onsite, unknown). Vacío = sin filtro. */
+  modalities: string[];
+}
+
 /**
  * Service for managing job offers and selected job state
  */
@@ -36,12 +48,33 @@ export class JobService {
 
   /**
    * Lista las ofertas almacenadas en backend. Desempaqueta la paginación
-   * de DRF para devolver `JobOffer[]` directo.
+   * de DRF para devolver `JobOffer[]` directo. Acepta filtros opcionales
+   * de país y modalidad (multi-select, comma-separated en query string).
    */
-  getJobs(): Observable<JobOffer[]> {
+  getJobs(filters?: JobFilters): Observable<JobOffer[]> {
+    let url = `${environment.apiUrl}/jobs/jobs/`;
+    const params: string[] = [];
+    if (filters?.countries?.length) {
+      params.push(`country=${filters.countries.join(',')}`);
+    }
+    if (filters?.modalities?.length) {
+      params.push(`modality=${filters.modalities.join(',')}`);
+    }
+    if (params.length) {
+      url += `?${params.join('&')}`;
+    }
     return this.http
-      .get<PaginatedResponse<JobOffer>>(`${environment.apiUrl}/jobs/jobs/`)
+      .get<PaginatedResponse<JobOffer>>(url)
       .pipe(map((response) => response.results));
+  }
+
+  /** Catálogo de filtros disponibles con conteos — para poblar los
+   * dropdowns del dashboard. Cacheable en el caller (1 llamada por
+   * mount del dashboard). */
+  getFilterOptions(): Observable<FilterOptionsResponse> {
+    return this.http.get<FilterOptionsResponse>(
+      `${environment.apiUrl}/jobs/jobs/filter-options/`,
+    );
   }
 
   /**

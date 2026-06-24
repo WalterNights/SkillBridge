@@ -1,9 +1,14 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { HttpErrorResponse } from '@angular/common/http';
 import { JobOffer } from '../models/job-offer.model';
-import { JobService, ScrapeResponse } from '../services/job.service';
+import {
+  FilterOptionsResponse,
+  JobFilters,
+  JobService,
+  ScrapeResponse,
+} from '../services/job.service';
 import { ApplicationService } from '../services/application.service';
 import { ScrapeProgressService } from '../services/scrape-progress.service';
 import { ToastService } from '../services/toast.service';
@@ -11,6 +16,28 @@ import { Router, RouterModule } from '@angular/router';
 import { HTMLChangesComponent } from '../shared/html-changes/html-changes';
 import { MATCH_THRESHOLDS } from '../constants/match-thresholds';
 import { portalMeta } from '../shared/portal';
+
+/** Etiqueta legible de un código ISO 3166-1 alpha-2 para el dropdown.
+ * Cubrimos los países activos en LATAM + ES/US. Si falta uno, se muestra
+ * el código tal cual (fallback aceptable). */
+const COUNTRY_LABELS: Record<string, string> = {
+  MX: 'México',
+  CO: 'Colombia',
+  AR: 'Argentina',
+  CL: 'Chile',
+  PE: 'Perú',
+  UY: 'Uruguay',
+  PY: 'Paraguay',
+  BO: 'Bolivia',
+  EC: 'Ecuador',
+  VE: 'Venezuela',
+  CR: 'Costa Rica',
+  PA: 'Panamá',
+  DO: 'R. Dominicana',
+  GT: 'Guatemala',
+  ES: 'España',
+  US: 'Estados Unidos',
+};
 
 /**
  * Results component for displaying job offers with filtering
@@ -32,6 +59,25 @@ export class ResultsComponent {
    * feed. Lo mantenemos como Signal<Set> para lookup O(1) en el ngFor. */
   appliedOfferIds = signal<Set<number>>(new Set());
 
+  /** Catálogo de filtros disponibles (poblado al mount via filter-options
+   * endpoint). Mientras está vacío, los dropdowns no se renderizan. */
+  filterOptions = signal<FilterOptionsResponse | null>(null);
+  /** Selección actual de filtros — disparan recarga al cambiar. */
+  selectedCountries = signal<Set<string>>(new Set());
+  selectedModalities = signal<Set<string>>(new Set());
+  /** UI: panel de filtros abierto/cerrado. */
+  filtersOpen = signal<boolean>(false);
+
+  /** True si hay al menos un filtro activo — muestra el botón "Limpiar". */
+  hasActiveFilters = computed(
+    () => this.selectedCountries().size > 0 || this.selectedModalities().size > 0,
+  );
+
+  /** Label legible para un código ISO. */
+  countryLabel(code: string): string {
+    return COUNTRY_LABELS[code] || code;
+  }
+
   private readonly MATCH_THRESHOLD = MATCH_THRESHOLDS;
 
   constructor(
@@ -49,6 +95,53 @@ export class ResultsComponent {
   ngOnInit(): void {
     this.loadOffers();
     this.loadAppliedIds();
+    this.loadFilterOptions();
+  }
+
+  private loadFilterOptions(): void {
+    this.jobService.getFilterOptions().subscribe({
+      next: (options) => this.filterOptions.set(options),
+      error: () => {
+        /* Soft-fail: el dashboard funciona sin filtros, simplemente
+         * el panel no se muestra. */
+      },
+    });
+  }
+
+  toggleFiltersPanel(): void {
+    this.filtersOpen.update((open) => !open);
+  }
+
+  toggleCountry(code: string): void {
+    this.selectedCountries.update((set) => {
+      const next = new Set(set);
+      next.has(code) ? next.delete(code) : next.add(code);
+      return next;
+    });
+    this.loadOffers();
+  }
+
+  toggleModality(value: string): void {
+    this.selectedModalities.update((set) => {
+      const next = new Set(set);
+      next.has(value) ? next.delete(value) : next.add(value);
+      return next;
+    });
+    this.loadOffers();
+  }
+
+  clearFilters(): void {
+    this.selectedCountries.set(new Set());
+    this.selectedModalities.set(new Set());
+    this.loadOffers();
+  }
+
+  isCountrySelected(code: string): boolean {
+    return this.selectedCountries().has(code);
+  }
+
+  isModalitySelected(value: string): boolean {
+    return this.selectedModalities().has(value);
   }
 
   private loadAppliedIds(): void {
@@ -66,7 +159,11 @@ export class ResultsComponent {
   }
 
   private loadOffers(): void {
-    this.jobService.getJobs().subscribe({
+    const filters: JobFilters = {
+      countries: Array.from(this.selectedCountries()),
+      modalities: Array.from(this.selectedModalities()),
+    };
+    this.jobService.getJobs(filters).subscribe({
       next: (data) => {
         this.offers = data;
       },

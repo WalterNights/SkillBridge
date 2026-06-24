@@ -1,6 +1,7 @@
 import logging
 
 from django.core.cache import cache
+from django.db.models import Count
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
 from rest_framework import status, viewsets
@@ -12,6 +13,7 @@ from jobs.models import JobOffer
 from jobs.serializers import JobOfferSerializer
 from jobs.services.job_service import JobService
 from jobs.services.matching_service import JobMatchingService
+from jobs.utils.offer_attributes import VALID_MODALITIES
 from notifications.models import Notification
 from users.models import UserProfile
 
@@ -70,8 +72,36 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Optimiza queries con select_related"""
-        return JobOffer.objects.all().order_by("-created_at")
+        """Aplica filtros del dashboard (?country=, ?modality=).
+
+        Ambos params aceptan comma-separated values:
+          ?country=MX,CO     → ofertas de México o Colombia
+          ?modality=remote   → solo remotas
+          ?modality=remote,hybrid → remotas o híbridas
+
+        Sin params → todas las ofertas, orden por recencia (no se cambia
+        el contrato previo). Si el param viene con un valor inválido,
+        se ignora silenciosamente — no rompemos el feed por un typo.
+        """
+        qs = JobOffer.objects.all().order_by("-created_at")
+
+        country_param = (self.request.query_params.get("country") or "").strip()
+        if country_param:
+            countries = [c.strip().upper() for c in country_param.split(",") if c.strip()]
+            if countries:
+                qs = qs.filter(country__in=countries)
+
+        modality_param = (self.request.query_params.get("modality") or "").strip()
+        if modality_param:
+            modalities = [
+                m.strip().lower()
+                for m in modality_param.split(",")
+                if m.strip().lower() in VALID_MODALITIES
+            ]
+            if modalities:
+                qs = qs.filter(modality__in=modalities)
+
+        return qs
 
     def _maybe_create_match_notification(self, user, offers):
         """Crea una notif `kind=match` si hay ≥1 oferta con match alto.
@@ -137,6 +167,49 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
         self._enrich_with_user_match([instance])
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="filter-options")
+    def filter_options(self, request):
+        """Devuelve los valores disponibles para los filtros del dashboard
+        con conteo de ofertas — los dropdowns muestran "MX (45)" / "CO (20)".
+
+        El frontend cachea esta respuesta — se llama 1 vez al cargar el
+        dashboard. El refresh implícito ocurre cuando el user navega de
+        vuelta (no precisa polling).
+
+        Filtramos países 'XX' del response — los dejamos en DB para no
+        perder datos pero no los exponemos como opción seleccionable
+        (sería confuso ver "Sin país conocido (15)").
+        """
+        country_counts = (
+            JobOffer.objects.exclude(country="XX")
+            .values("country")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+        modality_counts = (
+            JobOffer.objects.values("modality")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+        # Labels legibles para el dropdown
+        modality_labels = dict(JobOffer.MODALITY_CHOICES)
+        return Response(
+            {
+                "countries": [
+                    {"value": row["country"], "count": row["count"]}
+                    for row in country_counts
+                ],
+                "modalities": [
+                    {
+                        "value": row["modality"],
+                        "label": modality_labels.get(row["modality"], row["modality"]),
+                        "count": row["count"],
+                    }
+                    for row in modality_counts
+                ],
+            }
+        )
 
     @action(detail=False, methods=["get"])
     def matched(self, request):

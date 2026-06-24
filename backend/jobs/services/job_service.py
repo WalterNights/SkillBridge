@@ -140,10 +140,17 @@ class JobService:
         la batch entera. Aprendido tras un `DataError` por una sola URL
         de Computrabajo > 200 chars que rompía todas las demás.
         """
+        from jobs.utils.offer_attributes import extract_country, extract_modality
+
         created: list[JobOffer] = []
         skipped = 0
         for data in offers_data:
             try:
+                # Atributos derivados (country + modality) calculados acá
+                # —no en cada scraper— para tener un único punto de verdad.
+                # Los scrapers solo devuelven los campos crudos.
+                country = extract_country(data.location)
+                modality = extract_modality(data.location, data.summary)
                 obj, was_created = JobOffer.objects.get_or_create(
                     url=data.url,
                     defaults={
@@ -153,6 +160,8 @@ class JobService:
                         "summary": data.summary,
                         "keywords": data.keywords,
                         "portal": data.portal,
+                        "country": country,
+                        "modality": modality,
                     },
                 )
                 if was_created:

@@ -58,6 +58,72 @@
         de <span class="text-bone font-semibold">{{ offers.length }}</span>
       </p>
     </div>
+
+    <!-- Filtros país + modalidad — colapsable para no quitar foco visual.
+         Solo se renderiza si el backend ya devolvió las opciones disponibles. -->
+    <div *ngIf="filterOptions() as opts" class="mt-4 pt-4 border-t border-white/[0.05]">
+      <button
+        type="button"
+        (click)="toggleFiltersPanel()"
+        class="filter-toggle"
+        [class.is-open]="filtersOpen()"
+      >
+        <span class="material-symbols-outlined" style="font-size: 16px">tune</span>
+        País y modalidad
+        <span *ngIf="hasActiveFilters()" class="filter-toggle-badge">{{
+          selectedCountries().size + selectedModalities().size
+        }}</span>
+        <span class="material-symbols-outlined ml-auto" style="font-size: 18px">
+          {{ filtersOpen() ? 'expand_less' : 'expand_more' }}
+        </span>
+      </button>
+
+      <div *ngIf="filtersOpen()" class="filter-panel">
+        <!-- Países -->
+        <div *ngIf="opts.countries.length > 0" class="filter-group">
+          <p class="filter-group-label">País</p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              *ngFor="let c of opts.countries"
+              type="button"
+              class="filter-chip"
+              [class.is-active]="isCountrySelected(c.value)"
+              (click)="toggleCountry(c.value)"
+            >
+              {{ countryLabel(c.value) }}
+              <span class="filter-chip-count">{{ c.count }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modalidad -->
+        <div *ngIf="opts.modalities.length > 0" class="filter-group">
+          <p class="filter-group-label">Modalidad</p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              *ngFor="let m of opts.modalities"
+              type="button"
+              class="filter-chip"
+              [class.is-active]="isModalitySelected(m.value)"
+              (click)="toggleModality(m.value)"
+            >
+              {{ m.label }}
+              <span class="filter-chip-count">{{ m.count }}</span>
+            </button>
+          </div>
+        </div>
+
+        <button
+          *ngIf="hasActiveFilters()"
+          type="button"
+          class="filter-clear-btn"
+          (click)="clearFilters()"
+        >
+          <span class="material-symbols-outlined" style="font-size: 14px">close</span>
+          Limpiar filtros
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Job cards grid -->
