@@ -16,9 +16,9 @@
       </a>
     </div>
 
-    <!-- Nav (shared utility for user + admin) -->
-    <nav class="nav-group" aria-label="Principal">
-      <p class="nav-section-label">Menú</p>
+    <!-- Sección 1: actividad core del user (búsqueda, seguimiento, CV) -->
+    <nav class="nav-group" aria-label="Trabajo">
+      <p class="nav-section-label">Trabajo</p>
       <a
         class="nav-item"
         routerLink="/dashboard"
@@ -50,6 +50,12 @@
         <span class="material-symbols-outlined">description</span>
         <span class="nav-label">Mi CV</span>
       </a>
+    </nav>
+
+    <!-- Sección 2: contenido editorial — separa visualmente lo "para
+         leer" de lo "para actuar" arriba. -->
+    <nav class="nav-group" aria-label="Aprender">
+      <p class="nav-section-label">Aprender</p>
       <a
         class="nav-item"
         routerLink="/recursos"
@@ -104,10 +110,7 @@
           >tips_and_updates</span
         >
         <p class="text-sm text-bone font-semibold mt-2 mb-1 leading-snug">Tip del día</p>
-        <p class="text-xs text-warm-grey mb-3 leading-snug">{{ tipOfTheDay() }}</p>
-        <a routerLink="/recursos" class="text-xs text-primary font-semibold hover:underline underline-offset-4">
-          Ver más recursos →
-        </a>
+        <p class="text-xs text-warm-grey leading-snug">{{ tipOfTheDay() }}</p>
       </div>
     </div>
   </aside>
