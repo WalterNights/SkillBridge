@@ -57,6 +57,14 @@ export const routes: Routes = [
     path: 'blog',
     loadComponent: () => import('./public/blog/blog.component').then((m) => m.BlogComponent),
   },
+  // Documentos legales — privacidad, terminos, cookies. Comparten un único
+  // componente que hace lookup por slug en legal-data.ts. URLs públicas y
+  // estables porque las usan terceros (LinkedIn Developers pide privacy URL).
+  {
+    path: 'legal/:slug',
+    loadComponent: () =>
+      import('./public/legal/legal.component').then((m) => m.LegalComponent),
+  },
 
   // ===== Authenticated standalone (no shell) =====
   // /profile sigue afuera porque es el wizard de onboarding — no

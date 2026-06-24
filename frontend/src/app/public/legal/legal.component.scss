@@ -1,0 +1,121 @@
+/* Layout para los documentos legales. Mismo lenguaje editorial que
+ * /recursos/:slug pero más denso — anchor index al inicio, headings
+ * numeradas y bullets pegadas. Sin imágenes ni callouts: prosa pura. */
+
+.legal-toc {
+  margin: 0 0 40px;
+  padding: 20px 22px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+
+    @media (min-width: 640px) {
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 24px;
+    }
+  }
+
+  a {
+    display: inline-block;
+    font-size: 14px;
+    line-height: 1.45;
+    color: #b3b1aa;
+    text-decoration: none;
+    transition: color 180ms ease;
+
+    &:hover {
+      color: #f97316;
+    }
+  }
+}
+
+.legal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.legal-section {
+  scroll-margin-top: 120px; /* offset para que el sticky nav no tape el h2 al anchor */
+
+  h2 {
+    font-size: 22px;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    color: #e8e5dd;
+    font-weight: 800;
+    margin-bottom: 14px;
+  }
+
+  p {
+    color: #b3b1aa;
+    font-size: 16px;
+    line-height: 1.7;
+    margin-bottom: 14px;
+
+    &:last-of-type {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.legal-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  li {
+    position: relative;
+    padding-left: 22px;
+    color: #b3b1aa;
+    font-size: 15px;
+    line-height: 1.6;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 10px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #f97316;
+    }
+  }
+}
+
+.legal-crosslinks {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cross-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 13px;
+  font-weight: 600;
+  color: #cfcfc8;
+  text-decoration: none;
+  transition: border-color 180ms ease, color 180ms ease;
+
+  &:hover {
+    border-color: rgba(249, 115, 22, 0.40);
+    color: #f97316;
+  }
+}

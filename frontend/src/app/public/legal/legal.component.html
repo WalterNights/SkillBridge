@@ -1,0 +1,83 @@
+<app-public-nav />
+
+<main class="pt-32 pb-24 px-gutter">
+  <!-- 404 inline -->
+  <div *ngIf="!doc()" class="max-w-2xl mx-auto text-center">
+    <h1 class="text-headline text-bone mb-3">Documento no encontrado</h1>
+    <p class="text-body-lg text-warm-grey mb-6">
+      El enlace parece estar roto o el documento fue movido.
+    </p>
+    <a routerLink="/" class="btn-primary px-5 py-3 rounded-xl text-sm inline-flex items-center gap-2">
+      Volver al inicio
+    </a>
+  </div>
+
+  <!-- Documento -->
+  <div *ngIf="doc() as d" class="max-w-3xl mx-auto">
+    <!-- Breadcrumb -->
+    <button
+      type="button"
+      (click)="goBack()"
+      class="text-sm text-warm-grey hover:text-bone inline-flex items-center gap-1.5 transition-colors mb-8"
+    >
+      <span class="material-symbols-outlined" style="font-size: 16px">arrow_back</span>
+      Volver
+    </button>
+
+    <!-- Header -->
+    <header class="mb-10">
+      <p class="text-label uppercase text-primary font-semibold mb-3 tracking-widest">
+        Legal · Última actualización: {{ d.lastUpdated }}
+      </p>
+      <h1 class="text-[36px] sm:text-[44px] leading-[1.1] tracking-[-0.03em] font-black text-bone mb-4">
+        {{ d.title }}
+      </h1>
+      <p class="text-body-lg text-warm-grey">{{ d.subtitle }}</p>
+    </header>
+
+    <!-- Tabla de contenidos -->
+    <nav class="legal-toc">
+      <p class="text-label uppercase text-warm-grey mb-3 tracking-widest">Contenido</p>
+      <ul>
+        <li *ngFor="let section of toc()">
+          <a [href]="'#' + section.anchor">{{ section.heading }}</a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Secciones -->
+    <article class="legal-body">
+      <section *ngFor="let section of d.sections" class="legal-section">
+        <h2 [id]="section.anchor">{{ section.heading }}</h2>
+        <p *ngFor="let para of section.body">{{ para }}</p>
+        <ul *ngIf="section.bullets && section.bullets.length > 0" class="legal-bullets">
+          <li *ngFor="let bullet of section.bullets">{{ bullet }}</li>
+        </ul>
+      </section>
+    </article>
+
+    <!-- Pie con cross-links a los otros documentos -->
+    <footer class="legal-crosslinks">
+      <p class="text-xs text-dim mb-4 uppercase tracking-widest">Documentos relacionados</p>
+      <div class="flex flex-wrap gap-3">
+        <a
+          *ngIf="d.slug !== 'privacidad'"
+          routerLink="/legal/privacidad"
+          class="cross-link"
+        >Privacidad</a>
+        <a
+          *ngIf="d.slug !== 'terminos'"
+          routerLink="/legal/terminos"
+          class="cross-link"
+        >Términos</a>
+        <a
+          *ngIf="d.slug !== 'cookies'"
+          routerLink="/legal/cookies"
+          class="cross-link"
+        >Cookies</a>
+      </div>
+    </footer>
+  </div>
+</main>
+
+<app-public-footer />

@@ -82,6 +82,12 @@ EMAIL_HOST_USER=<email>
 EMAIL_HOST_PASSWORD=<app password>
 
 FRONTEND_API_URL=https://api.skiltak.com/api
+
+# LinkedIn OAuth — completar después de crear la app
+LINKEDIN_CLIENT_ID=<copiar del panel de LinkedIn Developers>
+LINKEDIN_CLIENT_SECRET=<copiar del panel de LinkedIn Developers>
+LINKEDIN_REDIRECT_URI=https://api.skiltak.com/api/auth/linkedin/callback/
+LINKEDIN_FRONTEND_COMPLETE_URL=https://skiltak.com/auth/linkedin/complete
 ```
 
 Generar `SECRET_KEY`:
@@ -123,6 +129,61 @@ En **Settings → Secrets and variables → Actions → New repository secret**:
 | `VPS_SSH_KEY` | Contenido de `C:\Users\walte\.ssh\id_ed25519_skiltak` (la clave privada) |
 
 A partir de ahí, todo push a `main` despliega automáticamente.
+
+---
+
+## Actualizar variables del `.env` en producción
+
+El deploy automático **no toca el `.env`** del VPS — lo deja como está. Si agregás nuevas variables (por ejemplo, `LINKEDIN_CLIENT_ID`), tenés que pushear los cambios al VPS manualmente. Dos formas:
+
+### A. Subir el archivo completo (más fácil cuando hay varios cambios)
+
+Desde tu máquina local con el `.env.prod` actualizado:
+
+```powershell
+# PowerShell — Windows
+scp -i $env:USERPROFILE\.ssh\id_ed25519_skiltak `
+    .env.prod `
+    root@72.61.75.116:/var/www/skiltak/.env
+```
+
+```bash
+# bash / Git Bash
+scp -i ~/.ssh/id_ed25519_skiltak \
+    .env.prod \
+    root@72.61.75.116:/var/www/skiltak/.env
+```
+
+Después reiniciá los servicios para que tomen las nuevas variables:
+
+```bash
+ssh -i ~/.ssh/id_ed25519_skiltak root@72.61.75.116 \
+    "systemctl restart skiltak-gunicorn skiltak-celery"
+```
+
+### B. Append rápido en el VPS (cuando son 1-2 variables nuevas)
+
+```bash
+ssh -i ~/.ssh/id_ed25519_skiltak root@72.61.75.116
+nano /var/www/skiltak/.env
+# pegar las líneas nuevas al final, guardar (Ctrl+O, Enter, Ctrl+X)
+systemctl restart skiltak-gunicorn skiltak-celery
+```
+
+### C. Configurar LinkedIn OAuth (resumen del flow completo)
+
+1. Crear la app en https://www.linkedin.com/developers/apps
+2. Agregar el producto **"Sign In with LinkedIn using OpenID Connect"** (instant-approve)
+3. En tab **Auth**, agregar como Authorized redirect URL:
+   ```
+   https://api.skiltak.com/api/auth/linkedin/callback/
+   ```
+   (En dev también: `http://localhost:8000/api/auth/linkedin/callback/`)
+4. Como **Privacy policy URL** poner: `https://skiltak.com/legal/privacidad`
+5. Copiar **Client ID** y **Client Secret** del panel
+6. Pegarlos en `.env.prod` (y en el `.env` local) en las variables `LINKEDIN_CLIENT_ID` y `LINKEDIN_CLIENT_SECRET`
+7. Subir el `.env` al VPS (método A) y reiniciar servicios
+8. Test: visitar `https://api.skiltak.com/api/auth/linkedin/start/` — debería redirigir a LinkedIn (302) en vez de devolver 503
 
 ---
 
