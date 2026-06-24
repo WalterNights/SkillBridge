@@ -85,8 +85,22 @@
     </div>
   </div>
 
-  <!-- ATS-optimized CV sheet -->
-  <div #cvContent class="cv-page">
+  <!-- Page count hint cuando ocupa más de una hoja -->
+  <p *ngIf="pageCount() > 1 && !isExporting()" class="cv-page-count-hint">
+    Tu CV ocupa {{ pageCount() }} hojas Oficio
+  </p>
+
+  <!-- ATS-optimized CV sheet (Oficio) -->
+  <div #cvContent class="cv-page" [class.is-exporting]="isExporting()">
+    <!-- Separadores visuales entre hojas cuando el contenido excede una -->
+    <div
+      *ngFor="let offset of pageBreakOffsets(); let i = index"
+      class="cv-page-break"
+      [style.top.px]="offset"
+    >
+      <span class="cv-page-break-label">Página {{ i + 2 }}</span>
+    </div>
+
     <!-- Header -->
     <header class="cv-header">
       <h1 class="cv-name">{{ profileData.first_name }} {{ profileData.last_name }}</h1>

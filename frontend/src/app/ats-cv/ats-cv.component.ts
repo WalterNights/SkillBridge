@@ -6,7 +6,14 @@ import localeEs from '@angular/common/locales/es';
 import { AuthService } from '../auth/auth.service';
 import { Title } from '@angular/platform-browser';
 import { registerLocaleData } from '@angular/common';
-import { Component, OnInit, ViewChild, ElementRef, signal } from '@angular/core';
+import {
+  AfterViewChecked,
+  Component,
+  ElementRef,
+  OnInit,
+  ViewChild,
+  signal,
+} from '@angular/core';
 import { ProfileService } from '../services/profile.service';
 import { ToastService } from '../services/toast.service';
 import { STORAGE_KEYS } from '../constants/app-stats';
@@ -30,7 +37,7 @@ import { RichTextComponent } from '../shared/rich-text/rich-text.component';
   templateUrl: './ats-cv.component.html',
   styleUrls: ['./ats-cv.component.scss'],
 })
-export class AtsCvComponent implements OnInit {
+export class AtsCvComponent implements OnInit, AfterViewChecked {
   profileData: any = null;
   isLoading = true;
   errorMessage = '';
@@ -45,6 +52,28 @@ export class AtsCvComponent implements OnInit {
   /** Flag para ocultar los botones AI cuando se captura el PDF — html2canvas
    * no respeta @media print, así que usamos una clase toggleable. */
   isExporting = signal(false);
+
+  /** Offsets en px desde el top del .cv-page donde van los separadores
+   * de página visuales. Se recalculan en AfterViewChecked cada vez que
+   * cambia la altura del content (re-render por cuantificar, mejorar, etc.). */
+  pageBreakOffsets = signal<number[]>([]);
+  /** Total de hojas Oficio que ocupa el CV. Mostrado en el header. */
+  pageCount = signal<number>(1);
+
+  /**
+   * Constantes del formato Oficio (US Legal):
+   *   - Page total:  215.9mm × 355.6mm
+   *   - Padding usado en .cv-page: 18mm top/bottom, 22mm left/right
+   *   - Content height por página: 355.6 - 2*18 = 319.6mm
+   *
+   * Convertimos a px asumiendo 96 DPI (CSS default): 1mm ≈ 3.7795px.
+   * Esto matchea cómo el browser renderea las unidades mm en pantalla.
+   */
+  private readonly OFICIO_PAGE_HEIGHT_PX = 355.6 * 3.7795275591;
+
+  /** Snapshot de la última altura medida — evita re-render por
+   *  pequeñas variaciones de subpixel layout. */
+  private lastMeasuredHeight = 0;
 
   /** Modal del auditor — solo se monta cuando se abre (lazy). */
   showAudit = signal(false);
@@ -139,6 +168,33 @@ export class AtsCvComponent implements OnInit {
   ngOnInit(): void {
     registerLocaleData(localeEs, 'es');
     this.loadProfileData();
+  }
+
+  /** Después de cada ciclo de detección de cambios, vuelve a medir la
+   * altura real del .cv-page y actualiza los page breaks si cambió.
+   * Usamos AfterViewChecked en vez de AfterViewInit porque el contenido
+   * crece dinámicamente (cuantificar, mejorar, regenerar). */
+  ngAfterViewChecked(): void {
+    if (!this.cvContent?.nativeElement || this.isExporting()) return;
+    const el = this.cvContent.nativeElement as HTMLElement;
+    const height = el.scrollHeight;
+    if (Math.abs(height - this.lastMeasuredHeight) < 4) return;
+    this.lastMeasuredHeight = height;
+    this.recomputePageBreaks(height);
+  }
+
+  /** Calcula offsets de page breaks dado un height total del .cv-page.
+   *  Si el contenido cabe en una página → []. */
+  private recomputePageBreaks(totalHeight: number): void {
+    const pageHeight = this.OFICIO_PAGE_HEIGHT_PX;
+    const breaks: number[] = [];
+    let offset = pageHeight;
+    while (offset < totalHeight - 8) {
+      breaks.push(offset);
+      offset += pageHeight;
+    }
+    this.pageBreakOffsets.set(breaks);
+    this.pageCount.set(breaks.length + 1);
   }
 
   /**
@@ -385,45 +441,56 @@ export class AtsCvComponent implements OnInit {
     const element = this.cvContent.nativeElement;
     if (!element) return;
 
-    // Ocultamos los botones AI (.no-export) antes de capturar — html2canvas
-    // hace screenshot del DOM tal cual, no respeta @media print.
+    // Ocultamos los botones AI + los separadores de página visuales antes
+    // de capturar — html2canvas hace screenshot del DOM tal cual, no
+    // respeta @media print. La clase `is-exporting` se aplica al wrapper.
     this.isExporting.set(true);
 
-    // A4 dimensions in points (1 inch = 72 points, A4 = 210mm x 297mm)
-    const a4Width = 595.28;
-    const a4Height = 841.89;
+    // Oficio (US Legal) dimensions in points (1 inch = 72 points).
+    // Legal = 8.5" × 14" = 612 × 1008 pt.
+    const pageWidth = 612;
+    const pageHeight = 1008;
 
-    html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#ffffff',
-    }).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png');
-      const doc = new jsPDF('p', 'pt', 'a4');
+    // Damos 1 frame para que el toggle de isExporting() oculte los
+    // separadores antes de tomar el screenshot — sin esto, html2canvas
+    // captura un frame stale con las líneas de quiebre adentro.
+    setTimeout(() => {
+      html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      })
+        .then((canvas) => {
+          const imgData = canvas.toDataURL('image/png');
+          const doc = new jsPDF('p', 'pt', 'legal');
 
-      const imgWidth = a4Width;
-      const imgHeight = (canvas.height * a4Width) / canvas.width;
+          const imgWidth = pageWidth;
+          const imgHeight = (canvas.height * pageWidth) / canvas.width;
 
-      // If content is taller than one page, handle multiple pages
-      let heightLeft = imgHeight;
-      let position = 0;
+          // Si el contenido supera la altura de una hoja Oficio, repetimos
+          // el render desplazando `position` — la misma imagen rendered
+          // se "scrollea" hoja a hoja en el PDF.
+          let heightLeft = imgHeight;
+          let position = 0;
 
-      doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= a4Height;
+          doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
 
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        doc.addPage();
-        doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= a4Height;
-      }
+          while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            doc.addPage();
+            doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+          }
 
-      doc.save('skiltak-ats-cv.pdf');
-      this.isExporting.set(false);
-    }).catch(() => {
-      this.isExporting.set(false);
-    });
+          doc.save('skiltak-ats-cv.pdf');
+          this.isExporting.set(false);
+        })
+        .catch(() => {
+          this.isExporting.set(false);
+        });
+    }, 50);
   }
 
   goToDashboard() {

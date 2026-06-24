@@ -34,8 +34,8 @@
    Inter still maps cleanly to Arial.
    =========================================== */
 .cv-page {
-  width: 210mm;
-  min-height: 297mm;
+  width: 215.9mm;
+  min-height: 355.6mm;
   max-width: 100%;
   margin: 0 auto;
   padding: 18mm 22mm;
@@ -46,6 +46,72 @@
   line-height: 1.55;
   box-sizing: border-box;
   border-radius: 4px;
+  position: relative;
+}
+
+/* Separador visual entre páginas de Oficio. Se inyecta absolute
+ * (via JS measurement de altura del content) a 355.6mm × N desde
+ * el top del .cv-page. Marca dónde se cortaría al imprimir. */
+.cv-page-break {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 14mm;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    to bottom,
+    rgba(11, 14, 20, 0) 0%,
+    rgba(11, 14, 20, 0.04) 40%,
+    rgba(11, 14, 20, 0.12) 50%,
+    rgba(11, 14, 20, 0.04) 60%,
+    rgba(11, 14, 20, 0) 100%
+  );
+  /* Línea punteada al medio para que el quiebre sea claro. */
+  &::before {
+    content: '';
+    position: absolute;
+    left: 8mm;
+    right: 8mm;
+    top: 50%;
+    height: 0;
+    border-top: 1px dashed rgba(11, 14, 20, 0.3);
+  }
+  .cv-page-break-label {
+    position: relative;
+    z-index: 1;
+    padding: 2px 10px;
+    background: #ffffff;
+    border: 1px solid rgba(11, 14, 20, 0.18);
+    border-radius: 999px;
+    font-family: "Inter", Arial, sans-serif;
+    font-size: 8pt;
+    font-weight: 600;
+    color: #6b7280;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    box-shadow: 0 2px 6px -1px rgba(11, 14, 20, 0.12);
+  }
+}
+
+/* La línea de quiebre nunca debe quedar en el output PDF. */
+.is-exporting .cv-page-break {
+  display: none;
+}
+
+/* Hint informativo arriba del CV cuando ocupa más de una hoja Oficio. */
+.cv-page-count-hint {
+  max-width: 215.9mm;
+  margin: 0 auto 10px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: #8b8a85;
+  background: rgba(249, 115, 22, 0.06);
+  border: 1px solid rgba(249, 115, 22, 0.18);
+  border-radius: 10px;
+  text-align: center;
 }
 
 /* ===========================================
