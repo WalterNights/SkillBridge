@@ -126,6 +126,13 @@ class LinkedInCallbackView(APIView):
         code = request.query_params.get("code", "")
         state = request.query_params.get("state", "")
         if not code or not state:
+            # Log diagnóstico: querer ver exactamente qué llegó. Si LinkedIn
+            # manda algo que no estamos esperando (ej: nuevo param de error
+            # no documentado, o el flow se cortó), esto nos lo dice.
+            logger.warning(
+                "LinkedIn callback missing code/state. query_params=%s",
+                dict(request.query_params),
+            )
             return self._redirect_to_frontend(error="missing_params")
 
         # Validar state contra cache (anti-CSRF) — y borrarlo
