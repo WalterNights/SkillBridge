@@ -304,6 +304,18 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@skiltak.com")
 PASSWORD_RESET_TIMEOUT = 600  # 10 min
 
 
+# ----- Gemini (Google Generative AI) -----
+# Usado por cv_auditor, achievement_quantifier y cover_letter_generator
+# vía `settings.GEMINI_API_KEY` (los modules más viejos — tips,
+# cv_analysis_service — leen `config()` directo del .env, que también
+# funciona pero menos consistente).
+#
+# Si la key está vacía, los servicios levantan su propia excepción
+# *Error con mensaje legible que las views traducen a 502/503.
+GEMINI_API_KEY = config("GEMINI_API_KEY", default="")
+GEMINI_MODEL = config("GEMINI_MODEL", default="gemini-2.5-flash")
+
+
 # ----- LinkedIn OAuth (Sign In with LinkedIn using OpenID Connect) -----
 # Producto se solicita en linkedin.com/developers/apps (instant-approve).
 # Después en el .env del VPS se setean los 3 valores. Si LINKEDIN_CLIENT_ID
