@@ -112,7 +112,7 @@ export const ARTICLES: readonly Article[] = [
       'Analizamos +50,000 ofertas para entender hacia dónde se mueve el mercado regional. Distribución por sector.',
     intro: [
       'Cada noche SkilTak escanea miles de ofertas en LinkedIn, Computrabajo, Magneto, Indeed y otros. Esto nos da una vista privilegiada del mercado: qué skills aparecen más, en qué sectores, y cómo va evolucionando la demanda.',
-      'Este reporte mira los últimos 90 días de scraping (~50,000 ofertas activas) en Colombia, México, Argentina, Chile y Perú. Sin auto-promoción: solo data.',
+      'Este reporte mira los últimos 90 días de actividad (~50,000 ofertas activas) en Colombia, México, Argentina, Chile y Perú. Sin auto-promoción: solo data.',
     ],
     sections: [
       {
