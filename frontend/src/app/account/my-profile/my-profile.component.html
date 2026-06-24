@@ -19,12 +19,26 @@
         [style.background-image]="bannerUrl() ? 'url(' + bannerUrl() + ')' : null"
         aria-hidden="true"
       >
-        <label class="banner-upload" for="banner-input" title="Cambiar banner">
-          <span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: 'wght' 400"
-            >photo_camera</span
+        <div class="banner-actions">
+          <button
+            *ngIf="bannerUrl()"
+            type="button"
+            class="banner-upload"
+            (click)="editExistingImage('banner')"
+            title="Reajustar zoom/encuadre del banner actual"
           >
-          <span class="banner-upload-label">{{ bannerUrl() ? 'Cambiar banner' : 'Subir banner' }}</span>
-        </label>
+            <span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: 'wght' 400"
+              >crop</span
+            >
+            <span class="banner-upload-label">Reajustar</span>
+          </button>
+          <label class="banner-upload" for="banner-input" title="Subir un archivo nuevo">
+            <span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: 'wght' 400"
+              >photo_camera</span
+            >
+            <span class="banner-upload-label">{{ bannerUrl() ? 'Cambiar banner' : 'Subir banner' }}</span>
+          </label>
+        </div>
         <input
           id="banner-input"
           type="file"
@@ -47,7 +61,18 @@
               <span class="loader-ring"></span>
             </div>
           </div>
-          <label class="photo-upload" for="photo-input" title="Cambiar foto">
+          <button
+            *ngIf="photoUrl()"
+            type="button"
+            class="photo-edit"
+            (click)="editExistingImage('photo')"
+            title="Reajustar zoom/encuadre"
+          >
+            <span class="material-symbols-outlined" style="font-size: 14px; font-variation-settings: 'wght' 400"
+              >crop</span
+            >
+          </button>
+          <label class="photo-upload" for="photo-input" [title]="photoUrl() ? 'Subir una foto nueva' : 'Subir foto de perfil'">
             <span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: 'wght' 400"
               >photo_camera</span
             >

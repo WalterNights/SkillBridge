@@ -45,11 +45,22 @@
   }
 }
 
-/* Botón flotante "Cambiar banner" — esquina superior derecha. */
-.banner-upload {
+/* Wrapper de las acciones del banner — agrupa "Reajustar" + "Cambiar"
+ * cuando hay banner subido. Posición absoluta a esquina superior derecha. */
+.banner-actions {
   position: absolute;
   top: 12px;
   right: 12px;
+  display: flex;
+  gap: 8px;
+  z-index: 2;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Botón flotante "Cambiar banner" / "Reajustar". Cuando vive dentro
+ * del wrapper .banner-actions su posicionamiento lo da el flex padre. */
+.banner-upload {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -61,11 +72,11 @@
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  z-index: 2;
   backdrop-filter: blur(8px);
   transition:
     background 180ms ease,
     border-color 180ms ease;
+  font-family: inherit;
 
   &:hover {
     background: rgba(249, 115, 22, 0.85);
@@ -133,7 +144,7 @@
   justify-content: center;
 }
 
-/* Botón cámara overlay */
+/* Botón cámara overlay (subir foto nueva) */
 .photo-upload {
   position: absolute;
   bottom: 4px;
@@ -155,6 +166,35 @@
   &:hover {
     background: #ea580c;
     transform: scale(1.05);
+  }
+}
+
+/* Botón "Reajustar" (crop icon) — solo visible cuando hay foto subida.
+ * Va a la izquierda del botón cámara para que se entienda la jerarquía:
+ *  ícono más sutil = acción secundaria (reajustar lo que ya hay)
+ *  ícono naranja = acción primaria (subir uno nuevo) */
+.photo-edit {
+  position: absolute;
+  bottom: 4px;
+  right: 38px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(11, 14, 20, 0.85);
+  color: #cfcfc8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px solid #0b0e14;
+  font-family: inherit;
+  transition:
+    background 180ms ease,
+    color 180ms ease;
+
+  &:hover {
+    background: #f97316;
+    color: #fff;
   }
 }
 

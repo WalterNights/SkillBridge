@@ -205,6 +205,49 @@ export class MyProfileComponent implements OnInit {
     (event.target as HTMLInputElement).value = '';
   }
 
+  /**
+   * Re-abre el cropper con la imagen YA SUBIDA — para que el user pueda
+   * re-zoomear o re-centrar sin tener que volver a elegir el archivo
+   * desde el disco.
+   *
+   * Estrategia: fetch del URL público → blob → File. La imagen ya está
+   * en nuestro dominio (cropped al output previo) así que no hay CORS.
+   * El crop sucesivo opera sobre el ya-recortado — perdés algo de
+   * resolución si re-zoomeás muy de cerca, pero la salida (1024 avatar
+   * / 1920 banner) sigue siendo retina-ready en la mayoría de los casos.
+   */
+  editExistingImage(target: CropTarget): void {
+    const url = target === 'photo' ? this.photoUrl() : this.bannerUrl();
+    if (!url) return;
+    this.isUploadingMedia.set(true);
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
+      })
+      .then((blob) => {
+        const ext = blob.type === 'image/png' ? 'png' : 'jpg';
+        const file = new File([blob], `${target}-current.${ext}`, { type: blob.type });
+        this.cropperFile.set(file);
+        if (target === 'photo') {
+          this.cropperAspect.set(1);
+          this.cropperRound.set(true);
+          this.cropperTitle.set('Reajustar foto de perfil');
+        } else {
+          this.cropperAspect.set(4);
+          this.cropperRound.set(false);
+          this.cropperTitle.set('Reajustar imagen del banner');
+        }
+        this.cropperTarget.set(target);
+        this.isUploadingMedia.set(false);
+      })
+      .catch(() => {
+        this.isUploadingMedia.set(false);
+        this.errorMessage = 'No pudimos abrir la imagen actual para ajustarla.';
+        setTimeout(() => (this.errorMessage = ''), 4000);
+      });
+  }
+
   onCropperApplied(blob: Blob): void {
     const target = this.cropperTarget();
     const ext = blob.type === 'image/png' ? 'png' : 'jpg';
