@@ -244,8 +244,12 @@
       </article>
     </ng-container>
 
-    <!-- ===== EDIT MODE — toolbar de formato + form ===== -->
-    <div *ngIf="mode() === 'edit'" class="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-5">
+    <!-- ===== EDIT MODE — form (toolbar de formato es position:fixed
+         a la izquierda, no toma espacio del form) ===== -->
+    <ng-container *ngIf="mode() === 'edit'">
+      <!-- Toolbar flotante, se posiciona en el espacio libre a la
+           izquierda del form centrado en pantallas anchas. En mobile
+           cae inline arriba del form. -->
       <app-text-format-toolbar />
     <form
       [formGroup]="profileForm"
@@ -396,7 +400,7 @@
         </div>
       </div>
     </form>
-    </div>
+    </ng-container>
   </div>
 </section>
 

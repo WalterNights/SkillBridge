@@ -9,16 +9,28 @@
  * abajo. Cuando hay uno activo, el accent del border-left se enciende
  * naranja para señalar "estoy listo para formatear". */
 
+/* Toolbar flotante. En lg+, position: fixed para que sobreviva al
+ * scroll del form sin robar ancho. La offset horizontal se computa
+ * a partir del centro del viewport — el form tiene max-w-4xl (56rem)
+ * y está centrado vía mx-auto, entonces la columna libre a la
+ * izquierda del form va de `(50vw - 28rem)` hasta el borde del
+ * sidebar/main. La toolbar se planta a `(50vw - 28rem - 1rem)` desde
+ * la derecha del viewport, dejando 1rem de gap con el form.
+ *
+ * Si la pantalla es chica y la columna libre se reduce, max() la
+ * empuja a 1rem para que no salga del viewport ni overlap con el
+ * sidebar (que en lg+ ocupa 220-240px del lado izquierdo). */
 .text-toolbar {
-  position: sticky;
-  top: 80px;
+  position: fixed;
+  top: 130px;
+  right: calc(50% + 28rem + 1rem);
+  z-index: 30;
   padding: 14px;
   border-radius: 14px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  width: 100%;
-  max-width: 200px;
+  width: 13rem;
   border-left: 2px solid transparent;
   transition: border-left-color 200ms ease;
 
@@ -100,12 +112,18 @@
   line-height: 1.4;
 }
 
-/* En mobile (sin grid de 2 columnas para el form), la toolbar se convierte
- * en una franja arriba del form, scrollable horizontal. */
-@media (max-width: 1023px) {
+/* En pantallas <1280px no hay suficiente espacio libre a la izquierda
+ * del form para que la toolbar flote sin overlapearse con el sidebar.
+ * La degradamos a una franja sticky arriba del form (scrollable
+ * horizontal), pegada al top del viewport. */
+@media (max-width: 1279px) {
   .text-toolbar {
-    position: static;
-    max-width: none;
+    position: sticky;
+    top: 80px;
+    right: auto;
+    left: auto;
+    width: auto;
+    margin-bottom: 16px;
     flex-direction: row;
     flex-wrap: nowrap;
     overflow-x: auto;
