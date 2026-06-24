@@ -76,3 +76,59 @@ class JobApplication(models.Model):
 
     def __str__(self):
         return f"{self.user.username} → {self.offer.title} ({self.status})"
+
+
+class CoverLetter(models.Model):
+    """Carta de presentación personalizada generada por AI para una oferta.
+
+    Una por (user, offer) — regenerar sobreescribe la anterior. El user
+    puede editar manualmente; en ese caso `user_edited=True` y al
+    regenerar se le advierte que va a perder sus cambios.
+
+    `offer_*_snapshot` guarda los datos clave de la oferta al momento de
+    generar la carta. La oferta original puede borrarse del scrape diario
+    (TTL = 90 días) pero la carta sobrevive — el user no pierde su trabajo.
+    """
+
+    TONE_CHOICES = [
+        ("formal", "Formal"),
+        ("cercano", "Cercano"),
+        ("directo", "Directo"),
+    ]
+    LANGUAGE_CHOICES = [
+        ("es", "Español"),
+        ("en", "Inglés"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="cover_letters",
+    )
+    offer = models.ForeignKey(
+        "jobs.JobOffer",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="cover_letters",
+    )
+
+    offer_title_snapshot = models.CharField(max_length=500)
+    offer_company_snapshot = models.CharField(max_length=255, blank=True)
+    offer_url_snapshot = models.URLField(max_length=500, blank=True)
+
+    content = models.TextField()
+    tone = models.CharField(max_length=10, choices=TONE_CHOICES, default="cercano")
+    language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default="es")
+    user_edited = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "offer")
+        ordering = ["-updated_at"]
+        indexes = [models.Index(fields=["user", "-updated_at"])]
+
+    def __str__(self):
+        return f"Carta {self.user.username} → {self.offer_title_snapshot}"

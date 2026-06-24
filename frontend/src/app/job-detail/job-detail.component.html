@@ -85,7 +85,7 @@
             <!-- Action row con state machine de aplicar -->
 
             <!-- IDLE: botón "Aplicar en {portal}" + utility icons -->
-            <div *ngIf="applyState() === 'idle'" class="flex items-center gap-2">
+            <div *ngIf="applyState() === 'idle'" class="flex items-center gap-2 flex-wrap">
               <button
                 type="button"
                 (click)="onApplyClick()"
@@ -95,6 +95,18 @@
                   >play_arrow</span
                 >
                 {{ applyLabel() }}
+              </button>
+
+              <button
+                type="button"
+                (click)="openCoverLetter()"
+                class="cover-letter-btn"
+                title="Generar carta de presentación con AI"
+              >
+                <span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: 'FILL' 1"
+                  >auto_awesome</span
+                >
+                Carta
               </button>
 
               <button
@@ -257,3 +269,12 @@
     </div>
   </div>
 </section>
+
+<!-- Cover letter modal (lazy — solo se monta cuando showCoverLetter=true) -->
+<app-cover-letter-modal
+  *ngIf="showCoverLetter() && job"
+  [offerId]="job.id"
+  [offerTitle]="job.title"
+  [offerCompany]="job.company || ''"
+  (closed)="closeCoverLetter()"
+/>

@@ -1,3 +1,29 @@
+/* Secondary CTA — "Carta" — al lado del botón primario de aplicar.
+ * Outline más sutil para que el primario siga siendo dominante. */
+.cover-letter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  background: rgba(249, 115, 22, 0.06);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  color: #f97316;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 120ms ease;
+
+  &:hover {
+    background: rgba(249, 115, 22, 0.12);
+    border-color: rgba(249, 115, 22, 0.5);
+    transform: translateY(-1px);
+  }
+}
+
 /* Loading spinner used inside the overlay shown while the job detail
  * is in-flight. Sized to match the .btn-* family's visual weight. */
 .loader-ring {

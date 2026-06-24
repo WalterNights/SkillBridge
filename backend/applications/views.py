@@ -1,12 +1,19 @@
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from applications.models import JobApplication
-from applications.serializers import JobApplicationSerializer
+from applications.cover_letter_generator import (
+    CoverLetterGenerationError,
+    generate_cover_letter,
+)
+from applications.models import CoverLetter, JobApplication
+from applications.serializers import CoverLetterSerializer, JobApplicationSerializer
+from jobs.models import JobOffer
 
 
 # Set de status válidos para validar transiciones — congelamos en módulo
@@ -139,3 +146,138 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
             user=request.user, status="applied"
         ).values_list("offer_id", flat=True)
         return Response({"applied_offer_ids": list(ids)})
+
+
+def _profile_dict_for_prompt(user) -> dict:
+    """Compone el dict que consume `generate_cover_letter`.
+
+    El perfil puede no existir todavía (user OAuth recién creado sin
+    completar el wizard) — devolvemos defaults vacíos y dejamos que el
+    prompt los maneje. El generator usa fallbacks tipo "profesional" /
+    "varios años" para no producir prosa rota.
+    """
+    profile = getattr(user, "profile", None)
+    if profile is None:
+        return {
+            "full_name": (user.first_name + " " + user.last_name).strip() or user.username,
+            "professional_title": "",
+            "years_experience": "",
+            "city": "",
+            "skills": "",
+            "summary": "",
+        }
+    return {
+        "full_name": f"{profile.first_name} {profile.last_name}".strip() or user.username,
+        "professional_title": profile.professional_title or "",
+        # No tenemos años_experience como campo — dejamos vacío y el prompt
+        # se las arregla con "varios años" como fallback.
+        "years_experience": "",
+        "city": profile.city or "",
+        "skills": profile.skills or "",
+        "summary": profile.summary or "",
+    }
+
+
+@method_decorator(
+    ratelimit(key="user", rate="10/h", method="POST", block=True),
+    name="create",
+)
+class CoverLetterViewSet(viewsets.ModelViewSet):
+    """ViewSet de cartas de presentación, scoped a request.user.
+
+    Endpoints:
+      - GET    /api/cover-letters/                      → lista del user
+      - GET    /api/cover-letters/?job_offer_id=N       → la del oferta N (o 404)
+      - POST   /api/cover-letters/                      → genera + guarda
+        body: {job_offer_id, tone, language}
+        Si ya existe para (user, offer) → la sobreescribe (regenerar).
+      - PATCH  /api/cover-letters/{id}/                 → editar content
+      - DELETE /api/cover-letters/{id}/                 → borrar
+
+    Rate-limit: 10 generaciones POST por hora — Gemini cuesta tokens.
+    PATCH/GET/DELETE no rate-limitados.
+
+    SEGURIDAD: get_queryset filtra por user.
+    """
+
+    serializer_class = CoverLetterSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        qs = CoverLetter.objects.filter(user=self.request.user).select_related("offer")
+        # ?job_offer_id=X — para que el frontend chequee "¿ya hay carta
+        # para esta oferta?" antes de mostrar el botón "Generar" vs "Ver".
+        offer_id = self.request.query_params.get("job_offer_id")
+        if offer_id:
+            qs = qs.filter(offer_id=offer_id)
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        """Genera (o regenera) la carta para una oferta.
+
+        Si ya existía para (user, offer), sobreescribe content/tone/language
+        y resetea user_edited=False — el user pidió una versión nueva,
+        sus ediciones previas se pierden.
+        """
+        offer_id = request.data.get("job_offer_id")
+        tone = (request.data.get("tone") or "cercano").strip()
+        language = (request.data.get("language") or "es").strip()
+
+        if not offer_id:
+            raise ValidationError({"job_offer_id": "Requerido."})
+        if tone not in dict(CoverLetter.TONE_CHOICES):
+            raise ValidationError({"tone": f"Tono inválido. Usá: {', '.join(dict(CoverLetter.TONE_CHOICES).keys())}"})
+        if language not in dict(CoverLetter.LANGUAGE_CHOICES):
+            raise ValidationError({"language": "Idioma inválido. Usá 'es' o 'en'."})
+
+        try:
+            offer = JobOffer.objects.get(pk=offer_id)
+        except JobOffer.DoesNotExist:
+            raise NotFound("La oferta no existe o fue eliminada.")
+
+        try:
+            content = generate_cover_letter(
+                user_profile=_profile_dict_for_prompt(request.user),
+                offer_title=offer.title,
+                offer_company=offer.company,
+                offer_description=offer.summary,
+                tone=tone,
+                language=language,
+            )
+        except CoverLetterGenerationError as exc:
+            return Response(
+                {"error": "generation_failed", "detail": str(exc)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        letter, created = CoverLetter.objects.update_or_create(
+            user=request.user,
+            offer=offer,
+            defaults={
+                "content": content,
+                "tone": tone,
+                "language": language,
+                "user_edited": False,
+                "offer_title_snapshot": offer.title,
+                "offer_company_snapshot": offer.company or "",
+                "offer_url_snapshot": offer.url or "",
+            },
+        )
+        out = CoverLetterSerializer(letter).data
+        return Response(
+            out,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        """PATCH — solo content es editable. Marca user_edited=True para
+        que el frontend avise al regenerar."""
+        instance = self.get_object()
+        new_content = request.data.get("content")
+        if new_content is None:
+            raise ValidationError({"content": "Requerido."})
+        instance.content = str(new_content).strip()
+        instance.user_edited = True
+        instance.save(update_fields=["content", "user_edited", "updated_at"])
+        return Response(CoverLetterSerializer(instance).data)

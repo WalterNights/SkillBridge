@@ -11,6 +11,7 @@ import {
   StatusOption,
 } from '../services/application.service';
 import { portalMeta } from '../shared/portal';
+import { CoverLetterModalComponent } from '../cover-letter/cover-letter-modal.component';
 
 const _RELATIVE_FMT = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
 
@@ -47,7 +48,7 @@ const TABS: readonly TabConfig[] = [
 @Component({
   selector: 'app-applications',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, CoverLetterModalComponent],
   templateUrl: './applications.component.html',
   styleUrl: './applications.component.scss',
 })
@@ -57,6 +58,8 @@ export class ApplicationsComponent {
   isLoading = signal(true);
   errorMessage = signal('');
   activeTab = signal<TabKey>('active');
+  /** Application activa para el modal de carta — null = modal cerrado. */
+  coverLetterFor = signal<JobApplicationDto | null>(null);
   /** UI state: id del card abierto (dropdown del cambio de status). */
   openMenuFor = signal<number | null>(null);
 
@@ -188,5 +191,14 @@ export class ApplicationsComponent {
   /** Cierra el dropdown si se clickea fuera del card. */
   closeMenu(): void {
     this.openMenuFor.set(null);
+  }
+
+  openCoverLetter(app: JobApplicationDto, event: Event): void {
+    event.stopPropagation();
+    this.coverLetterFor.set(app);
+  }
+
+  closeCoverLetter(): void {
+    this.coverLetterFor.set(null);
   }
 }

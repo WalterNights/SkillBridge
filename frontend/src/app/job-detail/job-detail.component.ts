@@ -6,6 +6,7 @@ import { ApplicationService, JobApplicationDto } from '../services/application.s
 import { JobOffer } from '../models/job-offer.model';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { portalMeta } from '../shared/portal';
+import { CoverLetterModalComponent } from '../cover-letter/cover-letter-modal.component';
 
 const _RELATIVE_FMT = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
 
@@ -35,7 +36,7 @@ function _formatRelative(iso: string | undefined): string {
  */
 @Component({
   selector: 'app-job-detail',
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, CoverLetterModalComponent],
   standalone: true,
   templateUrl: './job-detail.component.html',
   styleUrls: ['./job-detail.component.scss'],
@@ -46,6 +47,11 @@ export class JobDetailComponent implements OnInit {
   errorMessage = '';
   isBookmarked = false;
   isHidden = false;
+
+  /** Visibilidad del modal de carta de presentación (lazy — el modal
+   * solo se monta cuando se abre, así el GET de la carta existente
+   * solo dispara cuando el user clickea). */
+  showCoverLetter = signal(false);
 
   /**
    * State machine del CTA de aplicar:
@@ -230,6 +236,14 @@ export class JobDetailComponent implements OnInit {
   /** Portal de origen (LinkedIn, Elempleo, …) para el avatar + CTA copy. */
   portalMeta() {
     return portalMeta(this.job);
+  }
+
+  openCoverLetter(): void {
+    this.showCoverLetter.set(true);
+  }
+
+  closeCoverLetter(): void {
+    this.showCoverLetter.set(false);
   }
 
   toggleBookmark(): void {

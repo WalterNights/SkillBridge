@@ -1,0 +1,131 @@
+<div class="cl-overlay" (click)="close()">
+  <div class="cl-modal glass-strong" (click)="$event.stopPropagation()">
+    <header class="cl-header">
+      <div class="min-w-0 flex-1">
+        <p class="cl-eyebrow">Carta de presentación</p>
+        <h2 class="cl-title">{{ offerTitle || 'Para esta oferta' }}</h2>
+        <p *ngIf="offerCompany" class="cl-subtitle">{{ offerCompany }}</p>
+      </div>
+      <button
+        type="button"
+        class="cl-close"
+        (click)="close()"
+        aria-label="Cerrar"
+      >
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </header>
+
+    <!-- Loading -->
+    <div *ngIf="view() === 'loading'" class="cl-loading">
+      <span class="loader-ring"></span>
+      <p>Buscando tu carta…</p>
+    </div>
+
+    <!-- Empty / pre-generación -->
+    <div *ngIf="view() === 'empty'" class="cl-empty">
+      <p class="cl-empty-help">
+        Generá una carta personalizada para esta oferta usando los datos de tu perfil y la descripción del puesto.
+      </p>
+
+      <div class="cl-controls">
+        <label class="cl-control">
+          <span>Tono</span>
+          <select [(ngModel)]="selectedTone" class="cl-select">
+            <option value="cercano">Cercano</option>
+            <option value="formal">Formal</option>
+            <option value="directo">Directo</option>
+          </select>
+        </label>
+        <label class="cl-control">
+          <span>Idioma</span>
+          <select [(ngModel)]="selectedLanguage" class="cl-select">
+            <option value="es">Español</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+      </div>
+
+      <div *ngIf="errorMsg" class="cl-error">{{ errorMsg }}</div>
+
+      <button type="button" class="btn-primary cl-generate-btn" (click)="generate()">
+        <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'FILL' 1"
+          >auto_awesome</span
+        >
+        Generar carta
+      </button>
+    </div>
+
+    <!-- Generating -->
+    <div *ngIf="view() === 'generating'" class="cl-loading">
+      <span class="loader-ring"></span>
+      <p>Generando tu carta…</p>
+      <p class="cl-loading-sub">Esto puede tomar unos segundos</p>
+    </div>
+
+    <!-- Ready / editing -->
+    <div *ngIf="view() === 'ready'" class="cl-ready">
+      <div class="cl-controls">
+        <label class="cl-control">
+          <span>Tono</span>
+          <select [(ngModel)]="selectedTone" class="cl-select">
+            <option value="cercano">Cercano</option>
+            <option value="formal">Formal</option>
+            <option value="directo">Directo</option>
+          </select>
+        </label>
+        <label class="cl-control">
+          <span>Idioma</span>
+          <select [(ngModel)]="selectedLanguage" class="cl-select">
+            <option value="es">Español</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          class="cl-regenerate-btn"
+          (click)="generate()"
+          [disabled]="isSaving"
+        >
+          <span class="material-symbols-outlined" style="font-size: 16px">refresh</span>
+          Regenerar
+        </button>
+      </div>
+
+      <textarea
+        class="cl-editor"
+        rows="14"
+        [(ngModel)]="editorContent"
+        (blur)="saveEdits()"
+        placeholder="El contenido de tu carta aparecerá acá…"
+      ></textarea>
+
+      <div class="cl-meta">
+        <span *ngIf="letter()?.user_edited" class="cl-edited-badge">
+          <span class="material-symbols-outlined" style="font-size: 12px">edit</span>
+          Editado
+        </span>
+        <span *ngIf="isSaving" class="cl-saving">Guardando…</span>
+      </div>
+
+      <div *ngIf="errorMsg" class="cl-error">{{ errorMsg }}</div>
+
+      <div class="cl-actions">
+        <button type="button" class="cl-secondary-btn" (click)="copyToClipboard()">
+          <span class="material-symbols-outlined" style="font-size: 16px">content_copy</span>
+          Copiar
+        </button>
+        <button type="button" class="cl-secondary-btn" (click)="downloadAsText()">
+          <span class="material-symbols-outlined" style="font-size: 16px">download</span>
+          Descargar .txt
+        </button>
+      </div>
+    </div>
+
+    <!-- Error fetching letter -->
+    <div *ngIf="view() === 'error'" class="cl-empty">
+      <p class="cl-error">{{ errorMsg }}</p>
+      <button type="button" class="cl-secondary-btn" (click)="close()">Cerrar</button>
+    </div>
+  </div>
+</div>

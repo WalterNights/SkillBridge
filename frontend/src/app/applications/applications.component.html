@@ -169,6 +169,18 @@
               </button>
             </div>
 
+            <button
+              type="button"
+              class="status-menu-btn"
+              (click)="openCoverLetter(app, $event)"
+              title="Carta de presentación"
+              aria-label="Abrir carta de presentación"
+            >
+              <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'FILL' 1"
+                >auto_awesome</span
+              >
+            </button>
+
             <a
               [routerLink]="['/jobs', app.offer.id]"
               class="application-link"
@@ -183,3 +195,12 @@
     </div>
   </div>
 </section>
+
+<!-- Cover letter modal (lazy) -->
+<app-cover-letter-modal
+  *ngIf="coverLetterFor() as app"
+  [offerId]="app.offer.id"
+  [offerTitle]="app.offer.title"
+  [offerCompany]="app.offer.company || ''"
+  (closed)="closeCoverLetter()"
+/>
