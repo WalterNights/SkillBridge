@@ -1,9 +1,22 @@
 <footer class="px-gutter py-16 border-t border-white/[0.06]">
-  <div class="max-w-container-max mx-auto grid grid-cols-2 md:grid-cols-4 gap-10 mb-14">
+  <!-- Main grid: brand + 3 columnas de navegación -->
+  <div class="max-w-container-max mx-auto grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
+    <!-- Brand + tagline + email principal -->
     <div class="col-span-2 md:col-span-1 space-y-5">
       <span class="text-xl font-bold text-bone tracking-tight">SkilTak<span class="text-primary">.</span></span>
       <p class="text-body text-warm-grey">Deja de buscar en mil portales. Encuéntralo todo aquí.</p>
+      <a
+        href="mailto:hello@skiltak.com"
+        class="inline-flex items-center gap-2 text-body text-warm-grey hover:text-bone transition-colors"
+      >
+        <span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: 'wght' 300">
+          mail
+        </span>
+        hello&#64;skiltak.com
+      </a>
     </div>
+
+    <!-- Producto -->
     <div class="space-y-3">
       <h4 class="text-label uppercase text-warm-grey">Producto</h4>
       <nav class="flex flex-col gap-2">
@@ -26,6 +39,8 @@
         </a>
       </nav>
     </div>
+
+    <!-- Recursos -->
     <div class="space-y-3">
       <h4 class="text-label uppercase text-warm-grey">Recursos</h4>
       <nav class="flex flex-col gap-2">
@@ -43,27 +58,53 @@
         </a>
       </nav>
     </div>
+
+    <!-- Cuenta — útil para SEO y para que un visitor del home llegue al auth -->
     <div class="space-y-3">
-      <h4 class="text-label uppercase text-warm-grey">Legal</h4>
+      <h4 class="text-label uppercase text-warm-grey">Cuenta</h4>
       <nav class="flex flex-col gap-2">
+        <a class="text-body text-warm-grey hover:text-bone transition-colors" routerLink="/auth/login">
+          Iniciar sesión
+        </a>
+        <a class="text-body text-warm-grey hover:text-bone transition-colors" routerLink="/auth/register">
+          Crear cuenta
+        </a>
         <a
           class="text-body text-warm-grey hover:text-bone transition-colors"
-          routerLink="/legal/privacidad"
-        >Privacidad</a>
-        <a
-          class="text-body text-warm-grey hover:text-bone transition-colors"
-          routerLink="/legal/terminos"
-        >Términos</a>
-        <a
-          class="text-body text-warm-grey hover:text-bone transition-colors"
-          routerLink="/legal/cookies"
-        >Cookies</a>
+          href="mailto:hello@skiltak.com?subject=Soporte"
+        >
+          Contacto
+        </a>
       </nav>
     </div>
   </div>
+
+  <!-- Bottom row: copyright + legal tertiary links.
+       Patrón común (Stripe, Linear, Vercel): los links legales no
+       merecen una columna entera — quedan compactos abajo. -->
   <div
-    class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center pt-8 border-t border-white/[0.06]"
+    class="max-w-container-max mx-auto flex flex-col-reverse md:flex-row md:items-center md:justify-between gap-4 pt-8 border-t border-white/[0.06]"
   >
     <p class="text-body text-dim">© 2026 SkilTak. Hecho con foco en Latam.</p>
+    <nav class="flex flex-wrap items-center gap-x-5 gap-y-2">
+      <a
+        class="text-sm text-warm-grey hover:text-bone transition-colors"
+        routerLink="/legal/privacidad"
+      >
+        Privacidad
+      </a>
+      <a
+        class="text-sm text-warm-grey hover:text-bone transition-colors"
+        routerLink="/legal/terminos"
+      >
+        Términos
+      </a>
+      <a
+        class="text-sm text-warm-grey hover:text-bone transition-colors"
+        routerLink="/legal/cookies"
+      >
+        Cookies
+      </a>
+    </nav>
   </div>
 </footer>
