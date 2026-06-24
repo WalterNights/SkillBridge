@@ -53,12 +53,8 @@
           </div>
 
           <div>
-            <label class="field-label" for="language">Idioma</label>
-            <select id="language" [(ngModel)]="language" class="field-input">
-              <option value="es">Español</option>
-              <option value="en">English</option>
-              <option value="pt">Português</option>
-            </select>
+            <label class="field-label">Idioma</label>
+            <app-select [options]="languageOptions" [(value)]="language" />
           </div>
         </article>
 
@@ -77,30 +73,18 @@
           </div>
 
           <div class="space-y-3">
-            <!-- Push -->
-            <label class="toggle-row">
+            <!-- Notificaciones in-app: SIEMPRE activas por ahora — todavía
+                 no hay endpoint para des/activarlas y mostrar un toggle
+                 que no persiste era confuso. Cuando se agregue la pref
+                 al backend, restaurar el toggle. -->
+            <div class="toggle-row">
               <div class="flex-1 min-w-0">
                 <p class="text-sm text-bone font-semibold">Notificaciones in-app</p>
                 <p class="text-xs text-warm-grey mt-0.5">
-                  Aparecen en la campanita del header en tiempo real.
+                  Siempre activas — aparecen en la campanita del header en tiempo real.
                 </p>
               </div>
-              <input
-                type="checkbox"
-                class="sr-only"
-                [(ngModel)]="enableNotifications"
-                (change)="enableNotifications = !enableNotifications"
-              />
-              <button
-                type="button"
-                class="toggle-switch"
-                [class.on]="enableNotifications"
-                (click)="enableNotifications = !enableNotifications"
-                [attr.aria-pressed]="enableNotifications"
-              >
-                <span class="toggle-knob"></span>
-              </button>
-            </label>
+            </div>
 
             <!-- Email -->
             <label class="toggle-row">
@@ -121,6 +105,46 @@
               </button>
             </label>
           </div>
+        </article>
+
+        <!-- Seguridad — 2FA -->
+        <article class="glass-strong rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-3">
+            <span
+              class="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary shrink-0"
+              style="font-size: 18px; font-variation-settings: 'FILL' 1"
+            >
+              shield
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="text-base font-semibold text-bone">Seguridad</p>
+              <p class="text-xs text-warm-grey mt-0.5">
+                Protegé tu cuenta con verificación en dos pasos.
+              </p>
+            </div>
+          </div>
+
+          <label class="toggle-row">
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-bone font-semibold">Verificación en dos pasos (2FA)</p>
+              <p class="text-xs text-warm-grey mt-0.5">
+                {{
+                  twoFactorEnabled
+                    ? 'Activa — configurada con tu app authenticator.'
+                    : 'Usá Google Authenticator, Authy o 1Password.'
+                }}
+              </p>
+            </div>
+            <button
+              type="button"
+              class="toggle-switch"
+              [class.on]="twoFactorEnabled"
+              (click)="openTwoFactorModal()"
+              [attr.aria-pressed]="twoFactorEnabled"
+            >
+              <span class="toggle-knob"></span>
+            </button>
+          </label>
         </article>
       </div>
 
@@ -185,3 +209,11 @@
     </div>
   </div>
 </section>
+
+<!-- Modal 2FA — lazy, solo se monta cuando hay un mode set -->
+<app-two-factor-modal
+  *ngIf="twoFactorModalMode as mode"
+  [mode]="mode"
+  (changed)="onTwoFactorChanged($event)"
+  (closed)="closeTwoFactorModal()"
+/>

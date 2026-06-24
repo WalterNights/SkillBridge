@@ -70,7 +70,11 @@ export class ApplicationsComponent {
   countByTab = computed<Record<TabKey, number>>(() => {
     const all = this.applications();
     return {
-      all: all.length,
+      // Excluimos pending del count — visibleApplications para tab 'all'
+      // también las filtra (pending son intents no confirmados, ruido en
+      // la vista). Sin esta exclusión el badge mostraba 1 mientras el
+      // panel decía "No tienes postulaciones en este estado".
+      all: all.filter((a) => a.status !== 'pending').length,
       active: all.filter((a) =>
         ['applied', 'in_review', 'interview', 'offer'].includes(a.status),
       ).length,

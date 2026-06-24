@@ -253,6 +253,26 @@ textarea.field-input {
   min-height: 96px;
 }
 
+/* <select.field-input> abre un dropdown nativo. Por defecto los <option>
+ * heredan colores del OS (popup blanco con texto gris claro) — sobre
+ * tema oscuro quedan casi invisibles. Chrome y Firefox respetan
+ * background-color y color directos en <option>; Safari los ignora
+ * pero usa colores legibles por defecto en su tema. */
+select.field-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%238b8a85'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+  cursor: pointer;
+
+  option {
+    background: #11151d;
+    color: #e8e5dd;
+    padding: 8px 12px;
+  }
+}
+
 /* ===================================
    Portal avatar — brand-colored mark identifying the source job
    board of an offer (LinkedIn, Elempleo, Bumeran, etc).

@@ -1,0 +1,285 @@
+/* Modal del setup/disable de 2FA — mismo lenguaje visual que el resto
+ * de modales (cv-audit, cv-improve, quantify) para consistencia. */
+
+.tfa-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: tfa-fade-in 180ms ease;
+}
+
+@keyframes tfa-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tfa-modal {
+  width: 100%;
+  max-width: 560px;
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 20px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tfa-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tfa-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #f97316;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.tfa-title {
+  font-size: 20px;
+  line-height: 1.25;
+  color: #e8e5dd;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+}
+
+.tfa-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: #8b8a85;
+  line-height: 1.5;
+}
+
+.tfa-close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cfcfc8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 160ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .material-symbols-outlined {
+    font-size: 18px;
+  }
+}
+
+.tfa-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  gap: 14px;
+  color: #cfcfc8;
+  p { margin: 0; font-size: 14px; }
+}
+
+.loader-ring {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid rgba(249, 115, 22, 0.2);
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: tfa-spin 800ms linear infinite;
+}
+
+.loader-ring-sm {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(11, 14, 20, 0.2);
+  border-top-color: #0b0e14;
+  border-radius: 50%;
+  animation: tfa-spin 700ms linear infinite;
+}
+
+@keyframes tfa-spin {
+  to { transform: rotate(360deg); }
+}
+
+.tfa-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tfa-error {
+  font-size: 13px;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 8px 0 0;
+}
+
+.tfa-body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.tfa-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tfa-step-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e8e5dd;
+  margin: 0;
+
+  &--secondary {
+    font-weight: 500;
+    color: #8b8a85;
+    margin-top: 8px;
+  }
+}
+
+/* QR code — fondo blanco para que el authenticator app lo lea bien
+ * (los scanners no leen QRs sobre fondo oscuro semitransparente). */
+.tfa-qr-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 12px;
+}
+
+.tfa-qr {
+  width: 200px;
+  height: 200px;
+  display: block;
+}
+
+.tfa-secret-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+}
+
+.tfa-secret {
+  flex: 1;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #f97316;
+  letter-spacing: 0.05em;
+  word-break: break-all;
+}
+
+.tfa-copy-btn {
+  flex-shrink: 0;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+}
+
+.tfa-verify {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tfa-code-input {
+  text-align: center;
+  font-size: 20px !important;
+  letter-spacing: 0.3em;
+  font-family: 'Courier New', monospace;
+}
+
+.tfa-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+}
+
+.tfa-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e8e5dd;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+  font-family: inherit;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(249, 115, 22, 0.3);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.tfa-apply-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+/* Botón danger para desactivar 2FA. Usamos rojo brand para señalar
+ * que es una acción de menor seguridad. */
+.btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+  border: 1px solid #dc2626;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 160ms ease;
+
+  &:hover:not(:disabled) {
+    background: #b91c1c;
+  }
+}

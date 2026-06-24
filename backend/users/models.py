@@ -168,6 +168,25 @@ class User(AbstractUser):
         max_length=64, unique=True, null=True, blank=True
     )
 
+    # 2FA TOTP — Time-based One-Time Password (RFC 6238).
+    #
+    # `totp_secret` se guarda al iniciar el setup (POST /2fa/setup/) y
+    # queda en DB incluso si el user no termina de activar — eso permite
+    # mostrar el mismo QR si vuelve a abrir el modal. Solo se borra en
+    # disable().
+    #
+    # `totp_enabled` queda False hasta que el user verifica con un código
+    # del authenticator. Mientras está False, el setup puede regenerar
+    # el secret libremente.
+    #
+    # NOTA: el secret NO está encriptado en reposo — Django no provee
+    # encryption at-rest nativo y agregar django-cryptography por una
+    # sola columna es overkill ahora. Si la DB se compromete, los
+    # secrets se filtran. Para producción crítica, considerar
+    # encriptación a nivel de columna o usar un secret manager.
+    totp_secret = models.CharField(max_length=64, blank=True, default="")
+    totp_enabled = models.BooleanField(default=False)
+
     objects = UserManager()
 
     def __str__(self):

@@ -58,6 +58,15 @@ class JobOffer(models.Model):
         db_index=True,
         help_text="Modalidad de trabajo detectada heurísticamente",
     )
+    # Disponibilidad — false cuando detectamos que la oferta ya no está en
+    # el portal de origen (vía sync por sitemap, probe HTTP, etc). El feed
+    # filtra is_active=True por default — "cero ruido". Indexed porque
+    # casi todas las queries del frontend lo usan como filtro.
+    is_active = models.BooleanField(default=True, db_index=True)
+    # Cuándo se verificó por última vez la disponibilidad. Sirve para
+    # priorizar el probe diario (chequear primero las que llevan más
+    # tiempo sin verificar).
+    last_checked_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

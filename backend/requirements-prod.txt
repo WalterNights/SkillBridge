@@ -66,6 +66,10 @@ cryptography==45.0.4
 PyJWT==2.9.0
 certifi==2025.4.26
 django-ratelimit==4.1.0
+# 2FA TOTP — pyotp para generación/verificación (RFC 6238), qrcode para
+# convertir la otpauth:// URI a data URL PNG inline.
+pyotp==2.10.0
+qrcode==8.2
 
 # ----- HTTP -----
 httpx==0.28.1

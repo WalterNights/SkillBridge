@@ -1,0 +1,48 @@
+<div class="select-host" [class]="widthClass">
+  <button
+    #trigger
+    type="button"
+    class="select-trigger"
+    [class.is-open]="open()"
+    [attr.aria-expanded]="open()"
+    aria-haspopup="listbox"
+    (click)="toggle($event)"
+  >
+    <span class="select-label">{{ selectedLabel() }}</span>
+    <span class="select-chevron material-symbols-outlined" [class.is-flipped]="open()">
+      expand_more
+    </span>
+  </button>
+</div>
+
+<!-- Panel teleportado a document.body al abrir — escapa containing
+     blocks creados por ancestros con backdrop-filter (.glass-strong)
+     o transform. Los bindings (top/left/width, options, pick) siguen
+     funcionando porque la EmbeddedView mantiene el component context. -->
+<ng-template #panelTpl>
+  <ul
+    class="select-panel glass-strong"
+    role="listbox"
+    [style.top]="panelTop"
+    [style.left]="panelLeft"
+    [style.width]="panelWidth"
+  >
+    <li
+      *ngFor="let opt of options"
+      role="option"
+      [attr.aria-selected]="isSelected(opt)"
+      class="select-option"
+      [class.is-selected]="isSelected(opt)"
+      (mousedown)="pick($event, opt)"
+    >
+      <span class="select-option-label">{{ opt.label }}</span>
+      <span
+        *ngIf="isSelected(opt)"
+        class="material-symbols-outlined select-check"
+        style="font-size: 16px"
+      >
+        check
+      </span>
+    </li>
+  </ul>
+</ng-template>

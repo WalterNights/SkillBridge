@@ -8,6 +8,10 @@ from users.views import (
     PasswordResetRequestView,
     PasswordResetVerifyView,
     QuantifyAchievementView,
+    TwoFactorActivateView,
+    TwoFactorDisableView,
+    TwoFactorSetupView,
+    TwoFactorStatusView,
     UserProfileViewSet,
     UserRegisterView,
 )
@@ -25,5 +29,9 @@ urlpatterns = [
     path("cv/quantify/", QuantifyAchievementView.as_view(), name="cv-quantify"),
     path("cv/audit/", CvAuditView.as_view(), name="cv-audit"),
     path("cv/improve/", CvImproveView.as_view(), name="cv-improve"),
+    path("2fa/status/", TwoFactorStatusView.as_view(), name="2fa-status"),
+    path("2fa/setup/", TwoFactorSetupView.as_view(), name="2fa-setup"),
+    path("2fa/activate/", TwoFactorActivateView.as_view(), name="2fa-activate"),
+    path("2fa/disable/", TwoFactorDisableView.as_view(), name="2fa-disable"),
     path("", include(router.urls)),
 ]

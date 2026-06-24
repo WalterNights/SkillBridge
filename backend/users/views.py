@@ -23,6 +23,7 @@ from users.services.cv_analysis_service import get_cv_analyzer
 from users.services.cv_auditor import AuditError, audit_cv, profile_to_audit_payload
 from users.services.cv_improver import ImproveError, improve_cv, profile_to_improve_payload
 from users.services.profile_service import ProfileService
+from users.services import totp_service
 
 
 @method_decorator(ratelimit(key="ip", rate="5/m", method="POST", block=True), name="post")
@@ -466,3 +467,134 @@ class PasswordResetVerifyView(APIView):
         return Response(
             {"message": "Contraseña restablecida exitosamente"}, status=status.HTTP_200_OK
         )
+
+
+# =============================================================================
+# 2FA TOTP — endpoints de setup/activate/disable/status
+# =============================================================================
+#
+# El flow desde el frontend:
+#   1. GET  /2fa/status/   → ¿está activo?
+#   2. POST /2fa/setup/    → genera secret + QR (no activa todavía)
+#   3. POST /2fa/activate/ → user envía código de 6 dígitos del authenticator
+#                            app. Si verifica, activa.
+#   4. POST /2fa/disable/  → user envía código para confirmar identidad
+#                            antes de desactivar.
+#
+# NOTA: por ahora 2FA NO se enforcea en el login — el feature está solo
+# en /settings para que el user pueda configurarlo. Cuando se agregue
+# enforcement en el login (próxima fase), `totp_enabled` será consultado
+# en CustomTokenObtainPairView para pedir TOTP antes de emitir JWT.
+
+
+class TwoFactorStatusView(APIView):
+    """GET /api/users/2fa/status/ → `{enabled: bool}` para el user actual."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"enabled": bool(request.user.totp_enabled)})
+
+
+@method_decorator(
+    ratelimit(key="user", rate="10/h", method="POST", block=True), name="post"
+)
+class TwoFactorSetupView(APIView):
+    """POST /api/users/2fa/setup/ → genera secret + QR data URL.
+
+    Si el user YA tiene un secret guardado pero no activó (i.e., abrió
+    el setup antes pero abandonó), devolvemos el mismo secret — no
+    regeneramos. Esto deja que el user vuelva al mismo QR si reabre el
+    modal. Solo si ya está totp_enabled=True devolvemos 409.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        if user.totp_enabled:
+            return Response(
+                {"error": "already_enabled", "detail": "El 2FA ya está activo."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        if not user.totp_secret:
+            user.totp_secret = totp_service.generate_secret()
+            user.save(update_fields=["totp_secret"])
+
+        uri = totp_service.provisioning_uri(user.totp_secret, user.email or user.username)
+        qr = totp_service.qr_data_url(uri)
+        return Response(
+            {
+                "secret": user.totp_secret,  # útil para entry manual si el QR falla
+                "qr_data_url": qr,
+                "otpauth_uri": uri,
+            }
+        )
+
+
+@method_decorator(
+    ratelimit(key="user", rate="10/m", method="POST", block=True), name="post"
+)
+class TwoFactorActivateView(APIView):
+    """POST /api/users/2fa/activate/ → body `{code}` — activa 2FA si el
+    código del authenticator es válido.
+
+    Rate-limit estricto (10/m) — evita brute-force del TOTP de 6 dígitos
+    durante la activación (1M combinaciones, pero con ventana de 30s y
+    cap de 10 intentos/min queda fuera de práctico).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        if user.totp_enabled:
+            return Response(
+                {"error": "already_enabled"},
+                status=status.HTTP_409_CONFLICT,
+            )
+        if not user.totp_secret:
+            return Response(
+                {"error": "setup_required", "detail": "Hacé setup primero."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        code = (request.data.get("code") or "").strip()
+        if not totp_service.verify(user.totp_secret, code):
+            return Response(
+                {"error": "invalid_code", "detail": "Código inválido o expirado."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.totp_enabled = True
+        user.save(update_fields=["totp_enabled"])
+        return Response({"enabled": True})
+
+
+@method_decorator(
+    ratelimit(key="user", rate="10/m", method="POST", block=True), name="post"
+)
+class TwoFactorDisableView(APIView):
+    """POST /api/users/2fa/disable/ → body `{code}` — desactiva 2FA si
+    el código es válido. Borra el secret además del flag para que un
+    re-enable empiece de cero (no reusamos secret viejo)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        if not user.totp_enabled:
+            return Response({"enabled": False})
+
+        code = (request.data.get("code") or "").strip()
+        if not totp_service.verify(user.totp_secret, code):
+            return Response(
+                {"error": "invalid_code", "detail": "Código inválido o expirado."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.totp_enabled = False
+        user.totp_secret = ""
+        user.save(update_fields=["totp_enabled", "totp_secret"])
+        return Response({"enabled": False})

@@ -1,0 +1,121 @@
+/* Dropdown custom — pareado visual con .field-input para que en forms
+ * mixtos (algunos campos input nativo, otros app-select) el look sea
+ * idéntico. */
+
+.select-host {
+  position: relative;
+  display: inline-block;
+}
+
+.select-trigger {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #e8e5dd;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 200ms ease,
+    background 200ms ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  &.is-open,
+  &:focus-visible {
+    outline: none;
+    border-color: rgba(249, 115, 22, 0.4);
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+.select-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-chevron {
+  font-size: 20px;
+  color: #8b8a85;
+  transition: transform 180ms ease;
+  flex-shrink: 0;
+
+  &.is-flipped {
+    transform: rotate(180deg);
+  }
+}
+
+/* Panel desplegado — position:fixed para escapar stacking contexts
+ * creados por ancestros con backdrop-filter o overflow:hidden (las
+ * cards .glass-strong de /settings, /me, etc. clipaban un position:
+ * absolute child y solo se veía la primera opción).
+ *
+ * Coordenadas (top/left/width) las setea el componente desde el
+ * boundingClientRect del trigger. Z-index alto (40) pero bajo los
+ * modales (z:80). */
+.select-panel {
+  position: fixed;
+  z-index: 40;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.5);
+  max-height: 280px;
+  overflow-y: auto;
+  animation: select-fade-in 140ms ease;
+}
+
+@keyframes select-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #cfcfc8;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+
+  &:hover {
+    background: rgba(249, 115, 22, 0.1);
+    color: #e8e5dd;
+  }
+
+  &.is-selected {
+    background: rgba(249, 115, 22, 0.12);
+    color: #f97316;
+    font-weight: 600;
+  }
+}
+
+.select-check {
+  color: #f97316;
+  flex-shrink: 0;
+}

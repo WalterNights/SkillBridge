@@ -74,16 +74,21 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         """Aplica filtros del dashboard (?country=, ?modality=).
 
-        Ambos params aceptan comma-separated values:
+        Por default filtra `is_active=True` — solo mostramos ofertas que
+        siguen disponibles en el portal de origen. Las marcadas como
+        inactivas (vía sync por sitemap o probe HTTP) quedan ocultas
+        para honrar el slogan "cero ruido". Para debug se puede pasar
+        `?include_inactive=true` (futuro — no expuesto en UI).
+
+        Filtros adicionales:
           ?country=MX,CO     → ofertas de México o Colombia
           ?modality=remote   → solo remotas
           ?modality=remote,hybrid → remotas o híbridas
 
-        Sin params → todas las ofertas, orden por recencia (no se cambia
-        el contrato previo). Si el param viene con un valor inválido,
-        se ignora silenciosamente — no rompemos el feed por un typo.
+        Sin params → todas las activas, orden por recencia. Si un param
+        viene con valor inválido, se ignora silenciosamente.
         """
-        qs = JobOffer.objects.all().order_by("-created_at")
+        qs = JobOffer.objects.filter(is_active=True).order_by("-created_at")
 
         country_param = (self.request.query_params.get("country") or "").strip()
         if country_param:

@@ -1,0 +1,127 @@
+<div class="tfa-overlay" (click)="close()">
+  <div class="tfa-modal glass-strong" (click)="$event.stopPropagation()">
+    <header class="tfa-header">
+      <div class="min-w-0 flex-1">
+        <p class="tfa-eyebrow">
+          <span class="material-symbols-outlined" style="font-size: 13px; font-variation-settings: 'FILL' 1">
+            shield
+          </span>
+          Verificación en dos pasos
+        </p>
+        <h2 class="tfa-title">
+          {{ mode === 'enable' ? 'Activar 2FA' : 'Desactivar 2FA' }}
+        </h2>
+        <p class="tfa-subtitle">
+          {{
+            mode === 'enable'
+              ? 'Agregá una capa extra de seguridad usando una app authenticator (Google Authenticator, Authy, 1Password).'
+              : 'Ingresá un código de tu app authenticator para confirmar.'
+          }}
+        </p>
+      </div>
+      <button type="button" class="tfa-close" (click)="close()" aria-label="Cerrar">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </header>
+
+    <!-- Loading state durante setup() -->
+    <div *ngIf="view() === 'loading'" class="tfa-loading">
+      <span class="loader-ring"></span>
+      <p>Generando configuración…</p>
+    </div>
+
+    <!-- Error state -->
+    <div *ngIf="view() === 'error'" class="tfa-empty">
+      <p class="tfa-error">{{ errorMsg }}</p>
+      <button type="button" class="tfa-secondary-btn" (click)="close()">Cerrar</button>
+    </div>
+
+    <!-- Enable flow — muestra QR + secret + input -->
+    <div *ngIf="view() !== 'loading' && view() !== 'error' && mode === 'enable' && setupData() as data" class="tfa-body">
+      <section class="tfa-steps">
+        <p class="tfa-step-label">1 · Escaneá el código QR</p>
+        <div class="tfa-qr-wrap">
+          <img [src]="data.qr_data_url" alt="Código QR para 2FA" class="tfa-qr" />
+        </div>
+
+        <p class="tfa-step-label tfa-step-label--secondary">
+          ¿No podés escanear? Ingresá este código manualmente:
+        </p>
+        <div class="tfa-secret-row">
+          <code class="tfa-secret">{{ data.secret }}</code>
+          <button type="button" class="tfa-secondary-btn tfa-copy-btn" (click)="copySecret()">
+            <span class="material-symbols-outlined" style="font-size: 14px">content_copy</span>
+            Copiar
+          </button>
+        </div>
+      </section>
+
+      <section class="tfa-verify">
+        <p class="tfa-step-label">2 · Ingresá el código de 6 dígitos que muestra tu app</p>
+        <input
+          type="text"
+          inputmode="numeric"
+          maxlength="7"
+          autocomplete="off"
+          placeholder="123 456"
+          class="field-input tfa-code-input"
+          [(ngModel)]="code"
+          (keyup.enter)="submit()"
+          [disabled]="view() === 'verifying'"
+        />
+        <p *ngIf="errorMsg" class="tfa-error">{{ errorMsg }}</p>
+      </section>
+
+      <div class="tfa-actions">
+        <button type="button" class="tfa-secondary-btn" (click)="close()" [disabled]="view() === 'verifying'">
+          Cancelar
+        </button>
+        <button type="button" class="btn-primary tfa-apply-btn" (click)="submit()" [disabled]="view() === 'verifying'">
+          <span *ngIf="view() !== 'verifying'" class="inline-flex items-center gap-2">
+            <span class="material-symbols-outlined" style="font-size: 16px">check</span>
+            Activar 2FA
+          </span>
+          <span *ngIf="view() === 'verifying'" class="inline-flex items-center gap-2">
+            <span class="loader-ring-sm"></span>
+            Verificando…
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Disable flow — solo input de código -->
+    <div *ngIf="view() !== 'loading' && view() !== 'error' && mode === 'disable'" class="tfa-body">
+      <section class="tfa-verify">
+        <p class="tfa-step-label">Ingresá el código actual de tu app authenticator</p>
+        <input
+          type="text"
+          inputmode="numeric"
+          maxlength="7"
+          autocomplete="off"
+          placeholder="123 456"
+          class="field-input tfa-code-input"
+          [(ngModel)]="code"
+          (keyup.enter)="submit()"
+          [disabled]="view() === 'verifying'"
+        />
+        <p *ngIf="errorMsg" class="tfa-error">{{ errorMsg }}</p>
+      </section>
+
+      <div class="tfa-actions">
+        <button type="button" class="tfa-secondary-btn" (click)="close()" [disabled]="view() === 'verifying'">
+          Cancelar
+        </button>
+        <button type="button" class="btn-danger tfa-apply-btn" (click)="submit()" [disabled]="view() === 'verifying'">
+          <span *ngIf="view() !== 'verifying'" class="inline-flex items-center gap-2">
+            <span class="material-symbols-outlined" style="font-size: 16px">remove_moderator</span>
+            Desactivar 2FA
+          </span>
+          <span *ngIf="view() === 'verifying'" class="inline-flex items-center gap-2">
+            <span class="loader-ring-sm"></span>
+            Verificando…
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -8,6 +8,9 @@ import { Title } from '@angular/platform-browser';
 import { environment } from '../../../environment/environment';
 import { AuthService } from '../../auth/auth.service';
 import { StorageMethodComponent } from '../../shared/storage-method/storage-method';
+import { SelectComponent, SelectOption } from '../../shared/select/select.component';
+import { TwoFactorService } from '../../services/two-factor.service';
+import { TwoFactorModalComponent } from './two-factor-modal.component';
 
 /**
  * Configuración del usuario. Vive dentro del AppShell así que el
@@ -21,7 +24,7 @@ import { StorageMethodComponent } from '../../shared/storage-method/storage-meth
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SelectComponent, TwoFactorModalComponent],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
 })
@@ -39,11 +42,24 @@ export class SettingsComponent implements OnInit {
   enableNotifications = true;
   enableEmailAlerts = true;
   language = 'es';
+  /** Catálogo de idiomas — usado por el dropdown custom. */
+  languageOptions: SelectOption[] = [
+    { value: 'es', label: 'Español' },
+    { value: 'en', label: 'English' },
+    { value: 'pt', label: 'Português' },
+  ];
 
   /** ID del UserProfile cargado — necesario para el PATCH. */
   private profileId: number | null = null;
   isSaving = false;
   saveStatus: 'idle' | 'success' | 'error' = 'idle';
+
+  // 2FA state — toggle visible refleja el flag del backend. Modal se
+  // abre al click del toggle (en cualquier sentido) y emite el nuevo
+  // estado al cerrar; recién ahí actualizamos `twoFactorEnabled`.
+  twoFactorEnabled = false;
+  twoFactorModalMode: 'enable' | 'disable' | null = null;
+  private twoFactorService = inject(TwoFactorService);
 
   constructor() {
     this.titleService.setTitle('SkilTak — Configuración');
@@ -56,6 +72,29 @@ export class SettingsComponent implements OnInit {
       this.userEmail = this.storageMethod.getStorageItem(this.storage, 'user_email');
     });
     this.loadProfilePreferences();
+    this.loadTwoFactorStatus();
+  }
+
+  private loadTwoFactorStatus(): void {
+    this.twoFactorService.status().subscribe({
+      next: (res) => (this.twoFactorEnabled = res.enabled),
+      error: () => {
+        /* Soft-fail: la sección 2FA queda como "no enabled". El user puede
+         * intentar activar y si el backend está down recibirá error. */
+      },
+    });
+  }
+
+  openTwoFactorModal(): void {
+    this.twoFactorModalMode = this.twoFactorEnabled ? 'disable' : 'enable';
+  }
+
+  closeTwoFactorModal(): void {
+    this.twoFactorModalMode = null;
+  }
+
+  onTwoFactorChanged(enabled: boolean): void {
+    this.twoFactorEnabled = enabled;
   }
 
   /** Carga el perfil para obtener `email_alerts_enabled` actual + el ID. */
