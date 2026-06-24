@@ -160,6 +160,14 @@ class User(AbstractUser):
     rol = models.CharField(max_length=10, choices=ROL_CHOICES, default="user")
     create_at = models.DateTimeField(auto_now_add=True)
 
+    # OAuth — identificador único de LinkedIn (claim `sub` del OIDC).
+    # Permite idempotencia: si un user re-loguea con LinkedIn, lo
+    # encontramos por este id en vez de por email (que podría haber
+    # cambiado). null para users registrados con password.
+    linkedin_user_id = models.CharField(
+        max_length=64, unique=True, null=True, blank=True
+    )
+
     objects = UserManager()
 
     def __str__(self):

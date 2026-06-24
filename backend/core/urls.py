@@ -9,6 +9,7 @@ from users.views import CustomTokenObtainPairView
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/users/", include("users.urls")),
+    path("api/auth/", include("users.auth_urls")),
     path("api/jobs/", include("jobs.urls")),
     path("api/dashboard/", include("dashboard.urls")),
     path("api/", include("notifications.urls")),

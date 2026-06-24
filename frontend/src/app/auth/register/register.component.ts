@@ -13,6 +13,7 @@ import {
   ValidatorFn,
 } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { environment } from '../../../environment/environment';
 
 /**
  * Registration component for new user sign-up
@@ -30,6 +31,11 @@ export class RegisterComponent {
   errorMessage = '';
   showPassword = false;
   showConfirmPassword = false;
+
+  /** Mismo endpoint del backend que en login — arranca el flow OAuth
+   * con LinkedIn. Si el user nunca se registró, find_or_create lo da
+   * de alta automáticamente; si ya existe con ese email, lo linkea. */
+  readonly linkedInLoginUrl = `${environment.apiUrl}/auth/linkedin/start/`;
 
   constructor(
     private fb: FormBuilder,

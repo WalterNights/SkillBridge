@@ -7,6 +7,7 @@ import { StorageMethodComponent } from '../../shared/storage-method/storage-meth
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { STORAGE_KEYS } from '../../constants/app-stats';
+import { environment } from '../../../environment/environment';
 
 /**
  * Login component for user authentication
@@ -25,6 +26,12 @@ export class LoginComponent {
   isStorage = false;
   storage: 'session' | 'local' = 'session';
   showPassword = false;
+
+  /** URL del endpoint del backend que arranca el flow OAuth con LinkedIn.
+   * Usamos un `<a href>` simple (no fetch) — el flow OAuth requiere
+   * navegación top-level del browser para que LinkedIn pueda hacer
+   * el redirect de vuelta. */
+  readonly linkedInLoginUrl = `${environment.apiUrl}/auth/linkedin/start/`;
 
   constructor(
     private fb: FormBuilder,

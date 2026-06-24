@@ -304,6 +304,27 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@skiltak.com")
 PASSWORD_RESET_TIMEOUT = 600  # 10 min
 
 
+# ----- LinkedIn OAuth (Sign In with LinkedIn using OpenID Connect) -----
+# Producto se solicita en linkedin.com/developers/apps (instant-approve).
+# Después en el .env del VPS se setean los 3 valores. Si LINKEDIN_CLIENT_ID
+# está vacío, los endpoints devuelven 503 con mensaje claro — el botón
+# del frontend igual existe pero al click da error explicativo en vez de
+# un 500 críptico.
+LINKEDIN_CLIENT_ID = config("LINKEDIN_CLIENT_ID", default="")
+LINKEDIN_CLIENT_SECRET = config("LINKEDIN_CLIENT_SECRET", default="")
+LINKEDIN_REDIRECT_URI = config(
+    "LINKEDIN_REDIRECT_URI",
+    default="http://localhost:8000/api/auth/linkedin/callback/",
+)
+# A dónde redirigimos al frontend después del callback exitoso. El
+# frontend levanta los tokens del query string y los guarda como un
+# login normal.
+LINKEDIN_FRONTEND_COMPLETE_URL = config(
+    "LINKEDIN_FRONTEND_COMPLETE_URL",
+    default="http://localhost:4200/auth/linkedin/complete",
+)
+
+
 # ----- Hardening de producción -----
 if IS_PRODUCTION:
     # Cuando nginx habla con gunicorn por unix socket, REMOTE_ADDR queda

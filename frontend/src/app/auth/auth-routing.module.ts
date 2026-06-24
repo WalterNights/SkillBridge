@@ -10,6 +10,15 @@ const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', component: ResetPasswordComponent },
+  {
+    // Lazy load — el componente solo se necesita en el callback OAuth,
+    // no en cada visita a /auth/login.
+    path: 'linkedin/complete',
+    loadComponent: () =>
+      import('./linkedin-complete/linkedin-complete.component').then(
+        (m) => m.LinkedinCompleteComponent,
+      ),
+  },
 ];
 
 @NgModule({
