@@ -38,7 +38,18 @@
       <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-1">CV ATS</p>
       <h1 class="text-2xl font-black text-bone tracking-tight">Tu hoja de vida lista para postularte</h1>
     </div>
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-3 flex-wrap">
+      <button
+        type="button"
+        (click)="openAudit()"
+        class="px-5 py-2.5 rounded-xl border text-sm font-semibold inline-flex items-center gap-2 transition-colors"
+        style="background: rgba(249, 115, 22, 0.08); border-color: rgba(249, 115, 22, 0.3); color: #f97316;"
+      >
+        <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'FILL' 1">
+          psychology
+        </span>
+        Auditar con AI
+      </button>
       <button
         type="button"
         (click)="downloadCV()"
@@ -170,3 +181,6 @@
   (applied)="onQuantifyApplied($event)"
   (closed)="closeQuantify()"
 />
+
+<!-- Audit modal — lazy, fetcha el análisis al montarse -->
+<app-cv-audit-modal *ngIf="showAudit()" (closed)="closeAudit()" />

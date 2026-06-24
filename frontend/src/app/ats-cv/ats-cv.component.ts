@@ -11,10 +11,11 @@ import { ProfileService } from '../services/profile.service';
 import { ToastService } from '../services/toast.service';
 import { STORAGE_KEYS } from '../constants/app-stats';
 import { QuantifyModalComponent } from '../cv/quantify-modal.component';
+import { CvAuditModalComponent } from '../cv/cv-audit-modal.component';
 
 @Component({
   selector: 'app-ats-cv',
-  imports: [CommonModule, RouterModule, QuantifyModalComponent],
+  imports: [CommonModule, RouterModule, QuantifyModalComponent, CvAuditModalComponent],
   standalone: true,
   templateUrl: './ats-cv.component.html',
   styleUrls: ['./ats-cv.component.scss'],
@@ -34,6 +35,17 @@ export class AtsCvComponent implements OnInit {
   /** Flag para ocultar los botones AI cuando se captura el PDF — html2canvas
    * no respeta @media print, así que usamos una clase toggleable. */
   isExporting = signal(false);
+
+  /** Modal del auditor — solo se monta cuando se abre (lazy). */
+  showAudit = signal(false);
+
+  openAudit(): void {
+    this.showAudit.set(true);
+  }
+
+  closeAudit(): void {
+    this.showAudit.set(false);
+  }
 
   constructor(
     private titleService: Title,

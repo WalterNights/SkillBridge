@@ -1,0 +1,337 @@
+/* Modal del auditor de CV — mismo lenguaje visual que el quantify modal
+ * pero con un layout más rico (gauge + recomendaciones + grid de
+ * categorías con coloreado por severity). */
+
+.aud-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: aud-fade-in 180ms ease;
+}
+
+@keyframes aud-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.aud-modal {
+  width: 100%;
+  max-width: 780px;
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 20px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.aud-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.aud-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #f97316;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.aud-title {
+  font-size: 20px;
+  line-height: 1.25;
+  color: #e8e5dd;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+}
+
+.aud-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: #8b8a85;
+  line-height: 1.5;
+}
+
+.aud-close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cfcfc8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 160ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .material-symbols-outlined { font-size: 18px; }
+}
+
+.aud-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 16px;
+  gap: 14px;
+  color: #cfcfc8;
+  p { margin: 0; font-size: 14px; }
+}
+.aud-loading-sub {
+  font-size: 12px !important;
+  color: #8b8a85;
+}
+
+.loader-ring {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid rgba(249, 115, 22, 0.2);
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: aud-spin 800ms linear infinite;
+}
+@keyframes aud-spin {
+  to { transform: rotate(360deg); }
+}
+
+.aud-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.aud-error {
+  font-size: 13px;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.aud-ready {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* ---------- Score row ---------- */
+.aud-score-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left-width: 3px;
+
+  &[data-tier="excellent"] { border-left-color: #4ade80; }
+  &[data-tier="good"] { border-left-color: #f97316; }
+  &[data-tier="low"] { border-left-color: #ef4444; }
+}
+
+.aud-score-circle {
+  flex-shrink: 0;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 3px solid currentColor;
+
+  .aud-score-row[data-tier="excellent"] & { color: #4ade80; }
+  .aud-score-row[data-tier="good"] & { color: #f97316; }
+  .aud-score-row[data-tier="low"] & { color: #ef4444; }
+}
+
+.aud-score-num {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  color: currentColor;
+}
+
+.aud-score-suffix {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 2px;
+  letter-spacing: 0.1em;
+}
+
+.aud-score-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8b8a85;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.aud-overall {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #e8e5dd;
+}
+
+/* ---------- Sections ---------- */
+.aud-section-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8b8a85;
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+
+.aud-recs-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aud-recs-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(249, 115, 22, 0.05);
+  border: 1px solid rgba(249, 115, 22, 0.15);
+  border-radius: 10px;
+}
+
+.aud-rec-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #f97316;
+  color: #0b0e14;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aud-rec-text {
+  flex: 1;
+  font-size: 13px;
+  color: #e8e5dd;
+  line-height: 1.5;
+}
+
+/* ---------- Categories grid ---------- */
+.aud-cat-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+
+  @media (min-width: 540px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.aud-cat {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left-width: 2px;
+
+  &[data-severity="ok"] {
+    border-left-color: #4ade80;
+    .aud-cat-icon { color: #4ade80; }
+  }
+  &[data-severity="warning"] {
+    border-left-color: #fbbf24;
+    .aud-cat-icon { color: #fbbf24; }
+  }
+  &[data-severity="critical"] {
+    border-left-color: #ef4444;
+    .aud-cat-icon { color: #ef4444; }
+  }
+}
+
+.aud-cat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.aud-cat-icon {
+  font-size: 16px;
+}
+
+.aud-cat-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e8e5dd;
+}
+
+.aud-cat-msg {
+  margin: 0;
+  font-size: 12px;
+  color: #b3b1aa;
+  line-height: 1.55;
+}
+
+/* ---------- Actions ---------- */
+.aud-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.aud-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e8e5dd;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+  font-family: inherit;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(249, 115, 22, 0.3);
+  }
+}

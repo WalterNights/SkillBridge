@@ -1,0 +1,92 @@
+<div class="aud-overlay" (click)="close()">
+  <div class="aud-modal glass-strong" (click)="$event.stopPropagation()">
+    <header class="aud-header">
+      <div class="min-w-0 flex-1">
+        <p class="aud-eyebrow">
+          <span class="material-symbols-outlined" style="font-size: 13px; font-variation-settings: 'FILL' 1">
+            psychology
+          </span>
+          Auditor de CV
+        </p>
+        <h2 class="aud-title">Análisis estructural de tu CV</h2>
+        <p class="aud-subtitle">
+          Feedback accionable de un coach AI — listo en segundos, no sustituye revisión humana.
+        </p>
+      </div>
+      <button type="button" class="aud-close" (click)="close()" aria-label="Cerrar">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </header>
+
+    <!-- Loading -->
+    <div *ngIf="view() === 'loading'" class="aud-loading">
+      <span class="loader-ring"></span>
+      <p>Analizando tu CV…</p>
+      <p class="aud-loading-sub">Esto tarda 5-10 segundos</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="view() === 'error'" class="aud-empty">
+      <p class="aud-error">{{ errorMsg }}</p>
+      <div class="flex gap-2">
+        <button type="button" class="aud-secondary-btn" (click)="fetchAudit()">Reintentar</button>
+        <button type="button" class="aud-secondary-btn" (click)="close()">Cerrar</button>
+      </div>
+    </div>
+
+    <!-- Ready -->
+    <div *ngIf="view() === 'ready' && result() as r" class="aud-ready">
+      <!-- Score gauge -->
+      <div class="aud-score-row" [attr.data-tier]="scoreTier()">
+        <div class="aud-score-circle">
+          <span class="aud-score-num">{{ r.score }}</span>
+          <span class="aud-score-suffix">/100</span>
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="aud-score-label">{{ scoreLabel() }}</p>
+          <p class="aud-overall">{{ r.overall }}</p>
+        </div>
+      </div>
+
+      <!-- Top recomendaciones -->
+      <section *ngIf="r.top_recommendations.length > 0" class="aud-recs">
+        <p class="aud-section-label">Top recomendaciones</p>
+        <ol class="aud-recs-list">
+          <li *ngFor="let rec of r.top_recommendations; let i = index">
+            <span class="aud-rec-num">{{ i + 1 }}</span>
+            <span class="aud-rec-text">{{ rec }}</span>
+          </li>
+        </ol>
+      </section>
+
+      <!-- Categorías -->
+      <section class="aud-cats">
+        <p class="aud-section-label">Análisis por sección</p>
+        <div class="aud-cat-grid">
+          <div
+            *ngFor="let cat of r.categories"
+            class="aud-cat"
+            [attr.data-severity]="cat.severity"
+          >
+            <div class="aud-cat-header">
+              <span class="material-symbols-outlined aud-cat-icon" style="font-variation-settings: 'FILL' 1">
+                {{ iconFor(cat.severity) }}
+              </span>
+              <span class="aud-cat-label">{{ cat.label }}</span>
+            </div>
+            <p class="aud-cat-msg">{{ cat.message }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <div class="aud-actions">
+        <button type="button" class="aud-secondary-btn" (click)="fetchAudit()">
+          <span class="material-symbols-outlined" style="font-size: 16px">refresh</span>
+          Volver a analizar
+        </button>
+        <button type="button" class="aud-secondary-btn ml-auto" (click)="close()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
