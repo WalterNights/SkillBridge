@@ -14,6 +14,66 @@
   }
 }
 
+/* ===== TABS ===== */
+.tab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  background: transparent;
+  border: 0;
+  color: #8b8a85;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 180ms ease,
+    color 180ms ease;
+
+  &:hover {
+    color: #e8e5dd;
+  }
+
+  &.active {
+    background: rgba(249, 115, 22, 0.12);
+    color: #f97316;
+  }
+}
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+
+  .tab.active & {
+    background: rgba(249, 115, 22, 0.20);
+    color: #f97316;
+  }
+}
+
+/* ===== CARDS ===== */
 .application-card {
   transition: border-color 200ms ease, transform 200ms ease;
 
@@ -23,6 +83,7 @@
   }
 }
 
+/* ===== STATUS BADGE ===== */
 .status-badge {
   display: inline-flex;
   align-items: center;
@@ -35,12 +96,144 @@
   border-radius: 9999px;
 }
 
-.status-applied {
+/* Colores por status — paleta que matchea el resto del producto.
+ * Estados "vivos" en orange (brand), interview en azul, offer en
+ * verde (logro), rejected/withdrawn en gris (cerrado). */
+.status-badge[data-status='applied'] {
   color: #4ade80;
   background: rgba(74, 222, 128, 0.10);
   border: 1px solid rgba(74, 222, 128, 0.30);
 }
 
+.status-badge[data-status='in_review'] {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.30);
+}
+
+.status-badge[data-status='interview'] {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.10);
+  border: 1px solid rgba(96, 165, 250, 0.30);
+}
+
+.status-badge[data-status='offer'] {
+  color: #c084fc;
+  background: rgba(192, 132, 252, 0.12);
+  border: 1px solid rgba(192, 132, 252, 0.30);
+}
+
+.status-badge[data-status='rejected'],
+.status-badge[data-status='withdrawn'] {
+  color: #8b8a85;
+  background: rgba(139, 138, 133, 0.10);
+  border: 1px solid rgba(139, 138, 133, 0.25);
+}
+
+.status-badge[data-status='pending'] {
+  color: #cfcfc8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Tinte muy sutil del card según status — solo el borde izquierdo. */
+.application-card[data-status='offer'] {
+  border-left: 2px solid #c084fc;
+}
+
+.application-card[data-status='interview'] {
+  border-left: 2px solid #60a5fa;
+}
+
+.application-card[data-status='rejected'],
+.application-card[data-status='withdrawn'] {
+  opacity: 0.75;
+}
+
+/* ===== STATUS MENU (dropdown) ===== */
+.status-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #8b8a85;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
+
+  &:hover,
+  &[aria-expanded='true'] {
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.30);
+    color: #f97316;
+  }
+}
+
+.status-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  background: rgba(17, 21, 29, 0.98);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 12px;
+  padding: 6px;
+  z-index: 30;
+  box-shadow:
+    0 16px 32px -16px rgba(0, 0, 0, 0.6),
+    0 4px 8px -4px rgba(0, 0, 0, 0.4);
+}
+
+.status-menu-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8b8a85;
+  font-weight: 700;
+  padding: 6px 10px 4px;
+}
+
+.status-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  color: #cfcfc8;
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease;
+
+  &:hover {
+    background: rgba(249, 115, 22, 0.08);
+    color: #f97316;
+  }
+
+  &.is-current {
+    color: #f97316;
+    font-weight: 600;
+  }
+
+  .check {
+    color: #f97316;
+  }
+}
+
+.status-menu-text {
+  flex: 1;
+}
+
+/* ===== LINK ===== */
 .application-link {
   display: inline-flex;
   align-items: center;

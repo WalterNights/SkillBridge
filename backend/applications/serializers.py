@@ -22,5 +22,17 @@ class JobApplicationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JobApplication
-        fields = ["id", "offer", "offer_id", "status", "clicked_at", "applied_at"]
-        read_only_fields = ["id", "status", "clicked_at", "applied_at"]
+        fields = [
+            "id",
+            "offer",
+            "offer_id",
+            "status",
+            "clicked_at",
+            "applied_at",
+            "status_changed_at",
+            "notes",
+        ]
+        # `notes` editable via PATCH /applications/{id}/.
+        # `status` se cambia via /update-status/ o /confirm/ — no via PATCH
+        # directo para preservar las side-effects (status_changed_at).
+        read_only_fields = ["id", "status", "clicked_at", "applied_at", "status_changed_at"]
