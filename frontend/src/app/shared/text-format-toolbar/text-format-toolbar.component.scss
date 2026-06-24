@@ -1,0 +1,131 @@
+/* Toolbar de formato — sticky a la izquierda del form de edición.
+ *
+ * Layout strategy: position: sticky con top offset, dentro de un grid
+ * o aside del padre. En mobile (<lg) cae arriba del form como una
+ * franja horizontal scrollable.
+ *
+ * Visual: card chiquita con icon + label en cada botón. Cuando no hay
+ * textarea activo, todos los botones quedan disabled y muestra un hint
+ * abajo. Cuando hay uno activo, el accent del border-left se enciende
+ * naranja para señalar "estoy listo para formatear". */
+
+.text-toolbar {
+  position: sticky;
+  top: 80px;
+  padding: 14px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 200px;
+  border-left: 2px solid transparent;
+  transition: border-left-color 200ms ease;
+
+  &.is-active {
+    border-left-color: #f97316;
+  }
+}
+
+.tt-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8b8a85;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.tt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #cfcfc8;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease;
+
+  .material-symbols-outlined {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba(249, 115, 22, 0.08);
+    color: #f97316;
+    border-color: rgba(249, 115, 22, 0.25);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.tt-btn-muted {
+  color: #8b8a85;
+  &:hover:not(:disabled) {
+    color: #e8e5dd;
+  }
+}
+
+.tt-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 4px 0;
+}
+
+.tt-btn-label {
+  flex: 1;
+}
+
+.tt-hint {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  color: #8b8a85;
+  line-height: 1.4;
+}
+
+/* En mobile (sin grid de 2 columnas para el form), la toolbar se convierte
+ * en una franja arriba del form, scrollable horizontal. */
+@media (max-width: 1023px) {
+  .text-toolbar {
+    position: static;
+    max-width: none;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 4px;
+    align-items: center;
+    padding: 10px 12px;
+  }
+
+  .tt-label,
+  .tt-hint {
+    display: none;
+  }
+
+  .tt-btn-label {
+    display: none;
+  }
+
+  .tt-divider {
+    width: 1px;
+    height: 24px;
+    margin: 0 4px;
+  }
+}

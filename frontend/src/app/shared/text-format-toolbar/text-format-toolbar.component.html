@@ -1,0 +1,73 @@
+<aside
+  class="text-toolbar glass-strong"
+  [class.is-active]="hasActiveTarget()"
+  role="toolbar"
+  aria-label="Formato de texto"
+>
+  <p class="tt-label">Formato</p>
+  <button
+    type="button"
+    class="tt-btn"
+    (mousedown)="$event.preventDefault()"
+    (click)="bold()"
+    [disabled]="!hasActiveTarget()"
+    title="Negrita (selección)"
+  >
+    <span class="material-symbols-outlined">format_bold</span>
+    <span class="tt-btn-label">Negrita</span>
+  </button>
+  <button
+    type="button"
+    class="tt-btn"
+    (mousedown)="$event.preventDefault()"
+    (click)="italic()"
+    [disabled]="!hasActiveTarget()"
+    title="Cursiva (selección)"
+  >
+    <span class="material-symbols-outlined">format_italic</span>
+    <span class="tt-btn-label">Cursiva</span>
+  </button>
+
+  <span class="tt-divider"></span>
+
+  <button
+    type="button"
+    class="tt-btn"
+    (mousedown)="$event.preventDefault()"
+    (click)="bulletList()"
+    [disabled]="!hasActiveTarget()"
+    title="Lista con viñetas"
+  >
+    <span class="material-symbols-outlined">format_list_bulleted</span>
+    <span class="tt-btn-label">Lista</span>
+  </button>
+  <button
+    type="button"
+    class="tt-btn"
+    (mousedown)="$event.preventDefault()"
+    (click)="numberedList()"
+    [disabled]="!hasActiveTarget()"
+    title="Lista numerada"
+  >
+    <span class="material-symbols-outlined">format_list_numbered</span>
+    <span class="tt-btn-label">Numerada</span>
+  </button>
+
+  <span class="tt-divider"></span>
+
+  <button
+    type="button"
+    class="tt-btn tt-btn-muted"
+    (mousedown)="$event.preventDefault()"
+    (click)="clearFormat()"
+    [disabled]="!hasActiveTarget()"
+    title="Quitar formato"
+  >
+    <span class="material-symbols-outlined">format_clear</span>
+    <span class="tt-btn-label">Limpiar</span>
+  </button>
+
+  <p *ngIf="!hasActiveTarget()" class="tt-hint">
+    Hacé click en un campo de texto para activar.
+  </p>
+</aside>

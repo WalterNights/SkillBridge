@@ -244,9 +244,10 @@
       </article>
     </ng-container>
 
-    <!-- ===== EDIT MODE — form ===== -->
+    <!-- ===== EDIT MODE — toolbar de formato + form ===== -->
+    <div *ngIf="mode() === 'edit'" class="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-5">
+      <app-text-format-toolbar />
     <form
-      *ngIf="mode() === 'edit'"
       [formGroup]="profileForm"
       (ngSubmit)="onSubmit()"
       class="glass-strong rounded-2xl p-6 sm:p-8"
@@ -345,22 +346,22 @@
 
         <div>
           <label class="field-label" for="me-summary">Sobre mí *</label>
-          <textarea id="me-summary" formControlName="summary" rows="3" class="field-input resize-none"></textarea>
+          <textarea id="me-summary" formControlName="summary" rows="3" class="field-input rich-textarea"></textarea>
         </div>
 
         <div>
           <label class="field-label" for="me-edu">Educación *</label>
-          <textarea id="me-edu" formControlName="education" rows="3" class="field-input resize-none"></textarea>
+          <textarea id="me-edu" formControlName="education" rows="3" class="field-input rich-textarea"></textarea>
         </div>
 
         <div>
           <label class="field-label" for="me-skills">Habilidades *</label>
-          <textarea id="me-skills" formControlName="skills" rows="3" class="field-input resize-none"></textarea>
+          <textarea id="me-skills" formControlName="skills" rows="3" class="field-input rich-textarea"></textarea>
         </div>
 
         <div>
           <label class="field-label" for="me-exp">Experiencia *</label>
-          <textarea id="me-exp" formControlName="experience" rows="3" class="field-input resize-none"></textarea>
+          <textarea id="me-exp" formControlName="experience" rows="3" class="field-input rich-textarea"></textarea>
         </div>
 
         <div class="grid sm:grid-cols-2 gap-4">
@@ -395,6 +396,7 @@
         </div>
       </div>
     </form>
+    </div>
   </div>
 </section>
 

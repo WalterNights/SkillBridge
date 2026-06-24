@@ -13,6 +13,7 @@ import { AuthService } from '../../auth/auth.service';
 import { environment } from '../../../environment/environment';
 import { STORAGE_KEYS } from '../../constants/app-stats';
 import { PhotoCropperDialogComponent } from '../../shared/photo-cropper/photo-cropper-dialog.component';
+import { TextFormatToolbarComponent } from '../../shared/text-format-toolbar/text-format-toolbar.component';
 
 type Mode = 'view' | 'edit';
 type CropTarget = 'photo' | 'banner';
@@ -27,7 +28,13 @@ type CropTarget = 'photo' | 'banner';
 @Component({
   selector: 'app-my-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, PhotoCropperDialogComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterModule,
+    PhotoCropperDialogComponent,
+    TextFormatToolbarComponent,
+  ],
   templateUrl: './my-profile.component.html',
   styleUrl: './my-profile.component.scss',
 })
