@@ -68,12 +68,22 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
    *
    * Convertimos a px asumiendo 96 DPI (CSS default): 1mm ≈ 3.7795px.
    * Esto matchea cómo el browser renderea las unidades mm en pantalla.
+   *
+   * IMPORTANTE: jsPDF slicea la imagen capturada por html2canvas cada
+   * 355.6mm desde el TOP ABSOLUTO del .cv-page (incluida la padding).
+   * Pero los marcadores visuales son `position: absolute` con `top`
+   * relativo al padding-edge (i.e., empieza DESPUÉS del padding-top).
+   * Por eso restamos OFICIO_PADDING_TOP_PX al calcular el `top` del
+   * marcador — así matchea exactamente dónde jsPDF corta.
    */
-  private readonly OFICIO_PAGE_HEIGHT_PX = 355.6 * 3.7795275591;
+  private readonly MM_TO_PX = 3.7795275591;
+  private readonly OFICIO_PAGE_HEIGHT_PX = 355.6 * this.MM_TO_PX;
+  private readonly OFICIO_PADDING_TOP_PX = 18 * this.MM_TO_PX;
 
-  /** Snapshot de la última altura medida — evita re-render por
-   *  pequeñas variaciones de subpixel layout. */
-  private lastMeasuredHeight = 0;
+  /** Última altura "natural" medida (sin contar los margin-top
+   *  inyectados por snaps). Sirve como cache key: si no cambia, no
+   *  re-ejecutamos el snap. Evita loop en ngAfterViewChecked. */
+  private lastNaturalHeight = 0;
 
   /** Modal del auditor — solo se monta cuando se abre (lazy). */
   showAudit = signal(false);
@@ -170,31 +180,127 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     this.loadProfileData();
   }
 
-  /** Después de cada ciclo de detección de cambios, vuelve a medir la
-   * altura real del .cv-page y actualiza los page breaks si cambió.
+  /** Después de cada ciclo de detección de cambios, mide la altura real
+   * del .cv-page, snappea los page breaks a límites de sección/entry
+   * para que no se corten en mitad de un párrafo, y actualiza los
+   * markers visuales.
+   *
    * Usamos AfterViewChecked en vez de AfterViewInit porque el contenido
-   * crece dinámicamente (cuantificar, mejorar, regenerar). */
+   * crece dinámicamente (cuantificar, mejorar, regenerar). El guard
+   * `isSnapping` evita re-entry en la misma frame — el snap modifica
+   * el DOM y dispara otro view checked. */
+  private isSnapping = false;
+
   ngAfterViewChecked(): void {
     if (!this.cvContent?.nativeElement || this.isExporting()) return;
+    if (this.isSnapping) return;
     const el = this.cvContent.nativeElement as HTMLElement;
-    const height = el.scrollHeight;
-    if (Math.abs(height - this.lastMeasuredHeight) < 4) return;
-    this.lastMeasuredHeight = height;
-    this.recomputePageBreaks(height);
+
+    // Calcular altura "natural" sin tocar el DOM: scrollHeight actual
+    // menos la suma de los margin-top inyectados por snaps previos.
+    // Esto es el cache key — si no cambia, no re-snapeamos (evita loop
+    // donde ngAfterViewChecked se dispara tras cada DOM mutation y
+    // re-ejecuta el snap aunque el contenido sea idéntico).
+    const snappedEls = el.querySelectorAll<HTMLElement>('[data-page-snap]');
+    let injectedMargin = 0;
+    snappedEls.forEach((n) => {
+      injectedMargin += parseFloat(n.style.marginTop || '0');
+    });
+    const naturalHeight = el.scrollHeight - injectedMargin;
+
+    if (Math.abs(naturalHeight - this.lastNaturalHeight) < 4) return;
+    this.lastNaturalHeight = naturalHeight;
+
+    this.isSnapping = true;
+    try {
+      this.resetPageSnaps(el);
+
+      if (naturalHeight <= this.OFICIO_PAGE_HEIGHT_PX + 8) {
+        this.pageBreakOffsets.set([]);
+        this.pageCount.set(1);
+        return;
+      }
+
+      this.snapPageBreaks(el);
+      this.updateMarkersFromSnaps(el);
+    } finally {
+      this.isSnapping = false;
+    }
   }
 
-  /** Calcula offsets de page breaks dado un height total del .cv-page.
-   *  Si el contenido cabe en una página → []. */
-  private recomputePageBreaks(totalHeight: number): void {
+  /** Quita los margin-top inyectados por snaps previos para que la
+   *  re-medición arranque desde el layout natural. */
+  private resetPageSnaps(cvPage: HTMLElement): void {
+    cvPage.querySelectorAll<HTMLElement>('[data-page-snap]').forEach((node) => {
+      node.style.marginTop = '';
+      node.removeAttribute('data-page-snap');
+    });
+  }
+
+  /** Walks `.cv-entry` (NO .cv-section porque son demasiado grandes —
+   *  contienen múltiples entries y empujar la sección entera deja
+   *  páginas casi vacías). Para cada entry que cruza el boundary, le
+   *  inyecta `margin-top` para que empiece exactamente en el inicio de
+   *  la próxima "hoja Oficio".
+   *
+   *  offsetTop está en coords relativas al padding-edge de .cv-page.
+   *  El boundary en esas coords es `N * pageHeight - paddingTop` (porque
+   *  jsPDF slicea cada `pageHeight` desde el border-edge y el padding
+   *  consume `paddingTop` antes de que empiecen los hijos). */
+  private snapPageBreaks(cvPage: HTMLElement): void {
     const pageHeight = this.OFICIO_PAGE_HEIGHT_PX;
-    const breaks: number[] = [];
-    let offset = pageHeight;
-    while (offset < totalHeight - 8) {
-      breaks.push(offset);
-      offset += pageHeight;
+    const paddingTop = this.OFICIO_PADDING_TOP_PX;
+
+    const candidates = Array.from(
+      cvPage.querySelectorAll<HTMLElement>('.cv-entry'),
+    );
+    if (candidates.length === 0) return;
+
+    let nextBoundary = pageHeight - paddingTop; // offsetTop coords del primer cut
+
+    for (const el of candidates) {
+      // Leer fresh: snaps previos en este loop ya modificaron offsetTop
+      // de elementos siguientes.
+      const top = el.offsetTop;
+      const bottom = top + el.offsetHeight;
+
+      // Si el elemento ya empieza pasada la frontera (porque alguien antes
+      // ocupó toda la página), avanzar la frontera hasta cubrirlo.
+      while (top >= nextBoundary) {
+        nextBoundary += pageHeight;
+      }
+
+      // Si cabe entero, sigue. Si lo cruza, snap.
+      if (bottom <= nextBoundary) continue;
+
+      const gap = nextBoundary - top;
+      if (gap > 6) {
+        el.style.marginTop = `${gap}px`;
+        el.setAttribute('data-page-snap', '1');
+        // Después del snap, su nuevo offsetTop es ~nextBoundary.
+        // El boundary siguiente arranca pageHeight más adelante.
+        nextBoundary += pageHeight;
+      }
     }
-    this.pageBreakOffsets.set(breaks);
-    this.pageCount.set(breaks.length + 1);
+  }
+
+  /** Tras el snap, calcula offsets visuales de los markers leyendo la
+   *  posición real de los elementos con `data-page-snap`. El marker se
+   *  centra en el gap (entre bottom del elemento previo y top del
+   *  snappeado). */
+  private updateMarkersFromSnaps(cvPage: HTMLElement): void {
+    const snapped = cvPage.querySelectorAll<HTMLElement>('[data-page-snap]');
+    const offsets: number[] = [];
+    const MARKER_HALF_HEIGHT = 27;
+    snapped.forEach((el) => {
+      const top = el.offsetTop;
+      const marginTop = parseFloat(el.style.marginTop || '0');
+      // gap visual: top - marginTop hasta top. Centro = top - marginTop/2.
+      const gapMid = top - marginTop / 2;
+      offsets.push(Math.max(0, gapMid - MARKER_HALF_HEIGHT));
+    });
+    this.pageBreakOffsets.set(offsets);
+    this.pageCount.set(offsets.length + 1);
   }
 
   /**

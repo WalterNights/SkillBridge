@@ -8,10 +8,19 @@
 }
 
 .rt-paragraph {
-  margin: 0 0 1.5mm;
-  &:last-child {
-    margin-bottom: 0;
-  }
+  margin: 0;
+  /* Cada línea es su propio <p> para preservar saltos del textarea.
+   * Para que se vea como "líneas consecutivas" y no como párrafos
+   * separados, no aplicamos margen entre ellos. Si el user quiere
+   * separar bloques visualmente, deja una línea en blanco en el
+   * textarea — el parser la skipea pero las líneas previas/siguientes
+   * quedan como párrafos separados con su propio espacio. */
+
+  /* Solo añadimos margen entre un párrafo y una lista, o entre dos
+   * párrafos cuando hay un cambio de tipo de bloque. Lo simple: dar
+   * un poco de margen al final del párrafo solo cuando le sigue un
+   * bloque distinto. Para mantener simple, dejamos sin margen entre
+   * párrafos y la lista de bullets se separa por su propio margin-top. */
 }
 
 .rt-bullets {
@@ -41,6 +50,12 @@
       font-weight: 600;
     }
   }
+}
+
+/* Espacio vertical equivalente a una línea en blanco del input
+ * original. ~1em — separa bloques sin volverlo "doble salto". */
+.rt-spacer {
+  height: 1em;
 }
 
 strong {

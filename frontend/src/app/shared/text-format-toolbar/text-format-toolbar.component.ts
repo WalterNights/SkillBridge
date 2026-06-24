@@ -118,10 +118,21 @@ export class TextFormatToolbarComponent implements OnInit, OnDestroy {
     const end = ta.selectionEnd;
     const value = ta.value;
     const selected = value.slice(start, end);
-    // Si no hay selección, insertamos los markers y dejamos el cursor entre ellos.
-    const replacement = selected
-      ? `${prefix}${selected}${suffix}`
-      : `${prefix}${suffix}`;
+    // Multi-línea: wrappeamos cada línea no-vacía con sus propios
+    // markers. Sin esto, un solo par envuelve el bloque entero y el
+    // parser por-líneas no detecta el bold (apertura y cierre quedan
+    // en líneas distintas).
+    let replacement: string;
+    if (!selected) {
+      replacement = `${prefix}${suffix}`;
+    } else if (selected.includes('\n')) {
+      replacement = selected
+        .split('\n')
+        .map((line) => (line.trim() ? `${prefix}${line}${suffix}` : line))
+        .join('\n');
+    } else {
+      replacement = `${prefix}${selected}${suffix}`;
+    }
     const before = value.slice(0, start);
     const after = value.slice(end);
     ta.value = `${before}${replacement}${after}`;
