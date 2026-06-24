@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from jobs.adapters.scrapers.base import JobScraper, ScraperError
 from jobs.adapters.scrapers.computrabajo import ComputrabajoScraper
+from jobs.adapters.scrapers.hireline import HirelineScraper
 from jobs.adapters.scrapers.indeed import IndeedScraper
 from jobs.adapters.scrapers.linkedin import LinkedInGuestScraper
 from jobs.adapters.scrapers.magneto import MagnetoScraper
@@ -39,6 +40,7 @@ from jobs.adapters.scrapers.weworkremotely import WeWorkRemotelyScraper
 # (elempleo, bumeran, getonbrd) via DDG.
 _REGISTRY: dict[str, type[JobScraper]] = {
     ComputrabajoScraper.portal_name: ComputrabajoScraper,
+    HirelineScraper.portal_name: HirelineScraper,
     LinkedInGuestScraper.portal_name: LinkedInGuestScraper,
     MagnetoScraper.portal_name: MagnetoScraper,
     IndeedScraper.portal_name: IndeedScraper,

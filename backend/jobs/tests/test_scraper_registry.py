@@ -31,6 +31,7 @@ class TestRegistry:
         # vuelve a habilitar, sumarlo acá.
         assert set(available_portals()) == {
             "computrabajo",
+            "hireline",
             "linkedin",
             "magneto",
             "indeed",
