@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { environment } from '../../environment/environment';
 import { JobOffer } from '../models/job-offer.model';
@@ -47,13 +47,19 @@ export class JobService {
   // ---- HTTP ---------------------------------------------------------
 
   /**
-   * Lista las ofertas almacenadas en backend. Desempaqueta la paginación
-   * de DRF para devolver `JobOffer[]` directo. Acepta filtros opcionales
-   * de país y modalidad (multi-select, comma-separated en query string).
+   * Lista paginada de ofertas del backend. Devuelve el envelope completo
+   * de DRF ({count, next, previous, results}) para que el feed pueda
+   * implementar 'Cargar más' sin perder el total ni el cursor.
+   *
+   * Filtros opcionales: country (ISO codes, comma-separated) y modality
+   * (remote/hybrid/onsite/unknown, comma-separated). Page 1-indexed.
    */
-  getJobs(filters?: JobFilters): Observable<JobOffer[]> {
+  getJobs(filters?: JobFilters, page = 1): Observable<PaginatedResponse<JobOffer>> {
     let url = `${environment.apiUrl}/jobs/jobs/`;
     const params: string[] = [];
+    if (page > 1) {
+      params.push(`page=${page}`);
+    }
     if (filters?.countries?.length) {
       params.push(`country=${filters.countries.join(',')}`);
     }
@@ -63,9 +69,7 @@ export class JobService {
     if (params.length) {
       url += `?${params.join('&')}`;
     }
-    return this.http
-      .get<PaginatedResponse<JobOffer>>(url)
-      .pipe(map((response) => response.results));
+    return this.http.get<PaginatedResponse<JobOffer>>(url);
   }
 
   /** Catálogo de filtros disponibles con conteos — para poblar los

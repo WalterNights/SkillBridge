@@ -59,6 +59,14 @@ export class ResultsComponent {
    * feed. Lo mantenemos como Signal<Set> para lookup O(1) en el ngFor. */
   appliedOfferIds = signal<Set<number>>(new Set());
 
+  /** Estado de paginación. El backend pagina con DRF (PAGE_SIZE=20).
+   * `offers` acumula página a página — clicker "Cargar más" appendea,
+   * cambiar filtros resetea a página 1. */
+  currentPage = signal<number>(1);
+  totalCount = signal<number>(0);
+  hasMore = signal<boolean>(false);
+  isLoadingMore = signal<boolean>(false);
+
   /** Catálogo de filtros disponibles (poblado al mount via filter-options
    * endpoint). Mientras está vacío, los dropdowns no se renderizan. */
   filterOptions = signal<FilterOptionsResponse | null>(null);
@@ -158,18 +166,54 @@ export class ResultsComponent {
     return this.appliedOfferIds().has(offer.id);
   }
 
+  /** Reset + fetch primera página. Disparado al mount, al cambiar filtros
+   * o al regenerar tras un scrape — siempre arranca de cero. */
   private loadOffers(): void {
     const filters: JobFilters = {
       countries: Array.from(this.selectedCountries()),
       modalities: Array.from(this.selectedModalities()),
     };
-    this.jobService.getJobs(filters).subscribe({
-      next: (data) => {
-        this.offers = data;
+    this.currentPage.set(1);
+    this.jobService.getJobs(filters, 1).subscribe({
+      next: (response) => {
+        this.offers = response.results;
+        this.totalCount.set(response.count);
+        this.hasMore.set(response.next !== null);
       },
       error: (err: HttpErrorResponse) => {
         console.error('Failed to load job offers:', err);
         this.offers = [];
+        this.totalCount.set(0);
+        this.hasMore.set(false);
+      },
+    });
+  }
+
+  /** Append de la siguiente página al final de `offers`. No-op si ya
+   * estamos cargando o si no hay más páginas. Optimistic: incrementa
+   * la página antes de la request; si falla, rollback. */
+  loadMore(): void {
+    if (this.isLoadingMore() || !this.hasMore()) return;
+    const nextPage = this.currentPage() + 1;
+    const filters: JobFilters = {
+      countries: Array.from(this.selectedCountries()),
+      modalities: Array.from(this.selectedModalities()),
+    };
+    this.isLoadingMore.set(true);
+    this.jobService.getJobs(filters, nextPage).subscribe({
+      next: (response) => {
+        // Append manteniendo el orden. Como el backend ordena por
+        // -created_at, las nuevas páginas son MÁS VIEJAS — concatenar
+        // al final es la semántica correcta.
+        this.offers = [...this.offers, ...response.results];
+        this.currentPage.set(nextPage);
+        this.totalCount.set(response.count);
+        this.hasMore.set(response.next !== null);
+        this.isLoadingMore.set(false);
+      },
+      error: () => {
+        this.isLoadingMore.set(false);
+        this.toast.error('No pudimos cargar más ofertas. Intentá de nuevo.');
       },
     });
   }

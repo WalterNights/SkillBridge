@@ -55,7 +55,7 @@
 
       <p class="text-xs text-warm-grey ml-auto">
         Mostrando <span class="text-bone font-semibold">{{ filteredOffer.length }}</span>
-        de <span class="text-bone font-semibold">{{ offers.length }}</span>
+        de <span class="text-bone font-semibold">{{ totalCount() || offers.length }}</span>
       </p>
     </div>
 
@@ -218,6 +218,30 @@
           </button>
         </div>
       </article>
+    </div>
+
+    <!-- Load more: aparece cuando hay más páginas en el backend -->
+    <div *ngIf="hasMore() && filteredOffer.length > 0" class="flex justify-center mt-8">
+      <button
+        type="button"
+        class="load-more-btn"
+        [disabled]="isLoadingMore()"
+        (click)="loadMore()"
+      >
+        <span *ngIf="!isLoadingMore(); else loadingSpan" class="inline-flex items-center gap-2">
+          <span class="material-symbols-outlined" style="font-size: 16px">expand_more</span>
+          Cargar más ofertas
+          <span class="text-dim text-xs ml-1">
+            ({{ totalCount() - offers.length }} restantes)
+          </span>
+        </span>
+        <ng-template #loadingSpan>
+          <span class="inline-flex items-center gap-2">
+            <span class="load-more-spinner"></span>
+            Cargando…
+          </span>
+        </ng-template>
+      </button>
     </div>
 
     <!-- Empty state: no offers at all -->

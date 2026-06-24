@@ -6,6 +6,53 @@
   text-shadow: 0 0 30px rgba(249, 115, 22, 0.25);
 }
 
+/* "Cargar más ofertas" — botón outline al fondo del grid. Acción
+ * secundaria (la primaria sigue siendo "Buscar más ofertas" arriba,
+ * que dispara un scrape nuevo). */
+.load-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 22px;
+  background: rgba(249, 115, 22, 0.05);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  color: #e8e5dd;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+  font-family: inherit;
+
+  &:hover:not(:disabled) {
+    background: rgba(249, 115, 22, 0.12);
+    border-color: rgba(249, 115, 22, 0.5);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.load-more-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(249, 115, 22, 0.2);
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: load-more-spin 700ms linear infinite;
+}
+
+@keyframes load-more-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* =========================
    Country + modality filter panel (collapsible)
    ========================= */

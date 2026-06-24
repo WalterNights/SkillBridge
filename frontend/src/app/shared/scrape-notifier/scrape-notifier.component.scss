@@ -299,9 +299,11 @@
 }
 
 /* ===== ANIMATIONS ===== */
+/* Spin counter-clockwise para que las flechas del icono `sync`
+ * (Material Symbols) viajen en el sentido al que apuntan las puntas. */
 @keyframes spin {
   to {
-    transform: rotate(360deg);
+    transform: rotate(-360deg);
   }
 }
 
