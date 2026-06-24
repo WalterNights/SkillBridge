@@ -35,6 +35,7 @@ class TestRegistry:
             "linkedin",
             "magneto",
             "indeed",
+            "trabajando",
             "trabajos_co",
             "websearch",
         }

@@ -13,6 +13,7 @@ class JobOffer(models.Model):
         ("linkedin", "LinkedIn"),
         ("trabajos_co", "Trabajos Colombia"),
         ("hireline", "Hireline"),
+        ("trabajando", "Trabajando.com"),
         ("other", "Otro"),
     ]
 
