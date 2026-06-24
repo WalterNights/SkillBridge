@@ -1,0 +1,32 @@
+<ng-container *ngFor="let block of blocks()">
+  <!-- Párrafo: segmentos inline con bold/italic intercalados. -->
+  <p *ngIf="block.type === 'paragraph'" class="rt-paragraph">
+    <ng-container *ngFor="let seg of block.segments">
+      <strong *ngIf="seg.bold">{{ seg.text }}</strong>
+      <em *ngIf="seg.italic">{{ seg.text }}</em>
+      <span *ngIf="!seg.bold && !seg.italic">{{ seg.text }}</span>
+    </ng-container>
+  </p>
+
+  <!-- Lista con viñetas. -->
+  <ul *ngIf="block.type === 'bullet'" class="rt-bullets">
+    <li *ngFor="let item of block.items">
+      <ng-container *ngFor="let seg of item">
+        <strong *ngIf="seg.bold">{{ seg.text }}</strong>
+        <em *ngIf="seg.italic">{{ seg.text }}</em>
+        <span *ngIf="!seg.bold && !seg.italic">{{ seg.text }}</span>
+      </ng-container>
+    </li>
+  </ul>
+
+  <!-- Lista numerada. -->
+  <ol *ngIf="block.type === 'numbered'" class="rt-numbered">
+    <li *ngFor="let item of block.items">
+      <ng-container *ngFor="let seg of item">
+        <strong *ngIf="seg.bold">{{ seg.text }}</strong>
+        <em *ngIf="seg.italic">{{ seg.text }}</em>
+        <span *ngIf="!seg.bold && !seg.italic">{{ seg.text }}</span>
+      </ng-container>
+    </li>
+  </ol>
+</ng-container>

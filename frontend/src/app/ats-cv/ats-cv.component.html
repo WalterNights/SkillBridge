@@ -104,9 +104,11 @@
       </div>
     </header>
 
-    <!-- Summary -->
+    <!-- Summary — renderea markdown (bold, italic, listas si las hay). -->
     <section *ngIf="profileData.summary" class="cv-section">
-      <p class="cv-summary">{{ profileData.summary }}</p>
+      <div class="cv-summary">
+        <app-rich-text [value]="profileData.summary" />
+      </div>
     </section>
 
     <!-- Experience -->
@@ -127,15 +129,10 @@
             </div>
           </div>
           <div *ngIf="exp.description" class="cv-entry-desc-wrap">
-            <!-- Si Gemini devolvió múltiples bullets en la descripción
-                 (uno por línea), los rendereamos como lista. Si es texto
-                 plano, cae al fallback de párrafo. -->
-            <ul *ngIf="expBullets(exp.description).length > 0; else descPara" class="cv-entry-bullets">
-              <li *ngFor="let bullet of expBullets(exp.description)">{{ bullet }}</li>
-            </ul>
-            <ng-template #descPara>
-              <p class="cv-entry-description">{{ exp.description }}</p>
-            </ng-template>
+            <!-- RichText parsea bullets (- / • / *), numerada (1.) y
+                 bold/italic. Si la descripción es texto plano sin
+                 markdown, se renderea como párrafo. -->
+            <app-rich-text [value]="exp.description" class="cv-entry-description-rt" />
             <button
               *ngIf="!isExporting()"
               type="button"
@@ -152,7 +149,9 @@
         </div>
       </div>
 
-      <div *ngIf="!isExperienceArray()" class="cv-text-content">{{ profileData.experience }}</div>
+      <div *ngIf="!isExperienceArray()" class="cv-text-content">
+        <app-rich-text [value]="profileData.experience" />
+      </div>
     </section>
 
     <!-- Education -->
@@ -175,7 +174,9 @@
         </div>
       </div>
 
-      <div *ngIf="!isEducationArray()" class="cv-text-content">{{ profileData.education }}</div>
+      <div *ngIf="!isEducationArray()" class="cv-text-content">
+        <app-rich-text [value]="profileData.education" />
+      </div>
     </section>
 
     <!-- Skills -->

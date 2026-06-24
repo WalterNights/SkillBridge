@@ -14,6 +14,7 @@ import { QuantifyModalComponent } from '../cv/quantify-modal.component';
 import { CvAuditModalComponent } from '../cv/cv-audit-modal.component';
 import { CvImproveModalComponent } from '../cv/cv-improve-modal.component';
 import { CvImproveResponse } from '../services/cv-improve.service';
+import { RichTextComponent } from '../shared/rich-text/rich-text.component';
 
 @Component({
   selector: 'app-ats-cv',
@@ -23,6 +24,7 @@ import { CvImproveResponse } from '../services/cv-improve.service';
     QuantifyModalComponent,
     CvAuditModalComponent,
     CvImproveModalComponent,
+    RichTextComponent,
   ],
   standalone: true,
   templateUrl: './ats-cv.component.html',

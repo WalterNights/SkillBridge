@@ -1,0 +1,53 @@
+/* Estilos neutros — el contenedor padre define color, font-size,
+ * line-height. Acá solo regulamos márgenes y forma de las listas para
+ * que no se rompa el flujo del CV (que es print-style con tipografía
+ * Garamond/Cambria). */
+
+:host {
+  display: block;
+}
+
+.rt-paragraph {
+  margin: 0 0 1.5mm;
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.rt-bullets {
+  margin: 1.5mm 0 0;
+  padding-left: 5mm;
+  list-style-type: disc;
+  list-style-position: outside;
+
+  li {
+    margin-bottom: 0.8mm;
+    &::marker {
+      color: #6b7280;
+    }
+  }
+}
+
+.rt-numbered {
+  margin: 1.5mm 0 0;
+  padding-left: 5mm;
+  list-style-type: decimal;
+  list-style-position: outside;
+
+  li {
+    margin-bottom: 0.8mm;
+    &::marker {
+      color: #6b7280;
+      font-weight: 600;
+    }
+  }
+}
+
+strong {
+  font-weight: 700;
+  color: inherit;
+}
+
+em {
+  font-style: italic;
+}
