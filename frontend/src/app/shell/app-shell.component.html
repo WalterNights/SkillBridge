@@ -25,10 +25,20 @@
         routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: false }"
         (click)="toggleDrawer(false)"
-        title="Inicio"
+        title="Ofertas"
       >
-        <span class="material-symbols-outlined">home</span>
-        <span class="nav-label">Inicio</span>
+        <span class="material-symbols-outlined">work</span>
+        <span class="nav-label">Ofertas</span>
+      </a>
+      <a
+        class="nav-item"
+        routerLink="/applications"
+        routerLinkActive="active"
+        (click)="toggleDrawer(false)"
+        title="Mis postulaciones"
+      >
+        <span class="material-symbols-outlined">work_history</span>
+        <span class="nav-label">Mis postulaciones</span>
       </a>
       <a
         class="nav-item"
@@ -42,13 +52,23 @@
       </a>
       <a
         class="nav-item"
-        routerLink="/applications"
+        routerLink="/recursos"
         routerLinkActive="active"
         (click)="toggleDrawer(false)"
-        title="Mis postulaciones"
+        title="Recursos"
       >
-        <span class="material-symbols-outlined">work_history</span>
-        <span class="nav-label">Mis postulaciones</span>
+        <span class="material-symbols-outlined">menu_book</span>
+        <span class="nav-label">Recursos</span>
+      </a>
+      <a
+        class="nav-item"
+        routerLink="/blog"
+        routerLinkActive="active"
+        (click)="toggleDrawer(false)"
+        title="Blog"
+      >
+        <span class="material-symbols-outlined">article</span>
+        <span class="nav-label">Blog</span>
       </a>
     </nav>
 

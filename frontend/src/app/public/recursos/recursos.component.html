@@ -1,6 +1,6 @@
-<app-public-nav />
+<app-public-nav *ngIf="!insideShell" />
 
-<main class="pt-32 pb-24 px-gutter">
+<main [class.pt-32]="!insideShell" [class.pt-8]="insideShell" class="pb-24 px-gutter">
   <div class="max-w-container-max mx-auto">
     <!-- HEADER -->
     <header class="mb-14 max-w-3xl">
@@ -37,4 +37,4 @@
   </div>
 </main>
 
-<app-public-footer />
+<app-public-footer *ngIf="!insideShell" />

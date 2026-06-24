@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { AutoGuard } from './auth/auto.guard';
 import { AdminGuard } from './auth/admin.guard';
+import { authMatchGuard } from './auth/auth-match.guard';
 
 /**
  * SkilTak IA (post-refactor).
@@ -36,6 +37,32 @@ export const routes: Routes = [
     path: 'auth',
     loadChildren: () => import('./auth/auth.module').then((m) => m.AuthModule),
   },
+
+  // ===== SHELL para rutas PUBLIC-OR-AUTH (auth wraps en shell, unauth cae
+  // al fallback público abajo). canMatch deja al router probar la siguiente
+  // ruta si el user no está autenticado, en vez de bouncear a login. =====
+  {
+    path: '',
+    canMatch: [authMatchGuard],
+    loadComponent: () => import('./shell/app-shell.component').then((m) => m.AppShellComponent),
+    children: [
+      {
+        path: 'recursos',
+        loadComponent: () =>
+          import('./public/recursos/recursos.component').then((m) => m.RecursosComponent),
+      },
+      {
+        path: 'recursos/:slug',
+        loadComponent: () =>
+          import('./public/articulo/articulo.component').then((m) => m.ArticuloComponent),
+      },
+      {
+        path: 'blog',
+        loadComponent: () => import('./public/blog/blog.component').then((m) => m.BlogComponent),
+      },
+    ],
+  },
+
   // Public marketing pages — no auth required. Comparten <app-public-nav>
   // + <app-public-footer> internamente.
   {
@@ -43,6 +70,8 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./public/como-funciona/como-funciona.component').then((m) => m.ComoFuncionaComponent),
   },
+  // Fallback público de /recursos y /blog. Los componentes detectan auth
+  // state y skip PublicNav/PublicFooter cuando están dentro del shell.
   {
     path: 'recursos',
     loadComponent: () =>

@@ -1,6 +1,6 @@
-<app-public-nav />
+<app-public-nav *ngIf="!insideShell" />
 
-<main class="pt-32 pb-24 px-gutter">
+<main [class.pt-32]="!insideShell" [class.pt-8]="insideShell" class="pb-24 px-gutter">
   <!-- 404 inline -->
   <div *ngIf="!article()" class="max-w-2xl mx-auto text-center">
     <h1 class="text-headline text-bone mb-3">Artículo no encontrado</h1>
@@ -84,4 +84,4 @@
   </div>
 </main>
 
-<app-public-footer />
+<app-public-footer *ngIf="!insideShell" />

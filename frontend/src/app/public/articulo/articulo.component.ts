@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { AuthService } from '../../auth/auth.service';
 import { PublicFooterComponent } from '../../shared/public-footer/public-footer.component';
 import { PublicNavComponent } from '../../shared/public-nav/public-nav.component';
 import { Article, ARTICLES, findArticleBySlug } from '../recursos/articles-data';
@@ -26,6 +27,9 @@ export class ArticuloComponent {
 
   /** Artículos sugeridos al final — todos menos el actual. */
   related = signal<Article[]>([]);
+
+  /** True cuando el componente vive dentro del AppShell — skip PublicNav. */
+  readonly insideShell = inject(AuthService).isAuthenticated();
 
   private route = inject(ActivatedRoute);
   private location = inject(Location);
