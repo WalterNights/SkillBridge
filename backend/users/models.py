@@ -195,6 +195,16 @@ class UserProfile(models.Model):
     portfolio_url = models.URLField(null=True, blank=True)
     create_at = models.DateTimeField(auto_now_add=True)
 
+    # Preferences ----------------------------------------------------
+    # Si el user quiere recibir digest diario de matches >85% por email.
+    # Default True — la mayoría de los users esperan esto al registrarse;
+    # se puede apagar desde /settings.
+    email_alerts_enabled = models.BooleanField(default=True)
+    # Anti dedup: cuándo le mandamos el último email de alertas. La tarea
+    # diaria solo manda si el último envío fue hace más de 20h (margen
+    # contra timing drift entre runs del beat).
+    last_alert_sent_at = models.DateTimeField(null=True, blank=True)
+
     def __str__(self):
         return f"Perfil de {self.user.username}"
 

@@ -1,0 +1,20 @@
+Hola {{ first_name }},
+
+Encontramos {{ match_count }} oferta{{ match_count|pluralize:"s" }} nueva{{ match_count|pluralize:"s" }} que coincide{{ match_count|pluralize:"n" }} con tu perfil:
+
+{% for offer in matches %}
+{{ forloop.counter }}. {{ offer.title }}
+   {{ offer.company }}{% if offer.location %} · {{ offer.location }}{% endif %}
+   Match: {{ offer.match_percentage }}%
+   Ver oferta: {{ offer.url }}
+
+{% endfor %}
+
+Ver todas las ofertas en SkilTak:
+{{ platform_url }}/dashboard
+
+---
+¿No quieres recibir más estos correos? Actualiza tus preferencias:
+{{ settings_url }}
+
+SkilTak — Deja de buscar en mil portales. Encuéntralo todo aquí.

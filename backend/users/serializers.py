@@ -49,7 +49,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "banner",
             "linkedin_url",
             "portfolio_url",
+            "email_alerts_enabled",
         ]
+        # `last_alert_sent_at` no se expone — es contador interno de la
+        # tarea de alertas, no debería editarse desde el cliente.
         read_only_fields = ["phone"]
 
     def validate_photo(self, value):

@@ -132,13 +132,28 @@
             <button
               type="button"
               (click)="saveSettings()"
-              class="btn-primary w-full py-3 rounded-xl text-sm inline-flex items-center justify-center gap-2"
+              [disabled]="isSaving"
+              class="btn-primary w-full py-3 rounded-xl text-sm inline-flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'wght' 500"
                 >save</span
               >
-              Guardar cambios
+              {{ isSaving ? 'Guardando…' : 'Guardar cambios' }}
             </button>
+
+            <!-- Feedback inline del save -->
+            <p
+              *ngIf="saveStatus === 'success'"
+              class="text-xs text-emerald-400 text-center"
+            >
+              Preferencias actualizadas
+            </p>
+            <p
+              *ngIf="saveStatus === 'error'"
+              class="text-xs text-danger text-center"
+            >
+              No pudimos guardar. Intenta de nuevo en unos segundos.
+            </p>
             <button
               type="button"
               (click)="goBack()"

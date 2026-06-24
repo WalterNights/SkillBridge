@@ -240,6 +240,13 @@ CELERY_BEAT_SCHEDULE = {
         "task": "jobs.clean_old_offers",
         "schedule": crontab(hour=5, minute=0),
     },
+    # 12:00 UTC diario — 07:00 COT, 09:00 ART. Horario en que la gente
+    # típicamente revisa el inbox de la mañana. Después del scrape y
+    # cleanup para que las ofertas del digest sean las más frescas.
+    "daily-match-alerts": {
+        "task": "notifications.send_daily_match_alerts",
+        "schedule": crontab(hour=12, minute=0),
+    },
 }
 
 
