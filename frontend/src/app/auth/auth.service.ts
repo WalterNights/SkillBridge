@@ -36,7 +36,16 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     private storageMethod: StorageMethodComponent,
-  ) {}
+  ) {
+    // BUG fix: el `this.storage` solo se inicializaba dentro de
+    // login(). Cuando el user reabría el browser, no había login (ya
+    // estaba autenticado por localStorage), entonces `this.storage`
+    // quedaba en 'session' default. Al expirar el JWT y refrescarlo,
+    // escribíamos el nuevo token en sessionStorage en vez de
+    // localStorage → al cerrar browser, sesión perdida pese a
+    // tener "Mantener sesión iniciada" prendido.
+    this.storage = localStorage.getItem('storage') === 'true' ? 'local' : 'session';
+  }
 
   getToken(): string | null {
     if (localStorage.getItem('storage') === 'true') {
@@ -125,11 +134,38 @@ export class AuthService {
     return this.http.post(this.apiUrl, data);
   }
 
-  login(credentials: { username: string; password: string }) {
+  /**
+   * @param remember Si true, persiste el token en localStorage para
+   *   sobrevivir el cierre del browser. Si false (default), va a
+   *   sessionStorage y la sesión muere al cerrar la pestaña.
+   *   El login.component pasa el valor del switch "Mantener sesión
+   *   iniciada"; sin el parámetro asume false para compatibilidad
+   *   con callers viejos.
+   */
+  login(credentials: { username: string; password: string }, remember: boolean = false) {
     return this.http.post(`${environment.apiUrl}/token/login/`, credentials).pipe(
       tap((res: any) => {
+        // Persistimos la preferencia primero — getToken() y todos los
+        // getters consultan localStorage.getItem('storage') después.
+        if (remember) {
+          localStorage.setItem('storage', 'true');
+        } else {
+          localStorage.removeItem('storage');
+        }
+
+        // Limpiamos los tokens del storage OPUESTO antes de escribir
+        // en el elegido. Sin esto, si el user logueó antes con
+        // remember=ON y ahora con OFF, los tokens viejos quedaban
+        // huérfanos en localStorage — riesgo de privacidad en compus
+        // compartidas.
+        const oppositeStorage: 'session' | 'local' = remember ? 'session' : 'local';
+        this.StorageKey.forEach((key) => {
+          this.storageMethod.removeStorageItem(oppositeStorage, key);
+        });
+
+        this.storage = remember ? 'local' : 'session';
+
         const userName = res.first_name != undefined ? res.user_name : res.username;
-        this.storage = localStorage.getItem('storage') === 'true' ? 'local' : 'session';
         this.storageMethod.setStorageItem(this.storage, 'access_token', res.access);
         this.storageMethod.setStorageItem(this.storage, 'refresh_token', res.refresh);
         this.storageMethod.setStorageItem(

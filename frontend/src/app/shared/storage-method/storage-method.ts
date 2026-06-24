@@ -28,4 +28,14 @@ export class StorageMethodComponent {
     const storage = storageType === 'session' ? sessionStorage : localStorage;
     return storage.getItem(key);
   }
+
+  /**
+   * Removes a key from the specified storage. Used by the auth flow
+   * to clean up the opposite store when the user changes their
+   * "Mantener sesión iniciada" preference between logins.
+   */
+  removeStorageItem(storageType: StorageType, key: string): void {
+    const storage = storageType === 'session' ? sessionStorage : localStorage;
+    storage.removeItem(key);
+  }
 }

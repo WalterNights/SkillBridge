@@ -55,27 +55,28 @@ export class LoginComponent {
   }
 
   /**
-   * Loads storage preference from localStorage
+   * Loads storage preference from localStorage para reflejar
+   * visualmente la última elección del user — solo si esa elección
+   * todavía vive en localStorage (no la borramos al logout, queda
+   * como sticky preference). No setea this.storage acá — lo decide
+   * el submit basado en this.isStorage al momento de loguear.
    */
   private loadStoragePreference(): void {
     if (localStorage.getItem(STORAGE_KEYS.STORAGE_PREFERENCE) === 'true') {
       this.isStorage = true;
-      this.storage = 'local';
     }
   }
 
   /**
-   * Toggles storage preference between session and local storage
+   * Toggle del switch. SOLO cambia el state local — la preferencia
+   * se persiste recién al hacer login exitoso (AuthService.login con
+   * `remember: this.isStorage`). Antes escribíamos a localStorage
+   * inmediatamente, lo que filtraba la elección de un user al
+   * siguiente en una compu compartida si el primero toggleaba pero
+   * nunca terminaba de loguear.
    */
   toggleStorage(): void {
     this.isStorage = !this.isStorage;
-    if (this.isStorage) {
-      localStorage.setItem(STORAGE_KEYS.STORAGE_PREFERENCE, 'true');
-      this.storage = 'local';
-    } else {
-      localStorage.setItem(STORAGE_KEYS.STORAGE_PREFERENCE, 'false');
-      this.storage = 'session';
-    }
   }
 
   /**
@@ -94,7 +95,10 @@ export class LoginComponent {
     if (this.loginForm.invalid) return;
 
     this.isLoading = true;
-    this.authService.login(this.loginForm.value).subscribe({
+    // Pasamos `this.isStorage` como el flag `remember` — el AuthService
+    // se encarga de persistir la preferencia + escribir tokens en el
+    // storage correcto + limpiar el opuesto.
+    this.authService.login(this.loginForm.value, this.isStorage).subscribe({
       next: () => {
         setTimeout(() => {
           this.isLoading = false;
@@ -108,9 +112,13 @@ export class LoginComponent {
             return;
           }
 
+          // Después del login, this.isStorage define dónde se guardaron
+          // los flags. Leemos profile_complete desde ahí — no del
+          // valor cached de this.storage (que ya no usamos).
+          const storage: 'session' | 'local' = this.isStorage ? 'local' : 'session';
           const profileComplete =
             this.storageMethod.getStorageItem(
-              this.storage,
+              storage,
               STORAGE_KEYS.PROFILE_COMPLETE,
             ) === 'true';
           this.router.navigate([profileComplete ? '/dashboard' : '/profile']);
