@@ -52,6 +52,18 @@
       </button>
       <button
         type="button"
+        (click)="openImprove()"
+        class="px-5 py-2.5 rounded-xl border text-sm font-semibold inline-flex items-center gap-2 transition-colors"
+        style="background: rgba(249, 115, 22, 0.08); border-color: rgba(249, 115, 22, 0.3); color: #f97316;"
+        title="Mejorar el CV con AI (rewrite summary + cuantificar bullets)"
+      >
+        <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'FILL' 1">
+          auto_fix_high
+        </span>
+        Mejorar con AI
+      </button>
+      <button
+        type="button"
         (click)="downloadCV()"
         class="px-5 py-2.5 rounded-xl border border-white/[0.08] hover:border-white/[0.15] bg-white/[0.02] text-bone text-sm font-semibold inline-flex items-center gap-2 transition-colors"
       >
@@ -207,4 +219,18 @@
 />
 
 <!-- Audit modal — lazy, fetcha el análisis al montarse -->
-<app-cv-audit-modal *ngIf="showAudit()" (closed)="closeAudit()" />
+<app-cv-audit-modal
+  *ngIf="showAudit()"
+  (closed)="closeAudit()"
+  (improveRequested)="closeAudit(); openImprove()"
+/>
+
+<!-- Improve modal — lazy, fetcha la propuesta al montarse -->
+<app-cv-improve-modal
+  *ngIf="showImprove()"
+  [currentSummary]="profileData?.summary || ''"
+  [currentSkills]="profileData?.skills || ''"
+  [currentSampleExperience]="firstExperienceSample()"
+  (applied)="onImproveApplied($event)"
+  (closed)="closeImprove()"
+/>

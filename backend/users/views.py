@@ -21,6 +21,7 @@ from users.serializers import (
 from users.services.achievement_quantifier import QuantifyError, quantify_achievement
 from users.services.cv_analysis_service import get_cv_analyzer
 from users.services.cv_auditor import AuditError, audit_cv, profile_to_audit_payload
+from users.services.cv_improver import ImproveError, improve_cv, profile_to_improve_payload
 from users.services.profile_service import ProfileService
 
 
@@ -218,6 +219,47 @@ class CvAuditView(APIView):
         except AuditError as exc:
             return Response(
                 {"error": "audit_failed", "detail": str(exc)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        return Response(result)
+
+
+@method_decorator(
+    ratelimit(key="user", rate="5/h", method="POST", block=True), name="post"
+)
+class CvImproveView(APIView):
+    """POST /api/users/cv/improve/ → propone una versión mejorada del CV
+    del user (summary reescrito, bullets de experiencia cuantificados,
+    skills reordenados). NO persiste — devuelve el JSON con los campos
+    mejorados para que el frontend lo muestre y el user confirme con
+    PATCH.
+
+    Rate-limit: 5/hora por user — operación cara (rewrite del CV
+    completo con Gemini).
+
+    Response: {
+      "professional_title": str,
+      "summary": str,
+      "skills": str,
+      "soft_skills": str,
+      "experience": [{...mismo shape que profile.experience}]
+    }
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        profile = ProfileService.get_profile_by_user(request.user)
+        if profile is None:
+            return Response(
+                {"error": "profile_missing", "detail": "Completá tu perfil antes de mejorarlo."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        try:
+            result = improve_cv(profile_to_improve_payload(profile))
+        except ImproveError as exc:
+            return Response(
+                {"error": "improve_failed", "detail": str(exc)},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
         return Response(result)

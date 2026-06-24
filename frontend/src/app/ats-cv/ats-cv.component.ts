@@ -12,10 +12,18 @@ import { ToastService } from '../services/toast.service';
 import { STORAGE_KEYS } from '../constants/app-stats';
 import { QuantifyModalComponent } from '../cv/quantify-modal.component';
 import { CvAuditModalComponent } from '../cv/cv-audit-modal.component';
+import { CvImproveModalComponent } from '../cv/cv-improve-modal.component';
+import { CvImproveResponse } from '../services/cv-improve.service';
 
 @Component({
   selector: 'app-ats-cv',
-  imports: [CommonModule, RouterModule, QuantifyModalComponent, CvAuditModalComponent],
+  imports: [
+    CommonModule,
+    RouterModule,
+    QuantifyModalComponent,
+    CvAuditModalComponent,
+    CvImproveModalComponent,
+  ],
   standalone: true,
   templateUrl: './ats-cv.component.html',
   styleUrls: ['./ats-cv.component.scss'],
@@ -45,6 +53,75 @@ export class AtsCvComponent implements OnInit {
 
   closeAudit(): void {
     this.showAudit.set(false);
+  }
+
+  /** Modal del improver — idem auditor, lazy mount. */
+  showImprove = signal(false);
+
+  openImprove(): void {
+    this.showImprove.set(true);
+  }
+
+  closeImprove(): void {
+    this.showImprove.set(false);
+  }
+
+  /** Recibe la propuesta del modal y la persiste vía PATCH al profile.
+   * Optimistic: actualizamos el state local primero para que el user vea
+   * el cambio inmediato; si el PATCH falla, rollback + toast. */
+  onImproveApplied(proposal: CvImproveResponse): void {
+    if (!this.profileData?.id) {
+      this.toast.error('No pudimos identificar tu perfil. Recargá la página.');
+      return;
+    }
+
+    // Snapshot para rollback si el PATCH falla
+    const prev = {
+      summary: this.profileData.summary,
+      professional_title: this.profileData.professional_title,
+      skills: this.profileData.skills,
+      soft_skills: this.profileData.soft_skills,
+      experience: this.profileData.experience,
+    };
+
+    // Optimistic update local
+    this.profileData = {
+      ...this.profileData,
+      summary: proposal.summary,
+      professional_title: proposal.professional_title,
+      skills: proposal.skills,
+      soft_skills: proposal.soft_skills,
+      experience: proposal.experience,
+    };
+
+    // experience al backend va como JSON string (TextField legacy)
+    const payload = {
+      summary: proposal.summary,
+      professional_title: proposal.professional_title,
+      skills: proposal.skills,
+      soft_skills: proposal.soft_skills,
+      experience: JSON.stringify(proposal.experience),
+    };
+
+    this.profileService.patchProfile(this.profileData.id, payload).subscribe({
+      next: () => {
+        this.toast.success('Mejoras aplicadas a tu CV.');
+        this.closeImprove();
+      },
+      error: () => {
+        // Rollback
+        this.profileData = { ...this.profileData, ...prev };
+        this.toast.error('No pudimos guardar las mejoras. Intentá de nuevo.');
+        // Modal queda abierto para reintentar
+      },
+    });
+  }
+
+  /** Sample de la primera experiencia para el preview del modal. */
+  firstExperienceSample(): { position?: string; description?: string } | null {
+    if (!this.isExperienceArray()) return null;
+    const first = this.profileData.experience[0];
+    return first ? { position: first.position, description: first.description } : null;
   }
 
   constructor(

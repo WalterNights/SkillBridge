@@ -85,7 +85,18 @@
           <span class="material-symbols-outlined" style="font-size: 16px">refresh</span>
           Volver a analizar
         </button>
-        <button type="button" class="aud-secondary-btn ml-auto" (click)="close()">Cerrar</button>
+        <button
+          type="button"
+          class="aud-improve-btn ml-auto"
+          (click)="requestImprove()"
+          title="Aplicar las mejoras sugeridas con AI"
+        >
+          <span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: 'FILL' 1">
+            auto_fix_high
+          </span>
+          Aplicar mejoras con AI
+        </button>
+        <button type="button" class="aud-secondary-btn" (click)="close()">Cerrar</button>
       </div>
     </div>
   </div>

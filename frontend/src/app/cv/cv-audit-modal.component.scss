@@ -335,3 +335,27 @@
     border-color: rgba(249, 115, 22, 0.3);
   }
 }
+
+/* CTA naranja-tinted para 'Aplicar mejoras con AI' — separa visualmente
+ * la acción primaria (transformar el CV) de las secundarias (volver a
+ * analizar, cerrar). */
+.aud-improve-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  color: #f97316;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+  font-family: inherit;
+
+  &:hover {
+    background: rgba(249, 115, 22, 0.18);
+    border-color: rgba(249, 115, 22, 0.6);
+  }
+}

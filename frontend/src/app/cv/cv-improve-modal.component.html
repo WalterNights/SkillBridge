@@ -1,0 +1,119 @@
+<div class="imp-overlay" (click)="close()">
+  <div class="imp-modal glass-strong" (click)="$event.stopPropagation()">
+    <header class="imp-header">
+      <div class="min-w-0 flex-1">
+        <p class="imp-eyebrow">
+          <span class="material-symbols-outlined" style="font-size: 13px; font-variation-settings: 'FILL' 1">
+            auto_fix_high
+          </span>
+          Mejorar CV con AI
+        </p>
+        <h2 class="imp-title">Versión mejorada de tu CV</h2>
+        <p class="imp-subtitle">
+          La AI reescribe summary, cuantifica bullets de experiencia y reordena skills. No inventa empresas, fechas ni roles.
+        </p>
+      </div>
+      <button type="button" class="imp-close" (click)="close()" aria-label="Cerrar" [disabled]="isApplying">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </header>
+
+    <!-- Loading -->
+    <div *ngIf="view() === 'loading'" class="imp-loading">
+      <span class="loader-ring"></span>
+      <p>Mejorando tu CV…</p>
+      <p class="imp-loading-sub">Esto tarda 5-10 segundos</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="view() === 'error'" class="imp-empty">
+      <p class="imp-error">{{ errorMsg }}</p>
+      <div class="flex gap-2">
+        <button type="button" class="imp-secondary-btn" (click)="fetchProposal()">Reintentar</button>
+        <button type="button" class="imp-secondary-btn" (click)="close()">Cerrar</button>
+      </div>
+    </div>
+
+    <!-- Ready -->
+    <div *ngIf="view() === 'ready' && proposal() as p" class="imp-ready">
+      <!-- Summary -->
+      <section>
+        <p class="imp-section-label">Resumen profesional</p>
+        <div class="imp-diff">
+          <div class="imp-before">
+            <p class="imp-label">Antes</p>
+            <p class="imp-text">{{ currentSummary || '(vacío)' }}</p>
+          </div>
+          <div class="imp-after">
+            <p class="imp-label">Después</p>
+            <p class="imp-text">{{ p.summary }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Skills -->
+      <section>
+        <p class="imp-section-label">Skills (reordenadas)</p>
+        <div class="imp-diff">
+          <div class="imp-before">
+            <p class="imp-label">Antes</p>
+            <p class="imp-text small">{{ currentSkills || '(vacío)' }}</p>
+          </div>
+          <div class="imp-after">
+            <p class="imp-label">Después</p>
+            <p class="imp-text small">{{ p.skills }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sample experience entry preview -->
+      <section *ngIf="p.experience.length > 0">
+        <p class="imp-section-label">
+          Experiencia — preview del primero ({{ p.experience.length }} {{ p.experience.length === 1 ? 'rol' : 'roles' }} totales)
+        </p>
+        <div class="imp-diff">
+          <div class="imp-before">
+            <p class="imp-label">Antes</p>
+            <ul class="imp-bullets">
+              <li *ngFor="let b of bulletsOf(currentSampleExperience?.description)">{{ b }}</li>
+              <li *ngIf="bulletsOf(currentSampleExperience?.description).length === 0" class="text-dim">
+                (sin descripción)
+              </li>
+            </ul>
+          </div>
+          <div class="imp-after">
+            <p class="imp-label">Después</p>
+            <ul class="imp-bullets">
+              <li *ngFor="let b of bulletsOf(p.experience[0].description)">{{ b }}</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <div class="imp-actions">
+        <button type="button" class="imp-secondary-btn" (click)="fetchProposal()" [disabled]="isApplying">
+          <span class="material-symbols-outlined" style="font-size: 16px">refresh</span>
+          Regenerar
+        </button>
+        <div class="flex gap-2 ml-auto">
+          <button type="button" class="imp-secondary-btn" (click)="close()" [disabled]="isApplying">
+            Cancelar
+          </button>
+          <button type="button" class="btn-primary imp-apply-btn" (click)="apply()" [disabled]="isApplying">
+            <span *ngIf="!isApplying" class="inline-flex items-center gap-2">
+              <span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: 'FILL' 1">
+                check
+              </span>
+              Aplicar al CV
+            </span>
+            <span *ngIf="isApplying" class="inline-flex items-center gap-2">
+              <span class="loader-ring-sm"></span>
+              Guardando…
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

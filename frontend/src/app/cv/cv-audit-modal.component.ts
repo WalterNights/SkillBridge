@@ -30,6 +30,10 @@ type ViewMode = 'loading' | 'ready' | 'error';
 })
 export class CvAuditModalComponent implements OnInit {
   @Output() closed = new EventEmitter<void>();
+  /** El user pidió que la AI aplique las mejoras sugeridas — el padre
+   * cierra este modal y abre el de improve. Mantiene los dos modales
+   * desacoplados (cada uno con su lifecycle propio). */
+  @Output() improveRequested = new EventEmitter<void>();
 
   view = signal<ViewMode>('loading');
   result = signal<CvAuditResponse | null>(null);
@@ -83,5 +87,9 @@ export class CvAuditModalComponent implements OnInit {
 
   close(): void {
     this.closed.emit();
+  }
+
+  requestImprove(): void {
+    this.improveRequested.emit();
   }
 }

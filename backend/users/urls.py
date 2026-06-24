@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from users.views import (
     AnalyzerResumeView,
     CvAuditView,
+    CvImproveView,
     PasswordResetRequestView,
     PasswordResetVerifyView,
     QuantifyAchievementView,
@@ -23,5 +24,6 @@ urlpatterns = [
     path("password-reset/verify/", PasswordResetVerifyView.as_view(), name="password-reset-verify"),
     path("cv/quantify/", QuantifyAchievementView.as_view(), name="cv-quantify"),
     path("cv/audit/", CvAuditView.as_view(), name="cv-audit"),
+    path("cv/improve/", CvImproveView.as_view(), name="cv-improve"),
     path("", include(router.urls)),
 ]
