@@ -110,6 +110,9 @@ class AnalyzerResumeView(APIView):
                 "linkedin_url": extracted_data.get("linkedin_url", ""),
                 "portfolio_url": extracted_data.get("portfolio_url", ""),
                 "full_name": extracted_data.get("full_name", ""),
+                # Nuevos campos extraídos por el prompt mejorado.
+                "soft_skills": extracted_data.get("soft_skills", ""),
+                "languages": extracted_data.get("languages", []),
             }
 
             return Response(response_data, status=status.HTTP_200_OK)

@@ -197,6 +197,47 @@
   line-height: 1.55;
 }
 
+/* Bullets de experiencia (cuando Gemini devuelve varias líneas) — se
+ * renderean como lista clásica de CV ATS, no como párrafo. */
+.cv-entry-bullets {
+  margin: 1.5mm 0 0;
+  padding-left: 5mm;
+  list-style-type: disc;
+  list-style-position: outside;
+
+  li {
+    font-size: 10pt;
+    color: #374151;
+    line-height: 1.55;
+    margin-bottom: 0.8mm;
+
+    &::marker {
+      color: #6b7280;
+    }
+  }
+}
+
+/* Idiomas — lista inline con label + nivel. */
+.cv-languages {
+  margin: 1mm 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2mm 6mm;
+
+  li {
+    font-size: 10pt;
+    color: #374151;
+    line-height: 1.55;
+
+    strong {
+      color: #111827;
+      font-weight: 600;
+    }
+  }
+}
+
 /* Botón AI inline al pie de cada descripción de experiencia. Solo
  * visible en pantalla; al exportar PDF se setea `isExporting=true` y
  * el botón se quita del DOM (no es solo `display:none` porque

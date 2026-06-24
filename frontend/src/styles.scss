@@ -245,6 +245,14 @@ button {
   }
 }
 
+/* Cuando .field-input está aplicado a un <textarea> (summary, experiencia,
+ * educación) — solo permitimos resize vertical. El horizontal rompe el
+ * grid del form y queda feo. */
+textarea.field-input {
+  resize: vertical;
+  min-height: 96px;
+}
+
 /* ===================================
    Portal avatar — brand-colored mark identifying the source job
    board of an offer (LinkedIn, Elempleo, Bumeran, etc).

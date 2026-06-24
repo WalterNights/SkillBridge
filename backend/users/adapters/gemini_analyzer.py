@@ -31,15 +31,17 @@ _PROMPT_TEMPLATE = """Analiza el siguiente CV y extrae la información en format
 CV:
 {cv_text}
 
-Instrucciones:
-- Extrae ÚNICAMENTE la información que esté claramente presente en el CV
-- Si un campo no está presente, deja el valor vacío "" o array vacío []
-- Para las skills, lista solo las más relevantes y técnicas separadas por coma
-- El summary debe ser un resumen profesional conciso (máximo 3 líneas)
-- El título profesional debe ser la posición o rol principal
-- Para educación y experiencia, proporciona arrays con objetos estructurados
-- Las fechas deben estar en formato "Mes Año" (ej: "Marzo 2022")
-- Si la fecha de fin es actual, usa "Actual" o "Presente"
+REGLAS GENERALES:
+- Extrae ÚNICAMENTE la información que esté claramente presente en el CV.
+- Si un campo no está presente, deja el valor vacío "" o array vacío [].
+- Fechas en formato "Mes Año" (ej: "Marzo 2022"). Si es actual, "Actual" o "Presente".
+
+REGLAS ESPECÍFICAS:
+- `summary`: copia o adapta el resumen profesional del CV (puede tener 4-6 oraciones — no lo recortes agresivamente).
+- `skills`: TODAS las habilidades técnicas del CV separadas por coma. NO descartes ninguna. Incluye frameworks, lenguajes, bases de datos, cloud, herramientas, librerías, prácticas (SOLID, Clean Code, etc).
+- `soft_skills`: habilidades blandas y profesionales separadas por coma (liderazgo, comunicación, trabajo en equipo, etc). Vacío si el CV no las lista explícitamente.
+- `languages`: array con cada idioma + nivel (ej. "Native", "Fluent", "B2", "Intermediate"). Vacío si no hay sección de idiomas.
+- `experience[].description`: ⚠️ CRÍTICO ⚠️ — PRESERVA TODOS los bullets del CV original, UNO POR LÍNEA, con prefijo "• ". NO RESUMAS, NO COMBINES bullets, NO PARAFRASEES, NO INVENTES. Si el CV original tiene 12 bullets en un rol, devolvé 12 líneas. La descripción de un puesto NO es una oración — es la lista textual de logros/responsabilidades del CV.
 
 Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
 {{
@@ -52,8 +54,13 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
     "country": "país",
     "city": "ciudad",
     "professional_title": "título profesional o rol principal",
-    "summary": "resumen profesional breve",
-    "skills": "skill1, skill2, skill3, ...",
+    "summary": "resumen profesional, mantener largo similar al original",
+    "skills": "skill1, skill2, skill3, ... (TODAS las técnicas)",
+    "soft_skills": "habilidad1, habilidad2, ... (vacío si no aparecen en el CV)",
+    "languages": [
+        {{"language": "Español", "level": "Nativo"}},
+        {{"language": "Inglés", "level": "B2"}}
+    ],
     "education": [
         {{
             "institution": "nombre de la institución",
@@ -72,7 +79,7 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
             "end_date": "Mes Año o Actual",
             "location_city": "ciudad",
             "location_country": "país",
-            "description": "descripción breve de responsabilidades y logros"
+            "description": "• Bullet uno textual del CV\\n• Bullet dos\\n• Bullet tres (TODOS los del CV original)"
         }}
     ],
     "linkedin_url": "URL de LinkedIn si existe (incluye https://)",
@@ -175,6 +182,7 @@ def _normalize_extracted_data(data: dict) -> dict:
         "title",
         "summary",
         "skills",
+        "soft_skills",
         "linkedin_url",
         "portfolio_url",
     )
@@ -192,6 +200,25 @@ def _normalize_extracted_data(data: dict) -> dict:
             out[key] = value.strip()
         else:
             out[key] = []
+
+    # `languages` siempre como lista de objetos {language, level}. Si
+    # Gemini devuelve algo distinto, lo normalizamos defensivamente para
+    # que el frontend no se rompa.
+    langs_raw = data.get("languages", [])
+    out["languages"] = []
+    if isinstance(langs_raw, list):
+        for item in langs_raw:
+            if isinstance(item, dict):
+                lang = (item.get("language") or "").strip()
+                level = (item.get("level") or "").strip()
+                if lang:
+                    out["languages"].append({"language": lang, "level": level})
+            elif isinstance(item, str) and item.strip():
+                # Caso "Inglés: B2" como string suelto — lo splittemos
+                parts = item.split(":", 1)
+                lang = parts[0].strip()
+                level = parts[1].strip() if len(parts) > 1 else ""
+                out["languages"].append({"language": lang, "level": level})
 
     # full_name fallback
     if not out["full_name"] and (out["first_name"] or out["last_name"]):

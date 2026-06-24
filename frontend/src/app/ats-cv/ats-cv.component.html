@@ -115,7 +115,15 @@
             </div>
           </div>
           <div *ngIf="exp.description" class="cv-entry-desc-wrap">
-            <p class="cv-entry-description">{{ exp.description }}</p>
+            <!-- Si Gemini devolvió múltiples bullets en la descripción
+                 (uno por línea), los rendereamos como lista. Si es texto
+                 plano, cae al fallback de párrafo. -->
+            <ul *ngIf="expBullets(exp.description).length > 0; else descPara" class="cv-entry-bullets">
+              <li *ngFor="let bullet of expBullets(exp.description)">{{ bullet }}</li>
+            </ul>
+            <ng-template #descPara>
+              <p class="cv-entry-description">{{ exp.description }}</p>
+            </ng-template>
             <button
               *ngIf="!isExporting()"
               type="button"
@@ -162,6 +170,22 @@
     <section *ngIf="profileData.skills" class="cv-section">
       <h2 class="cv-section-title">Habilidades técnicas</h2>
       <p class="cv-skills">{{ profileData.skills }}</p>
+    </section>
+
+    <!-- Soft skills — solo si Gemini detectó alguna -->
+    <section *ngIf="softSkillsList().length > 0" class="cv-section">
+      <h2 class="cv-section-title">Habilidades blandas</h2>
+      <p class="cv-skills">{{ profileData.soft_skills }}</p>
+    </section>
+
+    <!-- Languages — array de {language, level} -->
+    <section *ngIf="hasLanguages()" class="cv-section">
+      <h2 class="cv-section-title">Idiomas</h2>
+      <ul class="cv-languages">
+        <li *ngFor="let lang of profileData.languages">
+          <strong>{{ lang.language }}</strong><span *ngIf="lang.level">: {{ lang.level }}</span>
+        </li>
+      </ul>
     </section>
 
     <!-- Links -->

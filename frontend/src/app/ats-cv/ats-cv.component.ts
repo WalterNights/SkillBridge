@@ -158,9 +158,61 @@ export class AtsCvComponent implements OnInit {
       linkedin_url: profile.linkedin_url || '',
       portfolio_url: profile.portfolio_url || '',
       skills: profile.skills || '',
+      soft_skills: profile.soft_skills || '',
+      languages: this.parseLanguages(profile.languages),
       experience: this.parseExperienceOrEducation(profile.experience),
       education: this.parseExperienceOrEducation(profile.education),
     };
+  }
+
+  /** Languages se guardan como JSON-as-text en backend. Acá lo parseamos
+   *  a array de `{language, level}`. Tolera: array directo, JSON string,
+   *  null/empty. */
+  parseLanguages(value: any): { language: string; level: string }[] {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string' && value.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  /** Splittea la descripción de una experiencia en bullets. El extractor
+   *  Gemini formatea cada bullet en una línea con prefijo "• " o "- ".
+   *  Si solo hay 1 línea (o 0 bullets), devuelve [] — el template muestra
+   *  el texto como un párrafo plano en ese caso. */
+  expBullets(description: string | null | undefined): string[] {
+    if (!description) return [];
+    const lines = description
+      .split(/\r?\n/)
+      .map((l) => l.trim().replace(/^[•\-*]\s*/, ''))
+      .filter(Boolean);
+    return lines.length >= 2 ? lines : [];
+  }
+
+  /** Skills como array deduplicado para chips/lista del CV. */
+  skillsList(): string[] {
+    return (this.profileData?.skills || '')
+      .split(',')
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+  }
+
+  /** Soft skills idem. Solo se renderea la sección si hay al menos 1. */
+  softSkillsList(): string[] {
+    return (this.profileData?.soft_skills || '')
+      .split(',')
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+  }
+
+  /** True si hay al menos 1 idioma para renderear la sección. */
+  hasLanguages(): boolean {
+    return Array.isArray(this.profileData?.languages) && this.profileData.languages.length > 0;
   }
 
   /**

@@ -201,6 +201,14 @@ class UserProfile(models.Model):
     )
     linkedin_url = models.URLField(null=True, blank=True)
     portfolio_url = models.URLField(null=True, blank=True)
+    # Habilidades blandas (liderazgo, comunicación, trabajo en equipo, etc).
+    # Texto libre separado por coma, igual contrato que `skills` para que
+    # el front pueda hacer split sin lógica especial.
+    soft_skills = models.TextField(blank=True, help_text="Habilidades blandas separadas por coma")
+    # Idiomas que maneja el user. JSON-as-text: array de
+    # `{"language": str, "level": str}`. Igual patrón que experience/education
+    # cuando los popula Gemini.
+    languages = models.TextField(blank=True, help_text="JSON array de idiomas {language, level}")
     create_at = models.DateTimeField(auto_now_add=True)
 
     # Preferences ----------------------------------------------------

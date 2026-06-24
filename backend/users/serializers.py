@@ -49,6 +49,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "banner",
             "linkedin_url",
             "portfolio_url",
+            "soft_skills",
+            "languages",
             "email_alerts_enabled",
         ]
         # `last_alert_sent_at` no se expone — es contador interno de la
