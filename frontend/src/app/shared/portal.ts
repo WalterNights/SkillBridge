@@ -17,6 +17,7 @@ export type PortalKey =
   | 'weworkremotely'
   | 'getonbrd'
   | 'magneto'
+  | 'trabajos_co'
   | 'generic';
 
 interface PortalMeta {
@@ -36,6 +37,7 @@ const _PORTAL_META: Record<PortalKey, Omit<PortalMeta, 'key'>> = {
   weworkremotely: { label: 'WeWorkRemotely', mark: 'WWR' },
   getonbrd: { label: 'Get on Board', mark: 'GB' },
   magneto: { label: 'Magneto365', mark: 'M' },
+  trabajos_co: { label: 'Trabajos Colombia', mark: 'TC' },
   generic: { label: 'Oferta', mark: '' },
 };
 
@@ -56,6 +58,7 @@ export function detectPortal(offer: OfferShape | null | undefined): PortalKey {
   if (url.includes('weworkremotely')) return 'weworkremotely';
   if (url.includes('getonbrd')) return 'getonbrd';
   if (url.includes('magneto')) return 'magneto';
+  if (url.includes('trabajos.com')) return 'trabajos_co';
 
   // Fallback al portal del backend (por si el scraper directo nos da
   // el portal pero la URL es una variante que no matchea ningún substring).

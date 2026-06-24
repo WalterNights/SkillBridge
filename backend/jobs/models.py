@@ -11,6 +11,7 @@ class JobOffer(models.Model):
         ("bumeran", "Bumeran"),
         ("indeed", "Indeed"),
         ("linkedin", "LinkedIn"),
+        ("trabajos_co", "Trabajos Colombia"),
         ("other", "Otro"),
     ]
 
