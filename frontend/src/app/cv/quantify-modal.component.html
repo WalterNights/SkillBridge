@@ -1,0 +1,81 @@
+<div class="q-overlay" (click)="close()">
+  <div class="q-modal glass-strong" (click)="$event.stopPropagation()">
+    <header class="q-header">
+      <div class="min-w-0 flex-1">
+        <p class="q-eyebrow">
+          <span class="material-symbols-outlined" style="font-size: 13px; font-variation-settings: 'FILL' 1">
+            auto_awesome
+          </span>
+          Cuantificar logro con AI
+        </p>
+        <h2 class="q-title">Reescribimos tu descripción con métricas</h2>
+        <p class="q-subtitle">
+          Las variantes incluyen estimaciones con "+" o "~" — son orientativas, verificá antes de publicar.
+        </p>
+      </div>
+      <button type="button" class="q-close" (click)="close()" aria-label="Cerrar">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </header>
+
+    <!-- Loading -->
+    <div *ngIf="view() === 'loading'" class="q-loading">
+      <span class="loader-ring"></span>
+      <p>Generando 3 variantes…</p>
+      <p class="q-loading-sub">Esto tarda 3-5 segundos</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="view() === 'error'" class="q-empty">
+      <p class="q-error">{{ errorMsg }}</p>
+      <div class="flex gap-2">
+        <button type="button" class="q-secondary-btn" (click)="regenerate()">Reintentar</button>
+        <button type="button" class="q-secondary-btn" (click)="close()">Cerrar</button>
+      </div>
+    </div>
+
+    <!-- Ready -->
+    <div *ngIf="view() === 'ready'" class="q-ready">
+      <p class="q-original-label">Texto original</p>
+      <p class="q-original">{{ originalText }}</p>
+
+      <p class="q-variants-label">Sugerencias</p>
+      <div class="q-variants">
+        <button
+          *ngFor="let s of suggestions(); let i = index"
+          type="button"
+          class="q-variant"
+          [class.is-selected]="selectedIndex() === i"
+          (click)="selectVariant(i)"
+        >
+          <span class="q-variant-num">{{ i + 1 }}</span>
+          <span class="q-variant-text">{{ s }}</span>
+        </button>
+      </div>
+
+      <p class="q-editor-label">Tu versión final (editable)</p>
+      <textarea
+        class="q-editor"
+        rows="5"
+        [(ngModel)]="editorContent"
+        placeholder="Elegí una sugerencia o escribí la tuya…"
+      ></textarea>
+
+      <div class="q-actions">
+        <button type="button" class="q-secondary-btn" (click)="regenerate()">
+          <span class="material-symbols-outlined" style="font-size: 16px">refresh</span>
+          Regenerar
+        </button>
+        <div class="flex gap-2 ml-auto">
+          <button type="button" class="q-secondary-btn" (click)="close()">Cancelar</button>
+          <button type="button" class="btn-primary q-apply-btn" (click)="apply()">
+            <span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: 'FILL' 1">
+              check
+            </span>
+            Aplicar al CV
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

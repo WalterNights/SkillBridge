@@ -5,6 +5,7 @@ from users.views import (
     AnalyzerResumeView,
     PasswordResetRequestView,
     PasswordResetVerifyView,
+    QuantifyAchievementView,
     UserProfileViewSet,
     UserRegisterView,
 )
@@ -19,5 +20,6 @@ urlpatterns = [
         "password-reset/request/", PasswordResetRequestView.as_view(), name="password-reset-request"
     ),
     path("password-reset/verify/", PasswordResetVerifyView.as_view(), name="password-reset-verify"),
+    path("cv/quantify/", QuantifyAchievementView.as_view(), name="cv-quantify"),
     path("", include(router.urls)),
 ]

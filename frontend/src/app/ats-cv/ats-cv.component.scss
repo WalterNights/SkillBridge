@@ -197,6 +197,38 @@
   line-height: 1.55;
 }
 
+/* Botón AI inline al pie de cada descripción de experiencia. Solo
+ * visible en pantalla; al exportar PDF se setea `isExporting=true` y
+ * el botón se quita del DOM (no es solo `display:none` porque
+ * html2canvas a veces lo respeta a medias). */
+.cv-entry-desc-wrap {
+  position: relative;
+}
+
+.cv-ai-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2mm;
+  padding: 3px 9px;
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  color: #c2410c;
+  border-radius: 999px;
+  font-size: 9pt;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+
+  &:hover {
+    background: rgba(249, 115, 22, 0.15);
+    border-color: rgba(249, 115, 22, 0.45);
+  }
+}
+
 /* ===========================================
    Free-text fallback (when education/experience come as strings,
    e.g. from manual input rather than parsed CV).

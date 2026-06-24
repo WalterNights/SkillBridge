@@ -6,13 +6,15 @@ import localeEs from '@angular/common/locales/es';
 import { AuthService } from '../auth/auth.service';
 import { Title } from '@angular/platform-browser';
 import { registerLocaleData } from '@angular/common';
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, signal } from '@angular/core';
 import { ProfileService } from '../services/profile.service';
+import { ToastService } from '../services/toast.service';
 import { STORAGE_KEYS } from '../constants/app-stats';
+import { QuantifyModalComponent } from '../cv/quantify-modal.component';
 
 @Component({
   selector: 'app-ats-cv',
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, QuantifyModalComponent],
   standalone: true,
   templateUrl: './ats-cv.component.html',
   styleUrls: ['./ats-cv.component.scss'],
@@ -23,11 +25,22 @@ export class AtsCvComponent implements OnInit {
   errorMessage = '';
   @ViewChild('cvContent', { static: false }) cvContent!: ElementRef;
 
+  /** Cuando está seteado, muestra el modal de cuantificar para esa entry.
+   * Guardamos el índice + el snapshot del texto para evitar race conditions
+   * si el user clickea otra entry mientras el modal está abierto. */
+  quantifyTarget = signal<{ index: number; text: string; role: string; company: string } | null>(
+    null,
+  );
+  /** Flag para ocultar los botones AI cuando se captura el PDF — html2canvas
+   * no respeta @media print, así que usamos una clase toggleable. */
+  isExporting = signal(false);
+
   constructor(
     private titleService: Title,
     private authService: AuthService,
     private router: Router,
     private profileService: ProfileService,
+    private toast: ToastService,
   ) {
     this.titleService.setTitle('SkilTak - CV ATS');
   }
@@ -117,6 +130,9 @@ export class AtsCvComponent implements OnInit {
    */
   formatProfileData(profile: any): any {
     return {
+      // `id` se mantiene para que PATCH al profile (cuantificar, etc) tenga
+      // la URL correcta. Si viene del localStorage draft puede ser undefined.
+      id: profile.id ?? null,
       first_name: profile.first_name || '',
       last_name: profile.last_name || '',
       email: profile.user?.email || profile.email || '',
@@ -164,9 +180,71 @@ export class AtsCvComponent implements OnInit {
     return value;
   }
 
+  // ---- Cuantificar logros con AI -----------------------------------
+
+  /** Abre el modal para una entry de experiencia. Solo aplica cuando
+   * `isExperienceArray()` es true — los users con experiencia como texto
+   * libre no ven el botón (no hay descripción discreta a cuantificar). */
+  openQuantify(index: number): void {
+    const exp = this.profileData?.experience?.[index];
+    if (!exp || !exp.description) return;
+    this.quantifyTarget.set({
+      index,
+      text: exp.description,
+      role: exp.position || '',
+      company: exp.company || '',
+    });
+  }
+
+  closeQuantify(): void {
+    this.quantifyTarget.set(null);
+  }
+
+  /** El modal emitió la sugerencia que el user aceptó. Optimistic update:
+   * cambiamos la descripción local + PATCH al backend. Si el PATCH falla,
+   * revertimos y avisamos. */
+  onQuantifyApplied(newText: string): void {
+    const target = this.quantifyTarget();
+    if (!target) return;
+    const profileId = this.profileData?.id;
+    if (!profileId) {
+      this.toast.error('No pudimos identificar tu perfil. Recargá la página.');
+      return;
+    }
+
+    const previousText = this.profileData.experience[target.index].description;
+    // Optimistic
+    this.profileData.experience[target.index] = {
+      ...this.profileData.experience[target.index],
+      description: newText,
+    };
+    this.closeQuantify();
+
+    // El backend guarda `experience` como TextField; serializamos el array
+    // a JSON string. Si más adelante migramos a JSONField, ajustar acá.
+    const payload = { experience: JSON.stringify(this.profileData.experience) };
+    this.profileService.patchProfile(profileId, payload).subscribe({
+      next: () => {
+        this.toast.success('Logro actualizado en tu CV.');
+      },
+      error: () => {
+        // Rollback
+        this.profileData.experience[target.index] = {
+          ...this.profileData.experience[target.index],
+          description: previousText,
+        };
+        this.toast.error('No pudimos guardar el cambio. Intentá de nuevo.');
+      },
+    });
+  }
+
   downloadCV(): void {
     const element = this.cvContent.nativeElement;
     if (!element) return;
+
+    // Ocultamos los botones AI (.no-export) antes de capturar — html2canvas
+    // hace screenshot del DOM tal cual, no respeta @media print.
+    this.isExporting.set(true);
 
     // A4 dimensions in points (1 inch = 72 points, A4 = 210mm x 297mm)
     const a4Width = 595.28;
@@ -199,6 +277,9 @@ export class AtsCvComponent implements OnInit {
       }
 
       doc.save('skiltak-ats-cv.pdf');
+      this.isExporting.set(false);
+    }).catch(() => {
+      this.isExporting.set(false);
     });
   }
 

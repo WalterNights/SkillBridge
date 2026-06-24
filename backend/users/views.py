@@ -18,6 +18,7 @@ from users.serializers import (
     UserProfileSerializer,
     UserSerializer,
 )
+from users.services.achievement_quantifier import QuantifyError, quantify_achievement
 from users.services.cv_analysis_service import get_cv_analyzer
 from users.services.profile_service import ProfileService
 
@@ -187,6 +188,48 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         is_complete = all([profile.first_name, profile.last_name, profile.city, profile.phone])
 
         return Response({"profile_complete": is_complete}, status=status.HTTP_200_OK)
+
+
+@method_decorator(
+    ratelimit(key="user", rate="20/h", method="POST", block=True), name="post"
+)
+class QuantifyAchievementView(APIView):
+    """POST /api/users/cv/quantify/ → devuelve 3 variantes cuantificadas
+    de un bullet de experiencia.
+
+    Body: {"text": str, "role_title": str (opcional), "company": str (opcional)}
+    Response: {"suggestions": [str, str, str]}
+
+    Rate-limit: 20/hora por user — Gemini cuesta tokens. El user puede
+    abrir y regenerar varias veces pero no farmear ilimitado.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        text = (request.data.get("text") or "").strip()
+        role_title = (request.data.get("role_title") or "").strip()
+        company = (request.data.get("company") or "").strip()
+
+        if not text:
+            return Response(
+                {"error": "text is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            suggestions = quantify_achievement(
+                original_text=text,
+                role_title=role_title,
+                company=company,
+            )
+        except QuantifyError as exc:
+            return Response(
+                {"error": "quantify_failed", "detail": str(exc)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response({"suggestions": suggestions})
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):

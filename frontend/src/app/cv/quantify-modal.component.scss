@@ -1,0 +1,286 @@
+/* Modal — mismo lenguaje visual que cover-letter-modal pero específico
+ * para AI suggestions. No los unificamos en un base shared porque cada
+ * uno tiene UI propia (variants list, etc.). */
+
+.q-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: q-fade-in 180ms ease;
+}
+
+@keyframes q-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.q-modal {
+  width: 100%;
+  max-width: 720px;
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 20px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.q-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.q-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #f97316;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.q-title {
+  font-size: 20px;
+  line-height: 1.25;
+  color: #e8e5dd;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+}
+
+.q-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: #8b8a85;
+  line-height: 1.5;
+}
+
+.q-close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cfcfc8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 160ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .material-symbols-outlined {
+    font-size: 18px;
+  }
+}
+
+.q-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  gap: 14px;
+  color: #cfcfc8;
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+}
+.q-loading-sub {
+  font-size: 12px !important;
+  color: #8b8a85;
+}
+
+.loader-ring {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid rgba(249, 115, 22, 0.2);
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: q-spin 800ms linear infinite;
+}
+@keyframes q-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.q-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.q-error {
+  font-size: 13px;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  width: 100%;
+}
+
+.q-ready {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.q-original-label,
+.q-variants-label,
+.q-editor-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8b8a85;
+  font-weight: 700;
+  margin: 4px 0 -4px;
+}
+
+.q-original {
+  margin: 0;
+  font-size: 14px;
+  color: #cfcfc8;
+  line-height: 1.55;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+}
+
+.q-variants {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.q-variant {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  color: #e8e5dd;
+  font-size: 13px;
+  line-height: 1.55;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+  font-family: inherit;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &.is-selected {
+    border-color: rgba(249, 115, 22, 0.5);
+    background: rgba(249, 115, 22, 0.06);
+  }
+}
+
+.q-variant-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.q-variant-text {
+  flex: 1;
+}
+
+.q-editor {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 14px 16px;
+  color: #e8e5dd;
+  font-size: 14px;
+  line-height: 1.55;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+  max-height: 220px;
+
+  &:focus {
+    outline: none;
+    border-color: rgba(249, 115, 22, 0.4);
+  }
+}
+
+.q-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+}
+
+.q-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e8e5dd;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(249, 115, 22, 0.3);
+  }
+}
+
+.q-apply-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
