@@ -60,9 +60,25 @@ Después de cerrar el roadmap original, esta sesión se dedicó a pulir el flow 
 - **Resize de fotos en backend** — el cropper ya genera output controlado (1024px avatar / 1920px banner). Falta validación server-side para users que carguen un PNG 4K sin pasar por el cropper.
 - **Comments / feedback widget** — el muro del home logged-in usa `STUB_COMMENTS` hardcoded. Scope sin decidir.
 
-## Next steps (sin orden, esperando prioridad de Walter)
+## Backlog priorizado para próxima sesión
 
-- **Mejorar paginación CV**: split de entries demasiado grandes, manejo de orphaned headers.
+Tres bugs/features reportados por Walter al cierre de esta sesión que NO se implementaron — están registrados para retomar:
+
+1. **Verificar disponibilidad de las ofertas en su portal de origen** — caso reportado: en el feed apareció "Desarrollador Fullstack Senior" de ZEMSANIA con 85% de match, al clickear y abrir el portal origen el portal devuelve "Esta oferta ya no está disponible". Va contra el slogan "cero ruido" (mostrar ofertas caducas es noise). Posibles approaches:
+   - Probe síncrono al portal antes de mostrar la oferta (caro, latency)
+   - Probe asíncrono diario que marca ofertas como `is_active=False` cuando el portal devuelve 404 / página de "no disponible" (preferible — ya tenemos pattern en `web_search.py` con LinkedIn closed probe)
+   - Para los scrapers que ya usan sitemap, recomputar cada vez (las URLs faltantes en el nuevo sitemap = expired)
+   - Filtrar `is_active` en el queryset del feed por default
+
+2. **Bug visual en /settings dropdown de idioma** — el `<select>` native abierto muestra fondo claro y opciones "English" / "Português" con color claro casi invisible contra ese fondo. Probable: el `<select>` no tiene estilos custom para las `<option>` (limitación de navegadores — opciones del dropdown nativo no son styleables, usan defaults del OS). Soluciones:
+   - Mejorar contraste de las opciones (cambiar el color del option a uno legible sobre fondo claro)
+   - Reemplazar el select nativo por un custom dropdown con `<div>` + signals (más esfuerzo)
+
+3. **Badge "1" quemado en /applications tab "Todas"** — el counter pegado al label del tab "Todas" tiene estilo roto (el badge no respeta el styling de los otros tabs). Probablemente un caso edge en el SCSS que no estilizó correctamente el badge cuando es del tab activo o cuando el count es bajo. Quick fix de CSS.
+
+## Otros next steps (sin orden, esperando prioridad)
+
+- **Mejorar paginación CV**: split de entries demasiado grandes para 1 hoja Oficio, manejo de orphaned section headers (h2 al final de página con content en la siguiente).
 - **Más portales**: BNE MX/CL (deferred), OCC, Bumeran, CompuTrabajo otros países.
 - **Sentry o similar** para monitoring en prod — solo tenemos logs en gunicorn/celery.
 - **Test E2E del flow LinkedIn OAuth** — hay 10 unit tests pero no smoke end-to-end.
