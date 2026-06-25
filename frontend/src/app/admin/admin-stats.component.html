@@ -1,0 +1,152 @@
+<section class="px-4 lg:px-8 py-8 lg:py-10">
+  <div class="max-w-6xl mx-auto">
+    <!-- Page header -->
+    <header class="mb-7">
+      <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-2">Administración</p>
+      <h1 class="text-3xl lg:text-4xl font-black text-bone tracking-tight leading-tight">Estadísticas</h1>
+      <p class="text-sm text-warm-grey mt-2">Métricas en tiempo real de la plataforma.</p>
+    </header>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading()" class="glass-strong rounded-2xl p-8 text-center">
+      <p class="text-sm text-warm-grey">Calculando métricas…</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="!isLoading() && errorMessage()" class="glass-strong rounded-2xl p-8 text-center">
+      <span
+        class="inline-flex w-12 h-12 rounded-full bg-danger/15 items-center justify-center mb-3 material-symbols-outlined text-danger"
+        style="font-size: 22px"
+      >error</span>
+      <p class="text-sm text-warm-grey">{{ errorMessage() }}</p>
+    </div>
+
+    <ng-container *ngIf="stats() as s">
+      <!-- Top-level KPI cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <article class="kpi-card">
+          <div class="kpi-icon kpi-icon-primary"><span class="material-symbols-outlined">group</span></div>
+          <p class="kpi-label">Usuarios</p>
+          <p class="kpi-value">{{ s.users.total }}</p>
+          <p class="kpi-sub">{{ s.users.complete_profile }} con perfil completo</p>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-icon kpi-icon-blue"><span class="material-symbols-outlined">work</span></div>
+          <p class="kpi-label">Ofertas activas</p>
+          <p class="kpi-value">{{ s.offers.active }}</p>
+          <p class="kpi-sub">{{ s.offers.total }} totales · {{ s.offers.inactive }} vencidas</p>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-icon kpi-icon-emerald"><span class="material-symbols-outlined">work_history</span></div>
+          <p class="kpi-label">Postulaciones</p>
+          <p class="kpi-value">{{ s.applications.total }}</p>
+          <p class="kpi-sub">{{ s.applications.success_rate_pct }}% con oferta</p>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-icon kpi-icon-grey"><span class="material-symbols-outlined">visibility_off</span></div>
+          <p class="kpi-label">Ignoradas</p>
+          <p class="kpi-value">{{ s.ignored.total }}</p>
+          <p class="kpi-sub">acumulado de todos los users</p>
+        </article>
+      </div>
+
+      <!-- Breakdown rows -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+        <!-- Ofertas por portal -->
+        <article class="glass-strong rounded-2xl p-6">
+          <header class="flex items-center justify-between mb-5">
+            <div>
+              <h2 class="text-base font-semibold text-bone">Ofertas activas por portal</h2>
+              <p class="text-xs text-warm-grey mt-0.5">Distribución del feed por origen.</p>
+            </div>
+            <span
+              class="material-symbols-outlined text-primary"
+              style="font-size: 22px; font-variation-settings: 'FILL' 1"
+            >stacked_bar_chart</span>
+          </header>
+          <p *ngIf="s.offers.by_portal.length === 0" class="text-sm text-warm-grey">
+            No hay ofertas activas todavía.
+          </p>
+          <ul class="flex flex-col gap-3">
+            <li *ngFor="let row of s.offers.by_portal" class="bar-row">
+              <div class="bar-meta">
+                <span class="bar-label">{{ portalLabel(row.portal) }}</span>
+                <span class="bar-value">{{ row.count }}</span>
+              </div>
+              <div class="bar-track">
+                <span class="bar-fill" [style.width.%]="pct(row.count, maxPortalCount())"></span>
+              </div>
+            </li>
+          </ul>
+        </article>
+
+        <!-- Ofertas por país (top 10) -->
+        <article class="glass-strong rounded-2xl p-6">
+          <header class="flex items-center justify-between mb-5">
+            <div>
+              <h2 class="text-base font-semibold text-bone">Ofertas activas por país</h2>
+              <p class="text-xs text-warm-grey mt-0.5">Top 10. Excluye ofertas sin país detectado.</p>
+            </div>
+            <span
+              class="material-symbols-outlined text-primary"
+              style="font-size: 22px; font-variation-settings: 'FILL' 1"
+            >public</span>
+          </header>
+          <p *ngIf="s.offers.by_country.length === 0" class="text-sm text-warm-grey">
+            Sin ofertas con país detectado todavía.
+          </p>
+          <ul class="flex flex-col gap-3">
+            <li *ngFor="let row of s.offers.by_country" class="bar-row">
+              <div class="bar-meta">
+                <span class="bar-label">{{ countryLabel(row.country) }}</span>
+                <span class="bar-value">{{ row.count }}</span>
+              </div>
+              <div class="bar-track">
+                <span class="bar-fill" [style.width.%]="pct(row.count, maxCountryCount())"></span>
+              </div>
+            </li>
+          </ul>
+        </article>
+      </div>
+
+      <!-- Postulaciones por status -->
+      <article class="glass-strong rounded-2xl p-6">
+        <header class="flex items-center justify-between mb-5">
+          <div>
+            <h2 class="text-base font-semibold text-bone">Postulaciones por estado</h2>
+            <p class="text-xs text-warm-grey mt-0.5">
+              Snapshot del pipeline — qué tan lejos llegan las postulaciones de la plataforma.
+            </p>
+          </div>
+          <span
+            class="material-symbols-outlined text-primary"
+            style="font-size: 22px; font-variation-settings: 'FILL' 1"
+          >donut_large</span>
+        </header>
+        <p *ngIf="s.applications.by_status.length === 0" class="text-sm text-warm-grey">
+          Sin postulaciones todavía.
+        </p>
+        <ul class="flex flex-col gap-3">
+          <li *ngFor="let row of s.applications.by_status" class="bar-row">
+            <div class="bar-meta">
+              <span class="status-pill" [attr.data-status]="statusColor(row.status)">
+                {{ statusLabel(row.status) }}
+              </span>
+              <span class="bar-value">{{ row.count }}</span>
+            </div>
+            <div class="bar-track">
+              <span
+                class="bar-fill"
+                [attr.data-status]="statusColor(row.status)"
+                [style.width.%]="pct(row.count, maxStatusCount())"
+              ></span>
+            </div>
+          </li>
+        </ul>
+      </article>
+    </ng-container>
+  </div>
+</section>
