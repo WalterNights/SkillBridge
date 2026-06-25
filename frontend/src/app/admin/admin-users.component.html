@@ -127,6 +127,15 @@
               <span *ngIf="u.professional_title" class="profession-tag">
                 {{ u.professional_title }}
               </span>
+              <span *ngIf="isSuperuser(u)" class="role-badge role-badge--super" title="Superusuario">
+                <span class="material-symbols-outlined" style="font-size: 13px; font-variation-settings: 'FILL' 1">verified</span>
+                Super
+              </span>
+              <span *ngIf="!isSuperuser(u) && isStaff(u)" class="role-badge role-badge--staff" title="Administrador">
+                <span class="material-symbols-outlined" style="font-size: 13px; font-variation-settings: 'FILL' 1">shield_person</span>
+                Admin
+              </span>
+              <span *ngIf="isSelf(u)" class="role-badge role-badge--self" title="Eres tú">Tú</span>
             </div>
             <p class="text-sm text-warm-grey flex flex-wrap items-center gap-x-3 gap-y-0.5">
               <span class="inline-flex items-center gap-1">
@@ -145,11 +154,89 @@
             </p>
           </div>
 
-          <button type="button" class="view-btn" title="Ver detalle del usuario" disabled>
-            <span class="material-symbols-outlined" style="font-size: 18px">visibility</span>
-          </button>
+          <!-- Role actions — ocultas en la propia fila (anti-lockout UX) -->
+          <div *ngIf="!isSelf(u) && u.user?.id" class="flex items-center gap-2 flex-wrap justify-end">
+            <button
+              *ngIf="!isStaff(u)"
+              type="button"
+              class="role-btn role-btn--promote"
+              (click)="promptRoleChange(u, 'is_staff', true)"
+              title="Promover a admin"
+            >
+              <span class="material-symbols-outlined" style="font-size: 16px">arrow_upward</span>
+              Promover
+            </button>
+            <button
+              *ngIf="isStaff(u) && !isSuperuser(u)"
+              type="button"
+              class="role-btn role-btn--demote"
+              (click)="promptRoleChange(u, 'is_staff', false)"
+              title="Quitar rol de admin"
+            >
+              <span class="material-symbols-outlined" style="font-size: 16px">arrow_downward</span>
+              Degradar
+            </button>
+            <button
+              *ngIf="isSuperuser(u)"
+              type="button"
+              class="role-btn role-btn--demote"
+              (click)="promptRoleChange(u, 'is_superuser', false)"
+              title="Quitar rol de super-admin"
+            >
+              <span class="material-symbols-outlined" style="font-size: 16px">arrow_downward</span>
+              Quitar super
+            </button>
+          </div>
         </div>
       </article>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación de cambio de rol -->
+  <div
+    *ngIf="pendingChange() as change"
+    class="role-modal-overlay"
+    (click)="cancelRoleChange()"
+  >
+    <div class="role-modal glass-strong" (click)="$event.stopPropagation()">
+      <header class="role-modal__header">
+        <span
+          class="role-modal__icon material-symbols-outlined"
+          style="font-size: 22px; font-variation-settings: 'FILL' 1"
+        >shield_person</span>
+        <div class="min-w-0">
+          <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold">Confirmar cambio</p>
+          <h2 class="text-lg font-semibold text-bone leading-snug">{{ change.action }}</h2>
+        </div>
+      </header>
+
+      <p class="text-sm text-warm-grey">
+        Vas a modificar el rol de
+        <span class="text-bone font-semibold">{{ change.profile.user?.email ?? change.profile.username }}</span>.
+      </p>
+      <p class="text-xs text-dim">
+        El cambio toma efecto en el próximo login del usuario afectado. No puedes degradarte a ti mismo.
+      </p>
+
+      <div class="role-modal__actions">
+        <button
+          type="button"
+          class="role-btn role-btn--secondary"
+          (click)="cancelRoleChange()"
+          [disabled]="isSavingRole()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="role-btn role-btn--confirm"
+          (click)="confirmRoleChange()"
+          [disabled]="isSavingRole()"
+        >
+          <span *ngIf="!isSavingRole()">Confirmar</span>
+          <span *ngIf="isSavingRole()">Guardando…</span>
+        </button>
+      </div>
     </div>
   </div>
 </section>

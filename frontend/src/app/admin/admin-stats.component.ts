@@ -106,7 +106,7 @@ export class AdminStatsComponent implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.errorMessage.set(
           err.status === 403
-            ? 'No tenés permisos para ver esta sección.'
+            ? 'No tienes permisos para ver esta sección.'
             : 'Error al cargar las estadísticas.',
         );
         this.isLoading.set(false);

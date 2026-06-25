@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Count
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
@@ -37,6 +38,87 @@ class dashboardUserData(APIView):
         profile = request.user.profile
         serializer = UserProfileSerializer(profile)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserRoleUpdateView(APIView):
+    """PATCH /api/dashboard/users/{id}/role/ — promueve o degrada un user.
+
+    Body: {"is_staff": bool, "is_superuser": bool} — ambos opcionales,
+    se aplican solo los que vengan en el payload.
+
+    Reglas de seguridad:
+      - Solo IsAdminUser puede llamar al endpoint.
+      - No puedes degradarte a ti mismo (anti-lockout: si el único
+        admin se sacó is_staff por error, nadie puede recuperarlo
+        sin SSH al VPS).
+      - Solo un superuser puede tocar `is_superuser` (el escalado
+        a super requiere ya ser super).
+      - 404 si el target user no existe.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request, user_id: int):
+        target = get_object_or_404(User, pk=user_id)
+
+        # Anti-self-lockout: el admin no puede sacarse sus propios
+        # privilegios. Hay que pedirle a OTRO admin.
+        is_self = request.user.id == target.id
+        wants_demote_self = is_self and (
+            request.data.get("is_staff") is False
+            or request.data.get("is_superuser") is False
+        )
+        if wants_demote_self:
+            return Response(
+                {
+                    "error": "self_demote_forbidden",
+                    "detail": (
+                        "No puedes degradarte a ti mismo. Pídele a otro admin "
+                        "que lo haga."
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Solo superusers pueden tocar is_superuser ajeno (defensa
+        # contra escalado: un staff común no debería poder hacer
+        # super a otro user, ni quitarle super a un super existente).
+        if "is_superuser" in request.data and not request.user.is_superuser:
+            return Response(
+                {
+                    "error": "superuser_required",
+                    "detail": "Solo un super-admin puede modificar el flag de superuser.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        updates: dict[str, bool] = {}
+        if "is_staff" in request.data:
+            updates["is_staff"] = bool(request.data["is_staff"])
+        if "is_superuser" in request.data:
+            updates["is_superuser"] = bool(request.data["is_superuser"])
+        if not updates:
+            return Response(
+                {
+                    "error": "no_fields",
+                    "detail": "Envía al menos is_staff o is_superuser en el body.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        for field, value in updates.items():
+            setattr(target, field, value)
+        target.save(update_fields=list(updates.keys()))
+
+        return Response(
+            {
+                "id": target.id,
+                "username": target.username,
+                "email": target.email,
+                "is_staff": target.is_staff,
+                "is_superuser": target.is_superuser,
+            }
+        )
 
 
 class dashboardStats(APIView):

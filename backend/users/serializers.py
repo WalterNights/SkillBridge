@@ -5,14 +5,26 @@ from users.models import PasswordResetToken, User, UserProfile, strip_image_meta
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    # SEGURIDAD: `rol` es read-only para prevenir mass-assignment desde
-    # el endpoint público de register. Sin esto, cualquiera podía POSTear
-    # con `{"rol": "admin"}` y crearse cuenta privilegiada.
+    # SEGURIDAD: `rol`, `is_staff` e `is_superuser` son read-only para
+    # prevenir mass-assignment desde el endpoint público de register.
+    # Sin esto, cualquiera podía POSTear con `{"is_staff": true}` y
+    # crearse cuenta privilegiada. El toggle de roles vive en su
+    # propio endpoint admin-gated (PATCH /dashboard/users/{id}/role/).
     rol = serializers.CharField(read_only=True)
+    is_staff = serializers.BooleanField(read_only=True)
+    is_superuser = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "password", "rol"]
+        fields = [
+            "id",
+            "username",
+            "email",
+            "password",
+            "rol",
+            "is_staff",
+            "is_superuser",
+        ]
 
     def create(self, validate_data):
         password = validate_data.pop("password")

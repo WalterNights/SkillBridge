@@ -62,3 +62,161 @@
     cursor: not-allowed;
   }
 }
+
+// ─── Role badges ─────────────────────────────────────────────────────
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+
+  &--staff {
+    color: #60a5fa;
+    background: rgba(96, 165, 250, 0.12);
+    border-color: rgba(96, 165, 250, 0.3);
+  }
+
+  &--super {
+    color: #c084fc;
+    background: rgba(192, 132, 252, 0.12);
+    border-color: rgba(192, 132, 252, 0.35);
+  }
+
+  &--self {
+    color: #8b8a85;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+// ─── Role action buttons ─────────────────────────────────────────────
+.role-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #d8d6cf;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &--promote {
+    color: #f97316;
+    border-color: rgba(249, 115, 22, 0.35);
+    background: rgba(249, 115, 22, 0.1);
+
+    &:hover:not(:disabled) {
+      background: rgba(249, 115, 22, 0.18);
+    }
+  }
+
+  &--demote {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.3);
+    background: rgba(248, 113, 113, 0.08);
+
+    &:hover:not(:disabled) {
+      background: rgba(248, 113, 113, 0.15);
+    }
+  }
+
+  &--secondary {
+    &:hover:not(:disabled) {
+      border-color: rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  &--confirm {
+    color: #ffffff;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    border-color: transparent;
+    box-shadow: 0 4px 12px -2px rgba(249, 115, 22, 0.35);
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.05);
+    }
+  }
+}
+
+// ─── Confirmation modal ──────────────────────────────────────────────
+.role-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  padding: 16px;
+  animation: role-overlay-in 140ms ease-out;
+}
+
+.role-modal {
+  width: 100%;
+  max-width: 460px;
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: role-modal-in 180ms ease-out;
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 4px;
+  }
+
+  &__icon {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__actions {
+    margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}
+
+@keyframes role-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes role-modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

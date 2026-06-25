@@ -28,9 +28,27 @@ export interface AdminStats {
   };
 }
 
+/** Payload para `PATCH /dashboard/users/{id}/role/`. Ambas keys son
+ *  opcionales — sólo se aplican las que vengan. El backend rechaza si
+ *  el body llega vacío. */
+export interface UserRoleUpdate {
+  is_staff?: boolean;
+  is_superuser?: boolean;
+}
+
+/** Respuesta del endpoint de rol — refleja el estado *después* del save. */
+export interface UserRoleResponse {
+  id: number;
+  username: string;
+  email: string;
+  is_staff: boolean;
+  is_superuser: boolean;
+}
+
 /**
- * Llamadas al endpoint admin (`/api/dashboard/stats/`). Acceso protegido
- * por `IsAdminUser` en el backend — los users sin `is_staff` reciben 403.
+ * Llamadas a los endpoints admin (`/api/dashboard/*`). Todas están
+ * protegidas por `IsAdminUser` en el backend — los users sin `is_staff`
+ * reciben 403 incluso si el AdminGuard del router falla.
  */
 @Injectable({ providedIn: 'root' })
 export class AdminService {
@@ -38,5 +56,15 @@ export class AdminService {
 
   getStats(): Observable<AdminStats> {
     return this.http.get<AdminStats>(`${environment.apiUrl}/dashboard/stats/`);
+  }
+
+  /** Promueve o degrada a un user. `userId` es el id del modelo User
+   *  (NO del UserProfile). El backend valida self-demote y exige
+   *  superuser para tocar `is_superuser`. */
+  updateUserRole(userId: number, payload: UserRoleUpdate): Observable<UserRoleResponse> {
+    return this.http.patch<UserRoleResponse>(
+      `${environment.apiUrl}/dashboard/users/${userId}/role/`,
+      payload,
+    );
   }
 }

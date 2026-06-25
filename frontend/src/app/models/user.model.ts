@@ -1,5 +1,11 @@
 /**
  * User entity interface
+ *
+ * En el dashboard admin el objeto viene del UserProfileSerializer, que
+ * nestea el modelo Django bajo `user`. Los flags de rol (`is_staff`,
+ * `is_superuser`) viven SOLO en `user.*` — el backend los hace read-only
+ * para evitar mass-assignment, y el toggle pasa por
+ * PATCH /api/dashboard/users/{user.id}/role/.
  */
 export interface User {
   id: number;
@@ -15,7 +21,11 @@ export interface User {
   date_joined: string;
   last_login?: string;
   user?: {
+    id: number;
     email: string;
+    username?: string;
+    is_staff?: boolean;
+    is_superuser?: boolean;
   };
 }
 
