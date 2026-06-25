@@ -42,6 +42,16 @@ export class CvImproveModalComponent implements OnInit {
   @Input({ required: true }) currentSkills = '';
   /** Primera entry de experiencia actual — sample para el preview. */
   @Input() currentSampleExperience: { position?: string; description?: string } | null = null;
+  /** Array completo de experiencias originales — necesario para mostrar
+   *  el diff de fechas (compara cada entry vs su contraparte mejorada).
+   *  Si la prop no está seteada o es texto libre, la sección de fechas
+   *  no se renderiza. */
+  @Input() currentExperience: Array<{
+    company?: string;
+    position?: string;
+    start_date?: string;
+    end_date?: string;
+  }> = [];
 
   @Output() applied = new EventEmitter<CvImproveResponse>();
   @Output() closed = new EventEmitter<void>();
@@ -112,4 +122,37 @@ export class CvImproveModalComponent implements OnInit {
       .map((l) => l.trim().replace(/^[•\-*]\s*/, ''))
       .filter(Boolean);
   }
+
+  /** Entries en las que Gemini modificó alguna fecha. Mostramos solo
+   *  los cambios para no inflar el modal con info redundante (los que
+   *  ya estaban bien no necesitan re-validación visual). */
+  dateChanges = computed<
+    Array<{
+      label: string;
+      beforeStart: string;
+      beforeEnd: string;
+      afterStart: string;
+      afterEnd: string;
+    }>
+  >(() => {
+    const p = this.proposal();
+    if (!p?.experience?.length || this.currentExperience.length === 0) return [];
+    const changes = [];
+    for (let i = 0; i < p.experience.length && i < this.currentExperience.length; i++) {
+      const orig = this.currentExperience[i];
+      const next = p.experience[i];
+      const startChanged = (orig.start_date ?? '') !== (next.start_date ?? '');
+      const endChanged = (orig.end_date ?? '') !== (next.end_date ?? '');
+      if (!startChanged && !endChanged) continue;
+      changes.push({
+        label:
+          `${next.position || orig.position || '(rol)'} · ${next.company || orig.company || '(empresa)'}`.trim(),
+        beforeStart: orig.start_date || '—',
+        beforeEnd: orig.end_date || '—',
+        afterStart: next.start_date || '—',
+        afterEnd: next.end_date || '—',
+      });
+    }
+    return changes;
+  });
 }

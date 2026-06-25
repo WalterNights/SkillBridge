@@ -394,6 +394,7 @@
   [currentSummary]="profileData?.summary || ''"
   [currentSkills]="profileData?.skills || ''"
   [currentSampleExperience]="firstExperienceSample()"
+  [currentExperience]="experienceArray() || []"
   (applied)="onImproveApplied($event)"
   (closed)="closeImprove()"
 />

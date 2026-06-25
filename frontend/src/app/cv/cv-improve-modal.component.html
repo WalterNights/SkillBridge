@@ -66,6 +66,37 @@
         </div>
       </section>
 
+      <!-- Date corrections — solo aparece si Gemini ajustó al menos una
+           fecha. Le muestra al user qué se cambió y por qué (para que
+           pueda descartar si la corrección no le hace sentido). -->
+      <section *ngIf="dateChanges().length > 0" class="imp-date-section">
+        <p class="imp-section-label">
+          <span class="material-symbols-outlined" style="font-size: 14px; font-variation-settings: 'FILL' 1">
+            event_repeat
+          </span>
+          Fechas corregidas ({{ dateChanges().length }})
+        </p>
+        <p class="imp-section-hint">
+          Detectamos fechas en el futuro, invertidas o solapadas. Revisalas — si la corrección no es correcta, cancelá y editá manualmente.
+        </p>
+        <ul class="imp-date-list">
+          <li *ngFor="let row of dateChanges()" class="imp-date-row">
+            <p class="imp-date-role">{{ row.label }}</p>
+            <div class="imp-date-diff">
+              <span class="imp-date-before">
+                <span class="imp-date-tag">Antes</span>
+                {{ row.beforeStart }} → {{ row.beforeEnd }}
+              </span>
+              <span class="material-symbols-outlined imp-date-arrow" style="font-size: 16px">arrow_forward</span>
+              <span class="imp-date-after">
+                <span class="imp-date-tag">Después</span>
+                {{ row.afterStart }} → {{ row.afterEnd }}
+              </span>
+            </div>
+          </li>
+        </ul>
+      </section>
+
       <!-- Sample experience entry preview -->
       <section *ngIf="p.experience.length > 0">
         <p class="imp-section-label">

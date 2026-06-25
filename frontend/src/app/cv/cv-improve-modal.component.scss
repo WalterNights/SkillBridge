@@ -271,3 +271,90 @@
     cursor: not-allowed;
   }
 }
+
+/* Date corrections section — solo aparece cuando hay fechas modificadas.
+ * Style consistente con el resto del diff (borders sutiles, badge naranja
+ * para "Después") pero con layout horizontal: rol → cambio en una sola
+ * fila para que se escanee fácil. */
+.imp-date-section {
+  margin-top: 4px;
+}
+
+.imp-section-hint {
+  margin: 4px 0 12px;
+  font-size: 12px;
+  color: #8b8a85;
+  line-height: 1.45;
+}
+
+.imp-date-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.imp-date-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: rgba(249, 115, 22, 0.04);
+  border: 1px solid rgba(249, 115, 22, 0.18);
+  border-radius: 10px;
+}
+
+.imp-date-role {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e8e5dd;
+}
+
+.imp-date-diff {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #cfcfc8;
+  font-variant-numeric: tabular-nums;
+}
+
+.imp-date-tag {
+  display: inline-block;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-right: 6px;
+  color: #8b8a85;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.imp-date-before {
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 107, 107, 0.6);
+  color: #8b8a85;
+  .imp-date-tag {
+    text-decoration: none;
+  }
+}
+
+.imp-date-after {
+  color: #f5f3ed;
+  font-weight: 600;
+  .imp-date-tag {
+    color: #f97316;
+    background: rgba(249, 115, 22, 0.12);
+  }
+}
+
+.imp-date-arrow {
+  color: #8b8a85;
+  flex-shrink: 0;
+}

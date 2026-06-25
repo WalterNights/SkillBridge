@@ -15,7 +15,7 @@ from unittest.mock import patch
 
 import pytest
 
-from users.services.cv_improver import _normalize_improved
+from users.services.cv_improver import _detect_cv_language, _normalize_improved
 
 
 _VALID_IMPROVE_PAYLOAD = {
@@ -157,6 +157,44 @@ class TestNormalizerDates:
         assert entry["company"] == "Acme"  # preservada
         assert entry["position"] == "Dev"  # preservada
         assert entry["description"] == "• Bullet mejorado"
+
+    def test_english_cv_is_detected(self):
+        payload = {
+            "summary": (
+                "Over 3 years of experience in software development, "
+                "transforming complex requirements into scalable solutions."
+            ),
+            "experience": [
+                {
+                    "description": (
+                        "• Led the team in building a new platform.\n"
+                        "• Implemented authentication with JWT and OAuth.\n"
+                    ),
+                },
+            ],
+        }
+        assert _detect_cv_language(payload) == "en"
+
+    def test_spanish_cv_is_detected(self):
+        payload = {
+            "summary": (
+                "Más de 3 años de experiencia en desarrollo de software, "
+                "transformando requisitos complejos en soluciones escalables."
+            ),
+            "experience": [
+                {
+                    "description": (
+                        "• Lideré el equipo en la construcción de la plataforma.\n"
+                        "• Implementé autenticación con JWT y OAuth.\n"
+                    ),
+                },
+            ],
+        }
+        assert _detect_cv_language(payload) == "es"
+
+    def test_empty_payload_defaults_to_spanish(self):
+        assert _detect_cv_language({}) == "es"
+        assert _detect_cv_language({"summary": "", "experience": []}) == "es"
 
     def test_dates_fallback_to_original_when_missing(self):
         original = {

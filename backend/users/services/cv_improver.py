@@ -37,23 +37,30 @@ _PROMPT_TEMPLATE = """Sos un coach de CV especializado en LATAM. Tu trabajo: tom
 PERFIL ACTUAL (JSON):
 {profile_json}
 
-CONTEXTO TEMPORAL: la fecha de hoy es {today}. Cualquier fecha posterior es FUTURO y casi siempre indica un error de tipeo (ej. "2025" cuando quisieron decir "2024"). NO debe haber `end_date` en el futuro salvo si es explícitamente "Presente"/"Actual"/"Current".
+IDIOMA OBLIGATORIO DE LA RESPUESTA: {language_name} ({language_code}).
+Reescribí TODO el texto (summary, skills, soft_skills, professional_title,
+descriptions de experiencia, location, etc) en {language_name}. Si el CV
+original está en {language_name}, mantenelo. Si está en otro idioma, lo
+detectamos mal — respondé igual en {language_name}. NO TRADUZCAS si el
+original ya está en {language_name}.
+
+CONTEXTO TEMPORAL: la fecha de hoy es {today}. Cualquier fecha posterior es FUTURO y casi siempre indica un error de tipeo (ej. "2025" cuando quisieron decir "2024"). NO debe haber `end_date` en el futuro salvo si es explícitamente "Presente"/"Actual"/"Current"/"Present".
 
 REGLAS OBLIGATORIAS:
 - NO INVENTES empresas, títulos, instituciones, idiomas, ni roles enteros. Esa parte del CV es sagrada.
+- NO TRADUZCAS — respondé en el mismo idioma del input. Si el summary del input dice "Over 3 years of experience…" devolvé summary en INGLÉS, no "Más de 3 años de experiencia…". Lo mismo para skills, bullets, todo.
 - FECHAS: podés CORREGIRLAS si están claramente rotas:
     a) `start_date` posterior a `end_date` → invertilas si tiene sentido, o ajustá la que parezca tipeada mal (el otro context — el rol anterior/siguiente — ayuda a inferir).
-    b) `end_date` en el futuro (después de hoy) Y el user NO indicó "Presente"/"Actual" → ajustá a "Presente" si es el rol más reciente, o al mes anterior al siguiente trabajo si no.
+    b) `end_date` en el futuro (después de hoy) Y el user NO indicó "Presente"/"Actual"/"Present" → ajustá a "Presente"/"Present" (en el idioma del CV) si es el rol más reciente, o al mes anterior al siguiente trabajo si no.
     c) Solapamientos imposibles (2 jobs fulltime mismo período en empresas distintas) → ajustá las fechas más sospechosas (las que tienen año futuro o no encajan con la cronología).
   Si las fechas se ven OK, NO las toques. NO inventes meses ni años con cero evidencia.
 - PRESERVÁ el número exacto de entries en `experience` y `education`. Si el CV tiene 3 trabajos, devolvé 3 trabajos.
 - Para cada entry de `experience`, `description` debe MANTENER UN BULLET POR LÍNEA con prefijo "• ". PRESERVÁ EL NÚMERO de bullets — si la entry tenía 12 bullets, devolvé 12 mejorados (no 4, no 15).
-- Cada bullet reescrito debe ser ACCIONABLE: empezar con verbo en pasado (Lideré, Implementé, Reduje, Diseñé, Optimicé, etc), incluir un número/métrica cuando sea razonable inferirlo (marcado con + o ~ si es estimación), evitar la voz pasiva ("Fue responsable de" → "Lideré").
-- `summary`: reescribilo en 3-5 oraciones que vendan al candidato. Hook → contexto → diferenciador. Sin clichés ("apasionado", "team player puro", "go-getter").
+- Cada bullet reescrito debe ser ACCIONABLE: empezar con verbo en pasado (en español: Lideré, Implementé, Reduje, Diseñé, Optimicé; en inglés: Led, Implemented, Reduced, Designed, Optimized), incluir un número/métrica cuando sea razonable inferirlo (marcado con + o ~ si es estimación), evitar la voz pasiva ("Fue responsable de" → "Lideré", "Was responsible for" → "Led").
+- `summary`: reescribilo en 3-5 oraciones que vendan al candidato. Hook → contexto → diferenciador. Sin clichés ("apasionado", "team player puro", "go-getter", "passionate", "rockstar").
 - `skills`: comma-separated, podés reordenar las más relevantes primero pero NO agregar nuevas. NO descartar ninguna que esté en el original.
 - `soft_skills`: idem, no agregar nuevas.
-- `professional_title`: respetá el actual a menos que sea claramente ambiguo (en cuyo caso ajustalo a algo más estándar — ej "Dev Full Stack" → "Full Stack Developer").
-- Mantené el idioma del CV original.
+- `professional_title`: respetá el actual a menos que sea claramente ambiguo (en cuyo caso ajustalo a algo más estándar — ej "Dev Full Stack" → "Full Stack Developer"). En el mismo idioma del input.
 
 Devolvé ÚNICAMENTE un JSON válido con esta forma exacta (mismas keys que el input, mismos counts):
 {{
@@ -92,12 +99,18 @@ def improve_cv(profile_payload: dict) -> dict:
     # largos (10+ trabajos) se truncan al sample de input — el resto se
     # preserva intacto post-merge.
     profile_json = json.dumps(profile_payload, ensure_ascii=False, indent=2)[:12000]
-    # Pasamos "today" en formato YYYY-MM-DD al prompt para que el modelo
-    # detecte fechas en el futuro (caso típico: año tipeado mal) sin
-    # tener que inferir nada.
+    # Detectar idioma del CV upfront — sin esto, Gemini ve un prompt en
+    # español y asume que debe responder en español aunque el CV input
+    # esté en inglés. La detección es heurística (stopwords) pero
+    # suficiente para distinguir es vs en, que cubren ~99% de nuestros
+    # users en LATAM/EEUU.
+    lang_code = _detect_cv_language(profile_payload)
+    lang_name = "Spanish (español)" if lang_code == "es" else "English"
     prompt = _PROMPT_TEMPLATE.format(
         profile_json=profile_json,
         today=date.today().isoformat(),
+        language_code=lang_code,
+        language_name=lang_name,
     )
 
     try:
@@ -123,6 +136,47 @@ def improve_cv(profile_payload: dict) -> dict:
         raise ImproveError("Estructura de respuesta inválida.")
 
     return _normalize_improved(data, profile_payload)
+
+
+# Stopwords de cada idioma — palabras de muy alta frecuencia que casi
+# nunca aparecen en el otro idioma. Para CVs de developers (a veces con
+# stack en inglés "React, Node") evitamos contar los términos técnicos
+# y nos enfocamos en conectores comunes que delatan la prosa.
+_ES_STOPWORDS = frozenset({
+    "el", "la", "los", "las", "de", "del", "en", "con", "para", "por",
+    "y", "o", "pero", "como", "que", "qué", "más", "este", "esta",
+    "estos", "estas", "un", "una", "unos", "unas", "ser", "fue", "es",
+    "son", "soy", "tiene", "tienen", "su", "sus", "mi", "mis", "nos",
+    "se", "le", "lo", "al",
+})
+_EN_STOPWORDS = frozenset({
+    "the", "of", "and", "to", "in", "for", "with", "on", "at", "by",
+    "from", "as", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "do", "does", "did", "but", "or", "if",
+    "this", "that", "these", "those", "an", "a", "i", "we", "you",
+    "my", "our", "their",
+})
+
+
+def _detect_cv_language(payload: dict) -> str:
+    """Devuelve 'es' o 'en' según los stopwords más frecuentes en el
+    texto libre del CV. Mira summary + descripciones de experience
+    (skills suele tener jerga técnica en inglés siempre, no es señal).
+    Default 'es' si ninguno gana o no hay texto suficiente.
+    """
+    chunks = [payload.get("summary", "") or ""]
+    for exp in payload.get("experience", []) or []:
+        if isinstance(exp, dict):
+            chunks.append(exp.get("description", "") or "")
+    text = " ".join(chunks).lower()
+    if len(text) < 30:
+        return "es"
+    tokens = re.findall(r"[a-záéíóúñ]+", text)
+    es_hits = sum(1 for t in tokens if t in _ES_STOPWORDS)
+    en_hits = sum(1 for t in tokens if t in _EN_STOPWORDS)
+    if en_hits > es_hits:
+        return "en"
+    return "es"
 
 
 def _strip_markdown_fences(text: str) -> str:
