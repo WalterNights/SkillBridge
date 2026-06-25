@@ -70,6 +70,10 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./public/como-funciona/como-funciona.component').then((m) => m.ComoFuncionaComponent),
   },
+  {
+    path: 'faq',
+    loadComponent: () => import('./public/faq/faq.component').then((m) => m.FaqComponent),
+  },
   // Fallback público de /recursos y /blog. Los componentes detectan auth
   // state y skip PublicNav/PublicFooter cuando están dentro del shell.
   {
@@ -165,6 +169,11 @@ export const routes: Routes = [
             path: 'stats',
             loadComponent: () =>
               import('./admin/admin-stats.component').then((m) => m.AdminStatsComponent),
+          },
+          {
+            path: 'faqs',
+            loadComponent: () =>
+              import('./admin/admin-faqs.component').then((m) => m.AdminFaqsComponent),
           },
         ],
       },

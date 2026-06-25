@@ -1,0 +1,190 @@
+<app-public-nav></app-public-nav>
+
+<main class="faq-page">
+  <header class="faq-hero">
+    <p class="faq-eyebrow">SOPORTE</p>
+    <h1>Preguntas frecuentes</h1>
+    <p class="faq-subtitle">
+      Lo que la mayoría quiere saber sobre SkilTak. ¿Te quedó algo en el aire?
+      <button type="button" class="faq-inline-link" (click)="openAskModal()">Pregunta tú mismo</button>
+      y un admin te responde.
+    </p>
+
+    <div class="faq-search">
+      <span class="material-symbols-outlined" style="font-size: 18px">search</span>
+      <input
+        type="text"
+        placeholder="Buscar en las preguntas…"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+      />
+    </div>
+
+    <div class="faq-cat-pills">
+      <button
+        type="button"
+        class="faq-pill"
+        [class.faq-pill--active]="activeCategory() === ''"
+        (click)="setCategory('')"
+      >
+        Todas
+      </button>
+      <button
+        *ngFor="let cat of categories()"
+        type="button"
+        class="faq-pill"
+        [class.faq-pill--active]="activeCategory() === cat.slug"
+        (click)="setCategory(cat.slug)"
+      >
+        {{ cat.name }}
+      </button>
+    </div>
+  </header>
+
+  <section class="faq-content">
+    <div *ngIf="isLoading()" class="faq-state">Cargando…</div>
+
+    <div *ngIf="!isLoading() && errorMessage()" class="faq-state faq-state--error">
+      {{ errorMessage() }}
+    </div>
+
+    <div
+      *ngIf="!isLoading() && !errorMessage() && filteredFaqs().length === 0"
+      class="faq-state"
+    >
+      <p>No encontramos preguntas que coincidan.</p>
+      <button type="button" class="btn-primary mt-3" (click)="openAskModal()">
+        <span class="material-symbols-outlined" style="font-size: 16px">add_comment</span>
+        Hacer mi pregunta
+      </button>
+    </div>
+
+    <div *ngIf="!isLoading() && !errorMessage() && filteredFaqs().length > 0" class="faq-groups">
+      <article *ngFor="let group of faqsByCategory()" class="faq-group">
+        <header class="faq-group-header">
+          <h2>{{ group.category.name }}</h2>
+          <p *ngIf="group.category.description" class="faq-group-desc">
+            {{ group.category.description }}
+          </p>
+        </header>
+
+        <ul class="faq-list">
+          <li
+            *ngFor="let f of group.entries; trackBy: trackFaq"
+            class="faq-item"
+            [class.faq-item--open]="isExpanded(f.id)"
+          >
+            <button type="button" class="faq-q" (click)="toggle(f.id)">
+              <span class="faq-q-text">{{ f.question }}</span>
+              <span class="material-symbols-outlined faq-chevron">
+                {{ isExpanded(f.id) ? 'expand_less' : 'expand_more' }}
+              </span>
+            </button>
+            <div class="faq-a" *ngIf="isExpanded(f.id)">
+              <p>{{ f.answer }}</p>
+            </div>
+          </li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <!-- CTA pegado abajo: "¿No encontraste tu duda?" -->
+  <aside class="faq-ask-cta">
+    <div>
+      <h3>¿No encontraste tu duda?</h3>
+      <p>Envíanos tu pregunta — un admin la revisa y la publica para que ayude a otros.</p>
+    </div>
+    <button type="button" class="btn-primary" (click)="openAskModal()">
+      <span class="material-symbols-outlined" style="font-size: 16px">add_comment</span>
+      {{ isAuthenticated ? 'Hacer una pregunta' : 'Inicia sesión para preguntar' }}
+    </button>
+  </aside>
+</main>
+
+<app-public-footer></app-public-footer>
+
+<!-- Modal: Hacer pregunta -->
+<div *ngIf="isAskModalOpen()" class="faq-modal-overlay" (click)="closeAskModal()">
+  <div class="faq-modal glass-strong" (click)="$event.stopPropagation()">
+    <header class="faq-modal-header">
+      <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold">Hacer una pregunta</p>
+      <h2 class="text-lg font-semibold text-bone">¿Sobre qué necesitas ayuda?</h2>
+      <button type="button" class="faq-modal-close" (click)="closeAskModal()" aria-label="Cerrar">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </header>
+
+    <!-- Pre-submit: textarea -->
+    <ng-container *ngIf="!lastAskResponse(); else responseTpl">
+      <p class="text-sm text-warm-grey mb-3">
+        Te respondemos al instante con AI. Tu pregunta queda en cola para que un admin la revise y
+        decida si se publica en la sección pública.
+      </p>
+      <textarea
+        rows="4"
+        maxlength="300"
+        class="faq-textarea"
+        placeholder="Ej. ¿Puedo cambiar mi correo después de registrarme?"
+        [ngModel]="draftQuestion()"
+        (ngModelChange)="draftQuestion.set($event)"
+        [disabled]="isSubmittingQuestion()"
+      ></textarea>
+      <p class="faq-char-count">{{ draftQuestion().length }} / 300</p>
+
+      <div class="faq-modal-actions">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="closeAskModal()"
+          [disabled]="isSubmittingQuestion()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="submitQuestion()"
+          [disabled]="isSubmittingQuestion() || draftQuestion().trim().length < 10"
+        >
+          <span *ngIf="!isSubmittingQuestion()">Enviar pregunta</span>
+          <span *ngIf="isSubmittingQuestion()">Enviando…</span>
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- Post-submit: respuesta AI inline -->
+    <ng-template #responseTpl>
+      <div class="faq-response">
+        <div class="faq-response-q">
+          <span class="material-symbols-outlined" style="font-size: 16px">help</span>
+          <p>{{ lastAskResponse()!.question }}</p>
+        </div>
+        <div *ngIf="lastAskResponse()!.has_ai_answer" class="faq-response-a">
+          <p class="faq-response-label">
+            <span class="material-symbols-outlined" style="font-size: 14px; font-variation-settings: 'FILL' 1">
+              auto_awesome
+            </span>
+            Respuesta automática (AI)
+          </p>
+          <p>{{ lastAskResponse()!.ai_answer }}</p>
+        </div>
+        <div *ngIf="!lastAskResponse()!.has_ai_answer" class="faq-response-fallback">
+          <p>
+            No pudimos generar una respuesta automática esta vez. Un admin revisará tu pregunta y te
+            contactará si publica la respuesta.
+          </p>
+        </div>
+        <p class="faq-response-note">
+          Tu pregunta queda en revisión. Si el admin la aprueba, aparece en la sección pública para
+          ayudar a otros usuarios.
+        </p>
+      </div>
+      <div class="faq-modal-actions">
+        <button type="button" class="btn-primary" (click)="closeAskModal()">
+          Listo
+        </button>
+      </div>
+    </ng-template>
+  </div>
+</div>

@@ -1,0 +1,265 @@
+<section class="px-4 lg:px-8 py-8 lg:py-10">
+  <div class="max-w-6xl mx-auto">
+    <!-- Page header -->
+    <header class="mb-7">
+      <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-2">Administración</p>
+      <h1 class="text-3xl lg:text-4xl font-black text-bone tracking-tight leading-tight">FAQ y soporte</h1>
+      <p class="text-sm text-warm-grey mt-2">
+        Modera las preguntas enviadas por usuarios y curáa las que respondemos públicamente.
+      </p>
+    </header>
+
+    <!-- Stats grid -->
+    <div *ngIf="stats() as s" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <article class="glass-strong rounded-2xl p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <span
+            class="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary"
+            style="font-size: 18px; font-variation-settings: 'FILL' 1"
+          >help</span>
+          <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold">Total preguntas</p>
+        </div>
+        <p class="text-3xl font-black text-bone tabular-nums">{{ s.totals.all }}</p>
+      </article>
+
+      <article class="glass-strong rounded-2xl p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <span
+            class="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center material-symbols-outlined text-amber-400"
+            style="font-size: 18px; font-variation-settings: 'FILL' 1"
+          >pending</span>
+          <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold">En cola</p>
+        </div>
+        <p class="text-3xl font-black text-bone tabular-nums">{{ s.totals.pending }}</p>
+      </article>
+
+      <article class="glass-strong rounded-2xl p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <span
+            class="w-9 h-9 rounded-xl bg-emerald-500/15 flex items-center justify-center material-symbols-outlined text-emerald-400"
+            style="font-size: 18px; font-variation-settings: 'FILL' 1"
+          >verified</span>
+          <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold">Publicadas</p>
+        </div>
+        <p class="text-3xl font-black text-bone tabular-nums">{{ s.totals.published }}</p>
+      </article>
+
+      <article class="glass-strong rounded-2xl p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <span
+            class="w-9 h-9 rounded-xl bg-violet-500/15 flex items-center justify-center material-symbols-outlined text-violet-400"
+            style="font-size: 18px; font-variation-settings: 'FILL' 1"
+          >trending_up</span>
+          <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold">Ratio aprobación</p>
+        </div>
+        <p class="text-3xl font-black text-bone tabular-nums">{{ s.approval_rate_pct }}%</p>
+        <p class="text-xs text-dim mt-1">de las decididas</p>
+      </article>
+    </div>
+
+    <!-- Filter pills -->
+    <div class="flex flex-wrap gap-2 mb-5">
+      <button
+        *ngFor="let opt of filterOptions"
+        type="button"
+        class="faq-filter-pill"
+        [class.faq-filter-pill--active]="statusFilter() === opt.value"
+        (click)="setFilter(opt.value)"
+      >
+        {{ opt.label }}
+      </button>
+      <p class="text-xs text-warm-grey self-center ml-auto">
+        <span class="text-bone font-semibold">{{ totalShown() }}</span> mostradas
+      </p>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading()" class="glass-strong rounded-2xl p-8 text-center">
+      <p class="text-sm text-warm-grey">Cargando…</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="!isLoading() && errorMessage()" class="glass-strong rounded-2xl p-8 text-center">
+      <p class="text-sm text-danger">{{ errorMessage() }}</p>
+    </div>
+
+    <!-- Empty -->
+    <div
+      *ngIf="!isLoading() && !errorMessage() && faqs().length === 0"
+      class="glass-strong rounded-2xl p-10 text-center"
+    >
+      <span
+        class="inline-flex w-14 h-14 rounded-full bg-primary/15 items-center justify-center mb-4 material-symbols-outlined text-primary"
+        style="font-size: 24px"
+      >inbox</span>
+      <h3 class="text-lg font-semibold text-bone mb-1">Sin preguntas en este filtro</h3>
+      <p class="text-sm text-warm-grey">Cambia el filtro arriba para ver otras.</p>
+    </div>
+
+    <!-- FAQ cards -->
+    <div *ngIf="!isLoading() && faqs().length > 0" class="flex flex-col gap-4">
+      <article *ngFor="let f of faqs(); trackBy: trackFaq" class="faq-card glass-strong rounded-2xl p-5">
+        <header class="flex flex-wrap items-start gap-3 mb-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2 mb-1">
+              <span class="faq-status-badge faq-status-badge--{{ f.status }}">
+                {{ statusLabel(f.status) }}
+              </span>
+              <span class="faq-source-badge">{{ sourceLabel(f.source) }}</span>
+              <span *ngIf="f.category" class="faq-cat-tag">{{ f.category.name }}</span>
+              <span *ngIf="f.submitted_by_username" class="faq-meta">
+                <span class="material-symbols-outlined" style="font-size: 13px">person</span>
+                {{ f.submitted_by_username }}
+              </span>
+              <span class="faq-meta">
+                <span class="material-symbols-outlined" style="font-size: 13px">visibility</span>
+                {{ f.view_count }}
+              </span>
+            </div>
+            <h3 class="text-base font-semibold text-bone leading-snug">{{ f.question }}</h3>
+            <p class="text-xs text-dim mt-1">Enviada {{ f.created_at | date: 'medium' }}</p>
+          </div>
+        </header>
+
+        <!-- VIEW MODE -->
+        <ng-container *ngIf="!isEditing(f.id)">
+          <div *ngIf="f.answer" class="faq-card-answer">
+            <p class="text-xs uppercase tracking-[0.1em] text-warm-grey font-semibold mb-1">Respuesta actual</p>
+            <p class="text-sm text-bone whitespace-pre-line">{{ f.answer }}</p>
+          </div>
+          <div *ngIf="!f.answer && f.ai_draft" class="faq-card-answer faq-card-answer--draft">
+            <p class="text-xs uppercase tracking-[0.1em] text-primary font-semibold mb-1 flex items-center gap-1">
+              <span class="material-symbols-outlined" style="font-size: 13px">auto_awesome</span>
+              Draft de la AI (sin publicar)
+            </p>
+            <p class="text-sm text-warm-grey whitespace-pre-line">{{ f.ai_draft }}</p>
+          </div>
+          <div *ngIf="!f.answer && !f.ai_draft" class="faq-card-answer faq-card-answer--empty">
+            <p class="text-sm text-warm-grey">
+              Sin respuesta. La AI no pudo generar un draft — edita manualmente antes de publicar.
+            </p>
+          </div>
+
+          <div *ngIf="f.moderation_note" class="faq-card-note">
+            <p class="text-xs uppercase tracking-[0.1em] text-warm-grey font-semibold mb-1">Nota de moderación</p>
+            <p class="text-sm text-warm-grey">{{ f.moderation_note }}</p>
+          </div>
+
+          <div class="faq-card-actions">
+            <button
+              type="button"
+              class="faq-btn faq-btn--secondary"
+              (click)="startEdit(f)"
+              [disabled]="isSaving(f.id)"
+            >
+              <span class="material-symbols-outlined" style="font-size: 16px">edit</span>
+              Editar
+            </button>
+            <button
+              *ngIf="f.status !== 'published'"
+              type="button"
+              class="faq-btn faq-btn--publish"
+              (click)="publish(f)"
+              [disabled]="isSaving(f.id)"
+            >
+              <span class="material-symbols-outlined" style="font-size: 16px">check</span>
+              Publicar
+            </button>
+            <button
+              *ngIf="f.status !== 'rejected'"
+              type="button"
+              class="faq-btn faq-btn--reject"
+              (click)="reject(f)"
+              [disabled]="isSaving(f.id)"
+            >
+              <span class="material-symbols-outlined" style="font-size: 16px">block</span>
+              Rechazar
+            </button>
+            <button
+              type="button"
+              class="faq-btn faq-btn--danger ml-auto"
+              (click)="hardDelete(f)"
+              [disabled]="isSaving(f.id)"
+              title="Eliminar permanentemente (pierde el track)"
+            >
+              <span class="material-symbols-outlined" style="font-size: 16px">delete</span>
+            </button>
+          </div>
+        </ng-container>
+
+        <!-- EDIT MODE -->
+        <ng-container *ngIf="draftFor(f.id) as draft">
+          <div class="faq-edit">
+            <label class="faq-label">
+              Respuesta pública
+              <textarea
+                rows="6"
+                class="faq-textarea"
+                placeholder="La respuesta que ven los visitantes en /faq."
+                [ngModel]="draft.answer"
+                (ngModelChange)="updateDraft(f.id, { answer: $event })"
+                [disabled]="isSaving(f.id)"
+              ></textarea>
+            </label>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label class="faq-label">
+                Categoría
+                <select
+                  class="faq-select"
+                  [ngModel]="draft.categoryId"
+                  (ngModelChange)="updateDraft(f.id, { categoryId: $event })"
+                  [disabled]="isSaving(f.id)"
+                >
+                  <option [ngValue]="null">— Sin categoría —</option>
+                  <option *ngFor="let c of categories()" [ngValue]="c.id">{{ c.name }}</option>
+                </select>
+              </label>
+
+              <label class="faq-label">
+                Nota de moderación (opcional)
+                <input
+                  type="text"
+                  maxlength="200"
+                  class="faq-input"
+                  placeholder="Razón si rechazas (ofensivo, irrelevante…)"
+                  [ngModel]="draft.moderationNote"
+                  (ngModelChange)="updateDraft(f.id, { moderationNote: $event })"
+                  [disabled]="isSaving(f.id)"
+                />
+              </label>
+            </div>
+
+            <div class="faq-card-actions">
+              <button
+                type="button"
+                class="faq-btn faq-btn--secondary"
+                (click)="cancelEdit(f.id)"
+                [disabled]="isSaving(f.id)"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                class="faq-btn faq-btn--secondary"
+                (click)="saveDraftOnly(f)"
+                [disabled]="isSaving(f.id)"
+              >
+                Guardar sin publicar
+              </button>
+              <button
+                type="button"
+                class="faq-btn faq-btn--publish"
+                (click)="publish(f)"
+                [disabled]="isSaving(f.id)"
+              >
+                <span *ngIf="!isSaving(f.id)">Guardar y publicar</span>
+                <span *ngIf="isSaving(f.id)">Guardando…</span>
+              </button>
+            </div>
+          </div>
+        </ng-container>
+      </article>
+    </div>
+  </div>
+</section>
