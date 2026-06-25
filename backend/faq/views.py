@@ -24,7 +24,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
 from rest_framework import status
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -179,12 +179,24 @@ class FaqAskView(APIView):
 # ──────────────────────────────────────────────────────────────────────
 
 
-class FaqAdminListView(ListAPIView):
-    """GET /api/faq/admin/ — lista paginada para la cola de moderación.
+class FaqAdminListView(ListCreateAPIView):
+    """GET /api/faq/admin/   — lista paginada para la cola de moderación.
+    POST /api/faq/admin/     — el admin crea una FAQ curada manualmente.
 
-    Filtros:
+    GET filtros:
       - ?status=pending|published|rejected|all (default: pending)
       - ?source=user|seed
+
+    POST shape esperado:
+      { question, answer, category_id?, status? }
+
+    Reglas del POST (forzadas por perform_create, no por el cliente):
+      - `source` se setea a `seed` siempre — esta vía es para curaduría
+        del admin, no para preguntas de usuarios.
+      - `submitted_by` queda en NULL (no es una pregunta enviada por user).
+      - `status` default = `published` para que aparezca de una en /faq.
+      - Si `status` = `published`, registramos al admin como moderador
+        + timestamp (audit trail).
     """
 
     permission_classes = [IsAdminUser]
@@ -201,6 +213,25 @@ class FaqAdminListView(ListAPIView):
         if source:
             qs = qs.filter(source=source)
         return qs
+
+    def perform_create(self, serializer):
+        # `source` y `submitted_by` están en `read_only_fields` del
+        # serializer (defensa contra mass-assignment), así que el cliente
+        # no los puede setear — los forzamos acá.
+        requested_status = self.request.data.get("status") or FaqQuestion.STATUS_PUBLISHED
+        moderation = {}
+        if requested_status == FaqQuestion.STATUS_PUBLISHED:
+            moderation = {
+                "moderated_by": self.request.user,
+                "moderated_at": timezone.now(),
+            }
+        serializer.save(
+            source=FaqQuestion.SOURCE_SEED,
+            submitted_by=None,
+            status=requested_status,
+            ai_draft="",  # nunca hay draft AI en curaduría manual
+            **moderation,
+        )
 
 
 class FaqAdminDetailView(APIView):

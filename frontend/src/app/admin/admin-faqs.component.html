@@ -57,8 +57,8 @@
       </article>
     </div>
 
-    <!-- Filter pills -->
-    <div class="flex flex-wrap gap-2 mb-5">
+    <!-- Filter pills + acción "Nueva pregunta" -->
+    <div class="flex flex-wrap items-center gap-2 mb-5">
       <button
         *ngFor="let opt of filterOptions"
         type="button"
@@ -67,6 +67,15 @@
         (click)="setFilter(opt.value)"
       >
         {{ opt.label }}
+      </button>
+      <button
+        type="button"
+        class="faq-filter-pill faq-filter-pill--create"
+        (click)="openCreateModal()"
+        title="Crear una FAQ curada directo"
+      >
+        <span class="material-symbols-outlined" style="font-size: 16px">add</span>
+        Nueva pregunta
       </button>
       <p class="text-xs text-warm-grey self-center ml-auto">
         <span class="text-bone font-semibold">{{ totalShown() }}</span> mostradas
@@ -263,3 +272,98 @@
     </div>
   </div>
 </section>
+
+<!-- Modal: Nueva pregunta (FAQ curada por admin) -->
+<div *ngIf="isCreateOpen()" class="faq-create-overlay" (click)="closeCreateModal()">
+  <div class="faq-create-modal glass-strong" (click)="$event.stopPropagation()">
+    <header class="faq-create-header">
+      <div>
+        <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold">Nueva FAQ</p>
+        <h2 class="text-lg font-semibold text-bone">Agregar pregunta curada</h2>
+      </div>
+      <button type="button" class="faq-create-close" (click)="closeCreateModal()" aria-label="Cerrar">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </header>
+
+    <form class="faq-create-form" (ngSubmit)="submitCreateFaq()" autocomplete="off">
+      <label class="faq-label">
+        Pregunta
+        <textarea
+          rows="2"
+          maxlength="300"
+          class="faq-textarea"
+          placeholder="¿Cómo funciona el matching?"
+          [(ngModel)]="createForm.question"
+          [ngModelOptions]="{ standalone: true }"
+          [disabled]="isCreatingFaq()"
+        ></textarea>
+      </label>
+
+      <label class="faq-label">
+        Respuesta
+        <textarea
+          rows="5"
+          class="faq-textarea"
+          placeholder="Texto que verán los visitantes en /faq."
+          [(ngModel)]="createForm.answer"
+          [ngModelOptions]="{ standalone: true }"
+          [disabled]="isCreatingFaq()"
+        ></textarea>
+      </label>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label class="faq-label">
+          Categoría
+          <select
+            class="faq-select"
+            [(ngModel)]="createForm.categoryId"
+            [ngModelOptions]="{ standalone: true }"
+            [disabled]="isCreatingFaq()"
+          >
+            <option [ngValue]="null">— Sin categoría —</option>
+            <option *ngFor="let c of categories()" [ngValue]="c.id">{{ c.name }}</option>
+          </select>
+        </label>
+
+        <label class="faq-publish-toggle">
+          <input
+            type="checkbox"
+            [(ngModel)]="createForm.publishImmediately"
+            [ngModelOptions]="{ standalone: true }"
+            [disabled]="isCreatingFaq()"
+          />
+          <div>
+            <p class="text-sm text-bone font-semibold">Publicar inmediatamente</p>
+            <p class="text-xs text-warm-grey">
+              Si está apagado, queda como borrador (status: pendiente).
+            </p>
+          </div>
+        </label>
+      </div>
+
+      <p *ngIf="createError()" class="text-xs text-danger">{{ createError() }}</p>
+
+      <div class="faq-create-actions">
+        <button
+          type="button"
+          class="faq-btn faq-btn--secondary"
+          (click)="closeCreateModal()"
+          [disabled]="isCreatingFaq()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="faq-btn faq-btn--publish"
+          [disabled]="isCreatingFaq()"
+        >
+          <span *ngIf="!isCreatingFaq()">
+            {{ createForm.publishImmediately ? 'Publicar' : 'Guardar borrador' }}
+          </span>
+          <span *ngIf="isCreatingFaq()">Guardando…</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

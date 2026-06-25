@@ -23,6 +23,15 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Reserva el espacio del scrollbar incluso cuando no hay overflow.
+   * Sin esto, navegar de una página corta (sin scroll) a una larga
+   * (con scroll) hace que el contenido salte horizontalmente ~15px
+   * porque la scrollbar aparece y reduce el viewport width.
+   *
+   * `stable` reserva siempre; el navegador lo dibuja transparente
+   * cuando no hace falta. Soportado en todos los browsers modernos
+   * desde 2022. */
+  scrollbar-gutter: stable;
 }
 
 body {

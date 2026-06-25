@@ -23,6 +23,117 @@
     color: #f97316;
     border-color: rgba(249, 115, 22, 0.35);
   }
+
+  // Variante visual para el botón de "Nueva pregunta" en la misma
+  // línea — fondo sólido naranja para diferenciarlo de los filtros.
+  &--create {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 8px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    border-color: transparent;
+    box-shadow: 0 4px 12px -2px rgba(249, 115, 22, 0.35);
+
+    &:hover {
+      filter: brightness(1.05);
+      background: linear-gradient(135deg, #f97316, #ea580c);
+    }
+  }
+}
+
+// ─── Create-FAQ modal ─────────────────────────────────────────────
+.faq-create-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 70;
+  padding: 16px;
+  animation: faq-create-overlay-in 140ms ease-out;
+}
+
+.faq-create-modal {
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  border-radius: 20px;
+  padding: 24px;
+  animation: faq-create-modal-in 180ms ease-out;
+}
+
+.faq-create-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.faq-create-close {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #b8b5ab;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ece9e0;
+  }
+}
+
+.faq-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.faq-publish-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  user-select: none;
+
+  input[type='checkbox'] {
+    margin-top: 2px;
+    width: 16px;
+    height: 16px;
+    accent-color: #f97316;
+    flex-shrink: 0;
+  }
+}
+
+.faq-create-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+@keyframes faq-create-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes faq-create-modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .faq-card {

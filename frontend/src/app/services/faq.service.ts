@@ -117,6 +117,18 @@ export class FaqService {
     return this.http.patch<FaqAdminEntry>(`${this.base}/admin/${id}/`, payload);
   }
 
+  /** Admin curáa una FAQ manualmente. El backend fuerza source=seed
+   *  y, si status=published, registra al admin como moderador.
+   *  `status` opcional — default es 'published'. */
+  adminCreate(payload: {
+    question: string;
+    answer: string;
+    category_id?: number | null;
+    status?: 'pending' | 'published';
+  }): Observable<FaqAdminEntry> {
+    return this.http.post<FaqAdminEntry>(`${this.base}/admin/`, payload);
+  }
+
   adminDelete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/admin/${id}/`);
   }

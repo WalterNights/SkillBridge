@@ -49,6 +49,18 @@ export class AdminFaqsComponent implements OnInit {
   categories = signal<FaqCategory[]>([]);
   stats = signal<FaqAdminStats | null>(null);
 
+  // Modal "Nueva pregunta" — form para que el admin agregue FAQs
+  // curadas directo, sin pasar por la cola de moderación.
+  isCreateOpen = signal(false);
+  isCreatingFaq = signal(false);
+  createForm = {
+    question: '',
+    answer: '',
+    categoryId: null as number | null,
+    publishImmediately: true,
+  };
+  createError = signal('');
+
   isLoading = signal(true);
   errorMessage = signal('');
   statusFilter = signal<StatusFilter>('pending');
@@ -259,5 +271,81 @@ export class AdminFaqsComponent implements OnInit {
 
   sourceLabel(s: string): string {
     return s === 'seed' ? 'Curada' : 'Usuario';
+  }
+
+  // ─── Create new FAQ ───────────────────────────────────────────────
+
+  openCreateModal(): void {
+    this.createForm = {
+      question: '',
+      answer: '',
+      categoryId: null,
+      publishImmediately: true,
+    };
+    this.createError.set('');
+    this.isCreateOpen.set(true);
+  }
+
+  closeCreateModal(): void {
+    if (this.isCreatingFaq()) return;
+    this.isCreateOpen.set(false);
+  }
+
+  submitCreateFaq(): void {
+    const q = this.createForm.question.trim();
+    const a = this.createForm.answer.trim();
+    this.createError.set('');
+
+    if (q.length < 10) {
+      this.createError.set('La pregunta debe tener al menos 10 caracteres.');
+      return;
+    }
+    if (a.length < 5) {
+      this.createError.set('La respuesta debe tener al menos 5 caracteres.');
+      return;
+    }
+
+    this.isCreatingFaq.set(true);
+    this.faqService
+      .adminCreate({
+        question: q,
+        answer: a,
+        category_id: this.createForm.categoryId,
+        status: this.createForm.publishImmediately ? 'published' : 'pending',
+      })
+      .subscribe({
+        next: (created) => {
+          this.isCreatingFaq.set(false);
+          this.isCreateOpen.set(false);
+          this.toast.success(
+            created.status === 'published'
+              ? 'Pregunta publicada en el FAQ.'
+              : 'Pregunta guardada como borrador.',
+          );
+          // Si el filtro actual coincide con el status creado, la metemos
+          // arriba sin recargar. Si no, recargamos por consistencia.
+          const filter = this.statusFilter();
+          if (filter === 'all' || filter === created.status) {
+            this.faqs.update((rows) => [created, ...rows]);
+          } else {
+            this.loadFaqs();
+          }
+          this.loadStats();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.isCreatingFaq.set(false);
+          const body = err.error;
+          // Capturamos field-errors comunes de DRF para mostrar inline.
+          if (body?.question) {
+            this.createError.set(Array.isArray(body.question) ? body.question[0] : body.question);
+          } else if (body?.answer) {
+            this.createError.set(Array.isArray(body.answer) ? body.answer[0] : body.answer);
+          } else if (body?.detail) {
+            this.createError.set(body.detail);
+          } else {
+            this.createError.set('No pudimos crear la pregunta. Intenta de nuevo.');
+          }
+        },
+      });
   }
 }

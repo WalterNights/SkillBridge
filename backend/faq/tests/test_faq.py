@@ -255,6 +255,104 @@ class TestFaqAdminList:
 
 @pytest.mark.integration
 @pytest.mark.django_db
+class TestFaqAdminCreate:
+    """POST /api/faq/admin/ — admin curáa una FAQ manualmente."""
+
+    URL = "/api/faq/admin/"
+
+    def test_requires_admin(self, authed_client):
+        response = authed_client.post(
+            self.URL,
+            {"question": "¿X?", "answer": "Y"},
+            format="json",
+        )
+        assert response.status_code == 403
+
+    def test_anon_is_401(self, api_client):
+        response = api_client.post(
+            self.URL,
+            {"question": "¿X?", "answer": "Y"},
+            format="json",
+        )
+        assert response.status_code == 401
+
+    def test_creates_seed_published_by_default(self, api_client, admin_user):
+        api_client.force_authenticate(user=admin_user)
+        cat = FaqCategory.objects.get(slug="cv")
+        response = api_client.post(
+            self.URL,
+            {
+                "question": "¿Puedo subir CV en Word?",
+                "answer": "Aceptamos solo PDF por ahora.",
+                "category_id": cat.id,
+            },
+            format="json",
+        )
+        assert response.status_code == 201
+        body = response.json()
+        # Defaults forzados por el view, no el cliente:
+        assert body["source"] == "seed"
+        assert body["status"] == "published"
+        assert body["submitted_by"] is None
+        assert body["moderated_by"] == admin_user.id
+        assert body["moderated_at"] is not None
+
+        faq = FaqQuestion.objects.get(pk=body["id"])
+        assert faq.category_id == cat.id
+        assert faq.ai_draft == ""
+
+    def test_can_create_as_draft_pending(self, api_client, admin_user):
+        """Admin puede crear con status=pending para guardar como borrador
+        sin publicar."""
+        api_client.force_authenticate(user=admin_user)
+        response = api_client.post(
+            self.URL,
+            {
+                "question": "¿Borrador?",
+                "answer": "Respuesta a refinar.",
+                "status": "pending",
+            },
+            format="json",
+        )
+        assert response.status_code == 201
+        body = response.json()
+        assert body["status"] == "pending"
+        # No registramos moderación porque no se publicó.
+        assert body["moderated_by"] is None
+        assert body["moderated_at"] is None
+
+    def test_client_cannot_force_source_user(self, api_client, admin_user):
+        """Defensa contra mass-assignment: aunque el cliente mande
+        `source: user`, el view lo overridea a `seed`."""
+        api_client.force_authenticate(user=admin_user)
+        response = api_client.post(
+            self.URL,
+            {
+                "question": "¿Hack?",
+                "answer": "Nope.",
+                "source": "user",  # ignorado
+                "submitted_by": 9999,  # ignorado
+            },
+            format="json",
+        )
+        assert response.status_code == 201
+        body = response.json()
+        assert body["source"] == "seed"
+        assert body["submitted_by"] is None
+
+    def test_question_is_required(self, api_client, admin_user):
+        api_client.force_authenticate(user=admin_user)
+        response = api_client.post(
+            self.URL,
+            {"answer": "Solo respuesta sin pregunta"},
+            format="json",
+        )
+        assert response.status_code == 400
+        assert "question" in response.json()
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
 class TestFaqAdminModeration:
     def test_publish_records_moderator(self, api_client, admin_user):
         from django.utils import timezone
