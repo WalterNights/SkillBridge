@@ -7,6 +7,7 @@ import { JobOffer } from '../models/job-offer.model';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { portalMeta } from '../shared/portal';
 import { CoverLetterModalComponent } from '../cover-letter/cover-letter-modal.component';
+import { ToastService } from '../services/toast.service';
 
 const _RELATIVE_FMT = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
 
@@ -72,6 +73,10 @@ export class JobDetailComponent implements OnInit {
   private jobService = inject(JobService);
   private applicationService = inject(ApplicationService);
   private titleService = inject(Title);
+  private toast = inject(ToastService);
+
+  /** Lock para evitar doble-click mientras la request de ignorar está en vuelo. */
+  isIgnoring = false;
 
   constructor() {
     this.titleService.setTitle('SkilTak — Detalle de oferta');
@@ -140,11 +145,18 @@ export class JobDetailComponent implements OnInit {
     });
   }
 
-  /** "Sí, aplicar" → confirm via API → estado final 'confirmed'. */
+  /** "Sí, aplicar" → confirm via API → vuelve al feed.
+   * El feed ya no muestra ofertas con postulación, así que el user va
+   * a ver la lista actualizada al toque. El toast le recuerda dónde
+   * encontrar la postulación nueva. */
   onConfirmApplied(): void {
     if (!this.applicationId) return;
     this.applicationService.confirm(this.applicationId).subscribe({
-      next: () => this.applyState.set('confirmed'),
+      next: () => {
+        this.applyState.set('confirmed');
+        this.toast.success('Postulación registrada — la encontrás en "Mis postulaciones".');
+        this.router.navigate(['/dashboard']);
+      },
       error: () => {
         /* Soft-fail: queda en 'asking', el user puede reintentar. */
       },
@@ -250,8 +262,23 @@ export class JobDetailComponent implements OnInit {
     this.isBookmarked = !this.isBookmarked;
   }
 
+  /** Ignora la oferta actual y vuelve al feed. La oferta desaparece del
+   * dashboard (el queryset del backend excluye las ignoradas del user) y
+   * queda visible en /ignored para restaurarla si se arrepiente. */
   toggleHide(): void {
-    this.isHidden = !this.isHidden;
+    if (!this.job || this.isIgnoring) return;
+    this.isIgnoring = true;
+    this.jobService.ignoreOffer(this.job.id).subscribe({
+      next: () => {
+        this.isHidden = true;
+        this.toast.success('Oferta ignorada — la encontrás en "Ofertas ignoradas".');
+        this.router.navigate(['/dashboard']);
+      },
+      error: () => {
+        this.isIgnoring = false;
+        this.toast.error('No pudimos ignorar la oferta. Intentá de nuevo.');
+      },
+    });
   }
 
   share(): void {

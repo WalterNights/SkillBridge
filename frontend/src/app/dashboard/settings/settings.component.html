@@ -176,7 +176,7 @@
               *ngIf="saveStatus === 'error'"
               class="text-xs text-danger text-center"
             >
-              No pudimos guardar. Intenta de nuevo en unos segundos.
+              {{ saveErrorMsg || 'No pudimos guardar. Intenta de nuevo en unos segundos.' }}
             </p>
             <button
               type="button"

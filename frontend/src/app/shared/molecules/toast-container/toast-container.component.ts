@@ -36,136 +36,217 @@ import { Subscription } from 'rxjs';
     ]),
   ],
   template: `
-    <div class="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+    <div class="toast-stack">
       <div
         *ngFor="let toast of toasts; trackBy: trackById"
         @toastAnimation
-        class="pointer-events-auto w-96 max-w-full bg-white dark:bg-dark-bg-secondary rounded-xl shadow-xl border border-gray-200 dark:border-dark-border overflow-hidden"
-        [class]="getToastClasses(toast)"
+        class="toast"
+        [attr.data-type]="toast.type"
       >
-        <div class="flex items-start gap-3 p-4">
-          <!-- Icon -->
-          <div class="flex-shrink-0">
-            <svg
-              *ngIf="toast.type === 'success'"
-              class="h-6 w-6 text-accent-500"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clip-rule="evenodd"
-              />
-            </svg>
+        <span class="toast-icon" aria-hidden="true">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">
+            {{ iconFor(toast.type) }}
+          </span>
+        </span>
 
-            <svg
-              *ngIf="toast.type === 'error'"
-              class="h-6 w-6 text-error-500"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clip-rule="evenodd"
-              />
-            </svg>
-
-            <svg
-              *ngIf="toast.type === 'warning'"
-              class="h-6 w-6 text-warning-500"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                clip-rule="evenodd"
-              />
-            </svg>
-
-            <svg
-              *ngIf="toast.type === 'info'"
-              class="h-6 w-6 text-primary-500"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                clip-rule="evenodd"
-              />
-            </svg>
-          </div>
-
-          <!-- Content -->
-          <div class="flex-1 min-w-0">
-            <p
-              *ngIf="toast.title"
-              class="text-sm font-semibold text-gray-900 dark:text-dark-text-primary"
-            >
-              {{ toast.title }}
-            </p>
-            <p class="text-sm text-gray-600 dark:text-dark-text-secondary mt-0.5">
-              {{ toast.message }}
-            </p>
-
-            <!-- Action Button -->
-            <button
-              *ngIf="toast.action"
-              (click)="handleAction(toast)"
-              class="mt-2 text-sm font-medium hover:underline"
-              [class]="getActionClasses(toast)"
-            >
-              {{ toast.action.label }}
-            </button>
-          </div>
-
-          <!-- Close Button -->
+        <div class="toast-body">
+          <p *ngIf="toast.title" class="toast-title">{{ toast.title }}</p>
+          <p class="toast-message">{{ toast.message }}</p>
           <button
-            (click)="closeToast(toast.id)"
-            class="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            aria-label="Close"
+            *ngIf="toast.action"
+            (click)="handleAction(toast)"
+            class="toast-action"
           >
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            {{ toast.action.label }}
+            <span class="material-symbols-outlined" style="font-size: 14px">arrow_forward</span>
           </button>
         </div>
 
-        <!-- Progress Bar -->
+        <button (click)="closeToast(toast.id)" class="toast-close" aria-label="Cerrar">
+          <span class="material-symbols-outlined" style="font-size: 18px">close</span>
+        </button>
+
         <div
           *ngIf="toast.duration && toast.duration > 0"
-          class="h-1 bg-gray-200 dark:bg-dark-bg-tertiary"
+          class="toast-progress"
+          aria-hidden="true"
         >
-          <div
-            class="h-full transition-all ease-linear"
-            [class]="getProgressClasses(toast)"
+          <span
+            class="toast-progress-fill"
             [style.animation-duration.ms]="toast.duration"
-          ></div>
+          ></span>
         </div>
       </div>
     </div>
   `,
   styles: [
     `
-      @keyframes shrink {
-        from {
-          width: 100%;
+      :host {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 100;
+      }
+
+      .toast-stack {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+        max-width: calc(100vw - 32px);
+      }
+
+      .toast {
+        pointer-events: auto;
+        position: relative;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: start;
+        gap: 12px;
+        width: 380px;
+        max-width: 100%;
+        padding: 14px 16px 14px 22px;
+        background: rgba(20, 22, 28, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        backdrop-filter: blur(20px) saturate(140%);
+        overflow: hidden;
+        font-family: inherit;
+        color: #e8e5dd;
+        /* La banda lateral de color es un inset box-shadow — sigue la
+           curva del border-radius perfectamente, sin sub-pixel gaps
+           entre un elemento absoluto y el border del padre. El
+           drop-shadow y el highlight interno también van acá, todo
+           agrupado en un único box-shadow stack. */
+        box-shadow:
+          inset 4px 0 0 0 var(--toast-accent, #f97316),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+          0 18px 40px rgba(0, 0, 0, 0.45);
+      }
+
+      .toast[data-type='success'] { --toast-accent: #22c55e; }
+      .toast[data-type='error']   { --toast-accent: #ef4444; }
+      .toast[data-type='warning'] { --toast-accent: #f59e0b; }
+      .toast[data-type='info']    { --toast-accent: #f97316; }
+
+      .toast-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        flex-shrink: 0;
+        margin-top: 1px;
+
+        .material-symbols-outlined {
+          font-size: 20px;
         }
-        to {
-          width: 0%;
+      }
+      .toast[data-type='success'] .toast-icon {
+        color: #4ade80;
+        background: rgba(34, 197, 94, 0.12);
+      }
+      .toast[data-type='error'] .toast-icon {
+        color: #f87171;
+        background: rgba(239, 68, 68, 0.12);
+      }
+      .toast[data-type='warning'] .toast-icon {
+        color: #fbbf24;
+        background: rgba(245, 158, 11, 0.12);
+      }
+      .toast[data-type='info'] .toast-icon {
+        color: #fb923c;
+        background: rgba(249, 115, 22, 0.12);
+      }
+
+      .toast-body {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .toast-title {
+        margin: 0 0 2px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #f5f3ed;
+        letter-spacing: -0.01em;
+      }
+
+      .toast-message {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.45;
+        color: #cfcfc8;
+      }
+
+      .toast-action {
+        margin-top: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0;
+        background: none;
+        border: 0;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        color: var(--toast-accent);
+        transition: opacity 140ms ease;
+
+        &:hover { opacity: 0.85; }
+      }
+
+      .toast-close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        margin: -3px -4px -3px 0;
+        background: transparent;
+        border: 0;
+        border-radius: 8px;
+        color: #8b8a85;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background 160ms ease, color 160ms ease;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.05);
+          color: #e8e5dd;
         }
       }
 
-      .progress-animate {
-        animation: shrink linear;
+      /* Progress bar: barra fina en el borde inferior que se vacía con
+         la duración del toast. Arranca desde el borde derecho del accent
+         lateral (left: 4px) para no superponerse con esa franja. */
+      .toast-progress {
+        position: absolute;
+        left: 4px;
+        right: 0;
+        bottom: 0;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.04);
+        overflow: hidden;
+      }
+      .toast-progress-fill {
+        display: block;
+        height: 100%;
+        width: 100%;
+        transform-origin: left;
+        background: var(--toast-accent);
+        animation: toast-shrink linear forwards;
+      }
+
+      @keyframes toast-shrink {
+        from { transform: scaleX(1); }
+        to   { transform: scaleX(0); }
       }
     `,
   ],
@@ -232,5 +313,19 @@ export class ToastContainerComponent implements OnInit, OnDestroy {
     };
 
     return `progress-animate ${bgClasses[toast.type]}`;
+  }
+
+  /** Material symbol para cada tipo de toast — usado en el template. */
+  iconFor(type: Toast['type']): string {
+    switch (type) {
+      case 'success':
+        return 'check_circle';
+      case 'error':
+        return 'error';
+      case 'warning':
+        return 'warning';
+      default:
+        return 'info';
+    }
   }
 }

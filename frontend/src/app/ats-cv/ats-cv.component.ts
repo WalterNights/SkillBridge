@@ -12,6 +12,7 @@ import {
   ElementRef,
   OnInit,
   ViewChild,
+  computed,
   signal,
 } from '@angular/core';
 import { ProfileService } from '../services/profile.service';
@@ -22,6 +23,104 @@ import { CvAuditModalComponent } from '../cv/cv-audit-modal.component';
 import { CvImproveModalComponent } from '../cv/cv-improve-modal.component';
 import { CvImproveResponse } from '../services/cv-improve.service';
 import { RichTextComponent } from '../shared/rich-text/rich-text.component';
+import {
+  CvProfileData,
+  EducationEntry,
+  ExperienceEntry,
+  LanguageEntry,
+  ProfileApiPayload,
+  ProfileApiResponse,
+} from '../models/profile.model';
+
+/**
+ * Tipos de bloque en los que dividimos el CV para la paginación.
+ *
+ * Reglas de "indivisibilidad":
+ *   - header: siempre el primer bloque de la primera hoja.
+ *   - summary: párrafo único.
+ *   - exp-h2 / edu-h2: solo el heading de sección. Bloque chico,
+ *     separado de las entries para que el algoritmo pueda meter más
+ *     en la hoja actual. Lookahead evita orphan (h2 nunca al final
+ *     de hoja sin entry).
+ *   - exp-entry / edu-entry: una entry (puesto + bullets / institución).
+ *     No se parte entre hojas; si no cabe, pasa entera a la siguiente.
+ *   - exp-text / edu-text: fallback cuando experience/education vienen
+ *     como texto libre (no array). Se trata como un único bloque atómico
+ *     (incluye su propio h2 adentro).
+ *   - skills / soft-skills / languages / portfolio: secciones atómicas
+ *     pequeñas — h2 + contenido en un solo bloque.
+ */
+type BlockKind =
+  | 'header'
+  | 'summary'
+  | 'exp-h2'
+  | 'exp-entry'
+  | 'exp-text'
+  | 'edu-h2'
+  | 'edu-entry'
+  | 'edu-text'
+  | 'skills'
+  | 'soft-skills'
+  | 'languages'
+  | 'portfolio';
+
+interface CvBlock {
+  kind: BlockKind;
+  /** Para exp-entry / edu-entry: índice en profileData.experience/education. */
+  index?: number;
+  /** Cuando la entry se parte entre hojas: rango [start, end) de bullets
+   *  que se renderean en este block. Sin estos campos = entry completa. */
+  bulletStart?: number;
+  bulletEnd?: number;
+  /** Cuando un exp-text / edu-text se parte entre hojas: rango [start, end)
+   *  de líneas del string libre que se renderean en este block. */
+  lineStart?: number;
+  lineEnd?: number;
+  /** True si es la segunda mitad de un bloque partido — el template
+   *  pinta un header chiquito "(cont.)" en vez del header completo. */
+  isContinuation?: boolean;
+}
+
+/** Rango de líneas [start, end) dentro de un text-block parseado. */
+type TextEntryRange = { start: number; end: number };
+
+/** Resultado de partir un bloque en dos para distribuirlo entre 2 hojas. */
+interface SplitResult {
+  part1: CvBlock;
+  part1Height: number;
+  part2: CvBlock;
+  part2Height: number;
+}
+
+/**
+ * Constantes de paginación. Heurísticas estimadas — no son números
+ * exactos, son aproximaciones que funcionan bien en el rango típico de
+ * un CV (1-3 hojas). Si cambia mucho el styling de cv-entry/cv-section,
+ * recalibrar.
+ */
+const PAGINATION = {
+  /** Hoja Oficio (US Legal) en mm. */
+  OFICIO_PAGE_HEIGHT_MM: 355.6,
+  /** Padding vertical de la .cv-page (top y bottom). */
+  OFICIO_PADDING_MM: 18,
+  /** Conversión mm → px asumiendo 96 DPI (CSS default). */
+  MM_TO_PX: 3.7795275591,
+  /** Altura estimada del cv-entry-header (puesto + empresa + fechas). */
+  ENTRY_HEADER_PX: 90,
+  /** Overhead estimado del header "(cont.)" en la parte 2 de un split. */
+  CONT_HEADER_PX: 35,
+  /** Mínimo de bullets en parte 1 para que partir una entry valga la pena. */
+  MIN_BULLETS_FIRST_PART: 3,
+  /** Altura estimada del h2 "Experiencia profesional" en un text-block. */
+  TEXT_SECTION_H2_PX: 50,
+  /** Header chiquito "(cont.)" en la parte 2 de un text-block partido. */
+  TEXT_CONT_HEADER_PX: 30,
+  /** Mínimo de líneas en parte 1 para que partir un text-block valga la pena. */
+  MIN_LINES_FIRST_PART: 4,
+} as const;
+
+/** Regex de marker de bullet — `-`, `•` o `*` seguido de espacio. */
+const BULLET_LINE_RE = /^\s*[-•*]\s+/;
 
 @Component({
   selector: 'app-ats-cv',
@@ -38,52 +137,42 @@ import { RichTextComponent } from '../shared/rich-text/rich-text.component';
   styleUrls: ['./ats-cv.component.scss'],
 })
 export class AtsCvComponent implements OnInit, AfterViewChecked {
-  profileData: any = null;
+  profileData: CvProfileData | null = null;
   isLoading = true;
   errorMessage = '';
-  @ViewChild('cvContent', { static: false }) cvContent!: ElementRef;
 
-  /** Cuando está seteado, muestra el modal de cuantificar para esa entry.
-   * Guardamos el índice + el snapshot del texto para evitar race conditions
-   * si el user clickea otra entry mientras el modal está abierto. */
+  /** Wrapper visible de todas las hojas — usado por html2canvas. */
+  @ViewChild('pagesWrap', { static: false }) pagesWrap!: ElementRef<HTMLElement>;
+  /** Container off-screen donde medimos altura de cada bloque antes de
+   *  decidir en qué hoja entra. */
+  @ViewChild('measureRoot', { static: false }) measureRoot!: ElementRef<HTMLElement>;
+
+  /** Cuando está seteado, muestra el modal de cuantificar para esa entry. */
   quantifyTarget = signal<{ index: number; text: string; role: string; company: string } | null>(
     null,
   );
-  /** Flag para ocultar los botones AI cuando se captura el PDF — html2canvas
-   * no respeta @media print, así que usamos una clase toggleable. */
+  /** Flag para ocultar los botones AI cuando se captura el PDF. */
   isExporting = signal(false);
 
-  /** Offsets en px desde el top del .cv-page donde van los separadores
-   * de página visuales. Se recalculan en AfterViewChecked cada vez que
-   * cambia la altura del content (re-render por cuantificar, mejorar, etc.). */
-  pageBreakOffsets = signal<number[]>([]);
-  /** Total de hojas Oficio que ocupa el CV. Mostrado en el header. */
-  pageCount = signal<number>(1);
-
   /**
-   * Constantes del formato Oficio (US Legal):
-   *   - Page total:  215.9mm × 355.6mm
-   *   - Padding usado en .cv-page: 18mm top/bottom, 22mm left/right
-   *   - Content height por página: 355.6 - 2*18 = 319.6mm
-   *
-   * Convertimos a px asumiendo 96 DPI (CSS default): 1mm ≈ 3.7795px.
-   * Esto matchea cómo el browser renderea las unidades mm en pantalla.
-   *
-   * IMPORTANTE: jsPDF slicea la imagen capturada por html2canvas cada
-   * 355.6mm desde el TOP ABSOLUTO del .cv-page (incluida la padding).
-   * Pero los marcadores visuales son `position: absolute` con `top`
-   * relativo al padding-edge (i.e., empieza DESPUÉS del padding-top).
-   * Por eso restamos OFICIO_PADDING_TOP_PX al calcular el `top` del
-   * marcador — así matchea exactamente dónde jsPDF corta.
+   * Bloques distribuidos en hojas. Cada elemento del array es una hoja
+   * (lista de bloques). Lo computa `distributePages()` tras medir.
    */
-  private readonly MM_TO_PX = 3.7795275591;
-  private readonly OFICIO_PAGE_HEIGHT_PX = 355.6 * this.MM_TO_PX;
-  private readonly OFICIO_PADDING_TOP_PX = 18 * this.MM_TO_PX;
+  pages = signal<CvBlock[][]>([]);
+  /** Total de hojas — derivado de pages() con mínimo 1 para que el hint
+   *  funcione antes de la primera distribución. */
+  pageCount = computed(() => Math.max(1, this.pages().length));
 
-  /** Última altura "natural" medida (sin contar los margin-top
-   *  inyectados por snaps). Sirve como cache key: si no cambia, no
-   *  re-ejecutamos el snap. Evita loop en ngAfterViewChecked. */
-  private lastNaturalHeight = 0;
+  /** Área útil de contenido por hoja en px. Constante derivada del
+   *  formato Oficio menos los paddings vertical superior e inferior. */
+  private readonly CONTENT_HEIGHT_PX =
+    (PAGINATION.OFICIO_PAGE_HEIGHT_MM - 2 * PAGINATION.OFICIO_PADDING_MM) * PAGINATION.MM_TO_PX;
+
+  /** Cache key del último set de alturas medidas — evita re-distribuir
+   *  cuando el DOM no cambió (ngAfterViewChecked dispara seguido). */
+  private lastMeasureSignature = '';
+  /** Lock para evitar reentrada cuando setear pages() dispara otra detección. */
+  private isDistributing = false;
 
   /** Modal del auditor — solo se monta cuando se abre (lazy). */
   showAudit = signal(false);
@@ -111,23 +200,22 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
    * Optimistic: actualizamos el state local primero para que el user vea
    * el cambio inmediato; si el PATCH falla, rollback + toast. */
   onImproveApplied(proposal: CvImproveResponse): void {
-    if (!this.profileData?.id) {
+    const profile = this.profileData;
+    if (!profile?.id) {
       this.toast.error('No pudimos identificar tu perfil. Recargá la página.');
       return;
     }
 
-    // Snapshot para rollback si el PATCH falla
     const prev = {
-      summary: this.profileData.summary,
-      professional_title: this.profileData.professional_title,
-      skills: this.profileData.skills,
-      soft_skills: this.profileData.soft_skills,
-      experience: this.profileData.experience,
+      summary: profile.summary,
+      professional_title: profile.professional_title,
+      skills: profile.skills,
+      soft_skills: profile.soft_skills,
+      experience: profile.experience,
     };
 
-    // Optimistic update local
     this.profileData = {
-      ...this.profileData,
+      ...profile,
       summary: proposal.summary,
       professional_title: proposal.professional_title,
       skills: proposal.skills,
@@ -135,7 +223,6 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
       experience: proposal.experience,
     };
 
-    // experience al backend va como JSON string (TextField legacy)
     const payload = {
       summary: proposal.summary,
       professional_title: proposal.professional_title,
@@ -144,25 +231,26 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
       experience: JSON.stringify(proposal.experience),
     };
 
-    this.profileService.patchProfile(this.profileData.id, payload).subscribe({
+    this.profileService.patchProfile(profile.id, payload).subscribe({
       next: () => {
         this.toast.success('Mejoras aplicadas a tu CV.');
         this.closeImprove();
       },
       error: () => {
-        // Rollback
-        this.profileData = { ...this.profileData, ...prev };
+        // Rollback usando el snapshot tomado antes del optimistic update.
+        const current = this.profileData;
+        if (current) this.profileData = { ...current, ...prev };
         this.toast.error('No pudimos guardar las mejoras. Intentá de nuevo.');
-        // Modal queda abierto para reintentar
       },
     });
   }
 
   /** Sample de la primera experiencia para el preview del modal. */
   firstExperienceSample(): { position?: string; description?: string } | null {
-    if (!this.isExperienceArray()) return null;
-    const first = this.profileData.experience[0];
-    return first ? { position: first.position, description: first.description } : null;
+    const exps = this.experienceArray();
+    if (!exps) return null;
+    const first = exps[0];
+    return { position: first.position, description: first.description };
   }
 
   constructor(
@@ -180,169 +268,274 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     this.loadProfileData();
   }
 
-  /** Después de cada ciclo de detección de cambios, mide la altura real
-   * del .cv-page, snappea los page breaks a límites de sección/entry
-   * para que no se corten en mitad de un párrafo, y actualiza los
-   * markers visuales.
+  /**
+   * Lista plana de bloques del CV en el orden en que aparecen.
    *
-   * Usamos AfterViewChecked en vez de AfterViewInit porque el contenido
-   * crece dinámicamente (cuantificar, mejorar, regenerar). El guard
-   * `isSnapping` evita re-entry en la misma frame — el snap modifica
-   * el DOM y dispara otro view checked. */
-  private isSnapping = false;
-
-  ngAfterViewChecked(): void {
-    if (!this.cvContent?.nativeElement || this.isExporting()) return;
-    if (this.isSnapping) return;
-    const el = this.cvContent.nativeElement as HTMLElement;
-
-    // Calcular altura "natural" sin tocar el DOM: scrollHeight actual
-    // menos la suma de los margin-top inyectados por snaps previos.
-    // Esto es el cache key — si no cambia, no re-snapeamos (evita loop
-    // donde ngAfterViewChecked se dispara tras cada DOM mutation y
-    // re-ejecuta el snap aunque el contenido sea idéntico).
-    const snappedEls = el.querySelectorAll<HTMLElement>('[data-page-snap]');
-    let injectedMargin = 0;
-    snappedEls.forEach((n) => {
-      injectedMargin += parseFloat(n.style.marginTop || '0');
-    });
-    const naturalHeight = el.scrollHeight - injectedMargin;
-
-    if (Math.abs(naturalHeight - this.lastNaturalHeight) < 4) return;
-    this.lastNaturalHeight = naturalHeight;
-
-    this.isSnapping = true;
-    try {
-      this.resetPageSnaps(el);
-
-      if (naturalHeight <= this.OFICIO_PAGE_HEIGHT_PX + 8) {
-        this.pageBreakOffsets.set([]);
-        this.pageCount.set(1);
-        return;
-      }
-
-      this.snapPageBreaks(el);
-      this.updateMarkersFromSnaps(el);
-    } finally {
-      this.isSnapping = false;
-    }
-  }
-
-  /** Quita los margin-top inyectados por snaps previos para que la
-   *  re-medición arranque desde el layout natural. */
-  private resetPageSnaps(cvPage: HTMLElement): void {
-    cvPage.querySelectorAll<HTMLElement>('[data-page-snap]').forEach((node) => {
-      node.style.marginTop = '';
-      node.removeAttribute('data-page-snap');
-    });
-  }
-
-  /** Walks `.cv-entry` (NO .cv-section porque son demasiado grandes —
-   *  contienen múltiples entries y empujar la sección entera deja
-   *  páginas casi vacías). Para cada entry que cruza el boundary, le
-   *  inyecta `margin-top` para que empiece exactamente en el inicio de
-   *  la próxima "hoja Oficio".
+   * Es lo que se renderiza tanto en la measure-layer (para medir alturas)
+   * como en la pages-layer (distribuido por hoja).
    *
-   *  offsetTop está en coords relativas al padding-edge de .cv-page.
-   *  El boundary en esas coords es `N * pageHeight - paddingTop` (porque
-   *  jsPDF slicea cada `pageHeight` desde el border-edge y el padding
-   *  consume `paddingTop` antes de que empiecen los hijos). */
-  private snapPageBreaks(cvPage: HTMLElement): void {
-    const pageHeight = this.OFICIO_PAGE_HEIGHT_PX;
-    const paddingTop = this.OFICIO_PADDING_TOP_PX;
+   * NOTA: esta función se llama en CADA ciclo de change-detection desde
+   * el template — debe ser barata. Acá solo armamos un array de tipos
+   * + índices, sin trabajo pesado.
+   */
+  cvBlocks(): CvBlock[] {
+    const profile = this.profileData;
+    if (!profile) return [];
+    const blocks: CvBlock[] = [];
+    blocks.push({ kind: 'header' });
+    if (profile.summary) blocks.push({ kind: 'summary' });
 
-    const candidates = Array.from(
-      cvPage.querySelectorAll<HTMLElement>('.cv-entry'),
-    );
-    if (candidates.length === 0) return;
-
-    let nextBoundary = pageHeight - paddingTop; // offsetTop coords del primer cut
-
-    for (const el of candidates) {
-      // Leer fresh: snaps previos en este loop ya modificaron offsetTop
-      // de elementos siguientes.
-      const top = el.offsetTop;
-      const bottom = top + el.offsetHeight;
-
-      // Si el elemento ya empieza pasada la frontera (porque alguien antes
-      // ocupó toda la página), avanzar la frontera hasta cubrirlo.
-      while (top >= nextBoundary) {
-        nextBoundary += pageHeight;
+    const exps = this.experienceArray();
+    if (exps) {
+      blocks.push({ kind: 'exp-h2' });
+      for (let i = 0; i < exps.length; i++) {
+        blocks.push({ kind: 'exp-entry', index: i });
       }
-
-      // Si cabe entero, sigue. Si lo cruza, snap.
-      if (bottom <= nextBoundary) continue;
-
-      const gap = nextBoundary - top;
-      if (gap > 6) {
-        el.style.marginTop = `${gap}px`;
-        el.setAttribute('data-page-snap', '1');
-        // Después del snap, su nuevo offsetTop es ~nextBoundary.
-        // El boundary siguiente arranca pageHeight más adelante.
-        nextBoundary += pageHeight;
-      }
+    } else if (profile.experience) {
+      blocks.push({ kind: 'exp-text' });
     }
+
+    const edus = this.educationArray();
+    if (edus) {
+      blocks.push({ kind: 'edu-h2' });
+      for (let i = 0; i < edus.length; i++) {
+        blocks.push({ kind: 'edu-entry', index: i });
+      }
+    } else if (profile.education) {
+      blocks.push({ kind: 'edu-text' });
+    }
+
+    if (profile.skills) blocks.push({ kind: 'skills' });
+    if (this.softSkillsList().length > 0) blocks.push({ kind: 'soft-skills' });
+    if (this.hasLanguages()) blocks.push({ kind: 'languages' });
+    if (profile.portfolio_url) blocks.push({ kind: 'portfolio' });
+
+    return blocks;
   }
 
-  /** Tras el snap, calcula offsets visuales de los markers leyendo la
-   *  posición real de los elementos con `data-page-snap`. El marker se
-   *  centra en el gap (entre bottom del elemento previo y top del
-   *  snappeado). */
-  private updateMarkersFromSnaps(cvPage: HTMLElement): void {
-    const snapped = cvPage.querySelectorAll<HTMLElement>('[data-page-snap]');
-    const offsets: number[] = [];
-    const MARKER_HALF_HEIGHT = 27;
-    snapped.forEach((el) => {
-      const top = el.offsetTop;
-      const marginTop = parseFloat(el.style.marginTop || '0');
-      // gap visual: top - marginTop hasta top. Centro = top - marginTop/2.
-      const gapMid = top - marginTop / 2;
-      offsets.push(Math.max(0, gapMid - MARKER_HALF_HEIGHT));
-    });
-    this.pageBreakOffsets.set(offsets);
-    this.pageCount.set(offsets.length + 1);
+  /** Devuelve el array de experiencias si el profile las tiene como
+   *  estructuradas (no texto libre), sino null. Centraliza el guard
+   *  Array.isArray + length > 0 que de otro modo se repetiría en cada
+   *  caller. */
+  experienceArray(): ExperienceEntry[] | null {
+    const exp = this.profileData?.experience;
+    return Array.isArray(exp) && exp.length > 0 ? exp : null;
+  }
+
+  /** Idem para educación. */
+  educationArray(): EducationEntry[] | null {
+    const edu = this.profileData?.education;
+    return Array.isArray(edu) && edu.length > 0 ? edu : null;
+  }
+
+  /** Lookup tipado de una experiencia por índice — para usar en templates
+   *  con `*ngIf="expAt(i) as exp"` que evita las cadenas
+   *  `experienceArray()?.[i]?.field` repetidas. */
+  expAt(index: number | undefined): ExperienceEntry | null {
+    if (index === undefined) return null;
+    return this.experienceArray()?.[index] ?? null;
+  }
+
+  /** Idem para una entry de educación. */
+  eduAt(index: number | undefined): EducationEntry | null {
+    if (index === undefined) return null;
+    return this.educationArray()?.[index] ?? null;
+  }
+
+  /** Devuelve experience como string (fallback markdown) o '' si está
+   *  estructurada como array. Usado por el template expTextTpl que solo
+   *  se invoca para bloques exp-text. */
+  expText(): string {
+    const v = this.profileData?.experience;
+    return typeof v === 'string' ? v : '';
+  }
+
+  /** Idem para education. */
+  eduText(): string {
+    const v = this.profileData?.education;
+    return typeof v === 'string' ? v : '';
   }
 
   /**
-   * Load profile data from localStorage first, then optionally from backend
+   * Tras cada ciclo de detección de cambios, medimos alturas de los
+   * bloques en la measure-layer y los distribuimos en hojas. La cache
+   * (`lastMeasureSignature`) evita re-distribuir cuando el DOM no
+   * cambió — sin eso entraríamos en loop infinito porque setear
+   * pages() dispara otro ngAfterViewChecked.
+   */
+  ngAfterViewChecked(): void {
+    if (this.isExporting() || this.isDistributing) return;
+    this.distributePages();
+  }
+
+  /**
+   * Distribución greedy: para cada bloque en orden, lo agregamos a la
+   * hoja actual; si no entra (excede la altura útil), abrimos una hoja
+   * nueva y lo ponemos ahí. Si un bloque por sí solo es más alto que
+   * la hoja, se acepta el overflow (no podemos cortarlo — el contrato
+   * con el user es "bloques indivisibles"). Visualmente, el overflow:
+   * hidden del .cv-page lo recorta y el user nota que tiene que reducir
+   * ese bloque.
+   */
+  private distributePages(): void {
+    const root = this.measureRoot?.nativeElement;
+    if (!root) return;
+
+    const measured = root.querySelectorAll<HTMLElement>('[data-measure-block]');
+    if (measured.length === 0) {
+      // Sin bloques: aún no cargó profileData. No reseteamos pages() para
+      // evitar parpadeo si justo recibimos data parcial.
+      return;
+    }
+
+    // Heights: incluimos margen-top + margen-bottom porque cv-section
+    // tiene margin-bottom 6mm que necesitamos contar para el spacing.
+    // Nota: .cv-measure-block tiene overflow:hidden para que los margenes
+    // de su hijo NO se collapsen con el contenedor — así offsetHeight
+    // incluye los márgenes interiores del cv-section.
+    const heights: number[] = [];
+    measured.forEach((b) => {
+      const cs = getComputedStyle(b);
+      const mt = parseFloat(cs.marginTop || '0');
+      const mb = parseFloat(cs.marginBottom || '0');
+      heights.push(b.offsetHeight + mt + mb);
+    });
+
+    const signature = `${measured.length}|${heights.map((h) => h.toFixed(1)).join(',')}`;
+    if (signature === this.lastMeasureSignature) return;
+    this.lastMeasureSignature = signature;
+
+    this.isDistributing = true;
+    try {
+      const originalBlocks = this.cvBlocks();
+      const limit = this.CONTENT_HEIGHT_PX;
+      const result: CvBlock[][] = [[]];
+      let currentHeight = 0;
+
+      // Cola mutable {block, height} — necesaria porque los splits de
+      // entries insertan bloques nuevos a mitad de la iteración.
+      const queue: Array<{ block: CvBlock; height: number }> = originalBlocks.map((b, i) => ({
+        block: b,
+        height: heights[i] ?? 0,
+      }));
+
+      let i = 0;
+      while (i < queue.length) {
+        const { block, height: h } = queue[i];
+        const currentPage = result[result.length - 1];
+
+        // Anti-orphan SUAVE: si es un h2 de sección, considerá pushear
+        // a hoja nueva — PERO antes verificá si la entry siguiente se
+        // puede partir entre bullets y llenar mejor la hoja actual.
+        // Si el split es viable, NO antiorphan — dejá h2 acá; la entry
+        // se va a partir cuando se procese.
+        const isH2 = block.kind === 'exp-h2' || block.kind === 'edu-h2';
+        const nextBlock = queue[i + 1]?.block;
+        const nextIsFirstEntry =
+          (block.kind === 'exp-h2' && nextBlock?.kind === 'exp-entry' && nextBlock.index === 0) ||
+          (block.kind === 'edu-h2' && nextBlock?.kind === 'edu-entry' && nextBlock.index === 0);
+        if (isH2 && nextIsFirstEntry && currentPage.length > 0) {
+          const nextH = queue[i + 1].height;
+          const combined = h + nextH;
+          if (currentHeight + combined > limit) {
+            // Combined no entra. ¿Vale la pena anti-orphan?
+            //   - SI: combined cabe en una hoja fresh Y la entry no puede
+            //     partirse de forma útil → push h2 a hoja nueva.
+            //   - NO: la entry tiene bullets que se pueden partir y llenar
+            //     esta hoja → dejá h2 acá, el split del entry hace el resto.
+            const availableAfterH2 = limit - currentHeight - h;
+            const canSplit = this.canMeaningfullySplit(queue[i + 1].block, nextH, availableAfterH2);
+            if (!canSplit && combined <= limit) {
+              // Antiorphan tradicional: combined fits fresh, entry no se parte
+              result.push([block]);
+              currentHeight = h;
+              i++;
+              continue;
+            }
+            // Else: fall through — h2 se queda; la próxima iter procesa
+            // la entry y dispara split si corresponde.
+          }
+        }
+
+        // Salvaguarda: hoja con SOLO un h2 fresh → forzá la entry acá.
+        const onlyHasH2 =
+          currentPage.length === 1 &&
+          (currentPage[0].kind === 'exp-h2' || currentPage[0].kind === 'edu-h2');
+        if (onlyHasH2) {
+          currentPage.push(block);
+          currentHeight += h;
+          i++;
+          continue;
+        }
+
+        // Standard greedy
+        if (currentPage.length > 0 && currentHeight + h > limit) {
+          // No entra. Intentos de split en orden:
+          //   1) Entry estructurada (array de objetos) → split por bullets.
+          //   2) Text libre (experience/education como string markdown) →
+          //      split por líneas del string.
+          const entrySplit = this.maybeSplitEntry(block, h, limit - currentHeight);
+          if (entrySplit) {
+            currentPage.push(entrySplit.part1);
+            currentHeight += entrySplit.part1Height;
+            queue.splice(i + 1, 0, { block: entrySplit.part2, height: entrySplit.part2Height });
+            i++;
+            continue;
+          }
+
+          const textSplit = this.maybeSplitText(block, h, limit - currentHeight);
+          if (textSplit) {
+            currentPage.push(textSplit.part1);
+            currentHeight += textSplit.part1Height;
+            queue.splice(i + 1, 0, { block: textSplit.part2, height: textSplit.part2Height });
+            i++;
+            continue;
+          }
+
+          // No se pudo partir → hoja nueva
+          result.push([block]);
+          currentHeight = h;
+        } else {
+          // Entra → push
+          currentPage.push(block);
+          currentHeight += h;
+        }
+        i++;
+      }
+
+      this.pages.set(result);
+    } finally {
+      // Liberamos el lock en el siguiente tick — sino el set anterior
+      // dispara ngAfterViewChecked re-entrante en este mismo callstack.
+      queueMicrotask(() => (this.isDistributing = false));
+    }
+  }
+
+  /**
+   * Carga el perfil — primero del draft de localStorage (form wizard),
+   * sino del backend. El draft es JSON ya en la forma CvProfileData, así
+   * que solo le metemos un fallback de email desde sessionStorage si
+   * falta.
    */
   loadProfileData(): void {
-    // First try to get from localStorage (most recent form data)
     const savedData = localStorage.getItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT);
     if (savedData) {
       try {
-        this.profileData = JSON.parse(savedData);
-
-        // Si no tiene email, intentar obtenerlo del usuario autenticado
-        if (!this.profileData.email) {
+        const draft = JSON.parse(savedData) as CvProfileData;
+        if (!draft.email) {
           const userEmail = sessionStorage.getItem('user_email');
-          if (userEmail) {
-            this.profileData.email = userEmail;
-          }
+          if (userEmail) draft.email = userEmail;
         }
+        this.profileData = draft;
+        this.isLoading = false;
+        return;
       } catch (e) {
         console.error('Error parsing localStorage data:', e);
-        this.fetchProfileFromBackend();
-        return;
       }
-
-      this.isLoading = false;
-    } else {
-      // No data in localStorage, fetch from backend
-      this.fetchProfileFromBackend();
     }
+    this.fetchProfileFromBackend();
   }
 
-  /**
-   * Fetch profile data from backend.
-   * El token se inyecta automáticamente por `TokenInterceptor`.
-   *
-   * Se chequea via AuthService.isAuthenticated() en vez de
-   * `localStorage.getItem(ACCESS_TOKEN)` porque el AuthService puede
-   * guardar el token en sessionStorage si "remember me" está apagado.
-   * Hardcodear localStorage rompía el flow para usuarios que no
-   * tildaban remember-me.
-   */
   fetchProfileFromBackend(): void {
     if (!this.authService.isAuthenticated()) {
       this.errorMessage = 'No se encontraron datos del perfil';
@@ -351,26 +544,16 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     }
 
     this.profileService.getMyProfile().subscribe({
-      next: (response) => {
-        // El endpoint puede devolver:
-        //   - DRF paginated: {count, next, previous, results: [{...}]}
-        //   - array crudo (cuando no hay pagination): [{...}]
-        //   - objeto puntual (cuando se pide /profiles/{id}/): {...}
-        // Cubrimos los tres casos en orden de probabilidad.
-        let profile: any = response;
-        if (response && Array.isArray(response.results)) {
-          profile = response.results[0];
-        } else if (Array.isArray(response)) {
-          profile = response[0];
-        }
-        if (profile) {
-          this.profileData = this.formatProfileData(profile);
+      next: (response: ProfileApiPayload) => {
+        const raw = this.unwrapProfileResponse(response);
+        if (raw) {
+          this.profileData = this.formatProfileData(raw);
         } else {
           this.errorMessage = 'No se encontraron datos del perfil';
         }
         this.isLoading = false;
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error('Error loading profile:', err);
         this.errorMessage = 'Error al cargar el perfil';
         this.isLoading = false;
@@ -378,43 +561,53 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     });
   }
 
-  /**
-   * Format backend profile data to match expected structure
-   */
-  formatProfileData(profile: any): any {
+  /** El endpoint puede devolver paginated `{results}`, array crudo o
+   *  objeto singular. Acá unificamos a "primer profile o null". */
+  private unwrapProfileResponse(payload: ProfileApiPayload): ProfileApiResponse | null {
+    if (!payload) return null;
+    if (Array.isArray(payload)) return payload[0] ?? null;
+    if ('results' in payload && Array.isArray(payload.results)) {
+      return payload.results[0] ?? null;
+    }
+    return payload as ProfileApiResponse;
+  }
+
+  /** Normaliza la respuesta cruda del backend al shape `CvProfileData`
+   *  que consumen templates y algoritmo de paginación. Aplica defaults
+   *  a strings vacíos y parsea los TextField legacy (JSON-as-string)
+   *  para experience/education/languages. */
+  formatProfileData(profile: ProfileApiResponse): CvProfileData {
     return {
-      // `id` se mantiene para que PATCH al profile (cuantificar, etc) tenga
-      // la URL correcta. Si viene del localStorage draft puede ser undefined.
       id: profile.id ?? null,
-      first_name: profile.first_name || '',
-      last_name: profile.last_name || '',
-      email: profile.user?.email || profile.email || '',
-      number_id: profile.number_id || '',
-      phone_code: profile.phone_code || '',
-      phone_number: profile.phone_number || profile.phone || '',
-      city: profile.city || '',
-      country: profile.country || '',
-      professional_title: profile.professional_title || '',
-      summary: profile.summary || '',
-      linkedin_url: profile.linkedin_url || '',
-      portfolio_url: profile.portfolio_url || '',
-      skills: profile.skills || '',
-      soft_skills: profile.soft_skills || '',
+      first_name: profile.first_name ?? '',
+      last_name: profile.last_name ?? '',
+      email: profile.user?.email ?? profile.email ?? '',
+      number_id: profile.number_id ?? '',
+      phone_code: profile.phone_code ?? '',
+      phone_number: profile.phone_number ?? profile.phone ?? '',
+      city: profile.city ?? '',
+      country: profile.country ?? '',
+      professional_title: profile.professional_title ?? '',
+      summary: profile.summary ?? '',
+      linkedin_url: profile.linkedin_url ?? '',
+      portfolio_url: profile.portfolio_url ?? '',
+      skills: profile.skills ?? '',
+      soft_skills: profile.soft_skills ?? '',
       languages: this.parseLanguages(profile.languages),
-      experience: this.parseExperienceOrEducation(profile.experience),
-      education: this.parseExperienceOrEducation(profile.education),
+      experience: this.parseEntriesField<ExperienceEntry>(profile.experience),
+      education: this.parseEntriesField<EducationEntry>(profile.education),
     };
   }
 
-  /** Languages se guardan como JSON-as-text en backend. Acá lo parseamos
-   *  a array de `{language, level}`. Tolera: array directo, JSON string,
-   *  null/empty. */
-  parseLanguages(value: any): { language: string; level: string }[] {
+  /** Languages se guarda como JSON-as-string en backend. Devolvemos
+   *  array vacío para los casos null/string-inválido en vez de propagar
+   *  el TypeError al template. */
+  parseLanguages(value: LanguageEntry[] | string | null | undefined): LanguageEntry[] {
     if (Array.isArray(value)) return value;
     if (typeof value === 'string' && value.trim().startsWith('[')) {
       try {
-        const parsed = JSON.parse(value);
-        return Array.isArray(parsed) ? parsed : [];
+        const parsed: unknown = JSON.parse(value);
+        return Array.isArray(parsed) ? (parsed as LanguageEntry[]) : [];
       } catch {
         return [];
       }
@@ -422,10 +615,12 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     return [];
   }
 
-  /** Splittea la descripción de una experiencia en bullets. El extractor
-   *  Gemini formatea cada bullet en una línea con prefijo "• " o "- ".
-   *  Si solo hay 1 línea (o 0 bullets), devuelve [] — el template muestra
-   *  el texto como un párrafo plano en ese caso. */
+  /**
+   * Splittea la descripción de una experiencia en bullets canónicos
+   * (sin marker `-`/`•`/`*` y sin espacios extra). Solo devuelve bullets
+   * si hay ≥ 2 líneas significativas — sino tratamos la descripción como
+   * un párrafo libre que NO se parte.
+   */
   expBullets(description: string | null | undefined): string[] {
     if (!description) return [];
     const lines = description
@@ -435,51 +630,34 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     return lines.length >= 2 ? lines : [];
   }
 
-  /** Skills como array deduplicado para chips/lista del CV. */
-  skillsList(): string[] {
-    return (this.profileData?.skills || '')
-      .split(',')
-      .map((s: string) => s.trim())
-      .filter(Boolean);
-  }
-
-  /** Soft skills idem. Solo se renderea la sección si hay al menos 1. */
   softSkillsList(): string[] {
-    return (this.profileData?.soft_skills || '')
+    return (this.profileData?.soft_skills ?? '')
       .split(',')
-      .map((s: string) => s.trim())
+      .map((s) => s.trim())
       .filter(Boolean);
   }
 
-  /** True si hay al menos 1 idioma para renderear la sección. */
   hasLanguages(): boolean {
-    return Array.isArray(this.profileData?.languages) && this.profileData.languages.length > 0;
+    return (this.profileData?.languages?.length ?? 0) > 0;
   }
 
   /**
-   * Normaliza experience/education. El backend los guarda como TextField
-   * libre, pero el wizard de Gemini los puebla como JSON parseado a
-   * array de objetos. Soportamos los tres casos:
-   *   - array de objetos (Gemini): pasa tal cual → el HTML usa ngFor
-   *   - JSON string que parsea a array: lo parseamos a array
-   *   - string libre: lo devolvemos como string → el HTML cae al
-   *     fallback `*ngIf="!isXxxArray()"` que lo renderiza como texto
-   *
-   * Antes devolvíamos [] para cualquier string, lo que dejaba la
-   * sección rota porque el HTML cree que es un array vacío y no
-   * dispara el fallback de texto.
+   * Normaliza `experience` / `education` (campos polimórficos del
+   * backend) a `T[]` cuando vienen como array o como JSON-string
+   * serializado, sino mantiene el string libre para el fallback de
+   * markdown plano. El genérico evita duplicar la función para cada
+   * shape de entry.
    */
-  parseExperienceOrEducation(value: string | any[] | null | undefined): string | any[] {
+  parseEntriesField<T>(value: T[] | string | null | undefined): T[] | string {
     if (Array.isArray(value)) return value;
     if (!value) return '';
-    // Algunos perfiles legacy guardaron el JSON serializado como string.
     const trimmed = value.trim();
     if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
       try {
-        const parsed = JSON.parse(trimmed);
-        if (Array.isArray(parsed)) return parsed;
+        const parsed: unknown = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed as T[];
       } catch {
-        // No es JSON válido — caemos al texto libre.
+        /* fall through */
       }
     }
     return value;
@@ -487,17 +665,15 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
 
   // ---- Cuantificar logros con AI -----------------------------------
 
-  /** Abre el modal para una entry de experiencia. Solo aplica cuando
-   * `isExperienceArray()` es true — los users con experiencia como texto
-   * libre no ven el botón (no hay descripción discreta a cuantificar). */
   openQuantify(index: number): void {
-    const exp = this.profileData?.experience?.[index];
-    if (!exp || !exp.description) return;
+    const exps = this.experienceArray();
+    const exp = exps?.[index];
+    if (!exp?.description) return;
     this.quantifyTarget.set({
       index,
       text: exp.description,
-      role: exp.position || '',
-      company: exp.company || '',
+      role: exp.position ?? '',
+      company: exp.company ?? '',
     });
   }
 
@@ -505,98 +681,78 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     this.quantifyTarget.set(null);
   }
 
-  /** El modal emitió la sugerencia que el user aceptó. Optimistic update:
-   * cambiamos la descripción local + PATCH al backend. Si el PATCH falla,
-   * revertimos y avisamos. */
   onQuantifyApplied(newText: string): void {
     const target = this.quantifyTarget();
     if (!target) return;
-    const profileId = this.profileData?.id;
-    if (!profileId) {
+    const profile = this.profileData;
+    const exps = this.experienceArray();
+    if (!profile?.id || !exps) {
       this.toast.error('No pudimos identificar tu perfil. Recargá la página.');
       return;
     }
 
-    const previousText = this.profileData.experience[target.index].description;
-    // Optimistic
-    this.profileData.experience[target.index] = {
-      ...this.profileData.experience[target.index],
-      description: newText,
-    };
+    const previousText = exps[target.index].description;
+    exps[target.index] = { ...exps[target.index], description: newText };
     this.closeQuantify();
 
-    // El backend guarda `experience` como TextField; serializamos el array
-    // a JSON string. Si más adelante migramos a JSONField, ajustar acá.
-    const payload = { experience: JSON.stringify(this.profileData.experience) };
-    this.profileService.patchProfile(profileId, payload).subscribe({
+    const payload = { experience: JSON.stringify(exps) };
+    this.profileService.patchProfile(profile.id, payload).subscribe({
       next: () => {
         this.toast.success('Logro actualizado en tu CV.');
       },
       error: () => {
-        // Rollback
-        this.profileData.experience[target.index] = {
-          ...this.profileData.experience[target.index],
-          description: previousText,
-        };
+        exps[target.index] = { ...exps[target.index], description: previousText };
         this.toast.error('No pudimos guardar el cambio. Intentá de nuevo.');
       },
     });
   }
 
-  downloadCV(): void {
-    const element = this.cvContent.nativeElement;
-    if (!element) return;
+  /**
+   * Exporta las hojas a PDF. Captura cada `.cv-page` por separado y la
+   * agrega como una página independiente del PDF — así cada hoja del
+   * documento exportado tiene su propio padding top/bottom (no hay
+   * artefactos de "una hoja larga sliceada").
+   *
+   * `isExporting` oculta los botones AI antes de capturar (html2canvas
+   * no respeta @media print, hay que toggle de clase manual).
+   */
+  async downloadCV(): Promise<void> {
+    if (!this.pagesWrap?.nativeElement) return;
+    const pageEls = Array.from(
+      this.pagesWrap.nativeElement.querySelectorAll<HTMLElement>('.cv-page'),
+    );
+    if (pageEls.length === 0) return;
 
-    // Ocultamos los botones AI + los separadores de página visuales antes
-    // de capturar — html2canvas hace screenshot del DOM tal cual, no
-    // respeta @media print. La clase `is-exporting` se aplica al wrapper.
     this.isExporting.set(true);
+    // Damos un frame para que la clase is-exporting oculte los botones.
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
-    // Oficio (US Legal) dimensions in points (1 inch = 72 points).
-    // Legal = 8.5" × 14" = 612 × 1008 pt.
+    // Legal/Oficio en puntos (1 inch = 72 pt): 8.5" × 14" = 612 × 1008 pt.
     const pageWidth = 612;
-    const pageHeight = 1008;
-
-    // Damos 1 frame para que el toggle de isExporting() oculte los
-    // separadores antes de tomar el screenshot — sin esto, html2canvas
-    // captura un frame stale con las líneas de quiebre adentro.
-    setTimeout(() => {
-      html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      })
-        .then((canvas) => {
-          const imgData = canvas.toDataURL('image/png');
-          const doc = new jsPDF('p', 'pt', 'legal');
-
-          const imgWidth = pageWidth;
-          const imgHeight = (canvas.height * pageWidth) / canvas.width;
-
-          // Si el contenido supera la altura de una hoja Oficio, repetimos
-          // el render desplazando `position` — la misma imagen rendered
-          // se "scrollea" hoja a hoja en el PDF.
-          let heightLeft = imgHeight;
-          let position = 0;
-
-          doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
-
-          while (heightLeft > 0) {
-            position = heightLeft - imgHeight;
-            doc.addPage();
-            doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-          }
-
-          doc.save('skiltak-ats-cv.pdf');
-          this.isExporting.set(false);
-        })
-        .catch(() => {
-          this.isExporting.set(false);
+    try {
+      const doc = new jsPDF('p', 'pt', 'legal');
+      for (let i = 0; i < pageEls.length; i++) {
+        const canvas = await html2canvas(pageEls[i], {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
         });
-    }, 50);
+        const imgData = canvas.toDataURL('image/png');
+        // Mantenemos proporción ancho-alto del canvas dentro del ancho
+        // fijo del PDF. Si la hoja DOM es exactamente Oficio, imgHeight
+        // sale ~1008pt y llena la página completa.
+        const imgHeight = (canvas.height * pageWidth) / canvas.width;
+        if (i > 0) doc.addPage();
+        doc.addImage(imgData, 'PNG', 0, 0, pageWidth, imgHeight);
+      }
+      doc.save('skiltak-ats-cv.pdf');
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      this.toast.error('No pudimos exportar el PDF. Intentá de nuevo.');
+    } finally {
+      this.isExporting.set(false);
+    }
   }
 
   goToDashboard() {
@@ -608,17 +764,320 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     }
   }
 
-  /**
-   * Check if education data is in array format
-   */
   isEducationArray(): boolean {
-    return Array.isArray(this.profileData?.education) && this.profileData.education.length > 0;
+    return this.educationArray() !== null;
+  }
+
+  isExperienceArray(): boolean {
+    return this.experienceArray() !== null;
+  }
+
+  /** trackBy del *ngFor de páginas — basa en índice + cantidad de bloques
+   *  para no remontar todas las hojas cuando cambia solo una. */
+  trackPage(index: number, page: CvBlock[]): string {
+    return `${index}-${page.length}`;
+  }
+
+  /** Predicado: ¿la entry tiene bullets como para partirse de forma útil
+   *  en `availableHeight`? Usado por el anti-orphan para decidir si hay
+   *  alternativa mejor antes de pushear el h2 a hoja nueva. */
+  private canMeaningfullySplit(
+    block: CvBlock,
+    fullHeight: number,
+    availableHeight: number,
+  ): boolean {
+    const bullets = this.entryBulletsFor(block);
+    if (bullets === null || bullets.length < 2) return false;
+    const bulletAvg = (fullHeight - PAGINATION.ENTRY_HEADER_PX) / bullets.length;
+    if (bulletAvg <= 0) return false;
+    const bulletsCanFit = Math.max(
+      0,
+      Math.floor((availableHeight - PAGINATION.ENTRY_HEADER_PX) / bulletAvg),
+    );
+    return bulletsCanFit >= PAGINATION.MIN_BULLETS_FIRST_PART && bulletsCanFit < bullets.length;
   }
 
   /**
-   * Check if experience data is in array format
+   * Si el bloque es una entry de experiencia/educación con bullets y
+   * no cabe en `availableHeight`, intenta partirla: parte 1 (header +
+   * primeros N bullets) en la hoja actual, parte 2 (cont. header +
+   * resto de bullets) en la siguiente. Devuelve null si la entry no
+   * tiene suficientes bullets para que el split valga la pena.
+   *
+   * Estimación de heights: dividimos (h - headerPx) entre la cantidad
+   * de bullets para sacar un avg por bullet, y calculamos cuántos
+   * entran. No es perfectamente preciso (algunos bullets son más largos
+   * que otros) pero es buena heurística para evitar desperdiciar hoja.
    */
-  isExperienceArray(): boolean {
-    return Array.isArray(this.profileData?.experience) && this.profileData.experience.length > 0;
+  private maybeSplitEntry(
+    block: CvBlock,
+    fullHeight: number,
+    availableHeight: number,
+  ): SplitResult | null {
+    const bullets = this.entryBulletsFor(block);
+    if (bullets === null || bullets.length < 2) return null;
+
+    const totalBullets = bullets.length;
+    const bulletsTotalHeight = Math.max(fullHeight - PAGINATION.ENTRY_HEADER_PX, 0);
+    const bulletAvgHeight = bulletsTotalHeight / totalBullets;
+    if (bulletAvgHeight <= 0) return null;
+
+    const availableForBullets = availableHeight - PAGINATION.ENTRY_HEADER_PX;
+    const bulletsCanFit = Math.max(0, Math.floor(availableForBullets / bulletAvgHeight));
+    if (bulletsCanFit < PAGINATION.MIN_BULLETS_FIRST_PART) return null;
+    if (bulletsCanFit >= totalBullets) return null;
+
+    const part1: CvBlock = {
+      kind: block.kind,
+      index: block.index,
+      bulletEnd: bulletsCanFit,
+    };
+    const part2: CvBlock = {
+      kind: block.kind,
+      index: block.index,
+      bulletStart: bulletsCanFit,
+      isContinuation: true,
+    };
+    const part1Height = PAGINATION.ENTRY_HEADER_PX + bulletsCanFit * bulletAvgHeight;
+    const part2Height =
+      PAGINATION.CONT_HEADER_PX + (totalBullets - bulletsCanFit) * bulletAvgHeight;
+    return { part1, part1Height, part2, part2Height };
+  }
+
+  /**
+   * Lookup de bullets para una entry partible. Centraliza los guards
+   * (kind correcto, no es continuation, no es ya-partido, entry existe
+   * en profileData) para evitar duplicarlos en maybeSplitEntry y
+   * canMeaningfullySplit. Devuelve null si el bloque no es candidato.
+   */
+  private entryBulletsFor(block: CvBlock): string[] | null {
+    if (block.kind !== 'exp-entry' && block.kind !== 'edu-entry') return null;
+    if (block.bulletStart !== undefined || block.bulletEnd !== undefined) return null;
+    if (block.isContinuation) return null;
+    if (block.index === undefined) return null;
+
+    const arr = block.kind === 'exp-entry' ? this.experienceArray() : this.educationArray();
+    const entry = arr?.[block.index];
+    if (!entry || !('description' in entry) || !entry.description) return null;
+    return this.expBullets(entry.description);
+  }
+
+  /**
+   * Split de bloques `exp-text` / `edu-text` (caso legacy donde el campo
+   * viene como string markdown libre, no como array de objetos).
+   *
+   * Estrategia en 3 pasos, de más limpia a más invasiva:
+   *
+   *   1. PARSE: dividir el string en "entries lógicas" — un entry =
+   *      grupo de líneas consecutivas que arranca con uno o más headers
+   *      (líneas bold o no-bullet) y sigue con sus bullets, hasta que
+   *      aparece el header del próximo entry o se acaba el texto.
+   *
+   *   2. ENTRY-LEVEL SPLIT: greedy fit de entries enteras. Cortar EN EL
+   *      BORDE entre entries (corte limpio: hoja 2 arranca con un entry
+   *      fresh). Esto es lo que pide cualquier CV bien formateado.
+   *
+   *   3. FALLBACK LINE-LEVEL SPLIT: si NI el primer entry cabe en lo
+   *      que queda de hoja, recurrimos al split línea-por-línea con
+   *      anti-orphan backtrack (un solo entry monolítico que se reparte
+   *      entre 2 hojas). Caso raro pero hay que cubrirlo.
+   */
+  private maybeSplitText(
+    block: CvBlock,
+    fullHeight: number,
+    availableHeight: number,
+  ): SplitResult | null {
+    if (block.kind !== 'exp-text' && block.kind !== 'edu-text') return null;
+    if (block.lineStart !== undefined || block.lineEnd !== undefined) return null;
+    if (block.isContinuation) return null;
+
+    const raw = this.rawTextFor(block.kind);
+    if (!raw) return null;
+
+    const lines = raw.split(/\r?\n/);
+    if (lines.length < PAGINATION.MIN_LINES_FIRST_PART) return null;
+
+    const linesTotalHeight = Math.max(fullHeight - PAGINATION.TEXT_SECTION_H2_PX, 0);
+    const lineAvgHeight = linesTotalHeight / lines.length;
+    if (lineAvgHeight <= 0) return null;
+    const availableForLines = availableHeight - PAGINATION.TEXT_SECTION_H2_PX;
+    if (availableForLines <= 0) return null;
+    const linesCanFit = Math.floor(availableForLines / lineAvgHeight);
+    if (linesCanFit < PAGINATION.MIN_LINES_FIRST_PART) return null;
+    if (linesCanFit >= lines.length) return null;
+
+    // Paso 1: parsear el texto en entries lógicas.
+    const entries = this.parseTextEntries(lines);
+
+    // Paso 2: con múltiples entries, preferimos cortar EN EL BORDE entre
+    // entries (corte limpio: hoja 2 arranca con un entry fresh).
+    if (entries.length >= 2) {
+      const entrySplit = this.cutAtEntryBoundary(entries, linesCanFit);
+      if (entrySplit !== null && entrySplit >= PAGINATION.MIN_LINES_FIRST_PART) {
+        return this.buildTextSplit(block, lines, entrySplit, lineAvgHeight);
+      }
+    }
+
+    // Paso 3: fallback line-level con anti-orphan backtrack — si el cut
+    // cae sobre un header (no-bullet), lo retrocedemos hasta que la
+    // última línea de parte 1 sea un bullet.
+    const lineLevelCut = this.backtrackToBullet(lines, linesCanFit);
+    if (lineLevelCut < PAGINATION.MIN_LINES_FIRST_PART) return null;
+    if (lineLevelCut >= lines.length) return null;
+
+    return this.buildTextSplit(block, lines, lineLevelCut, lineAvgHeight);
+  }
+
+  /** Devuelve el string crudo (legacy) de experience/education según el
+   *  kind del bloque, o null si no está como texto libre. */
+  private rawTextFor(kind: 'exp-text' | 'edu-text'): string | null {
+    const value = kind === 'exp-text' ? this.profileData?.experience : this.profileData?.education;
+    return typeof value === 'string' && value.trim() ? value : null;
+  }
+
+  // ---- Predicados de clasificación de líneas ------------------------
+  // Usados tanto por parseTextEntries como por backtrackToBullet. Tener
+  // una sola definición evita drift si más adelante agregamos markers
+  // (por ej. `+ ` o `~`) o cambia el formato.
+
+  private isBulletLine(line: string): boolean {
+    return BULLET_LINE_RE.test(line);
+  }
+  private isBlankLine(line: string): boolean {
+    return !line.trim();
+  }
+  private isHeaderLine(line: string): boolean {
+    return !this.isBlankLine(line) && !this.isBulletLine(line);
+  }
+
+  /**
+   * Parsea un array de líneas (texto markdown libre) en entries lógicas.
+   * Un entry = una o más líneas de header (bold / no-bullet / no-blank)
+   * seguidas de sus líneas de contenido (bullets, párrafos, blanks),
+   * hasta que aparece el próximo header (transición bullet/blank → header).
+   *
+   * Si el texto NO tiene headers (solo bullets sueltos), devuelve un
+   * único entry con todo el contenido — el caller cae al fallback
+   * line-level.
+   */
+  private parseTextEntries(lines: string[]): TextEntryRange[] {
+    const entries: TextEntryRange[] = [];
+    let i = 0;
+    // Saltar blanks iniciales.
+    while (i < lines.length && this.isBlankLine(lines[i])) i++;
+    if (i >= lines.length) return entries;
+
+    let entryStart = i;
+    while (i < lines.length) {
+      // Inicio de nuevo entry: header después de bullet/blank
+      // (transición no-header → header).
+      const prev = i > entryStart ? lines[i - 1] : '';
+      const curr = lines[i];
+      const isNewEntryBoundary =
+        i > entryStart &&
+        this.isHeaderLine(curr) &&
+        (this.isBulletLine(prev) || this.isBlankLine(prev));
+      if (isNewEntryBoundary) {
+        // Cerrar entry anterior recortando blanks finales.
+        let end = i;
+        while (end > entryStart && this.isBlankLine(lines[end - 1])) end--;
+        entries.push({ start: entryStart, end });
+        entryStart = i;
+      }
+      i++;
+    }
+    // Cerrar el último entry.
+    let end = lines.length;
+    while (end > entryStart && this.isBlankLine(lines[end - 1])) end--;
+    if (end > entryStart) entries.push({ start: entryStart, end });
+    return entries;
+  }
+
+  /**
+   * Dado un set de entries y el máximo de líneas que entran en parte 1,
+   * devuelve el índice de línea donde cortar (= primer line del primer
+   * entry que no entra). Si NI el primer entry entra → null (caller
+   * debe fallback a line-level).
+   */
+  private cutAtEntryBoundary(entries: TextEntryRange[], linesCanFit: number): number | null {
+    let cumulative = 0;
+    let lastEntryEndThatFit = 0;
+    for (const e of entries) {
+      const entryLines = e.end - e.start;
+      if (cumulative + entryLines > linesCanFit) {
+        return lastEntryEndThatFit > 0 ? lastEntryEndThatFit : null;
+      }
+      cumulative += entryLines;
+      lastEntryEndThatFit = e.end;
+    }
+    return null;
+  }
+
+  /**
+   * Anti-orphan para line-level fallback: retrocede el cut mientras la
+   * última línea de parte 1 NO sea un bullet — moviendo headers o blanks
+   * a parte 2 para que viajen junto a sus bullets.
+   */
+  private backtrackToBullet(lines: string[], initialCut: number): number {
+    let cut = initialCut;
+    while (cut > 0 && !this.isBulletLine(lines[cut - 1] ?? '')) {
+      cut--;
+    }
+    return cut;
+  }
+
+  /** Construye el par {part1, part2} de un text-block partido. Heights
+   *  se estiman usando la altura promedio por línea + overheads del h2
+   *  y del header "(cont.)". */
+  private buildTextSplit(
+    block: CvBlock,
+    lines: string[],
+    cut: number,
+    lineAvgHeight: number,
+  ): SplitResult {
+    const part1: CvBlock = { kind: block.kind, lineEnd: cut };
+    const part2: CvBlock = { kind: block.kind, lineStart: cut, isContinuation: true };
+    const part1Height = PAGINATION.TEXT_SECTION_H2_PX + cut * lineAvgHeight;
+    const part2Height = PAGINATION.TEXT_CONT_HEADER_PX + (lines.length - cut) * lineAvgHeight;
+    return { part1, part1Height, part2, part2Height };
+  }
+
+  /** Devuelve el slice de líneas de un text-block (experience/education
+   *  como string libre) — usado por los templates expTextTpl/eduTextTpl
+   *  cuando el bloque renderea solo una parte tras un split. */
+  getTextBlockSlice(kind: 'exp' | 'edu', start?: number, end?: number): string {
+    const raw = kind === 'exp' ? this.profileData?.experience : this.profileData?.education;
+    if (typeof raw !== 'string') return '';
+    if (start === undefined && end === undefined) return raw;
+    return raw
+      .split(/\r?\n/)
+      .slice(start ?? 0, end)
+      .join('\n');
+  }
+
+  /**
+   * Devuelve el slice de bullets de una entry como markdown — usado por
+   * el template cuando el bloque renderea solo una parte (split).
+   *
+   * NOTA: re-emitimos los bullets siempre con `- ` como marker canónico.
+   * Si el original venía con `•` o `*`, se normaliza. RichTextComponent
+   * los renderea idénticos, así que el output visual no cambia.
+   */
+  getEntryBulletsMarkdown(
+    entryIdx: number,
+    kind: 'exp' | 'edu',
+    start?: number,
+    end?: number,
+  ): string {
+    const arr = kind === 'exp' ? this.experienceArray() : this.educationArray();
+    const entry = arr?.[entryIdx];
+    // EducationEntry no tiene description — el split solo aplica a exp.
+    if (!entry || !('description' in entry) || !entry.description) return '';
+    if (start === undefined && end === undefined) return entry.description;
+    const bullets = this.expBullets(entry.description);
+    return bullets
+      .slice(start ?? 0, end)
+      .map((b) => `- ${b}`)
+      .join('\n');
   }
 }

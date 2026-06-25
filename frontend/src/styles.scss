@@ -253,6 +253,61 @@ textarea.field-input {
   min-height: 96px;
 }
 
+/* ===================================
+   Toggle switch — pill on/off pattern.
+   Usado en /settings (alertas email, 2FA) y en el login para
+   "Mantener sesión iniciada". Pareado con clase .on cuando active.
+   =================================== */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 160ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+.toggle-switch {
+  flex-shrink: 0;
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: background 200ms ease, border-color 200ms ease;
+  padding: 0;
+
+  &.on {
+    background: #f97316;
+    border-color: #f97316;
+
+    .toggle-knob {
+      transform: translateX(20px);
+      background: #ffffff;
+    }
+  }
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #cfcfc8;
+  transition: transform 200ms ease, background 200ms ease;
+}
+
 /* <select.field-input> abre un dropdown nativo. Por defecto los <option>
  * heredan colores del OS (popup blanco con texto gris claro) — sobre
  * tema oscuro quedan casi invisibles. Chrome y Firefox respetan

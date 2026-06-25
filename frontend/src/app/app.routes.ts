@@ -140,6 +140,13 @@ export const routes: Routes = [
           import('./applications/applications.component').then((m) => m.ApplicationsComponent),
       },
       {
+        path: 'ignored',
+        loadComponent: () =>
+          import('./ignored-offers/ignored-offers.component').then(
+            (m) => m.IgnoredOffersComponent,
+          ),
+      },
+      {
         path: 'settings',
         loadComponent: () =>
           import('./dashboard/settings/settings.component').then((m) => m.SettingsComponent),

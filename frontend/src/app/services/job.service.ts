@@ -32,6 +32,8 @@ export interface JobFilters {
   countries: string[];
   /** Lista de modalidades (remote, hybrid, onsite, unknown). Vacío = sin filtro. */
   modalities: string[];
+  /** Orden por % match. Undefined = default del backend (-created_at). */
+  ordering?: 'match_asc' | 'match_desc';
 }
 
 /**
@@ -66,6 +68,9 @@ export class JobService {
     if (filters?.modalities?.length) {
       params.push(`modality=${filters.modalities.join(',')}`);
     }
+    if (filters?.ordering) {
+      params.push(`ordering=${filters.ordering}`);
+    }
     if (params.length) {
       url += `?${params.join('&')}`;
     }
@@ -86,6 +91,26 @@ export class JobService {
    */
   getJobDetail(id: number | string): Observable<JobOffer> {
     return this.http.get<JobOffer>(`${environment.apiUrl}/jobs/jobs/${id}/`);
+  }
+
+  /** Marca una oferta como "Ignorar" para el usuario actual. POST es
+   * idempotente — el backend devuelve 201 si crea o 200 si ya existía. */
+  ignoreOffer(id: number): Observable<{ ignored: boolean; offer_id: number }> {
+    return this.http.post<{ ignored: boolean; offer_id: number }>(
+      `${environment.apiUrl}/jobs/jobs/${id}/ignore/`,
+      {},
+    );
+  }
+
+  /** Quita el "Ignorar" de una oferta. DELETE idempotente (204 siempre). */
+  unignoreOffer(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/jobs/jobs/${id}/ignore/`);
+  }
+
+  /** Lista las ofertas que el user marcó como ignoradas. No paginado —
+   * volúmenes esperados son chicos (decenas). */
+  getIgnoredOffers(): Observable<JobOffer[]> {
+    return this.http.get<JobOffer[]>(`${environment.apiUrl}/jobs/jobs/ignored/`);
   }
 
   /**

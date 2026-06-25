@@ -42,6 +42,16 @@
       </a>
       <a
         class="nav-item"
+        routerLink="/ignored"
+        routerLinkActive="active"
+        (click)="toggleDrawer(false)"
+        title="Ofertas ignoradas"
+      >
+        <span class="material-symbols-outlined">visibility_off</span>
+        <span class="nav-label">Ofertas ignoradas</span>
+      </a>
+      <a
+        class="nav-item"
         routerLink="/cv"
         routerLinkActive="active"
         (click)="toggleDrawer(false)"

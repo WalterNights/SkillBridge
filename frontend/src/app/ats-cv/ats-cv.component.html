@@ -43,7 +43,7 @@
         type="button"
         (click)="openAudit()"
         class="px-5 py-2.5 rounded-xl border text-sm font-semibold inline-flex items-center gap-2 transition-colors"
-        style="background: rgba(249, 115, 22, 0.08); border-color: rgba(249, 115, 22, 0.3); color: #f97316;"
+        style="background: rgba(249, 115, 22, 0.08); border-color: rgba(249, 115, 22, 0.3); color: #f97316"
       >
         <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'FILL' 1">
           psychology
@@ -54,7 +54,7 @@
         type="button"
         (click)="openImprove()"
         class="px-5 py-2.5 rounded-xl border text-sm font-semibold inline-flex items-center gap-2 transition-colors"
-        style="background: rgba(249, 115, 22, 0.08); border-color: rgba(249, 115, 22, 0.3); color: #f97316;"
+        style="background: rgba(249, 115, 22, 0.08); border-color: rgba(249, 115, 22, 0.3); color: #f97316"
         title="Mejorar el CV con AI (rewrite summary + cuantificar bullets)"
       >
         <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'FILL' 1">
@@ -77,151 +77,303 @@
         (click)="goToDashboard()"
         class="btn-primary px-5 py-2.5 rounded-xl text-sm inline-flex items-center gap-2"
       >
-        <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'wght' 400"
-          >work</span
-        >
+        <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'wght' 400">work</span>
         Ver ofertas
       </button>
     </div>
   </div>
 
   <!-- Page count hint cuando ocupa más de una hoja -->
-  <p *ngIf="pageCount() > 1 && !isExporting()" class="cv-page-count-hint">
-    Tu CV ocupa {{ pageCount() }} hojas Oficio
-  </p>
+  <p *ngIf="pageCount() > 1 && !isExporting()" class="cv-page-count-hint">Tu CV ocupa {{ pageCount() }} hojas Oficio</p>
 
-  <!-- ATS-optimized CV sheet (Oficio) -->
-  <div #cvContent class="cv-page" [class.is-exporting]="isExporting()">
-    <!-- Separadores visuales entre hojas cuando el contenido excede una -->
+  <!-- ============================================================ -->
+  <!-- LAYER VISIBLE: hojas Oficio reales, una por entry de pages() -->
+  <!-- ============================================================ -->
+  <div #pagesWrap class="cv-pages-wrap" [class.is-exporting]="isExporting()">
     <div
-      *ngFor="let offset of pageBreakOffsets(); let i = index"
-      class="cv-page-break"
-      [style.top.px]="offset"
+      *ngFor="let page of pages(); let pageIdx = index; trackBy: trackPage"
+      class="cv-page"
+      [attr.data-page-index]="pageIdx"
     >
-      <span class="cv-page-break-label">Página {{ i + 2 }}</span>
+      <ng-container *ngFor="let block of page" [ngSwitch]="block.kind">
+        <ng-container *ngSwitchCase="'header'" [ngTemplateOutlet]="headerTpl"></ng-container>
+        <ng-container *ngSwitchCase="'summary'" [ngTemplateOutlet]="summaryTpl"></ng-container>
+        <ng-container *ngSwitchCase="'exp-h2'" [ngTemplateOutlet]="expH2Tpl"></ng-container>
+        <ng-container
+          *ngSwitchCase="'exp-entry'"
+          [ngTemplateOutlet]="expContinuationTpl"
+          [ngTemplateOutletContext]="{ $implicit: block }"
+        ></ng-container>
+        <ng-container
+          *ngSwitchCase="'exp-text'"
+          [ngTemplateOutlet]="expTextTpl"
+          [ngTemplateOutletContext]="{ $implicit: block }"
+        ></ng-container>
+        <ng-container *ngSwitchCase="'edu-h2'" [ngTemplateOutlet]="eduH2Tpl"></ng-container>
+        <ng-container
+          *ngSwitchCase="'edu-entry'"
+          [ngTemplateOutlet]="eduContinuationTpl"
+          [ngTemplateOutletContext]="{ $implicit: block }"
+        ></ng-container>
+        <ng-container
+          *ngSwitchCase="'edu-text'"
+          [ngTemplateOutlet]="eduTextTpl"
+          [ngTemplateOutletContext]="{ $implicit: block }"
+        ></ng-container>
+        <ng-container *ngSwitchCase="'skills'" [ngTemplateOutlet]="skillsTpl"></ng-container>
+        <ng-container *ngSwitchCase="'soft-skills'" [ngTemplateOutlet]="softSkillsTpl"></ng-container>
+        <ng-container *ngSwitchCase="'languages'" [ngTemplateOutlet]="languagesTpl"></ng-container>
+        <ng-container *ngSwitchCase="'portfolio'" [ngTemplateOutlet]="portfolioTpl"></ng-container>
+      </ng-container>
     </div>
+  </div>
 
-    <!-- Header -->
-    <header class="cv-header">
-      <h1 class="cv-name">{{ profileData.first_name }} {{ profileData.last_name }}</h1>
-      <p *ngIf="profileData.professional_title" class="cv-title">{{ profileData.professional_title }}</p>
-      <div class="cv-contact">
-        <span *ngIf="profileData.city">{{ profileData.city }}<span *ngIf="profileData.country">, {{ profileData.country }}</span></span>
-        <span *ngIf="profileData.linkedin_url" class="cv-sep">·</span>
-        <span *ngIf="profileData.linkedin_url">{{ profileData.linkedin_url }}</span>
-        <span *ngIf="profileData.phone_number" class="cv-sep">·</span>
-        <span *ngIf="profileData.phone_number" class="cv-nowrap"
-          >{{ profileData.phone_code }} {{ profileData.phone_number }}</span
-        >
-        <span *ngIf="profileData.email" class="cv-sep">·</span>
-        <span *ngIf="profileData.email" class="cv-nowrap">{{ profileData.email }}</span>
-      </div>
-    </header>
-
-    <!-- Summary — renderea markdown (bold, italic, listas si las hay). -->
-    <section *ngIf="profileData.summary" class="cv-section">
-      <div class="cv-summary">
-        <app-rich-text [value]="profileData.summary" />
-      </div>
-    </section>
-
-    <!-- Experience -->
-    <section *ngIf="profileData.experience" class="cv-section">
-      <h2 class="cv-section-title">Experiencia profesional</h2>
-
-      <div *ngIf="isExperienceArray()" class="cv-entries">
-        <div *ngFor="let exp of profileData.experience; let i = index" class="cv-entry">
-          <div class="cv-entry-header">
-            <div class="cv-entry-left">
-              <h3 class="cv-entry-title">{{ exp.position }}</h3>
-              <p class="cv-entry-subtitle">
-                {{ exp.company }}<span *ngIf="exp.location_city || exp.location_country"> · {{ exp.location_city }}<span *ngIf="exp.location_country">{{ exp.location_city ? ', ' : '' }}{{ exp.location_country }}</span></span>
-              </p>
-            </div>
-            <div class="cv-entry-right">
-              <span class="cv-entry-date">{{ exp.start_date }} – {{ exp.end_date }}</span>
-            </div>
-          </div>
-          <div *ngIf="exp.description" class="cv-entry-desc-wrap">
-            <!-- RichText parsea bullets (- / • / *), numerada (1.) y
-                 bold/italic. Si la descripción es texto plano sin
-                 markdown, se renderea como párrafo. -->
-            <app-rich-text [value]="exp.description" class="cv-entry-description-rt" />
-            <button
-              *ngIf="!isExporting()"
-              type="button"
-              class="cv-ai-btn no-export"
-              (click)="openQuantify(i)"
-              title="Cuantificar este logro con AI"
-            >
-              <span class="material-symbols-outlined" style="font-size: 13px; font-variation-settings: 'FILL' 1">
-                auto_awesome
-              </span>
-              Cuantificar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div *ngIf="!isExperienceArray()" class="cv-text-content">
-        <app-rich-text [value]="profileData.experience" />
-      </div>
-    </section>
-
-    <!-- Education -->
-    <section *ngIf="profileData.education" class="cv-section">
-      <h2 class="cv-section-title">Educación</h2>
-
-      <div *ngIf="isEducationArray()" class="cv-entries">
-        <div *ngFor="let edu of profileData.education" class="cv-entry">
-          <div class="cv-entry-header">
-            <div class="cv-entry-left">
-              <h3 class="cv-entry-title">{{ edu.title }}</h3>
-              <p class="cv-entry-subtitle">
-                {{ edu.institution }}<span *ngIf="edu.location_city || edu.location_country"> · {{ edu.location_city }}<span *ngIf="edu.location_country">{{ edu.location_city ? ', ' : '' }}{{ edu.location_country }}</span></span>
-              </p>
-            </div>
-            <div class="cv-entry-right">
-              <span class="cv-entry-date">{{ edu.start_date }} – {{ edu.end_date }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div *ngIf="!isEducationArray()" class="cv-text-content">
-        <app-rich-text [value]="profileData.education" />
-      </div>
-    </section>
-
-    <!-- Skills -->
-    <section *ngIf="profileData.skills" class="cv-section">
-      <h2 class="cv-section-title">Habilidades técnicas</h2>
-      <p class="cv-skills">{{ profileData.skills }}</p>
-    </section>
-
-    <!-- Soft skills — solo si Gemini detectó alguna -->
-    <section *ngIf="softSkillsList().length > 0" class="cv-section">
-      <h2 class="cv-section-title">Habilidades blandas</h2>
-      <p class="cv-skills">{{ profileData.soft_skills }}</p>
-    </section>
-
-    <!-- Languages — array de {language, level} -->
-    <section *ngIf="hasLanguages()" class="cv-section">
-      <h2 class="cv-section-title">Idiomas</h2>
-      <ul class="cv-languages">
-        <li *ngFor="let lang of profileData.languages">
-          <strong>{{ lang.language }}</strong><span *ngIf="lang.level">: {{ lang.level }}</span>
-        </li>
-      </ul>
-    </section>
-
-    <!-- Links -->
-    <section *ngIf="profileData.portfolio_url" class="cv-section">
-      <h2 class="cv-section-title">Portafolio</h2>
-      <p class="cv-skills">{{ profileData.portfolio_url }}</p>
-    </section>
+  <!-- ============================================================ -->
+  <!-- LAYER MEDICIÓN: invisible, off-screen.                       -->
+  <!-- Renderea CADA bloque por separado para medir su altura       -->
+  <!-- y decidir en qué hoja entra. Mismo ancho que el área útil    -->
+  <!-- de una .cv-page (215.9 - 2*22 = 171.9mm).                     -->
+  <!-- ============================================================ -->
+  <div #measureRoot class="cv-measure" aria-hidden="true">
+    <div *ngFor="let block of cvBlocks()" class="cv-measure-block" data-measure-block [ngSwitch]="block.kind">
+      <ng-container *ngSwitchCase="'header'" [ngTemplateOutlet]="headerTpl"></ng-container>
+      <ng-container *ngSwitchCase="'summary'" [ngTemplateOutlet]="summaryTpl"></ng-container>
+      <ng-container *ngSwitchCase="'exp-h2'" [ngTemplateOutlet]="expH2Tpl"></ng-container>
+      <ng-container
+        *ngSwitchCase="'exp-entry'"
+        [ngTemplateOutlet]="expContinuationTpl"
+        [ngTemplateOutletContext]="{ $implicit: block }"
+      ></ng-container>
+      <ng-container
+        *ngSwitchCase="'exp-text'"
+        [ngTemplateOutlet]="expTextTpl"
+        [ngTemplateOutletContext]="{ $implicit: block }"
+      ></ng-container>
+      <ng-container *ngSwitchCase="'edu-h2'" [ngTemplateOutlet]="eduH2Tpl"></ng-container>
+      <ng-container
+        *ngSwitchCase="'edu-entry'"
+        [ngTemplateOutlet]="eduContinuationTpl"
+        [ngTemplateOutletContext]="{ $implicit: block }"
+      ></ng-container>
+      <ng-container
+        *ngSwitchCase="'edu-text'"
+        [ngTemplateOutlet]="eduTextTpl"
+        [ngTemplateOutletContext]="{ $implicit: block }"
+      ></ng-container>
+      <ng-container *ngSwitchCase="'skills'" [ngTemplateOutlet]="skillsTpl"></ng-container>
+      <ng-container *ngSwitchCase="'soft-skills'" [ngTemplateOutlet]="softSkillsTpl"></ng-container>
+      <ng-container *ngSwitchCase="'languages'" [ngTemplateOutlet]="languagesTpl"></ng-container>
+      <ng-container *ngSwitchCase="'portfolio'" [ngTemplateOutlet]="portfolioTpl"></ng-container>
+    </div>
   </div>
 </main>
+
+<!-- ================================================================ -->
+<!-- TEMPLATES de bloque — usados tanto por la layer visible como por  -->
+<!-- la de medición. Definirlos UNA sola vez evita drift de styling.   -->
+<!-- ================================================================ -->
+
+<ng-template #headerTpl>
+  <ng-container *ngIf="profileData as profile">
+    <header class="cv-header">
+      <h1 class="cv-name">{{ profile.first_name }} {{ profile.last_name }}</h1>
+      <p *ngIf="profile.professional_title" class="cv-title">{{ profile.professional_title }}</p>
+      <div class="cv-contact">
+        <span *ngIf="profile.city"
+          >{{ profile.city }}<span *ngIf="profile.country">, {{ profile.country }}</span></span
+        >
+        <span *ngIf="profile.linkedin_url" class="cv-sep">·</span>
+        <span *ngIf="profile.linkedin_url">{{ profile.linkedin_url }}</span>
+        <span *ngIf="profile.phone_number" class="cv-sep">·</span>
+        <span *ngIf="profile.phone_number" class="cv-nowrap">{{ profile.phone_code }} {{ profile.phone_number }}</span>
+        <span *ngIf="profile.email" class="cv-sep">·</span>
+        <span *ngIf="profile.email" class="cv-nowrap">{{ profile.email }}</span>
+      </div>
+    </header>
+  </ng-container>
+</ng-template>
+
+<ng-template #summaryTpl>
+  <section *ngIf="profileData as profile" class="cv-section">
+    <div class="cv-summary">
+      <app-rich-text [value]="profile.summary" />
+    </div>
+  </section>
+</ng-template>
+
+<!-- Experience: h2 BARE — sin cv-section wrapper. Esto permite que las
+     entries que lo siguen en la misma hoja se rendereen sin gap extra
+     entre h2 y primera entry. Si el h2 queda al final de una hoja sin
+     entries detrás, el algoritmo lo previene (anti-orphan lookahead). -->
+<ng-template #expH2Tpl>
+  <h2 class="cv-section-title">Experiencia profesional</h2>
+</ng-template>
+
+<!-- Una entry de experiencia. Recibe el CvBlock completo para poder
+     mirar bulletStart/bulletEnd/isContinuation cuando el algoritmo
+     partió la entry entre 2 hojas. -->
+<ng-template #expContinuationTpl let-block>
+  <section *ngIf="expAt(block.index) as exp" class="cv-section cv-section-continuation">
+    <div class="cv-entries">
+      <div class="cv-entry">
+        <!-- Header normal cuando NO es continuación -->
+        <div *ngIf="!block.isContinuation" class="cv-entry-header">
+          <div class="cv-entry-left">
+            <h3 class="cv-entry-title">{{ exp.position }}</h3>
+            <p class="cv-entry-subtitle">
+              {{ exp.company
+              }}<span *ngIf="exp.location_city || exp.location_country">
+                · {{ exp.location_city
+                }}<span *ngIf="exp.location_country"
+                  >{{ exp.location_city ? ', ' : '' }}{{ exp.location_country }}</span
+                ></span
+              >
+            </p>
+          </div>
+          <div class="cv-entry-right">
+            <span class="cv-entry-date">{{ exp.start_date }} – {{ exp.end_date }}</span>
+          </div>
+        </div>
+        <!-- Header chiquito de continuación: "Empresa · Puesto — cont." -->
+        <p *ngIf="block.isContinuation" class="cv-entry-cont-header">
+          {{ exp.company }} · {{ exp.position }}
+          <span class="cv-entry-cont-tag">— cont.</span>
+        </p>
+
+        <!-- Descripción: si hay bulletStart/bulletEnd mostramos solo el
+             slice; sino, la descripción entera (caso normal sin split). -->
+        <div *ngIf="exp.description" class="cv-entry-desc-wrap">
+          <app-rich-text
+            *ngIf="block.bulletStart === undefined && block.bulletEnd === undefined"
+            [value]="exp.description"
+            class="cv-entry-description-rt"
+          />
+          <app-rich-text
+            *ngIf="block.bulletStart !== undefined || block.bulletEnd !== undefined"
+            [value]="getEntryBulletsMarkdown(block.index, 'exp', block.bulletStart, block.bulletEnd)"
+            class="cv-entry-description-rt"
+          />
+          <button
+            *ngIf="!isExporting() && !block.isContinuation && block.bulletEnd === undefined"
+            type="button"
+            class="cv-ai-btn no-export"
+            (click)="openQuantify(block.index)"
+            title="Cuantificar este logro con AI"
+          >
+            <span class="material-symbols-outlined" style="font-size: 13px; font-variation-settings: 'FILL' 1">
+              auto_awesome
+            </span>
+            Cuantificar
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</ng-template>
+
+<!-- exp-text: fallback cuando profileData.experience viene como string
+     libre (perfiles legacy, no array estructurado). Soporta partirse en
+     2 mediante block.lineStart / block.lineEnd — la parte 2 muestra un
+     header chiquito "(cont.)" como las entries partidas. -->
+<ng-template #expTextTpl let-block>
+  <section class="cv-section" [class.cv-section-continuation]="block?.isContinuation">
+    <h2 *ngIf="!block?.isContinuation" class="cv-section-title">Experiencia profesional</h2>
+    <p *ngIf="block?.isContinuation" class="cv-entry-cont-header">
+      Experiencia profesional <span class="cv-entry-cont-tag">— cont.</span>
+    </p>
+    <div class="cv-text-content">
+      <app-rich-text *ngIf="block?.lineStart === undefined && block?.lineEnd === undefined" [value]="expText()" />
+      <app-rich-text
+        *ngIf="block?.lineStart !== undefined || block?.lineEnd !== undefined"
+        [value]="getTextBlockSlice('exp', block?.lineStart, block?.lineEnd)"
+      />
+    </div>
+  </section>
+</ng-template>
+
+<!-- Education: mismo patrón que experience (h2 bare + continuation entries) -->
+<ng-template #eduH2Tpl>
+  <h2 class="cv-section-title">Educación</h2>
+</ng-template>
+
+<ng-template #eduContinuationTpl let-block>
+  <section *ngIf="eduAt(block.index) as edu" class="cv-section cv-section-continuation">
+    <div class="cv-entries">
+      <div class="cv-entry">
+        <div *ngIf="!block.isContinuation" class="cv-entry-header">
+          <div class="cv-entry-left">
+            <h3 class="cv-entry-title">{{ edu.title }}</h3>
+            <p class="cv-entry-subtitle">
+              {{ edu.institution
+              }}<span *ngIf="edu.location_city || edu.location_country">
+                · {{ edu.location_city
+                }}<span *ngIf="edu.location_country"
+                  >{{ edu.location_city ? ', ' : '' }}{{ edu.location_country }}</span
+                ></span
+              >
+            </p>
+          </div>
+          <div class="cv-entry-right">
+            <span class="cv-entry-date">{{ edu.start_date }} – {{ edu.end_date }}</span>
+          </div>
+        </div>
+        <p *ngIf="block.isContinuation" class="cv-entry-cont-header">
+          {{ edu.institution }} · {{ edu.title }}
+          <span class="cv-entry-cont-tag">— cont.</span>
+        </p>
+      </div>
+    </div>
+  </section>
+</ng-template>
+
+<ng-template #eduTextTpl let-block>
+  <section class="cv-section" [class.cv-section-continuation]="block?.isContinuation">
+    <h2 *ngIf="!block?.isContinuation" class="cv-section-title">Educación</h2>
+    <p *ngIf="block?.isContinuation" class="cv-entry-cont-header">
+      Educación <span class="cv-entry-cont-tag">— cont.</span>
+    </p>
+    <div class="cv-text-content">
+      <app-rich-text *ngIf="block?.lineStart === undefined && block?.lineEnd === undefined" [value]="eduText()" />
+      <app-rich-text
+        *ngIf="block?.lineStart !== undefined || block?.lineEnd !== undefined"
+        [value]="getTextBlockSlice('edu', block?.lineStart, block?.lineEnd)"
+      />
+    </div>
+  </section>
+</ng-template>
+
+<ng-template #skillsTpl>
+  <section *ngIf="profileData as profile" class="cv-section">
+    <h2 class="cv-section-title">Habilidades técnicas</h2>
+    <p class="cv-skills">{{ profile.skills }}</p>
+  </section>
+</ng-template>
+
+<ng-template #softSkillsTpl>
+  <section *ngIf="profileData as profile" class="cv-section">
+    <h2 class="cv-section-title">Habilidades blandas</h2>
+    <p class="cv-skills">{{ profile.soft_skills }}</p>
+  </section>
+</ng-template>
+
+<ng-template #languagesTpl>
+  <section *ngIf="profileData as profile" class="cv-section">
+    <h2 class="cv-section-title">Idiomas</h2>
+    <ul class="cv-languages">
+      <li *ngFor="let lang of profile.languages">
+        <strong>{{ lang.language }}</strong
+        ><span *ngIf="lang.level">: {{ lang.level }}</span>
+      </li>
+    </ul>
+  </section>
+</ng-template>
+
+<ng-template #portfolioTpl>
+  <section *ngIf="profileData as profile" class="cv-section">
+    <h2 class="cv-section-title">Portafolio</h2>
+    <p class="cv-skills">{{ profile.portfolio_url }}</p>
+  </section>
+</ng-template>
 
 <!-- Quantify modal — lazy, solo se monta cuando hay target seleccionado -->
 <app-quantify-modal
@@ -234,11 +386,7 @@
 />
 
 <!-- Audit modal — lazy, fetcha el análisis al montarse -->
-<app-cv-audit-modal
-  *ngIf="showAudit()"
-  (closed)="closeAudit()"
-  (improveRequested)="closeAudit(); openImprove()"
-/>
+<app-cv-audit-modal *ngIf="showAudit()" (closed)="closeAudit()" (improveRequested)="closeAudit(); openImprove()" />
 
 <!-- Improve modal — lazy, fetcha la propuesta al montarse -->
 <app-cv-improve-modal

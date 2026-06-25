@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -71,3 +72,35 @@ class JobOffer(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class IgnoredOffer(models.Model):
+    """Marca per-user de una oferta que el usuario decidió ocultar del feed.
+
+    CASCADE en `offer`: cuando el cron `clean_old_offers` purga ofertas
+    >30 días, los registros de ignore mueren con ellas — no hay que
+    mantener un cleanup paralelo. Mismo razonamiento para `user`.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="ignored_offers",
+    )
+    offer = models.ForeignKey(
+        JobOffer,
+        on_delete=models.CASCADE,
+        related_name="ignored_by",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "offer"], name="unique_ignored_offer_per_user"
+            )
+        ]
+        indexes = [models.Index(fields=["user", "-created_at"])]
+
+    def __str__(self):
+        return f"{self.user_id} ignored {self.offer_id}"

@@ -190,6 +190,34 @@
 /* =========================
    Filter pills
    ========================= */
+/* Sort toggle — mismo lenguaje visual que filter-pill pero icono-prefix
+ * para sugerir acción (no estado de filtro). Sin variante .active porque
+ * siempre está "activo" — solo cambia de dirección. */
+.sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #cfcfc8;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+
+  &:hover {
+    background: rgba(249, 115, 22, 0.06);
+    border-color: rgba(249, 115, 22, 0.25);
+    color: #f97316;
+  }
+}
+
 .filter-pill {
   display: inline-flex;
   align-items: center;
@@ -383,23 +411,6 @@
   flex-shrink: 0;
 }
 
-/* "Aplicado" badge — pinta sobre el rank/portal slot cuando el user
-   ya postuló a esta oferta. Verde para diferenciarse del orange brand. */
-.applied-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  color: #4ade80;
-  background: rgba(74, 222, 128, 0.10);
-  border: 1px solid rgba(74, 222, 128, 0.30);
-  padding: 3px 8px;
-  border-radius: 9999px;
-}
-
 /* =========================
    Skills bar + chips
    ========================= */
@@ -486,6 +497,33 @@
     background: rgba(249, 115, 22, 0.08);
     border-color: rgba(249, 115, 22, 0.30);
     color: #f97316;
+  }
+}
+
+/* Botón ignorar — mismo lenguaje visual que detail-btn pero cuadrado y
+ * con hover rojo para señalar acción destructiva (oculta la oferta). */
+.ignore-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #8b8a85;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
   }
 }
 

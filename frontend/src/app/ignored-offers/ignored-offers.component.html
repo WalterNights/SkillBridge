@@ -1,0 +1,108 @@
+<section class="px-4 lg:px-8 py-8 lg:py-10">
+  <div class="max-w-4xl mx-auto">
+    <!-- Page header — mismo formato compacto que /applications -->
+    <header class="mb-6">
+      <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-1.5">
+        Tu feed
+      </p>
+      <h1 class="text-2xl lg:text-3xl font-black text-bone tracking-tight">
+        Ofertas ignoradas
+      </h1>
+      <p class="text-sm text-warm-grey mt-2">
+        Las que ocultaste del feed principal. Se purgan automáticamente tras 30 días.
+      </p>
+    </header>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading()" class="glass-strong rounded-2xl p-8 flex items-center gap-3">
+      <span class="loader-ring"></span>
+      <span class="text-sm text-bone">Cargando ofertas ignoradas…</span>
+    </div>
+
+    <!-- Empty state -->
+    <div
+      *ngIf="!isLoading() && offers().length === 0"
+      class="glass-strong rounded-2xl p-10 text-center"
+    >
+      <span
+        class="inline-flex w-14 h-14 rounded-full bg-primary/15 items-center justify-center mb-4 material-symbols-outlined text-primary"
+        style="font-size: 24px; font-variation-settings: 'FILL' 1"
+        >visibility_off</span
+      >
+      <h3 class="text-lg font-semibold text-bone mb-1">No tenés ofertas ignoradas</h3>
+      <p class="text-sm text-warm-grey mb-5">
+        Si una oferta del feed no te interesa, tocá el ícono de ojo tachado en la card y aparecerá acá.
+      </p>
+      <a
+        routerLink="/dashboard"
+        class="btn-primary px-5 py-2.5 rounded-xl text-sm inline-flex items-center gap-2"
+      >
+        <span class="material-symbols-outlined" style="font-size: 18px">arrow_back</span>
+        Volver al feed
+      </a>
+    </div>
+
+    <!-- Lista de filas -->
+    <div *ngIf="!isLoading() && offers().length > 0" class="flex flex-col gap-3">
+      <article
+        *ngFor="let offer of offers(); trackBy: trackOffer"
+        class="ignored-row glass-strong rounded-2xl p-5"
+      >
+        <div class="flex items-start gap-4">
+          <span
+            class="portal-avatar"
+            [attr.data-portal]="portalMeta(offer).key"
+            [title]="portalMeta(offer).label"
+          >
+            <span *ngIf="portalMeta(offer).mark; else genericIcon">
+              {{ portalMeta(offer).mark }}
+            </span>
+            <ng-template #genericIcon>
+              <span class="material-symbols-outlined">work</span>
+            </ng-template>
+          </span>
+
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
+              <span class="ignored-badge">
+                <span class="material-symbols-outlined" style="font-size: 12px; font-variation-settings: 'FILL' 1">
+                  visibility_off
+                </span>
+                Ignorada
+              </span>
+            </div>
+            <h3 class="text-base font-semibold text-bone leading-snug">
+              {{ offer.title }}
+            </h3>
+            <p class="text-sm text-warm-grey mt-0.5">
+              {{ offer.company || portalMeta(offer).label }}
+              <span *ngIf="offer.location" class="text-dim">· {{ offer.location }}</span>
+            </p>
+          </div>
+
+          <!-- Actions: Restaurar + Ver -->
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="restore-btn"
+              (click)="restore(offer); $event.stopPropagation()"
+              title="Restaurar — volver a mostrar en el feed"
+            >
+              <span class="material-symbols-outlined" style="font-size: 16px">visibility</span>
+              Restaurar
+            </button>
+
+            <a
+              [routerLink]="['/jobs', offer.id]"
+              class="ignored-link"
+              (click)="$event.stopPropagation()"
+            >
+              Ver
+              <span class="material-symbols-outlined" style="font-size: 14px">arrow_forward</span>
+            </a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>

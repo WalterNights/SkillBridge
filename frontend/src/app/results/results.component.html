@@ -53,7 +53,21 @@
         Regular <span class="text-dim ml-1">50–69%</span>
       </button>
 
-      <p class="text-xs text-warm-grey ml-auto">
+      <!-- Sort toggle: alterna entre mayor→menor y menor→mayor por % match. -->
+      <button
+        type="button"
+        class="sort-btn ml-auto"
+        (click)="toggleSortOrder()"
+        [title]="sortOrder() === 'desc' ? 'Ordenando: mejor match primero' : 'Ordenando: peor match primero'"
+        [attr.aria-label]="sortOrder() === 'desc' ? 'Cambiar a peor match primero' : 'Cambiar a mejor match primero'"
+      >
+        <span class="material-symbols-outlined" style="font-size: 16px">
+          {{ sortOrder() === 'desc' ? 'arrow_downward' : 'arrow_upward' }}
+        </span>
+        <span>{{ sortOrder() === 'desc' ? 'Mayor % primero' : 'Menor % primero' }}</span>
+      </button>
+
+      <p class="text-xs text-warm-grey">
         Mostrando <span class="text-bone font-semibold">{{ filteredOffer.length }}</span>
         de <span class="text-bone font-semibold">{{ totalCount() || offers.length }}</span>
       </p>
@@ -135,22 +149,16 @@
         class="job-card glass-strong rounded-2xl p-5 cursor-pointer transition-all flex flex-col"
         [attr.data-match]="matchTier(offer.match_percentage)"
       >
-        <!-- Rank badge — top 3 by orden actual del feed (o "Aplicado") -->
+        <!-- Rank badge — top 3 by orden actual del feed -->
         <div class="flex items-center justify-between mb-3">
-          <span *ngIf="isApplied(offer); else rankSlot" class="applied-badge">
-            <span class="material-symbols-outlined" style="font-size: 11px; font-variation-settings: 'FILL' 1">check_circle</span>
-            Aplicado
+          <span *ngIf="i < 3; else portalSlot" class="rank-badge">
+            <span class="rank-dot"></span>
+            Tu match #{{ i + 1 }} hoy
           </span>
-          <ng-template #rankSlot>
-            <span *ngIf="i < 3; else portalSlot" class="rank-badge">
-              <span class="rank-dot"></span>
-              Tu match #{{ i + 1 }} hoy
+          <ng-template #portalSlot>
+            <span class="text-[10px] uppercase tracking-[0.15em] text-dim font-semibold">
+              {{ portalMeta(offer).label }}
             </span>
-            <ng-template #portalSlot>
-              <span class="text-[10px] uppercase tracking-[0.15em] text-dim font-semibold">
-                {{ portalMeta(offer).label }}
-              </span>
-            </ng-template>
           </ng-template>
           <span class="match-pill">{{ offer.match_percentage }}%</span>
         </div>
@@ -210,11 +218,19 @@
           </div>
         </div>
 
-        <!-- Footer: botón Ver detalles (separado para no detonar el click del card) -->
-        <div class="mt-5 pt-4 border-t border-white/[0.05]">
-          <button type="button" class="detail-btn w-full" (click)="goToDetail(offer); $event.stopPropagation()">
+        <!-- Footer: Ver detalles + Ignorar (ambos paran propagación del click del card) -->
+        <div class="mt-5 pt-4 border-t border-white/[0.05] flex items-center gap-2">
+          <button type="button" class="detail-btn flex-1" (click)="goToDetail(offer); $event.stopPropagation()">
             Ver detalles
             <span class="material-symbols-outlined" style="font-size: 16px">arrow_forward</span>
+          </button>
+          <button
+            type="button"
+            class="ignore-btn"
+            title="Ignorar — no mostrarla más en el feed"
+            (click)="ignoreOffer(offer); $event.stopPropagation()"
+          >
+            <span class="material-symbols-outlined" style="font-size: 16px">visibility_off</span>
           </button>
         </div>
       </article>

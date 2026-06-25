@@ -147,8 +147,19 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Retorna solo el perfil del usuario autenticado"""
-        return UserProfile.objects.filter(user=self.request.user).select_related("user")
+        """Retorna solo el perfil del usuario autenticado.
+
+        order_by('id') — necesario para que la paginación de DRF sea
+        determinística. Sin un ordering explícito el ORM emite
+        UnorderedObjectListWarning y los items pueden venir en orden
+        distinto en pages distintas. En este queryset cada user tiene
+        UN perfil (OneToOne), así que el ordering es cosmético, pero
+        suprime el warning y deja el comportamiento documentado."""
+        return (
+            UserProfile.objects.filter(user=self.request.user)
+            .select_related("user")
+            .order_by("id")
+        )
 
     def create(self, request):
         """Crea o actualiza el perfil del usuario.

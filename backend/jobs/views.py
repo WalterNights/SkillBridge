@@ -9,7 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from jobs.models import JobOffer
+from jobs.models import IgnoredOffer, JobOffer
 from jobs.serializers import JobOfferSerializer
 from jobs.services.job_service import JobService
 from jobs.services.matching_service import JobMatchingService
@@ -155,22 +155,138 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
             return
         JobMatchingService.enrich_with_match(offers, profile)
 
+    # Umbral mínimo de match para que una oferta aparezca en el feed.
+    # Default alineado con `scrape` para que la experiencia sea consistente:
+    # 25% es la línea entre "este job tiene algo que ver con vos" y "ruido
+    # totalmente off-topic" (rol distinto + sin skills compartidas).
+    _DEFAULT_MIN_MATCH = 25
+
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
+        # El feed muestra solo ofertas SIN acción del usuario: ni ignoradas
+        # ni con postulación (cualquier status, incluido `pending` — un
+        # click en "Aplicar" cuenta como acción aunque no haya confirmado).
+        # Las ignoradas viven en /ignored; las postuladas en /applications.
+        # Solo afecta a `list` — `retrieve` sigue resolviendo todas para
+        # que los links desde esas vistas funcionen.
+        queryset = queryset.exclude(ignored_by__user=request.user).exclude(
+            applications__user=request.user
+        )
+
+        # Si el user no tiene perfil completo no hay manera de calcular
+        # match — mostramos todo (path barato, sin enrich completo).
+        try:
+            profile = request.user.profile
+            has_profile = bool(profile.skills or profile.professional_title)
+        except UserProfile.DoesNotExist:
+            profile = None
+            has_profile = False
+
+        if not has_profile:
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                self._enrich_with_user_match(page)
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            offers = list(queryset)
+            self._enrich_with_user_match(offers)
+            serializer = self.get_serializer(offers, many=True)
+            return Response(serializer.data)
+
+        # Threshold configurable — el frontend puede bajar a 0 para
+        # "modo exploración" o subir si quiere solo top matches.
+        min_match = self._parse_min_match(request)
+        # Orden — match_desc por default (la promesa del hero: "ordenadas
+        # por match"). El user puede invertir con match_asc para revisar
+        # qué quedó al final.
+        ordering = (request.query_params.get("ordering") or "match_desc").strip()
+
+        # Path enriquece-todo: necesario porque el match no es campo DB.
+        # Volumen esperado tras los excludes: decenas-a-cientos por user.
+        offers = list(queryset)
+        JobMatchingService.enrich_with_match(offers, profile)
+        offers = [
+            o for o in offers if getattr(o, "match_percentage", 0) >= min_match
+        ]
+        if ordering in ("match_desc", "match_asc"):
+            offers.sort(
+                key=lambda o: getattr(o, "match_percentage", 0),
+                reverse=(ordering == "match_desc"),
+            )
+
+        page = self.paginate_queryset(offers)
         if page is not None:
-            self._enrich_with_user_match(page)
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-        offers = list(queryset)
-        self._enrich_with_user_match(offers)
         serializer = self.get_serializer(offers, many=True)
         return Response(serializer.data)
+
+    def _parse_min_match(self, request) -> int:
+        """Lee `?min_match=N` y lo clampa a [0, 100]. Default = 25.
+
+        Inválidos (no-numérico, fuera de rango) caen al default — el
+        feed no debería romperse por un query param mal formado.
+        """
+        raw = request.query_params.get("min_match")
+        if raw is None:
+            return self._DEFAULT_MIN_MATCH
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            return self._DEFAULT_MIN_MATCH
+        return max(0, min(value, 100))
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         self._enrich_with_user_match([instance])
         serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["post", "delete"], url_path="ignore")
+    def ignore(self, request, pk=None):
+        """Marca/desmarca una oferta como ignorada para el usuario actual.
+
+        POST   /jobs/jobs/{id}/ignore/   → 201 si crea, 200 si ya existía
+        DELETE /jobs/jobs/{id}/ignore/   → 204 siempre (idempotente)
+
+        Nota: NO usamos `get_object()` porque ese pasa por get_queryset()
+        que no excluye nada en retrieve, pero igual resolvemos directo
+        con get_object_or_404 para que sea explícito y barato.
+        """
+        from django.shortcuts import get_object_or_404
+
+        offer = get_object_or_404(JobOffer, pk=pk)
+
+        if request.method == "POST":
+            _, created = IgnoredOffer.objects.get_or_create(
+                user=request.user, offer=offer
+            )
+            return Response(
+                {"ignored": True, "offer_id": offer.id},
+                status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+            )
+
+        # DELETE — idempotente: si no existe no es error.
+        IgnoredOffer.objects.filter(user=request.user, offer=offer).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=["get"], url_path="ignored")
+    def ignored(self, request):
+        """Lista las ofertas que el usuario marcó como ignoradas.
+
+        Devuelve los mismos campos que el feed (mismo serializer +
+        enrichment de match) para que la UI pueda reusar la card. Sin
+        paginación por simplicidad — esperamos volúmenes chicos (decenas,
+        no miles); si crece se agrega paginate_queryset acá igual.
+        """
+        ignored_qs = (
+            IgnoredOffer.objects.filter(user=request.user)
+            .select_related("offer")
+            .order_by("-created_at")
+        )
+        offers = [io.offer for io in ignored_qs]
+        self._enrich_with_user_match(offers)
+        serializer = self.get_serializer(offers, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=["get"], url_path="filter-options")

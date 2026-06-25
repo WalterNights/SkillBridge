@@ -101,7 +101,8 @@
                 type="button"
                 (click)="openCoverLetter()"
                 class="cover-letter-btn"
-                title="Generar carta de presentación con AI"
+                data-tooltip="Generá una carta de presentación personalizada con AI"
+                aria-label="Generar carta de presentación con AI"
               >
                 <span class="material-symbols-outlined" style="font-size: 16px; font-variation-settings: 'FILL' 1"
                   >auto_awesome</span
@@ -114,6 +115,7 @@
                 class="icon-btn"
                 [class.is-active]="isBookmarked"
                 (click)="toggleBookmark()"
+                [attr.data-tooltip]="isBookmarked ? 'Quitar de guardadas' : 'Guardar para revisar después'"
                 [attr.aria-label]="isBookmarked ? 'Quitar de guardadas' : 'Guardar oferta'"
               >
                 <span class="material-symbols-outlined" [style.font-variation-settings]="isBookmarked ? '\'FILL\' 1' : '\'wght\' 400'"
@@ -121,7 +123,13 @@
                 >
               </button>
 
-              <button type="button" class="icon-btn" (click)="share()" aria-label="Compartir">
+              <button
+                type="button"
+                class="icon-btn"
+                (click)="share()"
+                data-tooltip="Compartir el link de esta oferta"
+                aria-label="Compartir"
+              >
                 <span class="material-symbols-outlined">share</span>
               </button>
 
@@ -130,6 +138,7 @@
                 class="icon-btn"
                 [class.is-active]="isHidden"
                 (click)="toggleHide()"
+                [attr.data-tooltip]="isHidden ? 'Mostrar de nuevo en el feed' : 'Ignorar — no la verás más en el feed'"
                 aria-label="Ocultar oferta"
               >
                 <span class="material-symbols-outlined">visibility_off</span>

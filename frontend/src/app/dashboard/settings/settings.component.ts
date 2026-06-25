@@ -53,6 +53,7 @@ export class SettingsComponent implements OnInit {
   private profileId: number | null = null;
   isSaving = false;
   saveStatus: 'idle' | 'success' | 'error' = 'idle';
+  saveErrorMsg = '';
 
   // 2FA state — toggle visible refleja el flag del backend. Modal se
   // abre al click del toggle (en cualquier sentido) y emite el nuevo
@@ -117,30 +118,49 @@ export class SettingsComponent implements OnInit {
   }
 
   saveSettings(): void {
-    if (this.profileId === null) {
-      this.saveStatus = 'error';
-      return;
-    }
     this.isSaving = true;
     this.saveStatus = 'idle';
-    // PATCH parcial — solo enviamos los fields que el endpoint conoce.
-    // `enableNotifications` (in-app) y `language` quedan como prefs locales
-    // hasta que tengamos endpoints para ellos; no rompen el PATCH actual.
+    this.saveErrorMsg = '';
+    // Usamos POST al collection (no PATCH /{id}/) porque el backend
+    // tiene un upsert en UserProfileViewSet.create() — busca el profile
+    // del request.user y hace partial_update si existe, sino crea. Así
+    // evitamos depender de profileId que puede no estar cargado todavía
+    // si loadProfilePreferences() todavía no terminó / falló.
     const payload = { email_alerts_enabled: this.enableEmailAlerts };
-    this.http
-      .patch<any>(`${environment.apiUrl}/users/profiles/${this.profileId}/`, payload)
-      .subscribe({
-        next: () => {
-          this.isSaving = false;
-          this.saveStatus = 'success';
-          setTimeout(() => (this.saveStatus = 'idle'), 3000);
-        },
-        error: () => {
-          this.isSaving = false;
-          this.saveStatus = 'error';
-          setTimeout(() => (this.saveStatus = 'idle'), 5000);
-        },
-      });
+    this.http.post<any>(`${environment.apiUrl}/users/profiles/`, payload).subscribe({
+      next: (res) => {
+        this.isSaving = false;
+        this.saveStatus = 'success';
+        // Captura el id para futuras llamadas (otros saves, 2FA, etc).
+        if (res?.id) this.profileId = res.id;
+        setTimeout(() => (this.saveStatus = 'idle'), 3000);
+      },
+      error: (err) => {
+        this.isSaving = false;
+        this.saveStatus = 'error';
+        // Surface el detalle del backend para debug — útil para saber
+        // si es validación, auth, etc. DRF devuelve `{detail: "..."}`
+        // o un dict de field errors `{field: ["msg", ...]}`.
+        const errorObj = err?.error;
+        let detail = '';
+        if (typeof errorObj === 'string') {
+          detail = errorObj;
+        } else if (errorObj?.detail) {
+          detail = errorObj.detail;
+        } else if (errorObj && typeof errorObj === 'object') {
+          // dict de field errors → "field1: msg, field2: msg"
+          detail = Object.entries(errorObj)
+            .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+            .join(' · ');
+        }
+        const httpStatus = err?.status ? ` (HTTP ${err.status})` : '';
+        this.saveErrorMsg = detail
+          ? `${detail}${httpStatus}`
+          : `No pudimos guardar.${httpStatus}`;
+        console.error('[settings] Error al guardar:', err);
+        setTimeout(() => (this.saveStatus = 'idle'), 8000);
+      },
+    });
   }
 
   goBack(): void {

@@ -26,18 +26,27 @@
 }
 
 /* ===========================================
-   The printable A4 sheet.
-   Kept ATS-friendly (single column, no graphics, web-safe fonts).
-   Inter is used for screen + screenshot-to-PDF (html2canvas captures
-   the rendered look). For text-based ATS the actual font doesn't
-   matter since the PDF here is image-based; for visual ATS parsers
-   Inter still maps cleanly to Arial.
+   Pages wrap — stackea las hojas Oficio con un gap entre ellas para
+   que el fondo dark canvas se vea por el medio y cada hoja parezca
+   un papel independiente (como en Word/Google Docs preview).
+   =========================================== */
+.cv-pages-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+/* ===========================================
+   The printable Oficio sheet (215.9mm × 355.6mm = 8.5" × 14").
+   Height FIJO (no min-height) + overflow:hidden para que el bloque
+   que supere el área útil quede recortado adentro de la hoja en vez
+   de hacerla crecer.
    =========================================== */
 .cv-page {
   width: 215.9mm;
-  min-height: 355.6mm;
+  height: 355.6mm;
   max-width: 100%;
-  margin: 0 auto;
   padding: 18mm 22mm;
   background-color: #ffffff;
   box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
@@ -47,58 +56,7 @@
   box-sizing: border-box;
   border-radius: 4px;
   position: relative;
-}
-
-/* Separador visual entre páginas de Oficio. Se inyecta absolute
- * (via JS measurement de altura del content) a 355.6mm × N desde
- * el top del .cv-page. Marca dónde se cortaría al imprimir. */
-.cv-page-break {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 14mm;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(
-    to bottom,
-    rgba(11, 14, 20, 0) 0%,
-    rgba(11, 14, 20, 0.04) 40%,
-    rgba(11, 14, 20, 0.12) 50%,
-    rgba(11, 14, 20, 0.04) 60%,
-    rgba(11, 14, 20, 0) 100%
-  );
-  /* Línea punteada al medio para que el quiebre sea claro. */
-  &::before {
-    content: '';
-    position: absolute;
-    left: 8mm;
-    right: 8mm;
-    top: 50%;
-    height: 0;
-    border-top: 1px dashed rgba(11, 14, 20, 0.3);
-  }
-  .cv-page-break-label {
-    position: relative;
-    z-index: 1;
-    padding: 2px 10px;
-    background: #ffffff;
-    border: 1px solid rgba(11, 14, 20, 0.18);
-    border-radius: 999px;
-    font-family: "Inter", Arial, sans-serif;
-    font-size: 8pt;
-    font-weight: 600;
-    color: #6b7280;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    box-shadow: 0 2px 6px -1px rgba(11, 14, 20, 0.12);
-  }
-}
-
-/* La línea de quiebre nunca debe quedar en el output PDF. */
-.is-exporting .cv-page-break {
-  display: none;
+  overflow: hidden;
 }
 
 /* Hint informativo arriba del CV cuando ocupa más de una hoja Oficio. */
@@ -115,8 +73,36 @@
 }
 
 /* ===========================================
+   Measure layer — invisible y off-screen. Rendera cada bloque por
+   separado para medir su altura natural. El ancho matchea el área útil
+   de una .cv-page (215.9 - 2*22 = 171.9mm) para que el wrap del texto
+   sea idéntico al render visible.
+   =========================================== */
+.cv-measure {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  left: -10000px;
+  top: 0;
+  width: 171.9mm;
+  font-family: "Inter", Arial, sans-serif;
+  color: #1f2937;
+  line-height: 1.55;
+  box-sizing: border-box;
+}
+
+/* Cada bloque medido. overflow:hidden establece un BFC propio para
+ * que los margin-top/bottom de cv-section adentro NO se collapseen
+ * con el contenedor — necesitamos contar esos márgenes en la altura. */
+.cv-measure-block {
+  width: 100%;
+  overflow: hidden;
+  /* Sin esto el padding-vertical:0 dejaría a los margenes de los hijos
+   * "transcender" el contenedor y la medición daría menos de lo real. */
+}
+
+/* ===========================================
    Header — name, title, contact row.
-   Thin orange rule below replaces the old heavy double-navy bar.
    =========================================== */
 .cv-header {
   margin-bottom: 7mm;
@@ -178,7 +164,14 @@
    =========================================== */
 .cv-section {
   margin-bottom: 6mm;
-  page-break-inside: avoid;
+}
+
+/* Continuación: una sección que es el "remanente" de una sección
+ * cuyo header quedó en la hoja anterior. Quitamos el margin-top que
+ * cv-section heredaría por colapso para que arranque pegada al
+ * padding-top de la nueva hoja. */
+.cv-section-continuation {
+  margin-top: 0 !important;
 }
 
 .cv-section-title {
@@ -209,10 +202,6 @@
   display: flex;
   flex-direction: column;
   gap: 4mm;
-}
-
-.cv-entry {
-  page-break-inside: avoid;
 }
 
 .cv-entry-header {
@@ -256,6 +245,22 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Header chiquito que aparece arriba de la parte 2 de una entry partida
+ * entre hojas. Da contexto sin repetir todo el header completo. */
+.cv-entry-cont-header {
+  margin: 0 0 2mm 0;
+  font-size: 9.5pt;
+  color: #6b7280;
+  font-style: italic;
+  line-height: 1.4;
+
+  .cv-entry-cont-tag {
+    color: #9ca3af;
+    font-weight: 600;
+    margin-left: 2mm;
+  }
+}
+
 .cv-entry-description {
   margin: 1.5mm 0 0;
   font-size: 10pt;
@@ -263,8 +268,7 @@
   line-height: 1.55;
 }
 
-/* Bullets de experiencia (cuando Gemini devuelve varias líneas) — se
- * renderean como lista clásica de CV ATS, no como párrafo. */
+/* Bullets de experiencia. */
 .cv-entry-bullets {
   margin: 1.5mm 0 0;
   padding-left: 5mm;
@@ -306,8 +310,7 @@
 
 /* Botón AI inline al pie de cada descripción de experiencia. Solo
  * visible en pantalla; al exportar PDF se setea `isExporting=true` y
- * el botón se quita del DOM (no es solo `display:none` porque
- * html2canvas a veces lo respeta a medias). */
+ * el botón se quita del DOM. */
 .cv-entry-desc-wrap {
   position: relative;
 }
@@ -336,9 +339,14 @@
   }
 }
 
+/* Cuando exportamos PDF, los botones AI se ocultan via clase aplicada
+ * al wrapper de las páginas. */
+.is-exporting .cv-ai-btn {
+  display: none;
+}
+
 /* ===========================================
-   Free-text fallback (when education/experience come as strings,
-   e.g. from manual input rather than parsed CV).
+   Free-text fallback (cuando experience/education vienen como string).
    =========================================== */
 .cv-text-content {
   font-size: 10pt;
@@ -360,23 +368,17 @@
 
 /* ===========================================
    Print & PDF.
-   Drop shadow so the printed/PDF version doesn't ship the
-   dark-canvas glow as an unwanted artifact.
    =========================================== */
 @media print {
+  .cv-pages-wrap {
+    gap: 0;
+  }
+
   .cv-page {
-    width: 210mm;
-    min-height: 297mm;
-    padding: 18mm 22mm;
     margin: 0;
     box-shadow: none;
     border-radius: 0;
     page-break-after: always;
-  }
-
-  .cv-section,
-  .cv-entry {
-    page-break-inside: avoid;
   }
 }
 
@@ -386,8 +388,10 @@
 @media screen and (max-width: 800px) {
   .cv-page {
     width: 100%;
+    height: auto;
     min-height: auto;
     padding: 14mm 12mm;
+    overflow: visible;
   }
 
   .cv-name {

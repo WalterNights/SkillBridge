@@ -96,6 +96,147 @@ class TestJobsListFilters:
 
 @pytest.mark.integration
 @pytest.mark.django_db
+class TestJobsListOrdering:
+    """Orden por % match — debe aplicarse a TODO el queryset antes de
+    paginar, no solo a la página actual (sino el sort sería inútil con
+    "Cargar más")."""
+
+    def _setup_offers_with_keywords(self, user_profile):
+        """4 ofertas con scores ESTRICTAMENTE distintos contra el perfil
+        ('Backend Developer', skills python/django/postgresql/docker).
+        Diferenciar scores es clave: si dos empatan, el orden secundario
+        depende del `-created_at` del DB que varía entre runs aislados
+        vs conjuntos por la resolución del timestamp en SQLite.
+        """
+        return [
+            JobOffer.objects.create(
+                title="Backend Developer Python",
+                url="https://x.com/best",
+                summary="", keywords="python, django, postgresql, docker",
+                portal="hireline", country="MX", modality="remote",
+            ),
+            JobOffer.objects.create(
+                title="Software Developer",
+                url="https://x.com/mid-high",
+                summary="", keywords="python",
+                portal="hireline", country="MX", modality="remote",
+            ),
+            JobOffer.objects.create(
+                title="Senior Engineer",
+                url="https://x.com/mid-low",
+                summary="", keywords="python, django",
+                portal="hireline", country="MX", modality="remote",
+            ),
+            JobOffer.objects.create(
+                title="Recepcionista Bilingüe",
+                url="https://x.com/zero",
+                summary="", keywords="atención, cliente, ventas",
+                portal="hireline", country="MX", modality="remote",
+            ),
+        ]
+
+    def test_match_desc_orders_best_first(self, authed_client, user_profile):
+        # min_match=0 para aislar — sino el filtro default saca al de 0%.
+        self._setup_offers_with_keywords(user_profile)
+        response = authed_client.get("/api/jobs/jobs/?ordering=match_desc&min_match=0")
+        assert response.status_code == 200
+        titles = [r["title"] for r in response.json()["results"]]
+        assert titles[0] == "Backend Developer Python"
+        assert titles[-1] == "Recepcionista Bilingüe"
+
+    def test_match_asc_orders_worst_first(self, authed_client, user_profile):
+        self._setup_offers_with_keywords(user_profile)
+        response = authed_client.get("/api/jobs/jobs/?ordering=match_asc&min_match=0")
+        assert response.status_code == 200
+        titles = [r["title"] for r in response.json()["results"]]
+        assert titles[0] == "Recepcionista Bilingüe"
+        assert titles[-1] == "Backend Developer Python"
+
+    def test_invalid_ordering_falls_back_to_default(self, authed_client, user_profile):
+        """?ordering=xyz no rompe — cae al default (match_desc)."""
+        self._setup_offers_with_keywords(user_profile)
+        response = authed_client.get("/api/jobs/jobs/?ordering=xyz&min_match=0")
+        assert response.status_code == 200
+        assert response.json()["count"] == 4
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestJobsListMinMatch:
+    """El feed filtra ofertas con match bajo el umbral — sino aparecen
+    ofertas totalmente off-topic con 0% (ej: 'Analista Control de Accesos'
+    para un perfil de developer).
+    """
+
+    def _setup(self, user_profile):
+        return [
+            JobOffer.objects.create(
+                title="Senior Python Developer",
+                url="https://x.com/dev",
+                summary="", keywords="python, django, postgresql",
+                portal="hireline", country="MX", modality="remote",
+            ),
+            JobOffer.objects.create(
+                title="Analista Control de Accesos",
+                url="https://x.com/access",
+                summary="", keywords="auditoría, calidad, crm, gdpr",
+                portal="hireline", country="MX", modality="remote",
+            ),
+        ]
+
+    def test_default_min_match_excludes_zero_score_offers(self, authed_client, user_profile):
+        """Default 25% — la oferta off-topic con 0% no debe aparecer."""
+        self._setup(user_profile)
+        response = authed_client.get("/api/jobs/jobs/")
+        titles = [r["title"] for r in response.json()["results"]]
+        assert "Senior Python Developer" in titles
+        assert "Analista Control de Accesos" not in titles
+
+    def test_min_match_0_includes_everything(self, authed_client, user_profile):
+        """min_match=0 = modo exploración, no filtra nada."""
+        self._setup(user_profile)
+        response = authed_client.get("/api/jobs/jobs/?min_match=0")
+        titles = [r["title"] for r in response.json()["results"]]
+        assert "Senior Python Developer" in titles
+        assert "Analista Control de Accesos" in titles
+
+    def test_min_match_high_threshold(self, authed_client, user_profile):
+        """min_match=80 corta ofertas con match medio."""
+        self._setup(user_profile)
+        response = authed_client.get("/api/jobs/jobs/?min_match=80")
+        # Nadie alcanza 80% en este setup
+        assert response.json()["count"] == 0
+
+    def test_min_match_invalid_falls_back_to_default(self, authed_client, user_profile):
+        """?min_match=foo no rompe — cae al default 25."""
+        self._setup(user_profile)
+        response = authed_client.get("/api/jobs/jobs/?min_match=foo")
+        assert response.status_code == 200
+        titles = [r["title"] for r in response.json()["results"]]
+        assert "Analista Control de Accesos" not in titles
+
+    def test_min_match_clamped_above_100(self, authed_client, user_profile):
+        """min_match=999 se clampa a 100 — devuelve solo matches perfectos."""
+        self._setup(user_profile)
+        response = authed_client.get("/api/jobs/jobs/?min_match=999")
+        assert response.status_code == 200
+
+    def test_no_profile_shows_all_offers(self, authed_client, user):
+        """Sin perfil completo no podemos calcular match — el feed
+        no debería quedar vacío. Cae al path 'sin filtro'."""
+        # Note: user fixture exists but no profile created
+        JobOffer.objects.create(
+            title="Any job", url="https://x.com/any",
+            summary="", keywords="cobol",
+            portal="hireline", country="MX", modality="remote",
+        )
+        response = authed_client.get("/api/jobs/jobs/")
+        assert response.status_code == 200
+        assert response.json()["count"] == 1
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
 class TestFilterOptionsEndpoint:
     def test_returns_countries_and_modalities_with_counts(self, authed_client, offers_set):
         response = authed_client.get("/api/jobs/jobs/filter-options/")

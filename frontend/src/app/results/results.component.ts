@@ -9,7 +9,6 @@ import {
   JobService,
   ScrapeResponse,
 } from '../services/job.service';
-import { ApplicationService } from '../services/application.service';
 import { ScrapeProgressService } from '../services/scrape-progress.service';
 import { ToastService } from '../services/toast.service';
 import { Router, RouterModule } from '@angular/router';
@@ -54,11 +53,6 @@ export class ResultsComponent {
   hoverState: { [offerId: number]: boolean } = {};
   selectedFilter: 'all' | 'good' | 'regular' | 'bad' = 'all';
 
-  /** Set de offer_ids ya aplicados por el user — usado para mostrar el
-   * badge "Aplicado" en las cards. Se llena al loguear / al volver al
-   * feed. Lo mantenemos como Signal<Set> para lookup O(1) en el ngFor. */
-  appliedOfferIds = signal<Set<number>>(new Set());
-
   /** Estado de paginación. El backend pagina con DRF (PAGE_SIZE=20).
    * `offers` acumula página a página — clicker "Cargar más" appendea,
    * cambiar filtros resetea a página 1. */
@@ -81,6 +75,13 @@ export class ResultsComponent {
     () => this.selectedCountries().size > 0 || this.selectedModalities().size > 0,
   );
 
+  /** Orden actual del feed por % match.
+   *   'desc' (default) → mejor match primero — lo que el user quiere ver.
+   *   'asc'            → peor match primero — útil para revisar al final
+   *                      qué ofertas no le calzan tanto.
+   * Aplicado client-side sobre los resultados ya cargados (no re-fetch). */
+  sortOrder = signal<'desc' | 'asc'>('desc');
+
   /** Label legible para un código ISO. */
   countryLabel(code: string): string {
     return COUNTRY_LABELS[code] || code;
@@ -91,7 +92,6 @@ export class ResultsComponent {
   constructor(
     private router: Router,
     private jobService: JobService,
-    private applicationService: ApplicationService,
     private scrapeProgress: ScrapeProgressService,
     private toast: ToastService,
     private titleService: Title,
@@ -102,7 +102,6 @@ export class ResultsComponent {
 
   ngOnInit(): void {
     this.loadOffers();
-    this.loadAppliedIds();
     this.loadFilterOptions();
   }
 
@@ -152,29 +151,23 @@ export class ResultsComponent {
     return this.selectedModalities().has(value);
   }
 
-  private loadAppliedIds(): void {
-    this.applicationService.appliedOfferIds().subscribe({
-      next: (res) => this.appliedOfferIds.set(new Set(res.applied_offer_ids)),
-      error: () => {
-        /* Soft-fail: feed se renderiza sin badges. */
-      },
-    });
-  }
-
-  /** Usado por el template para condicionar el badge "Aplicado". */
-  isApplied(offer: JobOffer): boolean {
-    return this.appliedOfferIds().has(offer.id);
+  /** Construye el dict de filtros que va al backend — fuente única para
+   * loadOffers y loadMore, así no se desincronizan. Incluye el ordering
+   * por % match para que el backend ordene la lista completa antes de
+   * paginar (sino el sort solo aplica a la página visible). */
+  private currentFilters(): JobFilters {
+    return {
+      countries: Array.from(this.selectedCountries()),
+      modalities: Array.from(this.selectedModalities()),
+      ordering: this.sortOrder() === 'desc' ? 'match_desc' : 'match_asc',
+    };
   }
 
   /** Reset + fetch primera página. Disparado al mount, al cambiar filtros
    * o al regenerar tras un scrape — siempre arranca de cero. */
   private loadOffers(): void {
-    const filters: JobFilters = {
-      countries: Array.from(this.selectedCountries()),
-      modalities: Array.from(this.selectedModalities()),
-    };
     this.currentPage.set(1);
-    this.jobService.getJobs(filters, 1).subscribe({
+    this.jobService.getJobs(this.currentFilters(), 1).subscribe({
       next: (response) => {
         this.offers = response.results;
         this.totalCount.set(response.count);
@@ -195,12 +188,8 @@ export class ResultsComponent {
   loadMore(): void {
     if (this.isLoadingMore() || !this.hasMore()) return;
     const nextPage = this.currentPage() + 1;
-    const filters: JobFilters = {
-      countries: Array.from(this.selectedCountries()),
-      modalities: Array.from(this.selectedModalities()),
-    };
     this.isLoadingMore.set(true);
-    this.jobService.getJobs(filters, nextPage).subscribe({
+    this.jobService.getJobs(this.currentFilters(), nextPage).subscribe({
       next: (response) => {
         // Append manteniendo el orden. Como el backend ordena por
         // -created_at, las nuevas páginas son MÁS VIEJAS — concatenar
@@ -219,7 +208,10 @@ export class ResultsComponent {
   }
 
   /**
-   * Returns filtered offers based on selected filter
+   * Filtered offers — el chip (Todas/Excelente/Bueno/Regular) achica la
+   * página visible. El ORDEN viene del backend (server-side por match),
+   * no lo tocamos acá; sino el sort solo aplicaría a la página actual y
+   * no a las 100+ restantes del "Cargar más".
    */
   get filteredOffer(): JobOffer[] {
     switch (this.selectedFilter) {
@@ -246,6 +238,14 @@ export class ResultsComponent {
 
   setFilter(filter: 'all' | 'good' | 'regular' | 'bad') {
     this.selectedFilter = filter;
+  }
+
+  /** Toggle entre orden asc/desc por % match. Refetcha la página 1 porque
+   * el orden ahora vive en el backend — sin esto, mezclaríamos paginas
+   * con criterios distintos. */
+  toggleSortOrder(): void {
+    this.sortOrder.update((order) => (order === 'desc' ? 'asc' : 'desc'));
+    this.loadOffers();
   }
 
   /**
@@ -336,6 +336,22 @@ export class ResultsComponent {
   /** trackBy para el *ngFor del feed — evita rebuild completo al filtrar. */
   trackOffer(_index: number, offer: JobOffer): number {
     return offer.id;
+  }
+
+  /** Oculta la oferta del feed (optimista) y persiste en backend.
+   * Si falla, rollback + toast. El `$event.stopPropagation()` lo hace el template. */
+  ignoreOffer(offer: JobOffer): void {
+    const original = this.offers;
+    this.offers = original.filter((o) => o.id !== offer.id);
+    this.totalCount.update((n) => Math.max(0, n - 1));
+    this.jobService.ignoreOffer(offer.id).subscribe({
+      next: () => this.toast.success('Oferta ignorada — no la verás más en el feed.'),
+      error: () => {
+        this.offers = original;
+        this.totalCount.update((n) => n + 1);
+        this.toast.error('No pudimos ignorar la oferta. Intentá de nuevo.');
+      },
+    });
   }
 
   /**
