@@ -5,6 +5,7 @@ import { Title } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { STORAGE_KEYS } from '../constants/app-stats';
+import { AnalyticsService } from '../services/analytics.service';
 import { RevealDirective } from '../shared/directives/reveal.directive';
 import { PublicFooterComponent } from '../shared/public-footer/public-footer.component';
 import { UserNavComponent } from '../shared/user-nav/user-nav.component';
@@ -77,6 +78,7 @@ const POSITIVE_COMMENTS_STUB: UserComment[] = [
 export class HomeComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private analytics = inject(AnalyticsService);
 
   /**
    * Signals derived from AuthService observables. `toSignal` handles
@@ -114,9 +116,11 @@ export class HomeComponent {
    */
   startProfile(): void {
     if (this.isLoggedIn()) {
+      this.analytics.trackClick('home_cta_dashboard');
       this.router.navigate(['/dashboard']);
       return;
     }
+    this.analytics.trackClick('home_cta_register');
     sessionStorage.setItem(STORAGE_KEYS.REDIRECT_AFTER_LOGIN, POST_SIGNUP_REDIRECT);
     this.router.navigate(['/auth/register']);
   }

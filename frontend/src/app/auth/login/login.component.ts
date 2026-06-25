@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { AuthService } from '../auth.service';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
@@ -8,6 +8,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { HttpErrorResponse } from '@angular/common/http';
 import { STORAGE_KEYS } from '../../constants/app-stats';
 import { environment } from '../../../environment/environment';
+import { AnalyticsService } from '../../services/analytics.service';
 
 /**
  * Login component for user authentication
@@ -26,6 +27,8 @@ export class LoginComponent {
   isStorage = false;
   storage: 'session' | 'local' = 'session';
   showPassword = false;
+
+  private analytics = inject(AnalyticsService);
 
   /** URL del endpoint del backend que arranca el flow OAuth con LinkedIn.
    * Usamos un `<a href>` simple (no fetch) — el flow OAuth requiere
@@ -107,6 +110,7 @@ export class LoginComponent {
     // storage correcto + limpiar el opuesto.
     this.authService.login(this.loginForm.value, this.isStorage).subscribe({
       next: () => {
+        this.analytics.trackClick('login_success');
         setTimeout(() => {
           this.isLoading = false;
 

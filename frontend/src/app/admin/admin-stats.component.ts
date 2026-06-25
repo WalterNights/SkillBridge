@@ -4,6 +4,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
 import { AdminService, AdminStats } from '../services/admin.service';
+import { AnalyticsService, AnalyticsSummary } from '../services/analytics.service';
 
 /** Labels legibles para los códigos ISO de país que devuelve el backend. */
 const COUNTRY_LABELS: Record<string, string> = {
@@ -66,11 +67,37 @@ const PORTAL_LABELS: Record<string, string> = {
 })
 export class AdminStatsComponent implements OnInit {
   private adminService = inject(AdminService);
+  private analyticsService = inject(AnalyticsService);
   private titleService = inject(Title);
 
   stats = signal<AdminStats | null>(null);
+  analytics = signal<AnalyticsSummary | null>(null);
   isLoading = signal(true);
   errorMessage = signal('');
+
+  /** Ventana temporal del summary de analytics — 7/30/90 días. */
+  analyticsDays = signal(30);
+
+  /** Max value del gráfico pageviews_by_day. */
+  maxDailyPageviews = computed(() => {
+    const s = this.analytics();
+    if (!s || s.pageviews_by_day.length === 0) return 1;
+    return Math.max(...s.pageviews_by_day.map((r) => r.count));
+  });
+
+  /** Max value de top_paths (para escalar barras horizontales). */
+  maxTopPathCount = computed(() => {
+    const s = this.analytics();
+    if (!s || s.top_paths.length === 0) return 1;
+    return s.top_paths[0].count;
+  });
+
+  /** Max value de top_ctas. */
+  maxTopCtaCount = computed(() => {
+    const s = this.analytics();
+    if (!s || s.top_ctas.length === 0) return 1;
+    return s.top_ctas[0].count;
+  });
 
   /** Max value de offers.by_portal — usado para escalar las barras. */
   maxPortalCount = computed(() => {
@@ -112,6 +139,25 @@ export class AdminStatsComponent implements OnInit {
         this.isLoading.set(false);
       },
     });
+    this.loadAnalytics();
+  }
+
+  /** Recarga el summary de analytics con la ventana actual. Soft-fail
+   *  si el endpoint no responde — la página principal sigue funcional. */
+  private loadAnalytics(): void {
+    this.analyticsService.getSummary(this.analyticsDays()).subscribe({
+      next: (data) => this.analytics.set(data),
+      error: () => {
+        /* Soft-fail: si analytics no carga, la página principal sigue
+           mostrando las otras métricas (offers, users, applications). */
+      },
+    });
+  }
+
+  setAnalyticsWindow(days: number): void {
+    if (this.analyticsDays() === days) return;
+    this.analyticsDays.set(days);
+    this.loadAnalytics();
   }
 
   countryLabel(code: string): string {

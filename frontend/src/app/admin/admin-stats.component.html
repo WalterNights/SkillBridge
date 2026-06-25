@@ -148,5 +148,147 @@
         </ul>
       </article>
     </ng-container>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         Tráfico (analytics first-party)
+         ───────────────────────────────────────────────────────────── -->
+    <section *ngIf="analytics() as a" class="mt-10">
+      <header class="flex flex-wrap items-end justify-between gap-3 mb-5">
+        <div>
+          <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-1">
+            Tráfico de la plataforma
+          </p>
+          <h2 class="text-2xl font-black text-bone tracking-tight">
+            Últimos {{ a.window_days }} días
+          </h2>
+        </div>
+        <div class="flex gap-2">
+          <button
+            *ngFor="let opt of [7, 30, 90]"
+            type="button"
+            class="analytics-pill"
+            [class.analytics-pill--active]="analyticsDays() === opt"
+            (click)="setAnalyticsWindow(opt)"
+          >
+            {{ opt }}d
+          </button>
+        </div>
+      </header>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <article class="glass-strong rounded-2xl p-5">
+          <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold mb-2">
+            Visitantes únicos
+          </p>
+          <p class="text-3xl font-black text-bone tabular-nums">{{ a.totals.unique_visitors }}</p>
+        </article>
+        <article class="glass-strong rounded-2xl p-5">
+          <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold mb-2">
+            Pageviews
+          </p>
+          <p class="text-3xl font-black text-bone tabular-nums">{{ a.totals.pageviews }}</p>
+          <p class="text-xs text-dim mt-1">
+            {{ a.totals.authed_pageviews }} auth · {{ a.totals.anon_pageviews }} anon
+          </p>
+        </article>
+        <article class="glass-strong rounded-2xl p-5">
+          <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold mb-2">
+            Clicks en CTA
+          </p>
+          <p class="text-3xl font-black text-bone tabular-nums">{{ a.totals.cta_clicks }}</p>
+        </article>
+        <article class="glass-strong rounded-2xl p-5">
+          <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold mb-2">
+            Clicks externos
+          </p>
+          <p class="text-3xl font-black text-bone tabular-nums">{{ a.totals.outbound_clicks }}</p>
+        </article>
+      </div>
+
+      <article class="glass-strong rounded-2xl p-5 mb-6">
+        <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold mb-4">
+          Pageviews por día
+        </p>
+        <div *ngIf="a.pageviews_by_day.length === 0" class="text-sm text-warm-grey">
+          Sin datos en este rango.
+        </div>
+        <div *ngIf="a.pageviews_by_day.length > 0" class="analytics-chart">
+          <div
+            *ngFor="let day of a.pageviews_by_day"
+            class="analytics-bar"
+            [style.height.%]="pct(day.count, maxDailyPageviews())"
+            [title]="day.date + ': ' + day.count + ' pageviews'"
+          >
+            <span class="analytics-bar__count">{{ day.count }}</span>
+          </div>
+        </div>
+      </article>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <article class="glass-strong rounded-2xl p-5">
+          <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold mb-4">
+            Top páginas
+          </p>
+          <p *ngIf="a.top_paths.length === 0" class="text-sm text-warm-grey">Sin datos.</p>
+          <ul class="space-y-2.5">
+            <li *ngFor="let row of a.top_paths" class="flex items-center gap-3">
+              <span class="text-sm text-bone font-medium flex-1 truncate">{{ row.path }}</span>
+              <span class="text-xs text-warm-grey tabular-nums w-10 text-right">{{ row.count }}</span>
+              <div class="bar bar-container" style="flex-basis: 40%; min-width: 80px">
+                <span
+                  class="bar bar-fill"
+                  data-status="pending"
+                  [style.width.%]="pct(row.count, maxTopPathCount())"
+                ></span>
+              </div>
+            </li>
+          </ul>
+        </article>
+
+        <article class="glass-strong rounded-2xl p-5">
+          <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold mb-4">
+            Top CTA clicks
+          </p>
+          <p *ngIf="a.top_ctas.length === 0" class="text-sm text-warm-grey">
+            Aún no hay clicks rastreados.
+          </p>
+          <ul class="space-y-2.5">
+            <li *ngFor="let row of a.top_ctas" class="flex items-center gap-3">
+              <span class="text-sm text-bone font-medium flex-1 truncate">{{ row.label }}</span>
+              <span class="text-xs text-warm-grey tabular-nums w-10 text-right">{{ row.count }}</span>
+              <div class="bar bar-container" style="flex-basis: 40%; min-width: 80px">
+                <span
+                  class="bar bar-fill"
+                  data-status="offer"
+                  [style.width.%]="pct(row.count, maxTopCtaCount())"
+                ></span>
+              </div>
+            </li>
+          </ul>
+        </article>
+      </div>
+
+      <article class="glass-strong rounded-2xl p-5">
+        <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold mb-4">
+          De dónde vienen (referrers externos)
+        </p>
+        <p *ngIf="a.top_referrers.length === 0" class="text-sm text-warm-grey">
+          Sin referrers externos en este rango.
+        </p>
+        <ul class="space-y-2">
+          <li *ngFor="let row of a.top_referrers" class="flex items-center gap-3 text-sm">
+            <a
+              [href]="row.referrer"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-bone hover:text-primary truncate flex-1"
+            >
+              {{ row.referrer }}
+            </a>
+            <span class="text-warm-grey tabular-nums">{{ row.count }}</span>
+          </li>
+        </ul>
+      </article>
+    </section>
   </div>
 </section>

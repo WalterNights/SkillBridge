@@ -6,6 +6,7 @@ import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 
 import { AuthService } from '../../auth/auth.service';
+import { AnalyticsService } from '../../services/analytics.service';
 import {
   FaqAskResponse,
   FaqCategory,
@@ -42,6 +43,7 @@ export class FaqComponent implements OnInit {
   private toast = inject(ToastService);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private analytics = inject(AnalyticsService);
 
   faqs = signal<FaqEntry[]>([]);
   categories = signal<FaqCategory[]>([]);
@@ -158,10 +160,12 @@ export class FaqComponent implements OnInit {
 
   openAskModal(): void {
     if (!this.isAuthenticated) {
+      this.analytics.trackClick('faq_ask_login_required');
       // Redirige al login con returnUrl para volver a /faq tras autenticar.
       this.router.navigate(['/auth/login'], { queryParams: { returnUrl: '/faq' } });
       return;
     }
+    this.analytics.trackClick('faq_ask_open');
     this.draftQuestion.set('');
     this.lastAskResponse.set(null);
     this.isAskModalOpen.set(true);

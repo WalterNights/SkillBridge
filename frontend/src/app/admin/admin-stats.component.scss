@@ -173,3 +173,71 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 }
+
+/* ─── Analytics widget ─────────────────────────────────────────────── */
+.analytics-pill {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #b8b5ab;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms, color 160ms, border-color 160ms;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  &--active {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+    border-color: rgba(249, 115, 22, 0.35);
+  }
+}
+
+.analytics-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 140px;
+  padding: 8px 0;
+}
+
+.analytics-bar {
+  flex: 1;
+  min-width: 6px;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, #f97316, rgba(249, 115, 22, 0.4));
+  position: relative;
+  cursor: default;
+  transition: filter 160ms ease;
+
+  &:hover {
+    filter: brightness(1.2);
+  }
+
+  &__count {
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: 700;
+    color: #cfcfc8;
+    opacity: 0;
+    transition: opacity 160ms;
+    pointer-events: none;
+    white-space: nowrap;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  &:hover .analytics-bar__count {
+    opacity: 1;
+  }
+}

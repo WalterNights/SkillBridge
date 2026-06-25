@@ -2,8 +2,9 @@ import { filter } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './auth/auth.service';
 import { HeaderComponent } from './header/header.component';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
+import { AnalyticsService } from './services/analytics.service';
 import { ToastContainerComponent } from './shared/molecules/toast-container/toast-container.component';
 
 /**
@@ -23,6 +24,8 @@ export class AppComponent implements OnInit {
   title = 'SkilTak-front';
   showHeader = false;
 
+  private analytics = inject(AnalyticsService);
+
   /** Routes that still rely on the legacy <app-header>. Stripped down
    *  as each route gets its own header during the redesign. */
   private legacyHeaderRoutes = ['/auth/forgot-password', '/auth/reset-password'];
@@ -38,6 +41,10 @@ export class AppComponent implements OnInit {
           event.urlAfterRedirects.startsWith(path),
         );
       });
+
+    // Auto-track pageviews via Router events. Idempotente — el service
+    // sólo se suscribe la primera vez.
+    this.analytics.init(this.router);
   }
 
   ngOnInit(): void {
