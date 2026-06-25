@@ -242,20 +242,21 @@ class CvAuditView(APIView):
 class CvImproveView(APIView):
     """POST /api/users/cv/improve/ → propone una versión mejorada del CV
     del user (summary reescrito, bullets de experiencia cuantificados,
-    skills reordenados). NO persiste — devuelve el JSON con los campos
-    mejorados para que el frontend lo muestre y el user confirme con
-    PATCH.
+    skills reordenados, fechas corregidas si están rotas). NO persiste
+    — devuelve el JSON con los campos mejorados para que el frontend
+    lo muestre y el user confirme con PATCH.
 
-    Rate-limit: 5/hora por user — operación cara (rewrite del CV
-    completo con Gemini).
+    Rate limits superpuestos:
+      - 5/hora por user (django-ratelimit, anti-burst).
+      - LIFETIME 1/user (UserProfile.cv_improved_at). Los users normales
+        usan el feature UNA vez en la vida — la mejora iterativa de un
+        CV no aporta valor (el modelo ya gastó tokens proponiendo lo
+        mejor). Admins (is_staff) bypassean para QA / debug del prompt.
 
-    Response: {
-      "professional_title": str,
-      "summary": str,
-      "skills": str,
-      "soft_skills": str,
-      "experience": [{...mismo shape que profile.experience}]
-    }
+    Response 200: { ...improved fields... }
+    Response 404: profile_missing
+    Response 429: already_used (cuando lifetime cap se alcanzó)
+    Response 502: improve_failed (Gemini caído / JSON inválido)
     """
 
     permission_classes = [IsAuthenticated]
@@ -267,6 +268,21 @@ class CvImproveView(APIView):
                 {"error": "profile_missing", "detail": "Completá tu perfil antes de mejorarlo."},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+        # Lifetime cap — non-admins solo pueden usarlo una vez.
+        if not request.user.is_staff and profile.cv_improved_at is not None:
+            return Response(
+                {
+                    "error": "already_used",
+                    "detail": (
+                        "Ya usaste 'Mejorar con AI' una vez. Esta función está "
+                        "limitada a un único uso por cuenta."
+                    ),
+                    "used_at": profile.cv_improved_at.isoformat(),
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
         try:
             result = improve_cv(profile_to_improve_payload(profile))
         except ImproveError as exc:
@@ -274,6 +290,15 @@ class CvImproveView(APIView):
                 {"error": "improve_failed", "detail": str(exc)},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
+
+        # Marcar el uso SOLO si Gemini respondió OK. Si falla, el user
+        # puede reintentar sin gastar su único turno.
+        if not request.user.is_staff:
+            from django.utils import timezone
+
+            profile.cv_improved_at = timezone.now()
+            profile.save(update_fields=["cv_improved_at"])
+
         return Response(result)
 
 

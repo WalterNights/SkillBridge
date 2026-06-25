@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from datetime import date
 from typing import Any
 
 import google.generativeai as genai
@@ -31,13 +32,20 @@ class ImproveError(Exception):
     """Falla al mejorar. La view la traduce a 502/503."""
 
 
-_PROMPT_TEMPLATE = """Sos un coach de CV especializado en LATAM. Tu trabajo: tomar un CV existente y reescribirlo con MÁS IMPACTO — sin inventar nada nuevo, sin agregar empresas ni roles, sin cambiar fechas.
+_PROMPT_TEMPLATE = """Sos un coach de CV especializado en LATAM. Tu trabajo: tomar un CV existente y reescribirlo con MÁS IMPACTO — sin inventar trayectorias nuevas.
 
 PERFIL ACTUAL (JSON):
 {profile_json}
 
+CONTEXTO TEMPORAL: la fecha de hoy es {today}. Cualquier fecha posterior es FUTURO y casi siempre indica un error de tipeo (ej. "2025" cuando quisieron decir "2024"). NO debe haber `end_date` en el futuro salvo si es explícitamente "Presente"/"Actual"/"Current".
+
 REGLAS OBLIGATORIAS:
-- NO INVENTES: empresas, títulos, fechas, instituciones, idiomas. Solo reescribís texto.
+- NO INVENTES empresas, títulos, instituciones, idiomas, ni roles enteros. Esa parte del CV es sagrada.
+- FECHAS: podés CORREGIRLAS si están claramente rotas:
+    a) `start_date` posterior a `end_date` → invertilas si tiene sentido, o ajustá la que parezca tipeada mal (el otro context — el rol anterior/siguiente — ayuda a inferir).
+    b) `end_date` en el futuro (después de hoy) Y el user NO indicó "Presente"/"Actual" → ajustá a "Presente" si es el rol más reciente, o al mes anterior al siguiente trabajo si no.
+    c) Solapamientos imposibles (2 jobs fulltime mismo período en empresas distintas) → ajustá las fechas más sospechosas (las que tienen año futuro o no encajan con la cronología).
+  Si las fechas se ven OK, NO las toques. NO inventes meses ni años con cero evidencia.
 - PRESERVÁ el número exacto de entries en `experience` y `education`. Si el CV tiene 3 trabajos, devolvé 3 trabajos.
 - Para cada entry de `experience`, `description` debe MANTENER UN BULLET POR LÍNEA con prefijo "• ". PRESERVÁ EL NÚMERO de bullets — si la entry tenía 12 bullets, devolvé 12 mejorados (no 4, no 15).
 - Cada bullet reescrito debe ser ACCIONABLE: empezar con verbo en pasado (Lideré, Implementé, Reduje, Diseñé, Optimicé, etc), incluir un número/métrica cuando sea razonable inferirlo (marcado con + o ~ si es estimación), evitar la voz pasiva ("Fue responsable de" → "Lideré").
@@ -55,10 +63,10 @@ Devolvé ÚNICAMENTE un JSON válido con esta forma exacta (mismas keys que el i
   "soft_skills": "<las mismas habilidades blandas>",
   "experience": [
     {{
-      "company": "<MISMA empresa>",
-      "position": "<MISMO puesto>",
-      "start_date": "<MISMA fecha>",
-      "end_date": "<MISMA fecha>",
+      "company": "<MISMA empresa — NO cambiar>",
+      "position": "<MISMO puesto — NO cambiar>",
+      "start_date": "<fecha original O corregida si estaba rota>",
+      "end_date": "<fecha original O corregida si estaba rota>",
       "location_city": "<igual>",
       "location_country": "<igual>",
       "description": "• Bullet 1 reescrito con verbo + métrica\\n• Bullet 2\\n• Bullet 3 (MISMO COUNT que el input)"
@@ -84,7 +92,13 @@ def improve_cv(profile_payload: dict) -> dict:
     # largos (10+ trabajos) se truncan al sample de input — el resto se
     # preserva intacto post-merge.
     profile_json = json.dumps(profile_payload, ensure_ascii=False, indent=2)[:12000]
-    prompt = _PROMPT_TEMPLATE.format(profile_json=profile_json)
+    # Pasamos "today" en formato YYYY-MM-DD al prompt para que el modelo
+    # detecte fechas en el futuro (caso típico: año tipeado mal) sin
+    # tener que inferir nada.
+    prompt = _PROMPT_TEMPLATE.format(
+        profile_json=profile_json,
+        today=date.today().isoformat(),
+    )
 
     try:
         genai.configure(api_key=settings.GEMINI_API_KEY)
@@ -140,15 +154,27 @@ def _normalize_improved(improved: dict, original: dict) -> dict:
         and len(improved_exp) == len(original_exp)
         and all(isinstance(e, dict) for e in improved_exp)
     ):
-        # Mergeamos cada entry: preservamos company/position/dates del
-        # ORIGINAL (Gemini puede haber inventado a pesar de la instrucción)
-        # y reemplazamos solo `description`.
+        # Mergeamos cada entry:
+        #   - company / position / location_* → SIEMPRE del original
+        #     (Gemini puede haber inventado a pesar de la instrucción).
+        #   - start_date / end_date → del nuevo SI parecen razonables
+        #     (string corto, no vacío, distinto del original = el modelo
+        #     identificó un error y lo corrigió). Sino del original.
+        #   - description → del nuevo si trae algo no-vacío.
         merged_exp = []
         for orig, new in zip(original_exp, improved_exp):
             merged = dict(orig)
             new_desc = new.get("description")
             if isinstance(new_desc, str) and new_desc.strip():
                 merged["description"] = new_desc.strip()
+            for date_field in ("start_date", "end_date"):
+                new_date = new.get(date_field)
+                if (
+                    isinstance(new_date, str)
+                    and new_date.strip()
+                    and len(new_date) <= 50  # fechas razonables son cortas
+                ):
+                    merged[date_field] = new_date.strip()
             merged_exp.append(merged)
         out["experience"] = merged_exp
     else:

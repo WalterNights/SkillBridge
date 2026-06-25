@@ -512,12 +512,21 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
   }
 
   /**
-   * Carga el perfil — primero del draft de localStorage (form wizard),
-   * sino del backend. El draft es JSON ya en la forma CvProfileData, así
-   * que solo le metemos un fallback de email desde sessionStorage si
-   * falta.
+   * Carga el perfil. Si el user está autenticado SIEMPRE pedimos al
+   * backend — necesitamos el `id` para que features como "Mejorar con
+   * AI" o "Cuantificar" puedan hacer PATCH al profile correcto. Antes
+   * leíamos `MANUAL_PROFILE_DRAFT` de localStorage primero, pero el
+   * draft del wizard NO incluye id → al confirmar una mejora fallaba
+   * con "No pudimos identificar tu perfil".
+   *
+   * El draft sigue siendo el fallback SOLO cuando no hay sesión activa
+   * (e.g., preview mid-wizard antes de registrarse).
    */
   loadProfileData(): void {
+    if (this.authService.isAuthenticated()) {
+      this.fetchProfileFromBackend();
+      return;
+    }
     const savedData = localStorage.getItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT);
     if (savedData) {
       try {
@@ -533,7 +542,8 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
         console.error('Error parsing localStorage data:', e);
       }
     }
-    this.fetchProfileFromBackend();
+    this.errorMessage = 'No se encontraron datos del perfil';
+    this.isLoading = false;
   }
 
   fetchProfileFromBackend(): void {

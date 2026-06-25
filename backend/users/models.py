@@ -240,6 +240,14 @@ class UserProfile(models.Model):
     # contra timing drift entre runs del beat).
     last_alert_sent_at = models.DateTimeField(null=True, blank=True)
 
+    # CV Improve usage ------------------------------------------------
+    # Timestamp del primer (y único, para users no-admin) uso del
+    # endpoint /cv/improve/. Cada user normal puede regenerar el CV con
+    # AI UNA vez en la vida (la operación es cara y la mejora
+    # iterativa no aporta valor — el CV original ya lo tiene). Admins
+    # bypassean este check para QA / debugging del prompt.
+    cv_improved_at = models.DateTimeField(null=True, blank=True)
+
     def __str__(self):
         return f"Perfil de {self.user.username}"
 
