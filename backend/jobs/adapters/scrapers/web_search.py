@@ -131,25 +131,44 @@ _PROBE_ALLOWED_HOSTS = (
 # Patrones URL para distinguir páginas individuales de listings por portal.
 # DDG mezcla los dos tipos y antes guardábamos los listings como si fueran
 # ofertas — el user clickeaba y caía en una lista, no en una oferta.
+#
+# Cada entrada es un substring que el URL debe contener para ser individual.
+# Portales con esquemas más complejos (elempleo) tienen su propia función.
 _INDIVIDUAL_PATTERNS: dict[str, str] = {
     "linkedin.com": "/jobs/view/",
     "computrabajo.com": "/ofertas-de-trabajo/oferta-",
     "indeed.com": "/viewjob",
 }
 
+# Elempleo mezcla 2 esquemas de URL:
+#   - Viejo: /co/ofertas-trabajo/<slug>/<id>  (singular "trabajo")
+#   - Nuevo: /co/ofertas-empleo/<city>/trabajo-<slug>-<id>  (con ID al final)
+# Las LISTINGS usan /co/ofertas-empleo/ pero TERMINAN con sufijos de
+# categoría/paginación (-area-X, -modalidad-Y, /N) sin ID numérico largo.
+# Esta regex requiere al menos 8 dígitos seguidos al final del path para
+# considerar el URL como individual — descarta listings paginadas y
+# search results.
+_ELEMPLEO_INDIVIDUAL_RE = re.compile(
+    r"elempleo\.com/.*(?:/ofertas-trabajo/|-\d{8,}/?(?:[?#]|$))",
+    re.IGNORECASE,
+)
+
 
 def _is_individual_offer_url(url: str) -> bool:
     """True si el URL apunta a una oferta puntual, False si es un listing.
 
-    Para portales en `_INDIVIDUAL_PATTERNS` exige que matchee el patrón.
-    Para el resto (bumeran, magneto, getonbrd, weworkremotely, elempleo)
-    aceptamos cualquier URL del dominio — todavía no audité sus
-    patrones de listing vs detalle, mejor permitir que demasiado-filtrar.
+    Reglas en orden:
+      1. Portales en `_INDIVIDUAL_PATTERNS` → exigir el substring exacto.
+      2. Elempleo → regex que requiere ID numérico final o formato viejo.
+      3. Resto (bumeran, magneto, getonbrd, weworkremotely) → aceptar
+         cualquier URL del dominio (patrones no auditados todavía).
     """
     lowered = url.lower()
     for domain, pattern in _INDIVIDUAL_PATTERNS.items():
         if domain in lowered:
             return pattern in lowered
+    if "elempleo.com" in lowered:
+        return bool(_ELEMPLEO_INDIVIDUAL_RE.search(lowered))
     return True
 
 

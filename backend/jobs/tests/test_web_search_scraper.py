@@ -19,7 +19,10 @@ import pytest
 import requests
 
 from jobs.adapters.scrapers.base import ScraperError
-from jobs.adapters.scrapers.web_search import WebSearchJobsScraper
+from jobs.adapters.scrapers.web_search import (
+    WebSearchJobsScraper,
+    _is_individual_offer_url,
+)
 
 
 def _fake_response(text: str = "", status_code: int = 200):
@@ -71,7 +74,7 @@ _SERP_HTML = """
   </div>
   <div class="result results_links">
     <h2 class="result__title">
-      <a class="result__a" href="https://www.elempleo.com/co/ofertas-empleo/desarrollador-789">
+      <a class="result__a" href="https://www.elempleo.com/co/ofertas-trabajo/desarrollador-bogota/12345678">
         Desarrollador Backend
       </a>
     </h2>
@@ -173,7 +176,7 @@ class TestSearch:
 
         urls = [o.url for o in offers]
         assert "https://www.linkedin.com/jobs/view/123456" in urls
-        assert "https://www.elempleo.com/co/ofertas-empleo/desarrollador-789" in urls
+        assert "https://www.elempleo.com/co/ofertas-trabajo/desarrollador-bogota/12345678" in urls
         # El blog NO debe estar
         assert all("random-unrelated-blog" not in u for u in urls)
         # El ad NO debe estar
@@ -297,7 +300,7 @@ class TestClosedSnippetFilter:
             <a class="result__snippet">Ya no se aceptan solicitudes.</a>
           </div>
           <div class="result">
-            <h2><a class="result__a" href="https://www.elempleo.com/oferta/alive">
+            <h2><a class="result__a" href="https://www.elempleo.com/co/ofertas-trabajo/alive/87654321">
               Alive Job
             </a></h2>
             <a class="result__snippet">Acme · Bogotá · Empleo activo.</a>
@@ -313,7 +316,7 @@ class TestClosedSnippetFilter:
             offers = scraper.search("Developer", "Bogotá")
 
         urls = [o.url for o in offers]
-        assert "https://www.elempleo.com/oferta/alive" in urls
+        assert "https://www.elempleo.com/co/ofertas-trabajo/alive/87654321" in urls
         assert all("/dead" not in u for u in urls)
 
 
@@ -444,3 +447,85 @@ class TestInferLocation:
 
     def test_empty_snippet_returns_empty(self):
         assert WebSearchJobsScraper._infer_location("") == ""
+
+
+@pytest.mark.unit
+class TestIsIndividualOfferUrl:
+    """El filtro que descarta listings (search pages) de los SERPs.
+
+    Bug histórico: ofertas que en realidad son páginas de resultados
+    se guardaban como JobOffer y el user clickeaba y caía a una lista.
+    Caso reportado: elempleo URLs como /co/ofertas-empleo/<ciudad>/...
+    sin ID al final eran listings, no ofertas.
+    """
+
+    # LinkedIn
+    def test_linkedin_view_is_individual(self):
+        assert _is_individual_offer_url("https://www.linkedin.com/jobs/view/12345")
+
+    def test_linkedin_search_is_listing(self):
+        assert not _is_individual_offer_url(
+            "https://www.linkedin.com/jobs/search?keywords=python"
+        )
+
+    # Computrabajo
+    def test_computrabajo_oferta_is_individual(self):
+        assert _is_individual_offer_url(
+            "https://co.computrabajo.com/ofertas-de-trabajo/oferta-de-trabajo-de-developer-abc123"
+        )
+
+    def test_computrabajo_search_is_listing(self):
+        assert not _is_individual_offer_url(
+            "https://co.computrabajo.com/ofertas-de-trabajo/?q=python"
+        )
+
+    # Indeed
+    def test_indeed_viewjob_is_individual(self):
+        assert _is_individual_offer_url("https://co.indeed.com/viewjob?jk=abc123")
+
+    def test_indeed_search_is_listing(self):
+        assert not _is_individual_offer_url("https://co.indeed.com/jobs?q=python")
+
+    # Elempleo — el caso que motivó el filtro nuevo.
+    def test_elempleo_old_format_is_individual(self):
+        """URL viejo formato singular 'ofertas-trabajo'."""
+        assert _is_individual_offer_url(
+            "https://www.elempleo.com/co/ofertas-trabajo/desarrollador-fullstack/12345678"
+        )
+
+    def test_elempleo_new_format_with_id_is_individual(self):
+        """URL nuevo formato — termina con ID numérico largo."""
+        assert _is_individual_offer_url(
+            "https://www.elempleo.com/co/ofertas-empleo/medellin/trabajo-fullstack-developer-162646464613"
+        )
+
+    def test_elempleo_search_with_category_is_listing(self):
+        """Sufijo -area-X = listing por categoría, no oferta individual."""
+        assert not _is_individual_offer_url(
+            "https://www.elempleo.com/co/ofertas-empleo/medellin/trabajo-fullstack-developer-area-sistemas-tecnologia"
+        )
+
+    def test_elempleo_paginated_search_is_listing(self):
+        """Sufijo /N = paginación, no oferta individual."""
+        assert not _is_individual_offer_url(
+            "https://www.elempleo.com/co/ofertas-empleo/medellin/trabajo-fullstack-developer/3"
+        )
+
+    def test_elempleo_root_search_is_listing(self):
+        assert not _is_individual_offer_url(
+            "https://www.elempleo.com/co/ofertas-empleo/medellin/trabajo-fullstack-developer"
+        )
+
+    def test_elempleo_short_id_is_listing(self):
+        """IDs cortos (<8 dígitos) no son confiables como individuales —
+        podrían ser sufijos numéricos de slug. Conservamos margen."""
+        assert not _is_individual_offer_url(
+            "https://www.elempleo.com/co/ofertas-empleo/medellin/trabajo-fullstack-1234"
+        )
+
+    # Resto (bumeran, magneto, getonbrd) — fallback laxo
+    def test_unknown_portal_passes_through(self):
+        """Para portales sin patrón auditado aceptamos cualquier URL
+        del dominio (mejor falso positivo que perder ofertas reales)."""
+        assert _is_individual_offer_url("https://www.bumeran.com.co/cualquier-path")
+        assert _is_individual_offer_url("https://www.magneto365.com/empleos/foo")
