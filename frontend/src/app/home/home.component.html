@@ -432,41 +432,8 @@
   </div>
 </section>
 
-<!-- FOOTER -->
-<footer class="px-gutter py-16 border-t border-white/[0.06]">
-  <div class="max-w-container-max mx-auto grid grid-cols-2 md:grid-cols-4 gap-10 mb-14">
-    <div class="col-span-2 md:col-span-1 space-y-5">
-      <span class="text-xl font-bold text-bone tracking-tight">SkilTak<span class="text-primary">.</span></span>
-      <p class="text-body text-warm-grey">Deja de buscar en mil portales. Encuéntralo todo aquí.</p>
-    </div>
-    <div class="space-y-3">
-      <h4 class="text-label uppercase text-warm-grey">Producto</h4>
-      <nav class="flex flex-col gap-2">
-        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#como-funciona">Cómo funciona</a>
-        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#">Algoritmo</a>
-        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#">Roadmap</a>
-      </nav>
-    </div>
-    <div class="space-y-3">
-      <h4 class="text-label uppercase text-warm-grey">Recursos</h4>
-      <nav class="flex flex-col gap-2">
-        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#recursos">Guías</a>
-        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#">Blog</a>
-        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#">Salarios Latam 2026</a>
-      </nav>
-    </div>
-    <div class="space-y-3">
-      <h4 class="text-label uppercase text-warm-grey">Legal</h4>
-      <nav class="flex flex-col gap-2">
-        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#">Privacidad</a>
-        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#">Términos</a>
-        <a class="text-body text-warm-grey hover:text-bone transition-colors" href="#">Cookies</a>
-      </nav>
-    </div>
-  </div>
-  <div
-    class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center pt-8 border-t border-white/[0.06]"
-  >
-    <p class="text-body text-dim">© 2026 SkilTak. Hecho con foco en Latam.</p>
-  </div>
-</footer>
+<!-- FOOTER — componente compartido con resto de páginas públicas
+     (/como-funciona, /recursos, /blog, /legal/*) para que cambios al
+     footer queden en un solo lugar. -->
+<app-public-footer />
+

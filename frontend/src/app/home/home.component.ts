@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { STORAGE_KEYS } from '../constants/app-stats';
 import { RevealDirective } from '../shared/directives/reveal.directive';
+import { PublicFooterComponent } from '../shared/public-footer/public-footer.component';
 import { UserNavComponent } from '../shared/user-nav/user-nav.component';
 
 /**
@@ -69,7 +70,7 @@ const POSITIVE_COMMENTS_STUB: UserComment[] = [
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, RevealDirective, UserNavComponent],
+  imports: [CommonModule, RouterLink, RevealDirective, PublicFooterComponent, UserNavComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
