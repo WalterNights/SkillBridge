@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +9,7 @@ import { environment } from '../../../environment/environment';
 import { AuthService } from '../../auth/auth.service';
 import { StorageMethodComponent } from '../../shared/storage-method/storage-method';
 import { SelectComponent, SelectOption } from '../../shared/select/select.component';
+import { ToastService } from '../../services/toast.service';
 import { TwoFactorService } from '../../services/two-factor.service';
 import { TwoFactorModalComponent } from './two-factor-modal.component';
 
@@ -34,6 +35,18 @@ export class SettingsComponent implements OnInit {
   private storageMethod = inject(StorageMethodComponent);
   private titleService = inject(Title);
   private http = inject(HttpClient);
+
+  /** Tab activa en el layout en pestañas. Cuenta es el default — es lo
+   *  más liviano de cargar y lo que el user suele querer ver primero. */
+  activeTab = signal<'cuenta' | 'notificaciones' | 'seguridad'>('cuenta');
+
+  /** Definición declarativa de las tabs — un solo lugar para tocar si
+   *  cambia el orden, iconos o se agrega una nueva. */
+  readonly tabs = [
+    { id: 'cuenta' as const, label: 'Cuenta', icon: 'account_circle' },
+    { id: 'notificaciones' as const, label: 'Notificaciones', icon: 'notifications' },
+    { id: 'seguridad' as const, label: 'Seguridad', icon: 'shield' },
+  ];
 
   userName: string | null = null;
   userEmail: string | null = null;
@@ -61,6 +74,22 @@ export class SettingsComponent implements OnInit {
   twoFactorEnabled = false;
   twoFactorModalMode: 'enable' | 'disable' | null = null;
   private twoFactorService = inject(TwoFactorService);
+
+  // Cambio de contraseña — vive en la misma página pero con su propio
+  // estado y submit aislado. Mostramos errores inline para que el user
+  // sepa exactamente qué campo está mal (current incorrecta vs confirm
+  // mismatch, etc.).
+  passwordForm = {
+    current_password: '',
+    new_password: '',
+    confirm_password: '',
+  };
+  isChangingPassword = false;
+  passwordError = '';
+  showCurrentPassword = false;
+  showNewPassword = false;
+  showConfirmPassword = false;
+  private toast = inject(ToastService);
 
   constructor() {
     this.titleService.setTitle('SkilTak — Configuración');
@@ -165,5 +194,68 @@ export class SettingsComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/dashboard']);
+  }
+
+  // ─── Change password ────────────────────────────────────────────
+
+  changePassword(): void {
+    this.passwordError = '';
+    const { current_password, new_password, confirm_password } = this.passwordForm;
+
+    // Validación cliente — el backend re-valida igualmente, pero acá
+    // damos feedback inmediato sin un round-trip.
+    if (!current_password || !new_password || !confirm_password) {
+      this.passwordError = 'Completa los tres campos.';
+      return;
+    }
+    if (new_password.length < 8) {
+      this.passwordError = 'La nueva contraseña debe tener al menos 8 caracteres.';
+      return;
+    }
+    if (new_password !== confirm_password) {
+      this.passwordError = 'La nueva contraseña y la confirmación no coinciden.';
+      return;
+    }
+    if (new_password === current_password) {
+      this.passwordError = 'La nueva contraseña debe ser distinta a la actual.';
+      return;
+    }
+
+    this.isChangingPassword = true;
+    this.authService.changePassword(this.passwordForm).subscribe({
+      next: () => {
+        this.isChangingPassword = false;
+        this.passwordForm = {
+          current_password: '',
+          new_password: '',
+          confirm_password: '',
+        };
+        this.toast.success('Contraseña actualizada correctamente.');
+      },
+      error: (err) => {
+        this.isChangingPassword = false;
+        const body = err?.error;
+        // El backend devuelve un dict de field errors. Priorizamos
+        // current_password porque es el más común (user se equivocó).
+        if (body?.current_password) {
+          this.passwordError = Array.isArray(body.current_password)
+            ? body.current_password[0]
+            : body.current_password;
+        } else if (body?.confirm_password) {
+          this.passwordError = Array.isArray(body.confirm_password)
+            ? body.confirm_password[0]
+            : body.confirm_password;
+        } else if (body?.new_password) {
+          this.passwordError = Array.isArray(body.new_password)
+            ? body.new_password[0]
+            : body.new_password;
+        } else if (err?.status === 403) {
+          this.passwordError =
+            'Has hecho demasiados intentos. Espera una hora antes de volver a probar.';
+        } else {
+          this.passwordError = 'No pudimos actualizar la contraseña. Intenta de nuevo.';
+        }
+      },
+    });
   }
 }

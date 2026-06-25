@@ -30,3 +30,102 @@ button[type="button"] {
     transform: translateY(-2px);
   }
 }
+
+// ─── Tabs nav ──────────────────────────────────────────────────────
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-x: auto;
+  // En mobile el track no debe deformarse aunque sobre ancho.
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.settings-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: #8b8a85;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 160ms ease, color 160ms ease;
+
+  &:hover:not(.settings-tab--active) {
+    color: #cfcfc8;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &--active {
+    background: rgba(249, 115, 22, 0.12);
+    color: #f97316;
+  }
+}
+
+// ─── Password change form ──────────────────────────────────────────
+.pw-input-wrapper {
+  position: relative;
+}
+
+.pw-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #e8e5dd;
+  padding: 12px 44px 12px 14px; // padding-right deja espacio al toggle
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+
+  &:hover:not(:disabled) {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  &:focus {
+    border-color: rgba(249, 115, 22, 0.4);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.pw-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #8b8a85;
+  cursor: pointer;
+  border-radius: 8px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ece9e0;
+  }
+}

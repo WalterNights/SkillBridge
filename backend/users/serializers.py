@@ -183,3 +183,31 @@ class PasswordResetVerifySerializer(serializers.Serializer):
         data["user"] = user
         data["token"] = token
         return data
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """Cambio de contraseña desde la sesión activa del user.
+
+    Pide la pass actual + la nueva (con confirmación) — la view valida
+    `current_password` contra el hash en DB. Si el user perdió la pass
+    debe usar el flow de password-reset (con email), no este.
+    """
+
+    current_password = serializers.CharField(write_only=True, style={"input_type": "password"})
+    new_password = serializers.CharField(
+        write_only=True, min_length=8, style={"input_type": "password"}
+    )
+    confirm_password = serializers.CharField(
+        write_only=True, min_length=8, style={"input_type": "password"}
+    )
+
+    def validate(self, data):
+        if data["new_password"] != data["confirm_password"]:
+            raise serializers.ValidationError(
+                {"confirm_password": "Las contraseñas no coinciden."}
+            )
+        if data["new_password"] == data["current_password"]:
+            raise serializers.ValidationError(
+                {"new_password": "La nueva contraseña debe ser distinta a la actual."}
+            )
+        return data

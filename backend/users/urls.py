@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from users.views import (
     AnalyzerResumeView,
+    ChangePasswordView,
     CvAuditView,
     CvImproveView,
     PasswordResetRequestView,
@@ -26,6 +27,7 @@ urlpatterns = [
         "password-reset/request/", PasswordResetRequestView.as_view(), name="password-reset-request"
     ),
     path("password-reset/verify/", PasswordResetVerifyView.as_view(), name="password-reset-verify"),
+    path("me/change-password/", ChangePasswordView.as_view(), name="user-change-password"),
     path("cv/quantify/", QuantifyAchievementView.as_view(), name="cv-quantify"),
     path("cv/audit/", CvAuditView.as_view(), name="cv-audit"),
     path("cv/improve/", CvImproveView.as_view(), name="cv-improve"),

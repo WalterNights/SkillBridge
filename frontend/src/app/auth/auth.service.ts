@@ -258,4 +258,14 @@ export class AuthService {
   }): Observable<any> {
     return this.http.post(`${environment.apiUrl}/users/password-reset/verify/`, data);
   }
+
+  /** POST /users/me/change-password/ — el user logueado cambia su pass.
+   *  El backend valida `current_password` y exige `new_password === confirm`. */
+  changePassword(data: {
+    current_password: string;
+    new_password: string;
+    confirm_password: string;
+  }): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/users/me/change-password/`, data);
+  }
 }

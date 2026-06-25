@@ -13,6 +13,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from users.models import PasswordResetToken, User, UserProfile
 from users.serializers import (
+    ChangePasswordSerializer,
     PasswordResetRequestSerializer,
     PasswordResetVerifySerializer,
     UserProfileSerializer,
@@ -508,6 +509,57 @@ class PasswordResetVerifyView(APIView):
 
         return Response(
             {"message": "Contraseña restablecida exitosamente"}, status=status.HTTP_200_OK
+        )
+
+
+@method_decorator(
+    # 10/hora por user — protege contra brute-force de la pass actual,
+    # pero deja margen razonable para que el user se equivoque.
+    ratelimit(key="user", rate="10/h", method="POST", block=True),
+    name="post",
+)
+class ChangePasswordView(APIView):
+    """POST /api/users/me/change-password/
+
+    Cambio de contraseña desde la sesión activa. Requiere:
+      - current_password : verifica contra el hash actual
+      - new_password / confirm_password : la nueva (deben coincidir)
+
+    Respuestas:
+      - 200 : OK, contraseña actualizada
+      - 400 : current_password incorrecta, validation fail, o pass nueva
+              == actual
+      - 401 : sin auth
+      - 403 : rate-limit alcanzado (10/hora)
+
+    Nota: este endpoint NO invalida tokens activos del user. Si quieres
+    forzar re-login después de cambiar pass, el frontend tiene que
+    decidirlo y limpiar storage.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+        current = serializer.validated_data["current_password"]
+        if not user.check_password(current):
+            # Mensaje específico — el user YA está autenticado, no hay
+            # riesgo de enumeration.
+            return Response(
+                {"current_password": "La contraseña actual es incorrecta."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.set_password(serializer.validated_data["new_password"])
+        user.save(update_fields=["password"])
+
+        return Response(
+            {"message": "Contraseña actualizada correctamente."},
+            status=status.HTTP_200_OK,
         )
 
 

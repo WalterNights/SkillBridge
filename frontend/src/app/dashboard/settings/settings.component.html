@@ -1,211 +1,296 @@
 <section class="px-4 lg:px-8 py-8 lg:py-10">
-  <div class="max-w-5xl mx-auto">
+  <div class="max-w-4xl mx-auto">
     <!-- Page header -->
-    <header class="mb-7">
+    <header class="mb-6">
       <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-2">Cuenta</p>
       <h1 class="text-3xl lg:text-4xl font-black text-bone tracking-tight leading-tight">Configuración</h1>
       <p class="text-sm text-warm-grey mt-2">
-        Personalizá tu experiencia y gestioná tus preferencias.
+        Personaliza tu experiencia y gestiona tus preferencias.
       </p>
     </header>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
-      <!-- Left column: main settings -->
-      <div class="lg:col-span-2 space-y-5">
-        <!-- Account info -->
-        <article class="glass-strong rounded-2xl p-6">
-          <div class="flex items-center gap-3 mb-5">
-            <span
-              class="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary shrink-0"
-              style="font-size: 20px; font-variation-settings: 'FILL' 1"
-              >account_circle</span
-            >
-            <div>
-              <h2 class="text-base font-semibold text-bone">Información de la cuenta</h2>
-              <p class="text-xs text-warm-grey">Detalles básicos asociados a tu sesión.</p>
-            </div>
-          </div>
+    <!-- Tab nav — horizontal scroll en mobile, fila en desktop -->
+    <nav class="settings-tabs" role="tablist" aria-label="Secciones de configuración">
+      <button
+        *ngFor="let tab of tabs"
+        type="button"
+        role="tab"
+        class="settings-tab"
+        [class.settings-tab--active]="activeTab() === tab.id"
+        [attr.aria-selected]="activeTab() === tab.id"
+        (click)="activeTab.set(tab.id)"
+      >
+        <span class="material-symbols-outlined" style="font-size: 18px">{{ tab.icon }}</span>
+        {{ tab.label }}
+      </button>
+    </nav>
 
-          <div class="space-y-4">
-            <div>
-              <label class="field-label">Nombre de usuario</label>
-              <div class="readonly-field">{{ userName || 'No disponible' }}</div>
-            </div>
-            <div>
-              <label class="field-label">Correo electrónico</label>
-              <div class="readonly-field">{{ userEmail || 'No disponible' }}</div>
-            </div>
-          </div>
-        </article>
-
-        <!-- Appearance (idioma sólo — dark-only, no toggle de tema) -->
-        <article class="glass-strong rounded-2xl p-6">
-          <div class="flex items-center gap-3 mb-5">
-            <span
-              class="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary shrink-0"
-              style="font-size: 20px; font-variation-settings: 'wght' 400"
-              >translate</span
-            >
-            <div>
-              <h2 class="text-base font-semibold text-bone">Apariencia e idioma</h2>
-              <p class="text-xs text-warm-grey">SkilTak es dark-only — el idioma sí podés cambiarlo.</p>
-            </div>
-          </div>
-
+    <!-- ───── Tab: Cuenta ─────────────────────────────────────────── -->
+    <div *ngIf="activeTab() === 'cuenta'" class="space-y-5">
+      <article class="glass-strong rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <span
+            class="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary shrink-0"
+            style="font-size: 20px; font-variation-settings: 'FILL' 1"
+          >account_circle</span>
           <div>
-            <label class="field-label">Idioma</label>
-            <app-select [options]="languageOptions" [(value)]="language" />
+            <h2 class="text-base font-semibold text-bone">Información de la cuenta</h2>
+            <p class="text-xs text-warm-grey">Detalles básicos asociados a tu sesión.</p>
           </div>
-        </article>
+        </div>
 
-        <!-- Notifications -->
-        <article class="glass-strong rounded-2xl p-6">
-          <div class="flex items-center gap-3 mb-5">
-            <span
-              class="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary shrink-0"
-              style="font-size: 20px; font-variation-settings: 'FILL' 1"
-              >notifications</span
-            >
-            <div>
-              <h2 class="text-base font-semibold text-bone">Notificaciones</h2>
-              <p class="text-xs text-warm-grey">Elige cómo quieres enterarte de las nuevas ofertas.</p>
-            </div>
+        <div class="space-y-4">
+          <div>
+            <label class="field-label">Nombre de usuario</label>
+            <div class="readonly-field">{{ userName || 'No disponible' }}</div>
           </div>
-
-          <div class="space-y-3">
-            <!-- Notificaciones in-app: SIEMPRE activas por ahora — todavía
-                 no hay endpoint para des/activarlas y mostrar un toggle
-                 que no persiste era confuso. Cuando se agregue la pref
-                 al backend, restaurar el toggle. -->
-            <div class="toggle-row">
-              <div class="flex-1 min-w-0">
-                <p class="text-sm text-bone font-semibold">Notificaciones in-app</p>
-                <p class="text-xs text-warm-grey mt-0.5">
-                  Siempre activas — aparecen en la campanita del header en tiempo real.
-                </p>
-              </div>
-            </div>
-
-            <!-- Email -->
-            <label class="toggle-row">
-              <div class="flex-1 min-w-0">
-                <p class="text-sm text-bone font-semibold">Alertas por email</p>
-                <p class="text-xs text-warm-grey mt-0.5">
-                  Resumen diario con las ofertas que mejor calzan con tu perfil.
-                </p>
-              </div>
-              <button
-                type="button"
-                class="toggle-switch"
-                [class.on]="enableEmailAlerts"
-                (click)="enableEmailAlerts = !enableEmailAlerts"
-                [attr.aria-pressed]="enableEmailAlerts"
-              >
-                <span class="toggle-knob"></span>
-              </button>
-            </label>
+          <div>
+            <label class="field-label">Correo electrónico</label>
+            <div class="readonly-field">{{ userEmail || 'No disponible' }}</div>
           </div>
-        </article>
+        </div>
+      </article>
 
-        <!-- Seguridad — 2FA -->
-        <article class="glass-strong rounded-2xl p-6">
-          <div class="flex items-center gap-3 mb-3">
-            <span
-              class="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary shrink-0"
-              style="font-size: 18px; font-variation-settings: 'FILL' 1"
-            >
-              shield
-            </span>
-            <div class="min-w-0 flex-1">
-              <p class="text-base font-semibold text-bone">Seguridad</p>
+      <article class="glass-strong rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <span
+            class="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary shrink-0"
+            style="font-size: 20px; font-variation-settings: 'wght' 400"
+          >translate</span>
+          <div>
+            <h2 class="text-base font-semibold text-bone">Apariencia e idioma</h2>
+            <p class="text-xs text-warm-grey">SkilTak es dark-only — el idioma sí puedes cambiarlo.</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="field-label">Idioma</label>
+          <app-select [options]="languageOptions" [(value)]="language" />
+        </div>
+      </article>
+    </div>
+
+    <!-- ───── Tab: Notificaciones ─────────────────────────────────── -->
+    <div *ngIf="activeTab() === 'notificaciones'" class="space-y-5">
+      <article class="glass-strong rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <span
+            class="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary shrink-0"
+            style="font-size: 20px; font-variation-settings: 'FILL' 1"
+          >notifications</span>
+          <div>
+            <h2 class="text-base font-semibold text-bone">Notificaciones</h2>
+            <p class="text-xs text-warm-grey">Elige cómo quieres enterarte de las nuevas ofertas.</p>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <!-- Notificaciones in-app: siempre activas; toggle pendiente cuando
+               agreguemos la pref al backend. -->
+          <div class="toggle-row">
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-bone font-semibold">Notificaciones in-app</p>
               <p class="text-xs text-warm-grey mt-0.5">
-                Protegé tu cuenta con verificación en dos pasos.
+                Siempre activas — aparecen en la campanita del header en tiempo real.
               </p>
             </div>
           </div>
 
           <label class="toggle-row">
             <div class="flex-1 min-w-0">
-              <p class="text-sm text-bone font-semibold">Verificación en dos pasos (2FA)</p>
+              <p class="text-sm text-bone font-semibold">Alertas por email</p>
               <p class="text-xs text-warm-grey mt-0.5">
-                {{
-                  twoFactorEnabled
-                    ? 'Activa — configurada con tu app authenticator.'
-                    : 'Usá Google Authenticator, Authy o 1Password.'
-                }}
+                Resumen diario con las ofertas que mejor calzan con tu perfil.
               </p>
             </div>
             <button
               type="button"
               class="toggle-switch"
-              [class.on]="twoFactorEnabled"
-              (click)="openTwoFactorModal()"
-              [attr.aria-pressed]="twoFactorEnabled"
+              [class.on]="enableEmailAlerts"
+              (click)="enableEmailAlerts = !enableEmailAlerts"
+              [attr.aria-pressed]="enableEmailAlerts"
             >
               <span class="toggle-knob"></span>
             </button>
           </label>
-        </article>
-      </div>
+        </div>
 
-      <!-- Right column: actions + help -->
-      <div class="space-y-5">
-        <article class="glass-strong rounded-2xl p-6">
-          <h3 class="text-base font-semibold text-bone mb-4">Acciones</h3>
-          <div class="space-y-3">
-            <button
-              type="button"
-              (click)="saveSettings()"
-              [disabled]="isSaving"
-              class="btn-primary w-full py-3 rounded-xl text-sm inline-flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'wght' 500"
-                >save</span
-              >
-              {{ isSaving ? 'Guardando…' : 'Guardar cambios' }}
-            </button>
-
-            <!-- Feedback inline del save -->
-            <p
-              *ngIf="saveStatus === 'success'"
-              class="text-xs text-emerald-400 text-center"
-            >
-              Preferencias actualizadas
-            </p>
-            <p
-              *ngIf="saveStatus === 'error'"
-              class="text-xs text-danger text-center"
-            >
-              {{ saveErrorMsg || 'No pudimos guardar. Intenta de nuevo en unos segundos.' }}
-            </p>
-            <button
-              type="button"
-              (click)="goBack()"
-              class="w-full py-3 rounded-xl text-sm font-semibold border border-white/[0.08] text-warm-grey hover:border-white/[0.15] hover:text-bone transition-colors inline-flex items-center justify-center gap-2"
-            >
-              <span class="material-symbols-outlined" style="font-size: 18px">arrow_back</span>
-              Volver al dashboard
-            </button>
-          </div>
-        </article>
-
-        <!-- Help -->
-        <article class="rounded-2xl p-6 border-l-2 border-primary bg-canvas/40 backdrop-blur">
-          <div class="flex items-center gap-2 mb-3">
-            <span class="material-symbols-outlined text-primary" style="font-size: 18px; font-variation-settings: 'FILL' 1"
-              >help</span
-            >
-            <h4 class="text-sm font-semibold text-bone">¿Necesitás ayuda?</h4>
-          </div>
-          <p class="text-xs text-warm-grey mb-4 leading-snug">
-            Si tienes dudas sobre alguna preferencia, revisa la documentación o escríbenos a soporte.
+        <div class="flex items-center justify-end gap-3 mt-6 pt-5 border-t border-white/[0.06]">
+          <p
+            *ngIf="saveStatus === 'success'"
+            class="text-xs text-emerald-400"
+          >
+            Preferencias actualizadas
           </p>
-          <a href="#" class="text-xs text-primary font-semibold hover:underline underline-offset-4 inline-flex items-center gap-1">
-            Ver documentación
-            <span class="material-symbols-outlined" style="font-size: 14px">arrow_forward</span>
-          </a>
-        </article>
-      </div>
+          <p
+            *ngIf="saveStatus === 'error'"
+            class="text-xs text-danger"
+          >
+            {{ saveErrorMsg || 'No pudimos guardar.' }}
+          </p>
+          <button
+            type="button"
+            (click)="saveSettings()"
+            [disabled]="isSaving"
+            class="btn-primary py-2.5 px-5 rounded-xl text-sm inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'wght' 500"
+              >save</span>
+            {{ isSaving ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <!-- ───── Tab: Seguridad ──────────────────────────────────────── -->
+    <div *ngIf="activeTab() === 'seguridad'" class="space-y-5">
+      <!-- 2FA -->
+      <article class="glass-strong rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <span
+            class="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary shrink-0"
+            style="font-size: 20px; font-variation-settings: 'FILL' 1"
+          >shield</span>
+          <div>
+            <h2 class="text-base font-semibold text-bone">Verificación en dos pasos (2FA)</h2>
+            <p class="text-xs text-warm-grey">Protege tu cuenta con una app authenticator.</p>
+          </div>
+        </div>
+
+        <label class="toggle-row">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-bone font-semibold">2FA</p>
+            <p class="text-xs text-warm-grey mt-0.5">
+              {{
+                twoFactorEnabled
+                  ? 'Activa — configurada con tu app authenticator.'
+                  : 'Usa Google Authenticator, Authy o 1Password.'
+              }}
+            </p>
+          </div>
+          <button
+            type="button"
+            class="toggle-switch"
+            [class.on]="twoFactorEnabled"
+            (click)="openTwoFactorModal()"
+            [attr.aria-pressed]="twoFactorEnabled"
+          >
+            <span class="toggle-knob"></span>
+          </button>
+        </label>
+      </article>
+
+      <!-- Cambiar contraseña -->
+      <article class="glass-strong rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <span
+            class="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary shrink-0"
+            style="font-size: 20px; font-variation-settings: 'FILL' 1"
+          >password</span>
+          <div>
+            <h2 class="text-base font-semibold text-bone">Cambiar contraseña</h2>
+            <p class="text-xs text-warm-grey">
+              Te pedimos la contraseña actual por seguridad antes de aceptar una nueva.
+            </p>
+          </div>
+        </div>
+
+        <form class="space-y-4" (ngSubmit)="changePassword()" autocomplete="off">
+          <div>
+            <label class="field-label" for="current_password">Contraseña actual</label>
+            <div class="pw-input-wrapper">
+              <input
+                id="current_password"
+                name="current_password"
+                class="pw-input"
+                [type]="showCurrentPassword ? 'text' : 'password'"
+                [(ngModel)]="passwordForm.current_password"
+                [disabled]="isChangingPassword"
+                autocomplete="current-password"
+              />
+              <button
+                type="button"
+                class="pw-toggle"
+                (click)="showCurrentPassword = !showCurrentPassword"
+                [attr.aria-label]="showCurrentPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                <span class="material-symbols-outlined" style="font-size: 18px">
+                  {{ showCurrentPassword ? 'visibility_off' : 'visibility' }}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="field-label" for="new_password">Nueva contraseña</label>
+            <div class="pw-input-wrapper">
+              <input
+                id="new_password"
+                name="new_password"
+                class="pw-input"
+                [type]="showNewPassword ? 'text' : 'password'"
+                [(ngModel)]="passwordForm.new_password"
+                [disabled]="isChangingPassword"
+                autocomplete="new-password"
+                minlength="8"
+              />
+              <button
+                type="button"
+                class="pw-toggle"
+                (click)="showNewPassword = !showNewPassword"
+                [attr.aria-label]="showNewPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                <span class="material-symbols-outlined" style="font-size: 18px">
+                  {{ showNewPassword ? 'visibility_off' : 'visibility' }}
+                </span>
+              </button>
+            </div>
+            <p class="text-xs text-dim mt-1">Mínimo 8 caracteres.</p>
+          </div>
+
+          <div>
+            <label class="field-label" for="confirm_password">Confirmar nueva contraseña</label>
+            <div class="pw-input-wrapper">
+              <input
+                id="confirm_password"
+                name="confirm_password"
+                class="pw-input"
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                [(ngModel)]="passwordForm.confirm_password"
+                [disabled]="isChangingPassword"
+                autocomplete="new-password"
+                minlength="8"
+              />
+              <button
+                type="button"
+                class="pw-toggle"
+                (click)="showConfirmPassword = !showConfirmPassword"
+                [attr.aria-label]="showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                <span class="material-symbols-outlined" style="font-size: 18px">
+                  {{ showConfirmPassword ? 'visibility_off' : 'visibility' }}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <p *ngIf="passwordError" class="text-xs text-danger">{{ passwordError }}</p>
+
+          <div class="flex justify-end pt-2">
+            <button
+              type="submit"
+              class="btn-primary py-2.5 px-5 rounded-xl text-sm inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              [disabled]="isChangingPassword"
+            >
+              <span
+                class="material-symbols-outlined"
+                style="font-size: 18px; font-variation-settings: 'wght' 500"
+              >lock_reset</span>
+              {{ isChangingPassword ? 'Guardando…' : 'Actualizar contraseña' }}
+            </button>
+          </div>
+        </form>
+      </article>
     </div>
   </div>
 </section>
