@@ -3,15 +3,15 @@ import { CanActivate, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 
 /**
- * Gate for /admin/* routes.
+ * Gate para rutas /admin/*.
  *
- * The backend doesn't expose a `role` claim in the JWT yet, so for
- * now the guard rejects everyone. Replace `isAdmin()` once the
- * backend ships the claim (likely `is_staff` from Django's default).
- *
- * Why ship a guard that always rejects: the /admin/* routes have to
- * exist from Phase 1 so the AppShell can render the admin sidebar
- * without dead links in other screens.
+ * Lee el flag `is_staff` que el backend escupe en el payload del JWT
+ * login y AuthService cachea en storage. Rechazo redirige a /dashboard
+ * (no a /auth/login porque el user ya está autenticado — solo no tiene
+ * permisos de admin). No reescribimos el sidebar de admin acá: el
+ * AppShell ya esconde el grupo con *ngIf="isAdmin()", esto es la
+ * defensa en profundidad para que un /admin/users tipeado a mano por
+ * un user normal no abra la vista.
  */
 @Injectable({ providedIn: 'root' })
 export class AdminGuard implements CanActivate {
@@ -21,17 +21,10 @@ export class AdminGuard implements CanActivate {
   ) {}
 
   canActivate(): boolean {
-    if (this.isAdmin()) {
+    if (this.authService.isAdmin()) {
       return true;
     }
     this.router.navigate(['/dashboard']);
-    return false;
-  }
-
-  /** Placeholder until the backend returns the role in the JWT. */
-  private isAdmin(): boolean {
-    // TODO: read JWT claim (is_staff / is_superuser) or call /users/me/
-    // and cache the role inside AuthService.
     return false;
   }
 }

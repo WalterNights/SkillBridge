@@ -19,6 +19,13 @@ export class AuthService {
   isLoggedIn$ = this.isLoggedInSubject.asObservable();
   private isProfileCompleteSubject = new BehaviorSubject<boolean>(this.getProfileStatus());
   isProfileComplete$ = this.isProfileCompleteSubject.asObservable();
+  private isAdminSubject = new BehaviorSubject<boolean>(this.getIsAdmin());
+  /** True si el user tiene is_staff=True en Django. Lo escupe el endpoint
+   *  de login y lo cacheamos en storage; se actualiza solo al re-loguear.
+   *  Si cambia el rol en backend mientras el user tiene sesión activa, no
+   *  se refresca hasta el próximo login — aceptable para v1 (cambios de
+   *  rol son raros). */
+  isAdmin$ = this.isAdminSubject.asObservable();
   StorageKey = [
     'access_token',
     'refresh_token',
@@ -29,6 +36,7 @@ export class AuthService {
     'professional_title',
     'profile_photo',
     'is_profile_complete',
+    'is_staff',
     'manual_profile_draft',
   ];
   storage: 'session' | 'local' = 'session';
@@ -61,6 +69,22 @@ export class AuthService {
     } else {
       return sessionStorage.getItem('is_profile_complete') === 'true';
     }
+  }
+
+  /** Lee el flag de admin (Django `is_staff`) cacheado en storage al
+   *  login. Devuelve false ante cualquier ausencia/parsing fallido —
+   *  jamás escalar permisos por defecto. */
+  private getIsAdmin(): boolean {
+    if (localStorage.getItem('storage') === 'true') {
+      return localStorage.getItem('is_staff') === 'true';
+    }
+    return sessionStorage.getItem('is_staff') === 'true';
+  }
+
+  /** Snapshot sincrónico del flag — usado por guards / sidebar. Los
+   *  consumidores reactivos pueden suscribirse a `isAdmin$`. */
+  isAdmin(): boolean {
+    return this.getIsAdmin();
   }
 
   updateProfileStatus(): void {
@@ -184,8 +208,17 @@ export class AuthService {
           'profile_photo',
           res.profile_photo ?? '',
         );
+        // Boolean → string para el storage; el getter compara contra 'true'.
+        // Si el backend no lo mandó (versión vieja del backend), default a
+        // false — seguro porque deny by default.
+        this.storageMethod.setStorageItem(
+          this.storage,
+          'is_staff',
+          res.is_staff ? 'true' : 'false',
+        );
         sessionStorage.setItem('user_email', res.email);
         this.isLoggedInSubject.next(true);
+        this.isAdminSubject.next(this.getIsAdmin());
         this.updateProfileStatus();
       }),
     );
@@ -197,6 +230,7 @@ export class AuthService {
       localStorage.removeItem(key);
     });
     this.isLoggedInSubject.next(false);
+    this.isAdminSubject.next(false);
     this.updateProfileStatus();
   }
 

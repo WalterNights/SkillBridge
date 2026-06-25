@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { TipService } from '../services/tip.service';
@@ -75,11 +75,12 @@ export class AppShellComponent {
   }
 
   /**
-   * Whether the current user has admin privileges. Placeholder until
-   * the backend role flag lands — once `AuthService` exposes a real
-   * role, swap this default out.
+   * Whether the current user has admin privileges. Reactivo a
+   * `AuthService.isAdmin$` para que el sidebar se actualice al toque
+   * post-login (sino el grupo de admin no aparece hasta el próximo
+   * full refresh).
    */
-  isAdmin = signal(false);
+  isAdmin = toSignal(this.auth.isAdmin$, { initialValue: this.auth.isAdmin() });
 
   toggleDrawer(open?: boolean): void {
     this.drawerOpen.set(open ?? !this.drawerOpen());

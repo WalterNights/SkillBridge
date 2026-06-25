@@ -330,6 +330,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data["username"] = user.username
         data["email"] = user.email
         data["rol"] = user.rol
+        # `is_staff` permite al frontend mostrar el grupo "Administración"
+        # del sidebar y resolver AdminGuard sin tener que pegarle a /users/me/.
+        # `is_superuser` queda dispobnible por si en algún momento separamos
+        # admin (staff) de super-admin (settings de sistema).
+        data["is_staff"] = user.is_staff
+        data["is_superuser"] = user.is_superuser
 
         # Mismo gate que el endpoint /profiles/check/ — más realista
         # que `number_id is not None`: ese campo es opcional en el
