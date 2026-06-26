@@ -880,3 +880,95 @@ class TestProfessionalInboxRespond:
         api_client.post(self._url(interest.id), {"action": "accept"}, format="json")
         second_count = Notification.objects.filter(user=company_user).count()
         assert second_count == first_count
+
+
+# ──────────────────────────────────────────────────────────────────────
+# ADMIN access to "bolsa de profesionales" (Fase 5 — UX para staff)
+# ──────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestAdminCanBrowseProfiles:
+    """Un staff/admin (is_staff=True) tiene acceso read-only al feed,
+    detalle y descarga de CV — para tareas de soporte o curaduría. Lo
+    que NO puede es marcar interés (no tiene CompanyProfile)."""
+
+    def _make_admin(self, django_user_model):
+        admin = django_user_model.objects.create_user(
+            username="adm", email="adm@example.com", password="x",
+            is_staff=True,
+        )
+        return admin
+
+    def test_admin_can_search_profiles(self, api_client, django_user_model):
+        admin = self._make_admin(django_user_model)
+        _make_visible_profile(django_user_model, "alice")
+        api_client.force_authenticate(user=admin)
+        response = api_client.post(
+            "/api/companies/search-profiles/",
+            {"skills_required": ["react"], "target_title": "Senior Frontend"},
+            format="json",
+        )
+        assert response.status_code == 200
+        results = response.json()["results"]
+        assert any(r["first_name"] == "Alice" for r in results)
+
+    def test_admin_can_view_profile_detail(self, api_client, django_user_model):
+        admin = self._make_admin(django_user_model)
+        profile = _make_visible_profile(django_user_model, "alice")
+        api_client.force_authenticate(user=admin)
+        response = api_client.get(f"/api/companies/profiles/{profile.id}/")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["first_name"] == "Alice"
+        # Sin CompanyProfile asociada → can_mark_interest=False, el
+        # frontend usa este flag para esconder el botón.
+        assert body["can_mark_interest"] is False
+        assert body["interest_status"] is None
+
+    def test_admin_cannot_mark_interest(self, api_client, django_user_model):
+        """Aunque admin pueda VER, no puede marcar interés porque no
+        tiene CompanyProfile — el endpoint sigue exigiendo cuenta
+        empresa estrictamente."""
+        admin = self._make_admin(django_user_model)
+        profile = _make_visible_profile(django_user_model, "alice")
+        api_client.force_authenticate(user=admin)
+        response = api_client.post(
+            f"/api/companies/profiles/{profile.id}/interest/", {}, format="json"
+        )
+        assert response.status_code == 403
+
+    def test_admin_with_company_profile_can_mark_interest(
+        self, api_client, django_user_model
+    ):
+        """Edge case: si un user is_staff=True ADEMÁS tiene
+        account_type=company y CompanyProfile, sí puede marcar interés
+        (los flags son ortogonales)."""
+        # Creamos empresa primero (via endpoint público) y le subimos
+        # el flag is_staff manualmente.
+        api_client.post(
+            "/api/companies/register/", _VALID_COMPANY_PAYLOAD, format="json"
+        )
+        company_user = User.objects.get(email="hello@acme.com")
+        company_user.is_staff = True
+        company_user.save(update_fields=["is_staff"])
+
+        profile = _make_visible_profile(django_user_model, "alice")
+        api_client.force_authenticate(user=company_user)
+        response = api_client.post(
+            f"/api/companies/profiles/{profile.id}/interest/",
+            {"message": "hola"},
+            format="json",
+        )
+        assert response.status_code == 201
+
+    def test_professional_still_blocked_from_search(self, authed_client):
+        """Defensa de regresión: el cambio para permitir admin NO debe
+        habilitar el endpoint a profesionales sin staff."""
+        response = authed_client.post(
+            "/api/companies/search-profiles/",
+            {"skills_required": ["react"], "target_title": "X"},
+            format="json",
+        )
+        assert response.status_code == 403

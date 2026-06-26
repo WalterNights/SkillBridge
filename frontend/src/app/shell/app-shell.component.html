@@ -162,6 +162,20 @@
         <span class="material-symbols-outlined">forum</span>
         <span class="nav-label">FAQ</span>
       </a>
+      <!-- Bolsa de profesionales: el feed de búsqueda del lado empresa.
+           Admin lo usa read-only para soporte/curaduría. Apunta al mismo
+           /company/dashboard que ven las cuentas empresa — el backend
+           gatea las acciones (marcar interés) por separado. -->
+      <a
+        class="nav-item"
+        routerLink="/company/dashboard"
+        routerLinkActive="active"
+        (click)="toggleDrawer(false)"
+        title="Bolsa de profesionales"
+      >
+        <span class="material-symbols-outlined">person_search</span>
+        <span class="nav-label">Bolsa de profesionales</span>
+      </a>
     </nav>
 
     <!-- Tip widget (utility footer, hidden when collapsed) -->

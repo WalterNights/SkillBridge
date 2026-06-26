@@ -65,6 +65,9 @@ export interface ProfileDetail {
    *  'dismissed'. Null si nunca lo marcó. */
   interest_status: 'pending' | 'accepted' | 'dismissed' | null;
   interest_marked_at: string | null;
+  /** True si la cuenta del request tiene CompanyProfile y puede marcar
+   *  interés. False para admin sin company → el UI esconde el botón. */
+  can_mark_interest: boolean;
 }
 
 export interface CompanyInterestResponse {

@@ -8,8 +8,12 @@ import { AuthService } from './auth.service';
  * Lee `account_type` del JWT cacheado en storage por AuthService.
  * - Si el user no está logueado → /auth/login (AutoGuard lo manejaría
  *   pero defensivamente lo hacemos también acá).
- * - Si es professional → /dashboard (no le sirve la vista empresa).
+ * - Si es professional sin staff → /dashboard (no le sirve la vista).
  * - Si es company → permitir.
+ * - Si es admin (is_staff=True, aunque sea profesional) → permitir
+ *   read-only para soporte/curaduría. El componente esconde "Marcar
+ *   interés" si no tiene CompanyProfile (flag `can_mark_interest`
+ *   del backend).
  *
  * Este guard es el espejo de AdminGuard: defensa en profundidad sobre
  * el split que el AppShell ya hace via *ngIf="isCompany()".
@@ -26,10 +30,11 @@ export class CompanyGuard implements CanActivate {
       this.router.navigate(['/auth/login']);
       return false;
     }
-    if (this.authService.isCompany()) {
+    if (this.authService.isCompany() || this.authService.isAdmin()) {
       return true;
     }
-    // Cuenta profesional intentando entrar a /company/* — al dashboard.
+    // Cuenta profesional sin staff intentando entrar a /company/* —
+    // al dashboard.
     this.router.navigate(['/dashboard']);
     return false;
   }

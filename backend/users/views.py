@@ -232,13 +232,13 @@ class CompanySearchProfilesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Gate por account_type — el endpoint no tiene sentido para
-        # profesional. Defensa en profundidad además del frontend.
-        if request.user.account_type != User.ACCOUNT_TYPE_COMPANY:
+        # Gate: empresa o admin (admin tiene acceso read-only al
+        # mismo feed para tareas de soporte/curaduría).
+        if not request.user.is_staff and request.user.account_type != User.ACCOUNT_TYPE_COMPANY:
             return Response(
                 {
                     "error": "account_type_mismatch",
-                    "detail": "Solo cuentas empresa pueden buscar profesionales.",
+                    "detail": "Solo cuentas empresa o admin pueden buscar profesionales.",
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -1028,7 +1028,8 @@ class TwoFactorDisableView(APIView):
 
 
 def _get_company_or_403(request):
-    """Helper compartido por las vistas que requieren account_type=company.
+    """Helper para las vistas que requieren account_type=company estrictamente
+    (ej. marcar interés — necesita CompanyProfile para crear la fila).
     Devuelve (company_profile, None) si OK, o (None, Response 403) si no.
     """
     if request.user.account_type != User.ACCOUNT_TYPE_COMPANY:
@@ -1046,6 +1047,39 @@ def _get_company_or_403(request):
             {"error": "company_profile_missing"},
             status=status.HTTP_403_FORBIDDEN,
         )
+
+
+def _allow_company_or_admin(request):
+    """Helper para vistas de "bolsa de profesionales" (búsqueda, detalle,
+    descarga CV). Permite:
+      - Cuentas company → access full + flag de "puede marcar interés".
+      - Cuentas admin (`is_staff=True`) → access read-only, sin company
+        asociada (pueden ver y descargar pero no marcar interés).
+
+    Devuelve (company_profile_or_None, None) si OK, o (None, Response 403)
+    si la cuenta no califica.
+    """
+    if request.user.is_staff:
+        # Admin sin company es read-only sobre la bolsa.
+        try:
+            return request.user.company_profile, None
+        except CompanyProfile.DoesNotExist:
+            return None, None
+    if request.user.account_type == User.ACCOUNT_TYPE_COMPANY:
+        try:
+            return request.user.company_profile, None
+        except CompanyProfile.DoesNotExist:
+            return None, Response(
+                {"error": "company_profile_missing"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+    return None, Response(
+        {
+            "error": "account_type_mismatch",
+            "detail": "Solo cuentas empresa o admin pueden acceder.",
+        },
+        status=status.HTTP_403_FORBIDDEN,
+    )
 
 
 def _get_visible_professional_profile(profile_id: int):
@@ -1075,7 +1109,7 @@ class CompanyProfileDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, profile_id: int):
-        _, error = _get_company_or_403(request)
+        company, error = _allow_company_or_admin(request)
         if error:
             return error
 
@@ -1089,16 +1123,25 @@ class CompanyProfileDetailView(APIView):
 
         # ¿Esta empresa ya marcó interés en este profesional? El frontend
         # lo usa para mostrar "Ya marcaste interés" en lugar del botón.
-        company = request.user.company_profile
-        try:
-            interest = CompanyInterest.objects.get(
-                company=company, professional=profile
-            )
-            data["interest_status"] = interest.status
-            data["interest_marked_at"] = interest.created_at.isoformat()
-        except CompanyInterest.DoesNotExist:
+        # Admin sin company → interest_status queda null, el frontend
+        # esconde el botón.
+        if company is not None:
+            try:
+                interest = CompanyInterest.objects.get(
+                    company=company, professional=profile
+                )
+                data["interest_status"] = interest.status
+                data["interest_marked_at"] = interest.created_at.isoformat()
+            except CompanyInterest.DoesNotExist:
+                data["interest_status"] = None
+                data["interest_marked_at"] = None
+        else:
             data["interest_status"] = None
             data["interest_marked_at"] = None
+
+        # Flag explícito para que el frontend sepa si puede marcar
+        # interés (solo company, no admin sin company_profile).
+        data["can_mark_interest"] = company is not None
 
         return Response(data)
 
@@ -1114,9 +1157,8 @@ class CompanyProfileResumeView(APIView):
 
     def get(self, request, profile_id: int):
         from django.http import FileResponse
-        from django.shortcuts import get_object_or_404 as _
 
-        _, error = _get_company_or_403(request)
+        _, error = _allow_company_or_admin(request)
         if error:
             return error
 

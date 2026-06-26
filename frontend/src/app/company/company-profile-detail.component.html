@@ -142,9 +142,17 @@
           <article class="glass-strong rounded-2xl p-5 sticky-actions">
             <h3 class="profile-section-title">Acciones</h3>
 
-            <!-- Marcar interés -->
+            <!-- Marcar interés (solo para cuentas company; admin
+                 sin CompanyProfile ve este aviso en su lugar) -->
+            <div *ngIf="!p.can_mark_interest" class="admin-readonly mb-3">
+              <p class="text-xs text-warm-grey leading-relaxed">
+                <span class="material-symbols-outlined align-middle" style="font-size: 14px">shield_person</span>
+                Vista admin — solo lectura. Para marcar interés en un profesional, usá una cuenta empresa.
+              </p>
+            </div>
+
             <button
-              *ngIf="!hasMarkedInterest()"
+              *ngIf="p.can_mark_interest && !hasMarkedInterest()"
               type="button"
               class="btn-primary w-full py-3 rounded-xl text-sm inline-flex items-center justify-center gap-2 mb-3"
               (click)="openInterestModal()"
@@ -154,7 +162,7 @@
               Marcar interés
             </button>
 
-            <div *ngIf="hasMarkedInterest()" class="interest-marked mb-3">
+            <div *ngIf="p.can_mark_interest && hasMarkedInterest()" class="interest-marked mb-3">
               <div class="flex items-start gap-2">
                 <span
                   class="material-symbols-outlined text-emerald-400 shrink-0"

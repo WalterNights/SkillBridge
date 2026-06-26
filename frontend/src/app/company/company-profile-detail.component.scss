@@ -118,6 +118,18 @@
   padding: 12px;
 }
 
+.admin-readonly {
+  background: rgba(96, 165, 250, 0.05);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
+
+  .material-symbols-outlined {
+    color: #60a5fa;
+    margin-right: 2px;
+  }
+}
+
 // ─── btn-secondary local (no global todavía) ────────────────────────
 .btn-secondary {
   display: inline-flex;
