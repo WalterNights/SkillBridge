@@ -17,6 +17,10 @@ class Notification(models.Model):
         ("match", "Match"),
         ("reminder", "Reminder"),
         ("system", "System"),
+        # Una empresa marcó interés en este profesional. El metadata
+        # lleva company_id, legal_name, responsible_name y responsible_role
+        # para que el frontend renderice la noti sin un roundtrip extra.
+        ("company_interest", "Company Interest"),
     ]
 
     user = models.ForeignKey(

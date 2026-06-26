@@ -11,13 +11,21 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from users.models import CompanyProfile, PasswordResetToken, User, UserProfile
+from users.models import (
+    CompanyInterest,
+    CompanyProfile,
+    PasswordResetToken,
+    User,
+    UserProfile,
+)
 from users.serializers import (
     ChangePasswordSerializer,
+    CompanyInterestSerializer,
     CompanyProfileSerializer,
     CompanyRegisterSerializer,
     PasswordResetRequestSerializer,
     PasswordResetVerifySerializer,
+    ProfileDetailForCompanySerializer,
     UserProfileSerializer,
     UserSerializer,
 )
@@ -1011,3 +1019,192 @@ class TwoFactorDisableView(APIView):
         user.totp_secret = ""
         user.save(update_fields=["totp_enabled", "totp_secret"])
         return Response({"enabled": False})
+
+
+# =============================================================================
+# Company → Profile detail / Resume / Mark interest (FASE 3)
+# =============================================================================
+
+
+def _get_company_or_403(request):
+    """Helper compartido por las vistas que requieren account_type=company.
+    Devuelve (company_profile, None) si OK, o (None, Response 403) si no.
+    """
+    if request.user.account_type != User.ACCOUNT_TYPE_COMPANY:
+        return None, Response(
+            {
+                "error": "account_type_mismatch",
+                "detail": "Solo cuentas empresa pueden acceder a este endpoint.",
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    try:
+        return request.user.company_profile, None
+    except CompanyProfile.DoesNotExist:
+        return None, Response(
+            {"error": "company_profile_missing"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+
+def _get_visible_professional_profile(profile_id: int):
+    """Devuelve el UserProfile solo si está opt-in y la cuenta no es
+    company (defensa contra que una empresa quede listed accidentalmente).
+    Si no cumple → None (caller responde 404 — sin enumeration)."""
+    try:
+        profile = UserProfile.objects.select_related("user").get(pk=profile_id)
+    except UserProfile.DoesNotExist:
+        return None
+    if not profile.visible_to_companies:
+        return None
+    if profile.user.account_type != User.ACCOUNT_TYPE_PROFESSIONAL:
+        return None
+    return profile
+
+
+class CompanyProfileDetailView(APIView):
+    """GET /api/companies/profiles/{profile_id}/
+
+    Detalle completo del perfil profesional para el lado empresa. NO
+    expone PII de contacto (email/phone). Si el target no es
+    visible_to_companies → 404 sin distinguir de "profile_id inexistente"
+    (evita user-enumeration de quién está en SkilTak).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, profile_id: int):
+        _, error = _get_company_or_403(request)
+        if error:
+            return error
+
+        profile = _get_visible_professional_profile(profile_id)
+        if profile is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        data = ProfileDetailForCompanySerializer(
+            profile, context={"request": request}
+        ).data
+
+        # ¿Esta empresa ya marcó interés en este profesional? El frontend
+        # lo usa para mostrar "Ya marcaste interés" en lugar del botón.
+        company = request.user.company_profile
+        try:
+            interest = CompanyInterest.objects.get(
+                company=company, professional=profile
+            )
+            data["interest_status"] = interest.status
+            data["interest_marked_at"] = interest.created_at.isoformat()
+        except CompanyInterest.DoesNotExist:
+            data["interest_status"] = None
+            data["interest_marked_at"] = None
+
+        return Response(data)
+
+
+class CompanyProfileResumeView(APIView):
+    """GET /api/companies/profiles/{profile_id}/resume/
+
+    Sirve el resume del profesional como descarga (attachment). Mismo
+    gating que el detalle. Si el profile no tiene resume → 404.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, profile_id: int):
+        from django.http import FileResponse
+        from django.shortcuts import get_object_or_404 as _
+
+        _, error = _get_company_or_403(request)
+        if error:
+            return error
+
+        profile = _get_visible_professional_profile(profile_id)
+        if profile is None or not profile.resume:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        # FileResponse maneja Content-Type por extensión y soporta range
+        # requests para PDFs grandes.
+        resume_file = profile.resume.open("rb")
+        filename = f"{profile.first_name}_{profile.last_name}_CV.pdf"
+        response = FileResponse(
+            resume_file, as_attachment=True, filename=filename
+        )
+        return response
+
+
+@method_decorator(
+    # 30/h por user — protege contra que una empresa marque masivamente
+    # interés a todo el feed. El profesional dueño recibe una notificación
+    # por cada marca, abuso de spam.
+    ratelimit(key="user", rate="30/h", method="POST", block=True),
+    name="post",
+)
+class CompanyProfileInterestView(APIView):
+    """POST /api/companies/profiles/{profile_id}/interest/
+
+    La empresa marca interés en un profesional. Crea (o re-actualiza
+    si ya existía) el CompanyInterest. Dispara una Notification al
+    profesional con el copy "{empresa} marcó interés en tu perfil".
+
+    Body opcional: { "message": "Texto adicional…" }
+
+    Response 200 si re-marcó, 201 si era nuevo. Ambos devuelven el
+    CompanyInterest serializado.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, profile_id: int):
+        from django.db import transaction
+
+        company, error = _get_company_or_403(request)
+        if error:
+            return error
+
+        profile = _get_visible_professional_profile(profile_id)
+        if profile is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        message = str(request.data.get("message", "")).strip()[:400]
+
+        # Importamos acá para no agregar dependencia hard a notifications
+        # en el top del archivo.
+        from notifications.models import Notification
+
+        with transaction.atomic():
+            interest, created = CompanyInterest.objects.update_or_create(
+                company=company,
+                professional=profile,
+                defaults={
+                    "message": message,
+                    "status": CompanyInterest.STATUS_PENDING,
+                },
+            )
+
+            # Solo notificamos en el primer marcado — re-marcar (update)
+            # NO duplica notificaciones para no spammear al profesional.
+            if created:
+                Notification.objects.create(
+                    user=profile.user,
+                    kind="company_interest",
+                    title=f"{company.legal_name} marcó interés en tu perfil",
+                    body=(
+                        f"{company.responsible_name} ({company.responsible_role}) "
+                        f"quiere contactarte. Revisá los detalles en tu perfil."
+                    ),
+                    metadata={
+                        "company_id": company.id,
+                        "company_legal_name": company.legal_name,
+                        "responsible_name": company.responsible_name,
+                        "responsible_role": company.responsible_role,
+                        "interest_id": interest.id,
+                        "message": message,
+                    },
+                )
+
+        body = CompanyInterestSerializer(interest).data
+        return Response(
+            body,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )

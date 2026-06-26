@@ -399,3 +399,70 @@ class CompanyProfile(models.Model):
 
     def __str__(self) -> str:
         return f"Empresa: {self.legal_name}"
+
+
+class CompanyInterest(models.Model):
+    """Una empresa marcó interés en un profesional desde su feed.
+
+    Lo persistimos para:
+      - Dedup: una empresa no puede mandar 50 notificaciones al mismo
+        profesional spammeando el botón.
+      - Vista del profesional (Fase 4 — inbox "empresas interesadas").
+      - Métricas downstream — qué empresas marcan a quién.
+
+    Privacidad: NO copiamos email/teléfono del profesional acá. El
+    contacto efectivo sigue siendo el inbox: el profesional decide
+    si responder (revelando contacto) o ignorar.
+
+    Status:
+      - `pending` : la empresa marcó, el profesional aún no decidió.
+      - `accepted`: el profesional respondió positivo (Fase 4).
+      - `dismissed`: el profesional ignoró (Fase 4).
+    """
+
+    STATUS_PENDING = "pending"
+    STATUS_ACCEPTED = "accepted"
+    STATUS_DISMISSED = "dismissed"
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pendiente"),
+        (STATUS_ACCEPTED, "Aceptado"),
+        (STATUS_DISMISSED, "Descartado"),
+    ]
+
+    company = models.ForeignKey(
+        CompanyProfile,
+        on_delete=models.CASCADE,
+        related_name="interests",
+    )
+    professional = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="received_interests",
+    )
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING, db_index=True
+    )
+    # Mensaje opcional que la empresa puede agregar al marcar interés
+    # ("Buscamos alguien con tu perfil para X equipo, te interesaría
+    # charlar?"). Recortado por seguridad.
+    message = models.CharField(max_length=400, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        # Una empresa solo puede tener UN interés activo por profesional
+        # — re-marcar update el row existente, no crea nuevo.
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "professional"],
+                name="unique_company_professional_interest",
+            ),
+        ]
+        ordering = ["-created_at"]
+        indexes = [
+            # Listado "empresas interesadas en mí" del profesional.
+            models.Index(fields=["professional", "-created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.company.legal_name} → {self.professional.user.username} ({self.status})"

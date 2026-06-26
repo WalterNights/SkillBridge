@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from users.models import (
+    CompanyInterest,
     CompanyProfile,
     PasswordResetToken,
     User,
@@ -310,3 +311,52 @@ class CompanyRegisterSerializer(serializers.Serializer):
                 "Ya existe una cuenta con este correo electrónico."
             )
         return value.lower()
+
+
+class ProfileDetailForCompanySerializer(serializers.ModelSerializer):
+    """Vista detallada del perfil para el lado empresa.
+
+    SEGURIDAD: jamás expone email, phone, ni number_id. El contacto va
+    por flujo de "marcar interés" — el profesional decide si revelar
+    email cuando responde desde su inbox.
+
+    Es READ-ONLY: la empresa no puede modificar nada del profesional.
+    """
+
+    has_resume = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserProfile
+        fields = [
+            "id",
+            "first_name",
+            "last_name",
+            "professional_title",
+            "city",
+            "photo",
+            "banner",
+            "summary",
+            "skills",
+            "experience",
+            "education",
+            "soft_skills",
+            "languages",
+            "linkedin_url",
+            "portfolio_url",
+            "has_resume",
+        ]
+        read_only_fields = fields
+
+    def get_has_resume(self, obj: UserProfile) -> bool:
+        return bool(obj.resume)
+
+
+class CompanyInterestSerializer(serializers.ModelSerializer):
+    """Vista de un CompanyInterest, perspectiva empresa.
+    Se usa en el response del POST de "marcar interés" para que el
+    frontend sepa si era nuevo (created) o un update."""
+
+    class Meta:
+        model = CompanyInterest
+        fields = ["id", "status", "message", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]

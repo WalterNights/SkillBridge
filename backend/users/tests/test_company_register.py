@@ -12,7 +12,7 @@ Cubre:
 
 import pytest
 
-from users.models import CompanyProfile, User, UserProfile
+from users.models import CompanyInterest, CompanyProfile, User, UserProfile
 
 
 @pytest.fixture(autouse=True)
@@ -464,3 +464,223 @@ class TestSearchProfiles:
         assert row["first_name"] == "Alice"
         assert row["professional_title"] == "Senior Frontend"
         assert "match_percentage" in row
+
+
+# ──────────────────────────────────────────────────────────────────────
+# PROFILE DETAIL + RESUME + MARK INTEREST  (Fase 3)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def _make_company_user(api_client) -> User:
+    api_client.post(
+        "/api/companies/register/", _VALID_COMPANY_PAYLOAD, format="json"
+    )
+    return User.objects.get(email="hello@acme.com")
+
+
+def _make_visible_profile(django_user_model, username: str = "anna") -> UserProfile:
+    user = django_user_model.objects.create_user(
+        username=username, email=f"{username}@example.com", password="x"
+    )
+    return UserProfile.objects.create(
+        user=user,
+        first_name=username.title(),
+        last_name="Pro",
+        phone="+57",
+        city="Bogotá",
+        professional_title="Senior Frontend",
+        skills="react, typescript",
+        experience="...",
+        summary="Awesome summary text.",
+        visible_to_companies=True,
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestProfileDetail:
+    def _url(self, profile_id: int) -> str:
+        return f"/api/companies/profiles/{profile_id}/"
+
+    def test_anon_is_401(self, api_client):
+        response = api_client.get(self._url(1))
+        assert response.status_code == 401
+
+    def test_professional_account_is_403(self, authed_client, user_profile):
+        response = authed_client.get(self._url(user_profile.id))
+        assert response.status_code == 403
+
+    def test_company_can_view_visible_profile(self, api_client, django_user_model):
+        company_user = _make_company_user(api_client)
+        profile = _make_visible_profile(django_user_model)
+        api_client.force_authenticate(user=company_user)
+        response = api_client.get(self._url(profile.id))
+        assert response.status_code == 200
+        body = response.json()
+        assert body["first_name"] == "Anna"
+        assert body["summary"] == "Awesome summary text."
+        # PII NO aparece
+        assert "email" not in body
+        assert "phone" not in body
+        assert "number_id" not in body
+        # Interest status default null
+        assert body["interest_status"] is None
+
+    def test_hidden_profile_returns_404(self, api_client, django_user_model):
+        """Anti enumeration: profile que opt-out → 404 indistinguible
+        de profile_id que no existe."""
+        company_user = _make_company_user(api_client)
+        # Profile con visible_to_companies=False
+        hidden = django_user_model.objects.create_user(
+            username="hidden", email="hidden@example.com", password="x"
+        )
+        UserProfile.objects.create(
+            user=hidden, first_name="Hidden", last_name="Pro",
+            phone="+57", city="X", professional_title="Backend",
+            skills="x", experience="y", visible_to_companies=False,
+        )
+        api_client.force_authenticate(user=company_user)
+        response = api_client.get(self._url(hidden.profile.id))
+        assert response.status_code == 404
+
+    def test_company_account_profile_id_returns_404(self, api_client):
+        """Aunque la empresa pase su propio profile_id, no debe aparecer
+        en el detalle del lado profesional (defensa por account_type)."""
+        company_user = _make_company_user(api_client)
+        # Crear un UserProfile residual para la empresa para forzar el filter.
+        UserProfile.objects.create(
+            user=company_user, first_name="X", last_name="Y",
+            phone="+57", city="Z", professional_title="CEO",
+            skills="", experience="", visible_to_companies=True,
+        )
+        api_client.force_authenticate(user=company_user)
+        response = api_client.get(self._url(company_user.profile.id))
+        assert response.status_code == 404
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestMarkInterest:
+    def _url(self, profile_id: int) -> str:
+        return f"/api/companies/profiles/{profile_id}/interest/"
+
+    def test_anon_is_401(self, api_client):
+        response = api_client.post(self._url(1), {}, format="json")
+        assert response.status_code == 401
+
+    def test_professional_account_is_403(self, authed_client, user_profile):
+        response = authed_client.post(self._url(user_profile.id), {}, format="json")
+        assert response.status_code == 403
+
+    def test_first_mark_creates_interest_and_notification(
+        self, api_client, django_user_model
+    ):
+        from notifications.models import Notification
+
+        company_user = _make_company_user(api_client)
+        profile = _make_visible_profile(django_user_model)
+        api_client.force_authenticate(user=company_user)
+
+        response = api_client.post(
+            self._url(profile.id),
+            {"message": "Te queremos en nuestro equipo."},
+            format="json",
+        )
+        assert response.status_code == 201
+        body = response.json()
+        assert body["status"] == "pending"
+        assert body["message"] == "Te queremos en nuestro equipo."
+
+        # Interest persisted
+        assert CompanyInterest.objects.filter(
+            company__user=company_user,
+            professional=profile,
+        ).exists()
+
+        # Notification al profesional
+        notif = Notification.objects.get(user=profile.user)
+        assert notif.kind == "company_interest"
+        assert "Acme Inc." in notif.title
+        assert notif.metadata["company_legal_name"] == "Acme Inc."
+        assert notif.metadata["responsible_name"] == "Jane Doe"
+
+    def test_remark_updates_without_duplicate_notification(
+        self, api_client, django_user_model
+    ):
+        """Re-marcar mismo profile → update silencioso (no spammea
+        notificaciones)."""
+        from notifications.models import Notification
+
+        company_user = _make_company_user(api_client)
+        profile = _make_visible_profile(django_user_model)
+        api_client.force_authenticate(user=company_user)
+
+        # Primer marcado → 201 + 1 notif
+        api_client.post(self._url(profile.id), {}, format="json")
+        assert Notification.objects.filter(user=profile.user).count() == 1
+
+        # Segundo marcado con mensaje distinto → 200 + sigue 1 notif
+        response2 = api_client.post(
+            self._url(profile.id),
+            {"message": "Update del mensaje."},
+            format="json",
+        )
+        assert response2.status_code == 200
+        assert Notification.objects.filter(user=profile.user).count() == 1
+
+        # Pero el message del interest sí se actualizó
+        interest = CompanyInterest.objects.get(
+            company__user=company_user, professional=profile
+        )
+        assert interest.message == "Update del mensaje."
+
+    def test_hidden_profile_cannot_be_marked(self, api_client, django_user_model):
+        company_user = _make_company_user(api_client)
+        hidden_user = django_user_model.objects.create_user(
+            username="hidden", email="hidden@example.com", password="x"
+        )
+        UserProfile.objects.create(
+            user=hidden_user, first_name="Hidden", last_name="Pro",
+            phone="+57", city="X", professional_title="Backend",
+            skills="x", experience="y", visible_to_companies=False,
+        )
+        api_client.force_authenticate(user=company_user)
+        response = api_client.post(
+            self._url(hidden_user.profile.id), {}, format="json"
+        )
+        assert response.status_code == 404
+        # Y NO se creó interest ni notificación
+        assert CompanyInterest.objects.count() == 0
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestResumeDownload:
+    def _url(self, profile_id: int) -> str:
+        return f"/api/companies/profiles/{profile_id}/resume/"
+
+    def test_professional_account_is_403(self, authed_client, user_profile):
+        response = authed_client.get(self._url(user_profile.id))
+        assert response.status_code == 403
+
+    def test_no_resume_returns_404(self, api_client, django_user_model):
+        company_user = _make_company_user(api_client)
+        profile = _make_visible_profile(django_user_model)
+        # profile no tiene resume seteado
+        api_client.force_authenticate(user=company_user)
+        response = api_client.get(self._url(profile.id))
+        assert response.status_code == 404
+
+    def test_hidden_profile_returns_404(self, api_client, django_user_model):
+        company_user = _make_company_user(api_client)
+        hidden = django_user_model.objects.create_user(
+            username="hidden", email="hidden@example.com", password="x"
+        )
+        UserProfile.objects.create(
+            user=hidden, first_name="Hidden", last_name="Pro",
+            phone="+57", city="X", professional_title="X",
+            skills="", experience="", visible_to_companies=False,
+        )
+        api_client.force_authenticate(user=company_user)
+        response = api_client.get(self._url(hidden.profile.id))
+        assert response.status_code == 404

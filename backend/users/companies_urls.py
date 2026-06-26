@@ -14,6 +14,9 @@ from django.urls import path
 
 from users.views import (
     CompanyMeView,
+    CompanyProfileDetailView,
+    CompanyProfileInterestView,
+    CompanyProfileResumeView,
     CompanyRegisterView,
     CompanySearchProfilesView,
 )
@@ -25,5 +28,20 @@ urlpatterns = [
         "search-profiles/",
         CompanySearchProfilesView.as_view(),
         name="company-search-profiles",
+    ),
+    path(
+        "profiles/<int:profile_id>/",
+        CompanyProfileDetailView.as_view(),
+        name="company-profile-detail",
+    ),
+    path(
+        "profiles/<int:profile_id>/resume/",
+        CompanyProfileResumeView.as_view(),
+        name="company-profile-resume",
+    ),
+    path(
+        "profiles/<int:profile_id>/interest/",
+        CompanyProfileInterestView.as_view(),
+        name="company-profile-interest",
     ),
 ]
