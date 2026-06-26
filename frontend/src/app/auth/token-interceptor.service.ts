@@ -51,12 +51,11 @@ export class TokenInterceptorService implements HttpInterceptor {
         const isAuthEndpoint = req.url.includes('/token') || req.url.includes('/register');
         const hasRefresh = !!this.storageMethod.getStorageItem(this.storage, 'refresh_token');
         if (error.status !== 401 || isAuthEndpoint || !hasRefresh) {
-          // Si era 401 sobre una request autenticada pero no hay refresh
-          // (sesión perdida) — logout silencioso para evitar requests
-          // colgadas con tokens expirados. No navegamos: las rutas
-          // públicas no se bloquean.
+          // Sesión perdida sobre un endpoint autenticado: kick al login
+          // con hard reload. El soft navigate dejaba colgado el shell
+          // con datos viejos si había varias requests en flight.
           if (error.status === 401 && !isAuthEndpoint && !hasRefresh) {
-            this.authService.logout();
+            this.kickToLogin();
           }
           return throwError(() => error);
         }
@@ -73,17 +72,40 @@ export class TokenInterceptorService implements HttpInterceptor {
               });
               return next.handle(newReq);
             }
-            this.authService.logout();
-            this.router.navigate(['auth/login']);
+            this.kickToLogin();
             return throwError(() => error);
           }),
           catchError(() => {
-            this.authService.logout();
-            this.router.navigate(['auth/login']);
+            this.kickToLogin();
             return throwError(() => error);
           }),
         );
       }),
     );
+  }
+
+  /** Cierra sesión y fuerza navegación dura al login.
+   *
+   *  Por qué hard reload (window.location en vez de router.navigate):
+   *  cuando el refresh falla puede haber 5-10 requests in-flight que
+   *  fallan en paralelo y el SPA queda con state inconsistente
+   *  (componentes pintando datos parciales, otros disparando más
+   *  requests con token muerto). El reload limpia todo el árbol de
+   *  componentes y observables, asegurando estado clean en login.
+   *
+   *  Además, el navigate previo era `['auth/login']` SIN slash inicial,
+   *  lo cual Angular interpreta como ruta RELATIVA al activated route
+   *  actual — desde `/dashboard` resolvía a `/dashboard/auth/login`,
+   *  caía en el wildcard `**` y redirigía a la landing dejando al user
+   *  confundido con sesión muerta. Hard reload elimina esta clase de
+   *  bugs.
+   */
+  private kickToLogin(): void {
+    this.authService.logout();
+    if (typeof window !== 'undefined') {
+      window.location.assign('/auth/login');
+    } else {
+      this.router.navigate(['/auth/login']);
+    }
   }
 }
