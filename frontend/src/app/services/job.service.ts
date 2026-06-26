@@ -34,6 +34,13 @@ export interface JobFilters {
   modalities: string[];
   /** Orden por % match. Undefined = default del backend (-created_at). */
   ordering?: 'match_asc' | 'match_desc';
+  /** Threshold mínimo de match% para que una oferta entre al feed.
+   *  El backend usa `_DEFAULT_MIN_MATCH = 25` si no se manda — eso deja
+   *  fuera a usuarios cuyas skills no matchean con el dominio del
+   *  scraping (ej. UI/UX en un feed 95% dev). El frontend pasa 0 por
+   *  default y deja que el chip "Todas/Excelente/Bueno/Regular" filtre
+   *  localmente sobre la lista completa. */
+  minMatch?: number;
 }
 
 /**
@@ -70,6 +77,9 @@ export class JobService {
     }
     if (filters?.ordering) {
       params.push(`ordering=${filters.ordering}`);
+    }
+    if (filters?.minMatch !== undefined) {
+      params.push(`min_match=${filters.minMatch}`);
     }
     if (params.length) {
       url += `?${params.join('&')}`;

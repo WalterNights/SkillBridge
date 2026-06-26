@@ -154,12 +154,19 @@ export class ResultsComponent {
   /** Construye el dict de filtros que va al backend — fuente única para
    * loadOffers y loadMore, así no se desincronizan. Incluye el ordering
    * por % match para que el backend ordene la lista completa antes de
-   * paginar (sino el sort solo aplica a la página visible). */
+   * paginar (sino el sort solo aplica a la página visible).
+   *
+   * `minMatch: 0` desactiva el threshold default del backend (25%) que
+   * dejaba sin feed a usuarios cuyas skills no calzan con el dominio
+   * del scraping (ej. UI/UX en un feed dev). El chip "Todas/Excelente/
+   * Bueno/Regular" sigue filtrando localmente sobre la lista completa.
+   */
   private currentFilters(): JobFilters {
     return {
       countries: Array.from(this.selectedCountries()),
       modalities: Array.from(this.selectedModalities()),
       ordering: this.sortOrder() === 'desc' ? 'match_desc' : 'match_asc',
+      minMatch: 0,
     };
   }
 
