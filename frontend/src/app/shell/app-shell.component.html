@@ -16,8 +16,12 @@
       </a>
     </div>
 
+    <!-- ════════════════════════════════════════════════════════════
+         Cuentas PROFESIONAL — sidebar del lado "buscar trabajo"
+         ════════════════════════════════════════════════════════════ -->
+
     <!-- Sección 1: actividad core del user (búsqueda, seguimiento, CV) -->
-    <nav class="nav-group" aria-label="Trabajo">
+    <nav *ngIf="isProfessional()" class="nav-group" aria-label="Trabajo">
       <p class="nav-section-label">Trabajo</p>
       <a
         class="nav-item"
@@ -64,7 +68,7 @@
 
     <!-- Sección 2: contenido editorial — separa visualmente lo "para
          leer" de lo "para actuar" arriba. -->
-    <nav class="nav-group" aria-label="Aprender">
+    <nav *ngIf="isProfessional()" class="nav-group" aria-label="Aprender">
       <p class="nav-section-label">Aprender</p>
       <a
         class="nav-item"
@@ -85,6 +89,33 @@
       >
         <span class="material-symbols-outlined">article</span>
         <span class="nav-label">Blog</span>
+      </a>
+    </nav>
+
+    <!-- ════════════════════════════════════════════════════════════
+         Cuentas EMPRESA — sidebar del lado "buscar profesionales"
+         ════════════════════════════════════════════════════════════ -->
+    <nav *ngIf="isCompany()" class="nav-group" aria-label="Empresa">
+      <p class="nav-section-label">Empresa</p>
+      <a
+        class="nav-item"
+        routerLink="/company/dashboard"
+        routerLinkActive="active"
+        (click)="toggleDrawer(false)"
+        title="Inicio"
+      >
+        <span class="material-symbols-outlined">corporate_fare</span>
+        <span class="nav-label">Inicio</span>
+      </a>
+      <a
+        class="nav-item"
+        routerLink="/company/me"
+        routerLinkActive="active"
+        (click)="toggleDrawer(false)"
+        title="Perfil de la empresa"
+      >
+        <span class="material-symbols-outlined">badge</span>
+        <span class="nav-label">Mi empresa</span>
       </a>
     </nav>
 

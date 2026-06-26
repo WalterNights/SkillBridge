@@ -142,6 +142,65 @@
       </article>
     </div>
 
+    <!-- ───── Tab: Privacidad ─────────────────────────────────────── -->
+    <div *ngIf="activeTab() === 'privacidad'" class="space-y-5">
+      <article class="glass-strong rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <span
+            class="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary shrink-0"
+            style="font-size: 20px; font-variation-settings: 'FILL' 1"
+          >lock</span>
+          <div>
+            <h2 class="text-base font-semibold text-bone">Visibilidad de tu perfil</h2>
+            <p class="text-xs text-warm-grey">
+              Controlá quién puede encontrarte en SkilTak.
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <label class="toggle-row">
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-bone font-semibold">Visible para empresas</p>
+              <p class="text-xs text-warm-grey mt-0.5">
+                Permití que las empresas registradas te encuentren cuando busquen perfiles que
+                calcen con sus criterios. Mostramos tu nombre, foto, título y skills — nunca tu
+                email ni teléfono sin tu permiso.
+              </p>
+            </div>
+            <button
+              type="button"
+              class="toggle-switch"
+              [class.on]="visibleToCompanies"
+              (click)="visibleToCompanies = !visibleToCompanies"
+              [attr.aria-pressed]="visibleToCompanies"
+            >
+              <span class="toggle-knob"></span>
+            </button>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 mt-6 pt-5 border-t border-white/[0.06]">
+          <p *ngIf="saveStatus === 'success'" class="text-xs text-emerald-400">
+            Preferencias actualizadas
+          </p>
+          <p *ngIf="saveStatus === 'error'" class="text-xs text-danger">
+            {{ saveErrorMsg || 'No pudimos guardar.' }}
+          </p>
+          <button
+            type="button"
+            (click)="saveSettings()"
+            [disabled]="isSaving"
+            class="btn-primary py-2.5 px-5 rounded-xl text-sm inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'wght' 500"
+              >save</span>
+            {{ isSaving ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </article>
+    </div>
+
     <!-- ───── Tab: Seguridad ──────────────────────────────────────── -->
     <div *ngIf="activeTab() === 'seguridad'" class="space-y-5">
       <!-- 2FA -->

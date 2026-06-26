@@ -38,13 +38,16 @@ export class SettingsComponent implements OnInit {
 
   /** Tab activa en el layout en pestañas. Cuenta es el default — es lo
    *  más liviano de cargar y lo que el user suele querer ver primero. */
-  activeTab = signal<'cuenta' | 'notificaciones' | 'seguridad'>('cuenta');
+  activeTab = signal<'cuenta' | 'notificaciones' | 'privacidad' | 'seguridad'>(
+    'cuenta',
+  );
 
   /** Definición declarativa de las tabs — un solo lugar para tocar si
    *  cambia el orden, iconos o se agrega una nueva. */
   readonly tabs = [
     { id: 'cuenta' as const, label: 'Cuenta', icon: 'account_circle' },
     { id: 'notificaciones' as const, label: 'Notificaciones', icon: 'notifications' },
+    { id: 'privacidad' as const, label: 'Privacidad', icon: 'lock' },
     { id: 'seguridad' as const, label: 'Seguridad', icon: 'shield' },
   ];
 
@@ -54,6 +57,10 @@ export class SettingsComponent implements OnInit {
 
   enableNotifications = true;
   enableEmailAlerts = true;
+  /** Toggle opt-in: profesional autoriza a que las empresas lo vean en
+   *  el buscador de perfiles. Default false en backend; se carga real
+   *  desde GET /profiles/. */
+  visibleToCompanies = false;
   language = 'es';
   /** Catálogo de idiomas — usado por el dropdown custom. */
   languageOptions: SelectOption[] = [
@@ -137,6 +144,9 @@ export class SettingsComponent implements OnInit {
           if (typeof profile.email_alerts_enabled === 'boolean') {
             this.enableEmailAlerts = profile.email_alerts_enabled;
           }
+          if (typeof profile.visible_to_companies === 'boolean') {
+            this.visibleToCompanies = profile.visible_to_companies;
+          }
         }
       },
       error: () => {
@@ -155,7 +165,10 @@ export class SettingsComponent implements OnInit {
     // del request.user y hace partial_update si existe, sino crea. Así
     // evitamos depender de profileId que puede no estar cargado todavía
     // si loadProfilePreferences() todavía no terminó / falló.
-    const payload = { email_alerts_enabled: this.enableEmailAlerts };
+    const payload = {
+      email_alerts_enabled: this.enableEmailAlerts,
+      visible_to_companies: this.visibleToCompanies,
+    };
     this.http.post<any>(`${environment.apiUrl}/users/profiles/`, payload).subscribe({
       next: (res) => {
         this.isSaving = false;

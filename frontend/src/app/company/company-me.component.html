@@ -1,0 +1,186 @@
+<section class="px-4 lg:px-8 py-8 lg:py-10">
+  <div class="max-w-3xl mx-auto">
+    <header class="mb-6">
+      <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-2">Empresa</p>
+      <h1 class="text-3xl lg:text-4xl font-black text-bone tracking-tight leading-tight">Mi empresa</h1>
+      <p class="text-sm text-warm-grey mt-2">
+        Datos comerciales y de contacto del responsable. Editables en cualquier momento.
+      </p>
+    </header>
+
+    <div *ngIf="isLoading()" class="glass-strong rounded-2xl p-8 text-center">
+      <p class="text-sm text-warm-grey">Cargando…</p>
+    </div>
+
+    <form
+      *ngIf="!isLoading()"
+      class="space-y-5"
+      (ngSubmit)="save()"
+      autocomplete="off"
+    >
+      <!-- Datos comerciales -->
+      <article class="glass-strong rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <span
+            class="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary"
+            style="font-size: 20px; font-variation-settings: 'FILL' 1"
+          >corporate_fare</span>
+          <div>
+            <h2 class="text-base font-semibold text-bone">Datos comerciales</h2>
+            <p class="text-xs text-warm-grey">Información pública que verán los profesionales.</p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="field-label" for="legal_name">Nombre comercial *</label>
+            <input
+              id="legal_name"
+              name="legal_name"
+              type="text"
+              class="field-input"
+              [(ngModel)]="form.legal_name"
+              required
+              maxlength="120"
+            />
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="field-label" for="country">País</label>
+              <input
+                id="country"
+                name="country"
+                type="text"
+                class="field-input"
+                [(ngModel)]="form.country"
+              />
+            </div>
+            <div>
+              <label class="field-label" for="city">Ciudad</label>
+              <input
+                id="city"
+                name="city"
+                type="text"
+                class="field-input"
+                [(ngModel)]="form.city"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="field-label" for="industry">Industria</label>
+              <input
+                id="industry"
+                name="industry"
+                type="text"
+                class="field-input"
+                [(ngModel)]="form.industry"
+              />
+            </div>
+            <div>
+              <label class="field-label" for="size">Tamaño</label>
+              <select id="size" name="size" class="field-input" [(ngModel)]="form.size">
+                <option *ngFor="let o of sizeOptions" [value]="o.value">{{ o.label }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="field-label" for="website">Sitio web</label>
+            <input
+              id="website"
+              name="website"
+              type="url"
+              class="field-input"
+              [(ngModel)]="form.website"
+              placeholder="https://"
+            />
+          </div>
+
+          <div>
+            <label class="field-label" for="short_description">Descripción corta</label>
+            <textarea
+              id="short_description"
+              name="short_description"
+              class="field-input"
+              rows="3"
+              maxlength="200"
+              [(ngModel)]="form.short_description"
+            ></textarea>
+            <p class="text-xs text-dim mt-1">Máximo 200 caracteres.</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- Responsable -->
+      <article class="glass-strong rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <span
+            class="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary"
+            style="font-size: 20px; font-variation-settings: 'FILL' 1"
+          >badge</span>
+          <div>
+            <h2 class="text-base font-semibold text-bone">Responsable principal</h2>
+            <p class="text-xs text-warm-grey">
+              Persona de contacto. Es lo que ve el profesional cuando recibe interés de tu empresa.
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="field-label" for="responsible_name">Nombre *</label>
+            <input
+              id="responsible_name"
+              name="responsible_name"
+              type="text"
+              class="field-input"
+              [(ngModel)]="form.responsible_name"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="field-label" for="responsible_role">Cargo *</label>
+            <input
+              id="responsible_role"
+              name="responsible_role"
+              type="text"
+              class="field-input"
+              [(ngModel)]="form.responsible_role"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="field-label" for="responsible_email">Email de contacto *</label>
+            <input
+              id="responsible_email"
+              name="responsible_email"
+              type="email"
+              class="field-input"
+              [(ngModel)]="form.responsible_email"
+              required
+            />
+          </div>
+        </div>
+      </article>
+
+      <p *ngIf="errorMessage()" class="text-xs text-danger">{{ errorMessage() }}</p>
+
+      <div class="flex justify-end">
+        <button
+          type="submit"
+          class="btn-primary py-3 px-6 rounded-xl text-sm inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          [disabled]="isSaving()"
+        >
+          <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'wght' 500"
+            >save</span>
+          {{ isSaving() ? 'Guardando…' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</section>

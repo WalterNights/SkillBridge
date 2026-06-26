@@ -1,0 +1,7 @@
+// Estilos heredados del global field-input + glass-strong.
+// No hay overrides necesarios — el form usa el mismo lenguaje visual
+// que /settings.
+
+:host {
+  display: block;
+}

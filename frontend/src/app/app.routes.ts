@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { AutoGuard } from './auth/auto.guard';
 import { AdminGuard } from './auth/admin.guard';
+import { CompanyGuard } from './auth/company.guard';
 import { authMatchGuard } from './auth/auth-match.guard';
 
 /**
@@ -174,6 +175,30 @@ export const routes: Routes = [
             path: 'faqs',
             loadComponent: () =>
               import('./admin/admin-faqs.component').then((m) => m.AdminFaqsComponent),
+          },
+        ],
+      },
+      // ════════════════════════════════════════════════════════════
+      // Lado empresa del marketplace — gated por CompanyGuard. Una
+      // cuenta professional intentando /company/* es redirigida a
+      // /dashboard (espejo del comportamiento de AdminGuard).
+      // ════════════════════════════════════════════════════════════
+      {
+        path: 'company',
+        canActivate: [CompanyGuard],
+        children: [
+          { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+          {
+            path: 'dashboard',
+            loadComponent: () =>
+              import('./company/company-dashboard.component').then(
+                (m) => m.CompanyDashboardComponent,
+              ),
+          },
+          {
+            path: 'me',
+            loadComponent: () =>
+              import('./company/company-me.component').then((m) => m.CompanyMeComponent),
           },
         ],
       },

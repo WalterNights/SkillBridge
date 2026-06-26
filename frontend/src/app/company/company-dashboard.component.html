@@ -1,0 +1,75 @@
+<section class="px-4 lg:px-8 py-8 lg:py-10">
+  <div class="max-w-5xl mx-auto">
+    <!-- Header con saludo -->
+    <header class="mb-7">
+      <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-2">Empresa</p>
+      <h1 class="text-3xl lg:text-4xl font-black text-bone tracking-tight leading-tight">
+        Bienvenido<span *ngIf="company() as c">, {{ c.legal_name }}</span>
+      </h1>
+      <p class="text-sm text-warm-grey mt-2">
+        Desde acá vas a poder buscar profesionales que calcen con los criterios de tu empresa.
+      </p>
+    </header>
+
+    <!-- Card de bienvenida + CTA al próximo feature -->
+    <article class="glass-strong rounded-2xl p-8 mb-6 text-center">
+      <span
+        class="inline-flex w-16 h-16 rounded-2xl bg-primary/15 items-center justify-center mb-4 material-symbols-outlined text-primary"
+        style="font-size: 32px; font-variation-settings: 'FILL' 1"
+      >search</span>
+
+      <h2 class="text-xl font-bold text-bone mb-2">Buscar profesionales</h2>
+      <p class="text-sm text-warm-grey max-w-md mx-auto mb-6">
+        Estamos terminando el buscador de perfiles. Pronto vas a poder filtrar por skills,
+        seniority y ubicación, y ver cards con porcentaje de match contra los criterios que definas.
+      </p>
+
+      <button
+        type="button"
+        class="btn-primary py-3 px-6 rounded-xl text-sm inline-flex items-center gap-2 opacity-60 cursor-not-allowed"
+        disabled
+        title="Disponible en la próxima fase"
+      >
+        <span class="material-symbols-outlined" style="font-size: 18px">person_search</span>
+        Buscar profesionales
+        <span class="text-xs ml-1 opacity-80">(pronto)</span>
+      </button>
+    </article>
+
+    <!-- Resumen del perfil empresa -->
+    <article *ngIf="company() as c" class="glass-strong rounded-2xl p-6">
+      <header class="flex items-center justify-between mb-4">
+        <div>
+          <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold">Tu empresa</p>
+          <h3 class="text-lg font-semibold text-bone">{{ c.legal_name }}</h3>
+        </div>
+        <a
+          routerLink="/company/me"
+          class="text-xs text-primary font-semibold hover:underline underline-offset-4 inline-flex items-center gap-1"
+        >
+          Editar perfil
+          <span class="material-symbols-outlined" style="font-size: 14px">arrow_forward</span>
+        </a>
+      </header>
+
+      <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div *ngIf="c.industry">
+          <dt class="text-xs uppercase tracking-[0.1em] text-warm-grey font-semibold mb-1">Industria</dt>
+          <dd class="text-sm text-bone">{{ c.industry }}</dd>
+        </div>
+        <div *ngIf="c.city">
+          <dt class="text-xs uppercase tracking-[0.1em] text-warm-grey font-semibold mb-1">Ciudad</dt>
+          <dd class="text-sm text-bone">{{ c.city }}</dd>
+        </div>
+        <div *ngIf="c.responsible_name" class="sm:col-span-2">
+          <dt class="text-xs uppercase tracking-[0.1em] text-warm-grey font-semibold mb-1">Responsable</dt>
+          <dd class="text-sm text-bone">{{ c.responsible_name }}</dd>
+        </div>
+        <div *ngIf="c.short_description" class="sm:col-span-2">
+          <dt class="text-xs uppercase tracking-[0.1em] text-warm-grey font-semibold mb-1">Sobre la empresa</dt>
+          <dd class="text-sm text-bone leading-relaxed">{{ c.short_description }}</dd>
+        </div>
+      </dl>
+    </article>
+  </div>
+</section>

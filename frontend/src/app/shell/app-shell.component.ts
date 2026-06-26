@@ -82,6 +82,19 @@ export class AppShellComponent {
    */
   isAdmin = toSignal(this.auth.isAdmin$, { initialValue: this.auth.isAdmin() });
 
+  /**
+   * Tipo de cuenta del user logueado. El sidebar renderiza grupos
+   * distintos según valor — profesional ve "Trabajo / Aprender",
+   * empresa ve "Buscar profesionales / Cuenta empresa".
+   */
+  accountType = toSignal(this.auth.accountType$, {
+    initialValue: this.auth.accountType(),
+  });
+
+  /** Helpers para el template — más legibles que `accountType() === 'company'`. */
+  isCompany = (): boolean => this.accountType() === 'company';
+  isProfessional = (): boolean => this.accountType() === 'professional';
+
   toggleDrawer(open?: boolean): void {
     this.drawerOpen.set(open ?? !this.drawerOpen());
   }
