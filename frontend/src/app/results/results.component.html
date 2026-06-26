@@ -260,7 +260,10 @@
       </button>
     </div>
 
-    <!-- Empty state: no offers at all -->
+    <!-- Empty state: no offers at all.
+         Caso A (totalCount === 0 y nunca scrapeó) → "Pide una búsqueda".
+         Caso B (totalCount === 0 después de scrape) → ninguna matcheó al
+         60%+; explicamos por qué y ofrecemos editar perfil o reintentar. -->
     <div
       *ngIf="offers.length === 0"
       class="glass-strong rounded-2xl p-10 text-center max-w-2xl mx-auto"
@@ -270,18 +273,50 @@
           >work</span
         >
       </div>
-      <h3 class="text-lg font-semibold text-bone mb-1">Todavía no tienes ofertas</h3>
-      <p class="text-sm text-warm-grey mb-5">
-        Pide una búsqueda y te traemos las que mejor coinciden con tu perfil.
-      </p>
-      <button
-        type="button"
-        (click)="obtainOffers()"
-        class="btn-primary px-5 py-2.5 rounded-xl text-sm inline-flex items-center gap-2"
-      >
-        <span class="material-symbols-outlined" style="font-size: 18px">sync</span>
-        Cargar ofertas
-      </button>
+
+      <ng-container *ngIf="!hasSearched(); else noMatches">
+        <h3 class="text-lg font-semibold text-bone mb-1">Todavía no tienes ofertas</h3>
+        <p class="text-sm text-warm-grey mb-5">
+          Pide una búsqueda y te traemos las que mejor coinciden con tu perfil.
+        </p>
+        <button
+          type="button"
+          (click)="obtainOffers()"
+          class="btn-primary px-5 py-2.5 rounded-xl text-sm inline-flex items-center gap-2"
+        >
+          <span class="material-symbols-outlined" style="font-size: 18px">sync</span>
+          Cargar ofertas
+        </button>
+      </ng-container>
+
+      <ng-template #noMatches>
+        <h3 class="text-lg font-semibold text-bone mb-1">Aún no encontramos ofertas para tu perfil</h3>
+        <p class="text-sm text-warm-grey mb-2">
+          Buscamos en {{ lastScrapeStats() }} pero ninguna oferta alcanzó el 60% de coincidencia con tu título o tus skills.
+        </p>
+        <p class="text-xs text-dim mb-5">
+          Nuestro lema es <span class="text-primary font-semibold">cero ruido</span> — preferimos no mostrarte
+          ofertas mediocres. Probá afinar tu título profesional o agregar más skills relevantes.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-2 justify-center">
+          <button
+            type="button"
+            (click)="goToProfile()"
+            class="btn-primary px-5 py-2.5 rounded-xl text-sm inline-flex items-center justify-center gap-2"
+          >
+            <span class="material-symbols-outlined" style="font-size: 18px">edit</span>
+            Editar mi perfil
+          </button>
+          <button
+            type="button"
+            (click)="obtainOffers()"
+            class="btn-secondary px-5 py-2.5 rounded-xl text-sm inline-flex items-center justify-center gap-2"
+          >
+            <span class="material-symbols-outlined" style="font-size: 18px">sync</span>
+            Buscar de nuevo
+          </button>
+        </div>
+      </ng-template>
     </div>
 
     <!-- Empty state: filter has no results but there are offers -->

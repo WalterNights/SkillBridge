@@ -156,10 +156,12 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
         JobMatchingService.enrich_with_match(offers, profile)
 
     # Umbral mínimo de match para que una oferta aparezca en el feed.
-    # Default alineado con `scrape` para que la experiencia sea consistente:
-    # 25% es la línea entre "este job tiene algo que ver con vos" y "ruido
-    # totalmente off-topic" (rol distinto + sin skills compartidas).
-    _DEFAULT_MIN_MATCH = 25
+    # 60% honra el slogan "cero ruido" — preferimos feed vacío + CTA a que
+    # el usuario tenga que filtrar ofertas mediocres mentalmente. Subido
+    # desde 25% tras feedback de cliente: el feed se llenaba de jobs de
+    # ventas/mantenimiento que matcheaban 10-20% por palabras sueltas y
+    # arruinaban la promesa del producto.
+    _DEFAULT_MIN_MATCH = 60
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -381,17 +383,14 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
         except UserProfile.DoesNotExist:
             return Response({"error": "User profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        query = profile.professional_title
-        location = profile.city
-
-        if not query or not location:
+        if not profile.professional_title or not profile.city:
             # El frontend muestra `err.error.error` como toast cuando el
             # status es 400 — usamos esa convención para que el usuario
             # vea de inmediato qué le falta, no un genérico "sin novedades".
             missing = []
-            if not query:
+            if not profile.professional_title:
                 missing.append("título profesional")
-            if not location:
+            if not profile.city:
                 missing.append("ciudad")
             return Response(
                 {
@@ -404,14 +403,17 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
             )
 
         try:
-            # Scrapea TODOS los portales registrados en paralelo
-            new_offers, scrape_stats = JobService.scrape_all_portals_with_stats(
-                query, location
-            )
+            # El PortalRouter elige qué portales y con qué query scrapear
+            # según el perfil (vía Gemini, con fallback determinístico). Así
+            # un perfil no-tech no dispara Hireline / WeWorkRemotely y la
+            # query se refina por portal en vez de mandar el título crudo.
+            new_offers, scrape_stats = JobService.scrape_for_profile(profile)
 
-            # Filtrar por matching (cargo + skills, ver matching_service)
+            # Filtrar por matching (cargo + skills, ver matching_service).
+            # Mismo umbral que el feed para que la experiencia post-scrape
+            # sea consistente con lo que verá el usuario en /jobs.
             filtered_offers = JobMatchingService.filter_jobs_by_skills(
-                new_offers, profile, min_match_percentage=25
+                new_offers, profile, min_match_percentage=self._DEFAULT_MIN_MATCH
             )
 
             # Notif de match — solo si hay ofertas arriba del umbral.

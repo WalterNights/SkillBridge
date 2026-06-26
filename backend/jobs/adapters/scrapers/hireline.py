@@ -68,6 +68,12 @@ class HirelineScraper(JobScraper):
     """Scraper de hireline.io vía sitemap + JSON-LD."""
 
     portal_name = "hireline"
+    description = (
+        "Bolsa 100% tech enfocada en México y LATAM. Roles típicos: "
+        "developer (frontend/backend/full-stack), data, devops, QA, mobile, "
+        "product/UX, tech lead. NO sirve para perfiles no-tech."
+    )
+    categories = ("tech",)
 
     def search(self, query: str, location: str, pages: int = 2) -> list[JobOfferData]:
         logger.info(

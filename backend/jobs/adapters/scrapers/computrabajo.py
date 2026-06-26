@@ -54,6 +54,12 @@ class ComputrabajoScraper(JobScraper):
     """Scraper para co.computrabajo.com."""
 
     portal_name = "computrabajo"
+    description = (
+        "Bolsa generalista líder en Colombia, México, Perú, Chile, Argentina y "
+        "España. Fuerte en operativos, ventas, call center, administrativos, "
+        "salud y comercial. Cobertura tech presente pero no especializada."
+    )
+    categories = ("all",)
 
     def search(self, query: str, location: str, pages: int = 2) -> list[JobOfferData]:
         if not query or not location:

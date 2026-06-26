@@ -28,17 +28,17 @@ from jobs.adapters.scrapers.trabajos_co import TrabajosColombiaScraper
 from jobs.adapters.scrapers.web_search import WebSearchJobsScraper
 from jobs.adapters.scrapers.weworkremotely import WeWorkRemotelyScraper
 
-# WeWorkRemotelyScraper queda implementado pero FUERA del registro por
-# defecto porque es 100% remoto/tech — para un contador, diseñador o
-# vendedor era ruido garantizado en el feed. Cuando agreguemos perfiles
-# "remote-first" o un toggle en el wizard de profile, lo activamos opt-in.
-#
 # LinkedInGuestScraper pega directo a la API guest de LinkedIn (HTTP plano).
 # MagnetoScraper / IndeedScraper requieren Playwright (Chromium headless)
 # porque son SPAs / tienen Cloudflare. Si Playwright no está instalado en
 # el entorno (ej. CI sin chromium), esos scrapers devuelven [] sin tirar.
 # WebSearchJobsScraper cubre los portales sin scraper dedicado
 # (elempleo, bumeran, getonbrd) via DDG.
+#
+# WeWorkRemotelyScraper se activó en el registry tras la Fase 2 del Portal
+# Router (commit del 2026-06-26): ahora el LLM decide qué portales scrapear
+# por perfil, así que un contador o vendedor nunca lo va a invocar. Antes
+# era ruido garantizado porque se disparaba para todos.
 _REGISTRY: dict[str, type[JobScraper]] = {
     ComputrabajoScraper.portal_name: ComputrabajoScraper,
     HirelineScraper.portal_name: HirelineScraper,
@@ -48,6 +48,7 @@ _REGISTRY: dict[str, type[JobScraper]] = {
     TrabajandoScraper.portal_name: TrabajandoScraper,
     TrabajosColombiaScraper.portal_name: TrabajosColombiaScraper,
     WebSearchJobsScraper.portal_name: WebSearchJobsScraper,
+    WeWorkRemotelyScraper.portal_name: WeWorkRemotelyScraper,
 }
 
 

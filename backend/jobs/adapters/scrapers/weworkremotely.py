@@ -91,6 +91,12 @@ class WeWorkRemotelyScraper(JobScraper):
     """Scraper para weworkremotely.com."""
 
     portal_name = "weworkremotely"
+    description = (
+        "Bolsa exclusiva remote, mayormente en inglés. Tech remote, "
+        "product, design y marketing remote-first. NO sirve para empleos "
+        "presenciales/LATAM-locales ni perfiles que no manejen inglés."
+    )
+    categories = ("tech", "design", "marketing")
 
     def search(self, query: str, location: str, pages: int = 1) -> list[JobOfferData]:
         if not query:

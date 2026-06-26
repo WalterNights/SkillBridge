@@ -49,6 +49,13 @@ class LinkedInGuestScraper(JobScraper):
     """Scraper directo de LinkedIn que pagina el endpoint guest."""
 
     portal_name = "linkedin"
+    description = (
+        "Red profesional global. Cobertura amplia: tech, marketing, "
+        "ventas, finanzas, RRHH, ejecutivo. Más útil para perfiles "
+        "mid-senior. Puede rate-limitear o devolver 0 si la query es "
+        "muy específica en español."
+    )
+    categories = ("all",)
 
     _BASE_URL = "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
     _PAGE_SIZE = 25

@@ -42,6 +42,13 @@ class IndeedScraper(JobScraper):
     """Scraper de Indeed Colombia via Playwright headless."""
 
     portal_name = "indeed"
+    description = (
+        "Agregador global con presencia fuerte en Colombia, México y "
+        "España. Generalista — sirve para casi cualquier vertical pero "
+        "depende de Playwright (puede fallar silencioso) y a veces lo "
+        "bloquea Cloudflare."
+    )
+    categories = ("all",)
 
     def search(self, query: str, location: str, pages: int = 1) -> list[JobOfferData]:
         if not query:

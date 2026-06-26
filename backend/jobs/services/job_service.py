@@ -129,6 +129,75 @@ class JobService:
         return created, stats
 
     @staticmethod
+    def scrape_for_profile(
+        profile,
+        max_workers: int = 4,
+    ) -> tuple[list[JobOffer], dict[str, dict]]:
+        """Scrapea solo los portales que el `PortalRouterService` sugiere
+        para este perfil, cada uno con su query refinado.
+
+        Diferencia con `scrape_all_portals_with_stats`:
+          - No scrapea todo el registry — descarta los portales que no
+            tienen sentido para el perfil (un diseñador no necesita
+            Hireline; un developer no necesita WeWorkRemotely si el
+            router decide que el rol es local).
+          - El query NO es necesariamente `profile.professional_title` —
+            el router refina por portal (ej. "diseñador UX" en LinkedIn
+            vs "UI/UX Designer" en WeWorkRemotely vs el título completo
+            en Computrabajo).
+
+        Returns el mismo formato `(offers, stats)` que el método legacy
+        para que el view layer no se entere de la diferencia.
+        """
+        # Import local para evitar import circular (portal_router importa
+        # de jobs.adapters; jobs.services se importa desde tests).
+        from jobs.services.portal_router import PortalRouterService
+
+        plans = PortalRouterService.suggest_portals(profile)
+        if not plans:
+            logger.warning(
+                "PortalRouter devolvió 0 planes para user=%s — scrape no-op",
+                profile.user_id,
+            )
+            return [], {}
+
+        logger.info(
+            "scrape_for_profile user=%s plans=%s",
+            profile.user_id,
+            [(p.portal, p.query) for p in plans],
+        )
+
+        stats: dict[str, dict] = {
+            p.portal: {"found": 0, "error": None} for p in plans
+        }
+        portal_offers: dict[str, list[JobOfferData]] = {p.portal: [] for p in plans}
+        all_offers_data: list[JobOfferData] = []
+
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            future_to_plan = {
+                pool.submit(_scrape_one_portal, p.portal, p.query, p.location): p
+                for p in plans
+            }
+            for future in as_completed(future_to_plan):
+                plan = future_to_plan[future]
+                try:
+                    offers = future.result()
+                    logger.info("%s: %d ofertas raw (query=%r)", plan.portal, len(offers), plan.query)
+                    stats[plan.portal]["found"] = len(offers)
+                    portal_offers[plan.portal] = offers
+                    all_offers_data.extend(offers)
+                except Exception as exc:
+                    logger.exception("Portal %s falló", plan.portal)
+                    stats[plan.portal]["error"] = f"{type(exc).__name__}: {exc}"
+
+        created = JobService.save_new_offers(all_offers_data)
+        for plan in plans:
+            stats[plan.portal]["saved_new"] = sum(
+                1 for o in created if o.portal == plan.portal
+            )
+        return created, stats
+
+    @staticmethod
     def save_new_offers(offers_data: Iterable[JobOfferData]) -> list[JobOffer]:
         """Persiste DTOs en DB devolviendo solo las que se crearon ahora.
 

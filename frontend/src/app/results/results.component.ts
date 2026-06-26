@@ -82,6 +82,32 @@ export class ResultsComponent {
    * Aplicado client-side sobre los resultados ya cargados (no re-fetch). */
   sortOrder = signal<'desc' | 'asc'>('desc');
 
+  /** True si el usuario disparó un scrape en esta sesión. Una de las dos
+   * señales que usamos para decidir qué empty-state mostrar. */
+  private didScrape = signal<boolean>(false);
+
+  /** True si la DB ya tiene ofertas (independientemente del match% del
+   * usuario actual). Lo derivamos del response de filter-options: si
+   * hay países o modalidades con count > 0, hay ofertas en el sistema.
+   * Sin esto, un user que entra a un feed vacío por umbral 60% pero
+   * con DB poblada veía "Pedí tu primera búsqueda", lo cual es falso. */
+  hasOffersInDb = computed(() => {
+    const opts = this.filterOptions();
+    if (!opts) return false;
+    return opts.countries.length > 0 || opts.modalities.length > 0;
+  });
+
+  /** True = el feed vacío amerita el mensaje "ajustá tu perfil" (ya
+   * hay ofertas pero ninguna te calza). False = mensaje genérico
+   * "pedí tu primera búsqueda". */
+  hasSearched = computed(() => this.didScrape() || this.hasOffersInDb());
+
+  /** Resumen legible del último scrape para el empty-state — formato
+   * "N portales (M ofertas revisadas)". Texto neutral si no hay stats
+   * en esta sesión (ej. ofertas que ya estaban en DB). */
+  private lastScrapeSummary = signal<string>('todos los portales disponibles');
+  lastScrapeStats = computed(() => this.lastScrapeSummary());
+
   /** Label legible para un código ISO. */
   countryLabel(code: string): string {
     return COUNTRY_LABELS[code] || code;
@@ -156,17 +182,16 @@ export class ResultsComponent {
    * por % match para que el backend ordene la lista completa antes de
    * paginar (sino el sort solo aplica a la página visible).
    *
-   * `minMatch: 0` desactiva el threshold default del backend (25%) que
-   * dejaba sin feed a usuarios cuyas skills no calzan con el dominio
-   * del scraping (ej. UI/UX en un feed dev). El chip "Todas/Excelente/
-   * Bueno/Regular" sigue filtrando localmente sobre la lista completa.
+   * No mandamos `minMatch` — el backend aplica el default (60%) que
+   * honra el slogan "cero ruido". Si el feed queda vacío para un perfil
+   * que el scraping no cubre, mostramos un empty-state con CTA en vez
+   * de inundar con ofertas mediocres.
    */
   private currentFilters(): JobFilters {
     return {
       countries: Array.from(this.selectedCountries()),
       modalities: Array.from(this.selectedModalities()),
       ordering: this.sortOrder() === 'desc' ? 'match_desc' : 'match_asc',
-      minMatch: 0,
     };
   }
 
@@ -382,6 +407,17 @@ export class ResultsComponent {
           newOffersCount: newOffers.length,
           stats,
         });
+        // Marcamos "ya buscó" para que el empty-state muestre el mensaje
+        // honesto ("ninguna alcanzó 60%") en vez del genérico inicial.
+        this.didScrape.set(true);
+        const totalFound = Object.values(stats).reduce(
+          (acc, s) => acc + (s?.found ?? 0),
+          0,
+        );
+        const portalsCount = Object.keys(stats).length;
+        this.lastScrapeSummary.set(
+          `${portalsCount} ${portalsCount === 1 ? 'portal' : 'portales'} (${totalFound} ofertas revisadas)`,
+        );
         this.loadOffers();
       },
       error: (err: HttpErrorResponse) => {
@@ -399,5 +435,11 @@ export class ResultsComponent {
         this.scrapeProgress.fail(message);
       },
     });
+  }
+
+  /** CTA del empty-state "ninguna oferta matchea al 60%" — navegar al
+   * editor de perfil para refinar título / skills y mejorar el matching. */
+  goToProfile(): void {
+    this.router.navigate(['/profile']);
   }
 }

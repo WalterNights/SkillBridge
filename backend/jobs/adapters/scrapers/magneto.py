@@ -52,6 +52,12 @@ class MagnetoScraper(JobScraper):
     """Scraper de Magneto365 via Playwright headless."""
 
     portal_name = "magneto"
+    description = (
+        "Bolsa generalista de Colombia (Magneto365). Fuerte en operativos, "
+        "ventas, call center, salud, administrativos y técnico. Requiere "
+        "Playwright headless — puede degradar a [] si no está disponible."
+    )
+    categories = ("all",)
 
     def search(self, query: str, location: str, pages: int = 1) -> list[JobOfferData]:
         if not query:

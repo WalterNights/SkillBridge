@@ -227,6 +227,12 @@ class WebSearchJobsScraper(JobScraper):
     """Scraper meta que usa DDG HTML restringida a sitios de empleo."""
 
     portal_name = "websearch"
+    description = (
+        "Meta-scraper: usa búsqueda web (DDG) restringida a portales sin "
+        "scraper dedicado (elempleo, bumeran, getonbrd, occ, zonajobs). "
+        "Generalista de bajo recall pero cubre nichos no atendidos."
+    )
+    categories = ("all",)
 
     def search(self, query: str, location: str, pages: int = 1) -> list[JobOfferData]:
         if not query:

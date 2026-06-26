@@ -43,6 +43,18 @@ class JobScraper(ABC):
     #: timeout HTTP por request, en segundos. Subclases pueden override.
     request_timeout_seconds: int = 30
 
+    #: Descripción humana del portal — qué categorías de empleo cubre y
+    #: dónde. La consume el `PortalRouterService` para que el LLM decida
+    #: si tiene sentido scrapearlo para un perfil dado. Una línea, ES,
+    #: sin floreo: "qué + dónde + restricciones notables".
+    description: str = ""
+
+    #: Categorías macro que el portal cubre, alineadas con
+    #: `users.services.profession_classifier`. `'all'` = generalista (sirve
+    #: para cualquier perfil). El router las usa como fallback determinístico
+    #: cuando el LLM no está disponible.
+    categories: tuple[str, ...] = ("all",)
+
     @abstractmethod
     def search(self, query: str, location: str, pages: int = 2) -> list[JobOfferData]:
         """Devuelve las ofertas que matchean `query` en `location`.

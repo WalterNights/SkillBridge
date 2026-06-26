@@ -60,6 +60,12 @@ class TrabajandoScraper(JobScraper):
     """Scraper de trabajando.cl + trabajando.com.co vía sitemap + JSON-LD."""
 
     portal_name = "trabajando"
+    description = (
+        "Bolsa generalista LATAM (trabajando.cl, trabajando.com.co, etc). "
+        "Fuerte en Chile y Colombia. Cobertura horizontal: ventas, "
+        "administrativos, ingeniería, salud, hostelería, retail."
+    )
+    categories = ("all",)
 
     def search(self, query: str, location: str, pages: int = 2) -> list[JobOfferData]:
         logger.info(

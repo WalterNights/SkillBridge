@@ -61,6 +61,12 @@ class TrabajosColombiaScraper(JobScraper):
     """Scraper para colombia.trabajos.com."""
 
     portal_name = "trabajos_co"
+    description = (
+        "Bolsa generalista de Colombia (colombia.trabajos.com). Fuerte en "
+        "ventas, call center, atención al cliente, mantenimiento, "
+        "operativos y servicios generales. Tech presente pero menor."
+    )
+    categories = ("all",)
 
     def search(self, query: str, location: str, pages: int = 2) -> list[JobOfferData]:
         if not query:
