@@ -1,0 +1,86 @@
+<section class="px-4 lg:px-8 py-8 lg:py-10">
+  <div class="max-w-4xl mx-auto">
+    <!-- Page header -->
+    <header class="mb-7">
+      <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-2">Administración</p>
+      <h1 class="text-3xl lg:text-4xl font-black text-bone tracking-tight leading-tight">
+        Feature flags
+      </h1>
+      <p class="text-sm text-warm-grey mt-2 max-w-2xl">
+        Activa o desactiva funcionalidades sin tocar código ni deployar. Los flags se crean
+        desde el backend (data migration) y acá los puedes togglear en runtime.
+      </p>
+    </header>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading()" class="glass-strong rounded-2xl p-10 text-center">
+      <p class="text-sm text-warm-grey">Cargando flags…</p>
+    </div>
+
+    <!-- Error -->
+    <div
+      *ngIf="!isLoading() && errorMessage()"
+      class="glass-strong rounded-2xl p-10 text-center"
+    >
+      <span
+        class="inline-flex w-14 h-14 rounded-full bg-rose-500/15 items-center justify-center mb-4 material-symbols-outlined text-rose-400"
+        style="font-size: 26px"
+      >error</span>
+      <h2 class="text-lg font-semibold text-bone mb-1">No pudimos cargar los flags</h2>
+      <p class="text-sm text-warm-grey">{{ errorMessage() }}</p>
+    </div>
+
+    <!-- Empty state (raro: la data migration siembra al menos uno) -->
+    <div
+      *ngIf="!isLoading() && !errorMessage() && flags().length === 0"
+      class="glass-strong rounded-2xl p-10 text-center"
+    >
+      <p class="text-sm text-warm-grey">No hay flags definidos todavía.</p>
+    </div>
+
+    <!-- Lista -->
+    <div *ngIf="!isLoading() && !errorMessage() && flags().length > 0" class="space-y-3">
+      <article
+        *ngFor="let flag of flags()"
+        class="glass-strong rounded-2xl p-5 flex items-start gap-4"
+      >
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <code class="text-sm text-bone font-mono font-semibold">{{ flag.key }}</code>
+            <span
+              class="text-[10px] uppercase tracking-[0.12em] font-semibold px-2 py-0.5 rounded-full"
+              [ngClass]="
+                flag.value_bool
+                  ? ['bg-emerald-500/15', 'text-emerald-400']
+                  : ['bg-white/5', 'text-warm-grey']
+              "
+            >
+              {{ flag.value_bool ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+          <p *ngIf="flag.description" class="text-sm text-warm-grey leading-relaxed mt-2">
+            {{ flag.description }}
+          </p>
+          <p class="text-xs text-dim mt-2">
+            Última actualización: {{ formatDate(flag.updated_at) }}
+          </p>
+        </div>
+
+        <!-- Toggle switch estilo iOS -->
+        <button
+          type="button"
+          class="flag-switch"
+          role="switch"
+          [class.is-on]="flag.value_bool"
+          [class.is-saving]="isSaving(flag.key)"
+          [attr.aria-checked]="flag.value_bool"
+          [attr.aria-label]="'Toggle ' + flag.key"
+          [disabled]="isSaving(flag.key)"
+          (click)="toggle(flag)"
+        >
+          <span class="flag-switch-knob"></span>
+        </button>
+      </article>
+    </div>
+  </div>
+</section>

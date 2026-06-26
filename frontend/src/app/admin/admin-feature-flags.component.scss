@@ -1,0 +1,53 @@
+:host {
+  display: block;
+}
+
+// Toggle switch estilo iOS — off-gris, on-orange con knob blanco que
+// desliza. is-saving pinta el knob amarillo para señalar "in-flight".
+.flag-switch {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 200ms ease, border-color 200ms ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  &.is-on {
+    background: rgba(249, 115, 22, 0.5);
+    border-color: rgba(249, 115, 22, 0.6);
+
+    .flag-switch-knob {
+      transform: translateX(22px);
+      background: #ffffff;
+    }
+  }
+
+  &.is-saving {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.flag-switch-knob {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #d8d6cf;
+  transform: translateY(-50%);
+  transition: transform 200ms ease, background 200ms ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}

@@ -3,6 +3,7 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
+import { FeatureFlagsService } from '../services/feature-flags.service';
 import { TipService } from '../services/tip.service';
 import { inferProfessionCategory } from '../shared/profession-classifier';
 import { ScrapeNotifierComponent } from '../shared/scrape-notifier/scrape-notifier.component';
@@ -42,6 +43,7 @@ const SIDEBAR_COLLAPSED_KEY = 'shell_sidebar_collapsed';
 export class AppShellComponent {
   private auth = inject(AuthService);
   private tipApi = inject(TipService);
+  private featureFlags = inject(FeatureFlagsService);
   private destroyRef = inject(DestroyRef);
 
   /** Mobile drawer open state. Ignored on desktop. */
@@ -72,6 +74,15 @@ export class AppShellComponent {
       .getTipOfTheDay(professionParam)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((text) => this.tipOfTheDay.set(text));
+
+    // Carga los feature flags públicos UNA vez al bootstrap del shell.
+    // Cualquier componente hijo que consulte FeatureFlagsService.isEnabled
+    // los lee del cache sin disparar más requests. Sin auth — los flags
+    // son públicos para que el shell decida qué exponer.
+    this.featureFlags
+      .loadPublic()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
   }
 
   /**

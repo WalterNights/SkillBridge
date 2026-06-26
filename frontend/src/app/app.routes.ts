@@ -186,6 +186,13 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./admin/admin-faqs.component').then((m) => m.AdminFaqsComponent),
           },
+          {
+            path: 'feature-flags',
+            loadComponent: () =>
+              import('./admin/admin-feature-flags.component').then(
+                (m) => m.AdminFeatureFlagsComponent,
+              ),
+          },
         ],
       },
       // ════════════════════════════════════════════════════════════

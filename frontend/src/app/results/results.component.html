@@ -53,6 +53,26 @@
         Regular <span class="text-dim ml-1">50–69%</span>
       </button>
 
+      <!-- Checkbox "Ver matches bajos" — toggle controlado por feature flag
+           show_low_match_filter. Cuando se activa, el feed baja el min_match
+           del backend a 30 (vs 60 default) para mostrar también ofertas
+           mediocres. Útil cuando el scraping trae poca cosa arriba del 60%
+           y queremos darle visibilidad temporal. El admin puede desactivar
+           el flag desde /admin/feature-flags. -->
+      <label
+        *ngIf="featureFlags.isEnabled('show_low_match_filter')"
+        class="low-match-toggle"
+        [class.is-active]="showLowMatches()"
+      >
+        <input
+          type="checkbox"
+          [checked]="showLowMatches()"
+          (change)="toggleLowMatches()"
+        />
+        <span class="material-symbols-outlined" style="font-size: 14px">visibility</span>
+        Ver matches bajos <span class="text-dim ml-1">30%+</span>
+      </label>
+
       <!-- Sort toggle: alterna entre mayor→menor y menor→mayor por % match. -->
       <button
         type="button"

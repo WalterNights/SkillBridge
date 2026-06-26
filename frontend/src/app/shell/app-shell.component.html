@@ -162,6 +162,16 @@
         <span class="material-symbols-outlined">forum</span>
         <span class="nav-label">FAQ</span>
       </a>
+      <a
+        class="nav-item"
+        routerLink="/admin/feature-flags"
+        routerLinkActive="active"
+        (click)="toggleDrawer(false)"
+        title="Feature flags"
+      >
+        <span class="material-symbols-outlined">toggle_on</span>
+        <span class="nav-label">Flags</span>
+      </a>
       <!-- Bolsa de profesionales: el feed de búsqueda del lado empresa.
            Admin lo usa read-only para soporte/curaduría. Apunta al mismo
            /company/dashboard que ven las cuentas empresa — el backend

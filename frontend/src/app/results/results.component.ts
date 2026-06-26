@@ -9,6 +9,7 @@ import {
   JobService,
   ScrapeResponse,
 } from '../services/job.service';
+import { FeatureFlagsService } from '../services/feature-flags.service';
 import { ScrapeProgressService } from '../services/scrape-progress.service';
 import { ToastService } from '../services/toast.service';
 import { Router, RouterModule } from '@angular/router';
@@ -108,6 +109,21 @@ export class ResultsComponent {
   private lastScrapeSummary = signal<string>('todos los portales disponibles');
   lastScrapeStats = computed(() => this.lastScrapeSummary());
 
+  /** Estado del checkbox "Ver matches bajos" (visible solo si el feature
+   * flag `show_low_match_filter` está activo). Cuando es true, el feed
+   * pide al backend `min_match=30` en vez del default 60. Persiste en
+   * sessionStorage para que sobreviva refresh sin contaminar otras pestañas
+   * — es un toggle de debug temporal, no una preferencia de usuario. */
+  showLowMatches = signal<boolean>(
+    sessionStorage.getItem('show_low_matches') === 'true',
+  );
+
+  /** Threshold a pedir al backend según el toggle. 30 = mediocre+;
+   * undefined = backend usa su default (60). */
+  private currentMinMatch(): number | undefined {
+    return this.showLowMatches() ? 30 : undefined;
+  }
+
   /** Label legible para un código ISO. */
   countryLabel(code: string): string {
     return COUNTRY_LABELS[code] || code;
@@ -122,8 +138,19 @@ export class ResultsComponent {
     private toast: ToastService,
     private titleService: Title,
     private changes: HTMLChangesComponent,
+    /** Público para que el template lo lea con `featureFlags.isEnabled(...)`. */
+    public featureFlags: FeatureFlagsService,
   ) {
     this.titleService.setTitle('SkilTak - Resultados de Búsqueda');
+  }
+
+  /** Toggle del checkbox "Ver matches bajos". Persiste en sessionStorage
+   * y dispara recarga del feed con el nuevo threshold. */
+  toggleLowMatches(): void {
+    const next = !this.showLowMatches();
+    this.showLowMatches.set(next);
+    sessionStorage.setItem('show_low_matches', String(next));
+    this.loadOffers();
   }
 
   ngOnInit(): void {
@@ -188,11 +215,16 @@ export class ResultsComponent {
    * de inundar con ofertas mediocres.
    */
   private currentFilters(): JobFilters {
-    return {
+    const filters: JobFilters = {
       countries: Array.from(this.selectedCountries()),
       modalities: Array.from(this.selectedModalities()),
       ordering: this.sortOrder() === 'desc' ? 'match_desc' : 'match_asc',
     };
+    const minMatch = this.currentMinMatch();
+    if (minMatch !== undefined) {
+      filters.minMatch = minMatch;
+    }
+    return filters;
   }
 
   /** Reset + fetch primera página. Disparado al mount, al cambiar filtros
