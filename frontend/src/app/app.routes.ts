@@ -157,6 +157,16 @@ export const routes: Routes = [
           import('./dashboard/settings/settings.component').then((m) => m.SettingsComponent),
       },
       {
+        // Inbox del profesional — "empresas interesadas en mí". El
+        // backend ya rechaza con 403 si la cuenta es company, pero
+        // mostramos un mensaje claro en el componente.
+        path: 'inbox',
+        loadComponent: () =>
+          import('./inbox/company-interests-inbox.component').then(
+            (m) => m.CompanyInterestsInboxComponent,
+          ),
+      },
+      {
         path: 'admin',
         canActivate: [AdminGuard],
         children: [

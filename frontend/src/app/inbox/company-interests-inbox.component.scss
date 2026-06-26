@@ -1,0 +1,177 @@
+// Inbox del profesional — empresas interesadas.
+
+:host {
+  display: block;
+}
+
+// ─── Filter pills ────────────────────────────────────────────────────
+.inbox-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.inbox-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #b8b5ab;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms, color 160ms, border-color 160ms;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  &--active {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+    border-color: rgba(249, 115, 22, 0.35);
+  }
+}
+
+.pending-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #f97316;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  margin-left: 2px;
+}
+
+// ─── Card de interest ────────────────────────────────────────────────
+.inbox-card {
+  transition: border-color 200ms ease, transform 200ms ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+  }
+
+  &[data-status='dismissed'] {
+    opacity: 0.65;
+  }
+}
+
+.company-avatar {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  box-shadow: 0 4px 12px -2px rgba(249, 115, 22, 0.3);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 9999px;
+
+  &--pending {
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.12);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+  }
+
+  &--accepted {
+    color: #34d399;
+    background: rgba(52, 211, 153, 0.12);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+  }
+
+  &--dismissed {
+    color: #8b8a85;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+.responsible-block {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.message-block {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(249, 115, 22, 0.05);
+  border-left: 2px solid rgba(249, 115, 22, 0.4);
+}
+
+// ─── Botones de acción ──────────────────────────────────────────────
+.inbox-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms, color 160ms, border-color 160ms;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &--accept {
+    color: #ffffff;
+    background: linear-gradient(135deg, #34d399, #10b981);
+    border: 1px solid transparent;
+    box-shadow: 0 4px 12px -2px rgba(52, 211, 153, 0.35);
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.08);
+    }
+  }
+
+  &--dismiss {
+    color: #cfcfc8;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    &:hover:not(:disabled) {
+      background: rgba(248, 113, 113, 0.1);
+      color: #f87171;
+      border-color: rgba(248, 113, 113, 0.3);
+    }
+  }
+}

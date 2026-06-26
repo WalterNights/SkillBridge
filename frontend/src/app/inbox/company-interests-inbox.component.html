@@ -1,0 +1,179 @@
+<section class="px-4 lg:px-8 py-8 lg:py-10">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <header class="mb-7">
+      <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-2">Mi cuenta</p>
+      <h1 class="text-3xl lg:text-4xl font-black text-bone tracking-tight leading-tight">
+        Empresas interesadas en ti
+      </h1>
+      <p class="text-sm text-warm-grey mt-2">
+        Acá ves las empresas que marcaron interés en tu perfil. Aceptá para revelar el contacto
+        del responsable y poder responder; descartá si no querés continuar.
+      </p>
+    </header>
+
+    <!-- Filter pills -->
+    <nav class="inbox-filters mb-5">
+      <button
+        *ngFor="let opt of filterOptions"
+        type="button"
+        class="inbox-filter-pill"
+        [class.inbox-filter-pill--active]="activeFilter() === opt.value"
+        (click)="setFilter(opt.value)"
+      >
+        {{ opt.label }}
+        <span
+          *ngIf="opt.value === 'pending' && pendingCount() > 0"
+          class="pending-badge"
+        >{{ pendingCount() }}</span>
+      </button>
+    </nav>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading()" class="glass-strong rounded-2xl p-10 text-center">
+      <p class="text-sm text-warm-grey">Cargando…</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="!isLoading() && errorMessage()" class="glass-strong rounded-2xl p-8 text-center">
+      <p class="text-sm text-danger">{{ errorMessage() }}</p>
+    </div>
+
+    <!-- Empty state -->
+    <div
+      *ngIf="!isLoading() && !errorMessage() && items().length === 0"
+      class="glass-strong rounded-2xl p-12 text-center"
+    >
+      <span
+        class="inline-flex w-14 h-14 rounded-full bg-primary/15 items-center justify-center mb-4 material-symbols-outlined text-primary"
+        style="font-size: 26px"
+      >mark_email_unread</span>
+      <h3 class="text-base font-semibold text-bone mb-1">
+        {{ activeFilter() === 'all' ? 'Sin empresas todavía' : 'Sin coincidencias en este filtro' }}
+      </h3>
+      <p class="text-sm text-warm-grey max-w-md mx-auto">
+        Cuando una empresa marque interés en tu perfil, aparece acá. Para que te encuentren,
+        activá tu visibilidad en
+        <a routerLink="/settings" class="text-primary hover:underline">Configuración → Privacidad</a>.
+      </p>
+    </div>
+
+    <!-- Lista -->
+    <div *ngIf="items().length > 0" class="flex flex-col gap-3">
+      <article
+        *ngFor="let item of items(); trackBy: trackItem"
+        class="inbox-card glass-strong rounded-2xl p-5"
+        [attr.data-status]="item.status"
+      >
+        <div class="flex flex-wrap items-start gap-4">
+          <div class="company-avatar">
+            <img *ngIf="item.company_logo" [src]="item.company_logo" alt="" />
+            <span *ngIf="!item.company_logo">{{ initials(item.company_legal_name) }}</span>
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
+              <h3 class="text-base font-semibold text-bone leading-snug">
+                {{ item.company_legal_name }}
+              </h3>
+              <span class="status-badge status-badge--{{ item.status }}">
+                {{
+                  item.status === 'pending'
+                    ? 'Pendiente'
+                    : item.status === 'accepted'
+                    ? 'Aceptada'
+                    : 'Descartada'
+                }}
+              </span>
+            </div>
+
+            <p class="text-xs text-warm-grey mb-2 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+              <span *ngIf="item.company_industry">{{ item.company_industry }}</span>
+              <span *ngIf="item.company_city || item.company_country" class="inline-flex items-center gap-1">
+                <span class="material-symbols-outlined" style="font-size: 13px">location_on</span>
+                {{ item.company_city }}{{ item.company_city && item.company_country ? ', ' : '' }}{{ item.company_country }}
+              </span>
+              <a
+                *ngIf="item.company_website"
+                [href]="item.company_website"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 hover:text-primary"
+              >
+                <span class="material-symbols-outlined" style="font-size: 13px">language</span>
+                Sitio web
+              </a>
+            </p>
+
+            <p *ngIf="item.company_short_description" class="text-sm text-warm-grey leading-relaxed mb-3">
+              {{ item.company_short_description }}
+            </p>
+
+            <div class="responsible-block">
+              <p class="text-xs uppercase tracking-[0.1em] text-warm-grey font-semibold mb-1">
+                Responsable de contacto
+              </p>
+              <p class="text-sm text-bone font-semibold">
+                {{ item.responsible_name }}
+                <span class="text-warm-grey font-normal">— {{ item.responsible_role }}</span>
+              </p>
+              <p *ngIf="item.responsible_email" class="text-sm mt-1">
+                <a
+                  [href]="'mailto:' + item.responsible_email"
+                  class="text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  <span class="material-symbols-outlined" style="font-size: 14px">mail</span>
+                  {{ item.responsible_email }}
+                </a>
+              </p>
+              <p *ngIf="!item.responsible_email && item.status === 'pending'" class="text-xs text-dim mt-1">
+                El email del responsable se revela cuando aceptás el interés.
+              </p>
+            </div>
+
+            <div *ngIf="item.message" class="message-block">
+              <p class="text-xs uppercase tracking-[0.1em] text-warm-grey font-semibold mb-1">
+                Mensaje de la empresa
+              </p>
+              <p class="text-sm text-bone leading-relaxed whitespace-pre-line">
+                {{ item.message }}
+              </p>
+            </div>
+
+            <p class="text-xs text-dim mt-3">
+              Recibido {{ item.created_at | date: 'medium' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Actions: solo para pendientes -->
+        <div
+          *ngIf="item.status === 'pending'"
+          class="flex justify-end gap-2 mt-4 pt-3 border-t border-white/[0.05]"
+        >
+          <button
+            type="button"
+            class="inbox-btn inbox-btn--dismiss"
+            (click)="respond(item, 'dismiss')"
+            [disabled]="isActionPending(item.id)"
+          >
+            <span class="material-symbols-outlined" style="font-size: 16px">close</span>
+            Descartar
+          </button>
+          <button
+            type="button"
+            class="inbox-btn inbox-btn--accept"
+            (click)="respond(item, 'accept')"
+            [disabled]="isActionPending(item.id)"
+          >
+            <span
+              class="material-symbols-outlined"
+              style="font-size: 16px; font-variation-settings: 'FILL' 1"
+            >check_circle</span>
+            {{ isActionPending(item.id) ? 'Aceptando…' : 'Aceptar' }}
+          </button>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
