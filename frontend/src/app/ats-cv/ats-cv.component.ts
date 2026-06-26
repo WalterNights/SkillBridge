@@ -117,6 +117,18 @@ const PAGINATION = {
   TEXT_CONT_HEADER_PX: 30,
   /** Mínimo de líneas en parte 1 para que partir un text-block valga la pena. */
   MIN_LINES_FIRST_PART: 4,
+  /** Mínimo de bullets que tiene que tener un entry para quedarse en parte 1.
+   *  Si el último entry de la hoja queda con menos de esto, se mueve entero
+   *  a parte 2 (anti-orphan a nivel de entry). Sin este chequeo, vimos casos
+   *  donde un entry "Empresa X / Cargo Y" + 1 bullet quedaba huérfano al
+   *  pie de página 1 y el resto del entry caía en página 2 — visualmente
+   *  feo y rompe el "no cortar entries". */
+  MIN_BULLETS_TO_KEEP_ENTRY: 2,
+  /** Cap anti-desperdicio del orphan fix: no retroceder el cut si parte 1
+   *  queda con menos del N% de lo que cabía. Evita el efecto perverso de
+   *  vaciar la página entera por mover un entry chico — ahí preferimos el
+   *  orphan visual a la hoja casi vacía. */
+  MIN_PART1_FILL_RATIO: 0.5,
 } as const;
 
 /** Regex de marker de bullet — `-`, `•` o `*` seguido de espacio. */
@@ -924,7 +936,8 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     if (entries.length >= 2) {
       const entrySplit = this.cutAtEntryBoundary(entries, linesCanFit);
       if (entrySplit !== null && entrySplit >= PAGINATION.MIN_LINES_FIRST_PART) {
-        return this.buildTextSplit(block, lines, entrySplit, lineAvgHeight);
+        const refined = this.avoidEntryOrphan(lines, entrySplit, linesCanFit);
+        return this.buildTextSplit(block, lines, refined, lineAvgHeight);
       }
     }
 
@@ -935,7 +948,67 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     if (lineLevelCut < PAGINATION.MIN_LINES_FIRST_PART) return null;
     if (lineLevelCut >= lines.length) return null;
 
-    return this.buildTextSplit(block, lines, lineLevelCut, lineAvgHeight);
+    // Paso 4: anti-orphan a nivel de entry. Si el último header line en
+    // parte 1 quedó con muy pocos bullets (header + 0-1 bullets), retrocedé
+    // el cut para mover ese entry entero a parte 2. Capeado por
+    // MIN_PART1_FILL_RATIO para no vaciar la hoja.
+    const finalCut = this.avoidEntryOrphan(lines, lineLevelCut, linesCanFit);
+    return this.buildTextSplit(block, lines, finalCut, lineAvgHeight);
+  }
+
+  /**
+   * Anti-orphan a nivel de entry: si parte 1 termina con un header
+   * (puesto/empresa) seguido de muy pocos bullets, movemos ese header
+   * entero a parte 2 para que viaje con el resto de sus bullets.
+   *
+   * Diferencia con `backtrackToBullet`: ese solo evita que el cut caiga
+   * EXACTAMENTE sobre un header (huérfano de 0 bullets). Este chequea
+   * el conteo de bullets después del último header en parte 1 y
+   * retrocede si está debajo del threshold.
+   *
+   * Guardrail: si el retroceso deja parte 1 con menos del fill ratio
+   * mínimo, abortar — preferimos un orphan visual a una hoja casi vacía.
+   * Caso típico de aborto: el entry "huérfano" es ENORME (10 bullets)
+   * y moverlo a parte 2 vaciaría la mitad de la hoja.
+   */
+  private avoidEntryOrphan(lines: string[], cut: number, linesCanFit: number): number {
+    if (cut <= 0) return cut;
+
+    // Contar bullets consecutivos antes del cut (saltando blanks finales
+    // que `backtrackToBullet` debería haber comido, defensivo).
+    let i = cut - 1;
+    while (i >= 0 && this.isBlankLine(lines[i])) i--;
+    let bulletsAfterHeader = 0;
+    while (i >= 0 && this.isBulletLine(lines[i])) {
+      bulletsAfterHeader++;
+      i--;
+    }
+    // Si todo eran bullets hasta el inicio del texto: no hay header
+    // huérfano que mover.
+    if (i < 0) return cut;
+    // Suficientes bullets después del último header → no es orphan.
+    if (bulletsAfterHeader >= PAGINATION.MIN_BULLETS_TO_KEEP_ENTRY) return cut;
+
+    // Retroceder al INICIO del bloque de header lines (puede ser
+    // "Empresa\nCargo [fechas]" = 2 headers seguidos sin bullets entre
+    // medio — los englobamos todos).
+    let headerStart = i;
+    while (headerStart > 0 && this.isHeaderLine(lines[headerStart - 1])) {
+      headerStart--;
+    }
+    // Saltar blanks anteriores al header para que parte 1 termine en
+    // bullet o en EOF lógico, no en blanco.
+    let newCut = headerStart;
+    while (newCut > 0 && this.isBlankLine(lines[newCut - 1])) newCut--;
+
+    // Guard anti-desperdicio: si retroceder vacía demasiado la hoja,
+    // mejor dejar el orphan visual.
+    const minAcceptable = Math.max(
+      PAGINATION.MIN_LINES_FIRST_PART,
+      Math.floor(linesCanFit * PAGINATION.MIN_PART1_FILL_RATIO),
+    );
+    if (newCut < minAcceptable) return cut;
+    return newCut;
   }
 
   /** Devuelve el string crudo (legacy) de experience/education según el
