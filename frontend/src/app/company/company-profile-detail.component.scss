@@ -1,0 +1,185 @@
+// Detalle del profesional para el lado empresa.
+
+:host {
+  display: block;
+}
+
+// ─── Header con banner + avatar grande ──────────────────────────────
+.profile-detail-banner {
+  height: 120px;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(15, 12, 9, 0.6));
+
+  &.has-banner {
+    background: none;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.profile-detail-header {
+  display: flex;
+  gap: 18px;
+  padding: 0 28px 24px;
+  margin-top: -38px;
+}
+
+.profile-detail-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 32px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 4px solid #0d0c0a;
+  box-shadow: 0 10px 24px -4px rgba(249, 115, 22, 0.35);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.profile-link-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  color: #cfcfc8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+  transition: background 160ms, color 160ms;
+
+  &:hover {
+    background: rgba(249, 115, 22, 0.08);
+    color: #f97316;
+    border-color: rgba(249, 115, 22, 0.25);
+  }
+}
+
+// ─── Section titles dentro del detalle ──────────────────────────────
+.profile-section-title {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #8b8a85;
+  margin: 0 0 12px;
+}
+
+// ─── Pills de skills ────────────────────────────────────────────────
+.skill-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  letter-spacing: 0.01em;
+
+  &--tech {
+    color: #f97316;
+    background: rgba(249, 115, 22, 0.1);
+    border: 1px solid rgba(249, 115, 22, 0.25);
+  }
+
+  &--soft {
+    color: #a78bfa;
+    background: rgba(167, 139, 250, 0.08);
+    border: 1px solid rgba(167, 139, 250, 0.22);
+  }
+}
+
+// ─── Sidebar acciones sticky ────────────────────────────────────────
+.sticky-actions {
+  position: sticky;
+  top: 24px;
+}
+
+.interest-marked {
+  background: rgba(52, 211, 153, 0.05);
+  border: 1px solid rgba(52, 211, 153, 0.18);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+// ─── btn-secondary local (no global todavía) ────────────────────────
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #d8d6cf;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.07);
+  }
+}
+
+// ─── Modal "Marcar interés" ─────────────────────────────────────────
+.interest-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 70;
+  padding: 16px;
+  animation: interest-overlay-in 140ms ease-out;
+}
+
+.interest-modal {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 20px;
+  padding: 24px;
+  animation: interest-modal-in 180ms ease-out;
+}
+
+.interest-modal-close {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #b8b5ab;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ece9e0;
+  }
+}
+
+@keyframes interest-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes interest-modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

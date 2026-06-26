@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
+import { RouterLink } from '@angular/router';
 
 import {
   CompanyService,
@@ -43,7 +44,7 @@ const DEFAULT_CRITERIA: CriteriaForm = {
 @Component({
   selector: 'app-company-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './company-dashboard.component.html',
   styleUrls: ['./company-dashboard.component.scss'],
 })

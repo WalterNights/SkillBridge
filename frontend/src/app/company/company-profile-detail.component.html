@@ -1,0 +1,269 @@
+<section class="px-4 lg:px-8 py-8 lg:py-10">
+  <div class="max-w-5xl mx-auto">
+    <!-- Back link -->
+    <a
+      routerLink="/company/dashboard"
+      class="inline-flex items-center gap-1 text-xs text-warm-grey hover:text-bone mb-4"
+    >
+      <span class="material-symbols-outlined" style="font-size: 14px">arrow_back</span>
+      Volver al feed
+    </a>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading()" class="glass-strong rounded-2xl p-12 text-center">
+      <p class="text-sm text-warm-grey">Cargando perfil…</p>
+    </div>
+
+    <!-- Not found -->
+    <div *ngIf="!isLoading() && notFound()" class="glass-strong rounded-2xl p-12 text-center">
+      <span
+        class="inline-flex w-14 h-14 rounded-full bg-warm-grey/15 items-center justify-center mb-4 material-symbols-outlined text-warm-grey"
+        style="font-size: 26px"
+      >search_off</span>
+      <h2 class="text-lg font-semibold text-bone mb-1">Perfil no disponible</h2>
+      <p class="text-sm text-warm-grey">
+        Este profesional no está visible para empresas o ya no existe.
+      </p>
+    </div>
+
+    <!-- Detail -->
+    <ng-container *ngIf="profile() as p">
+      <article class="profile-detail-card glass-strong rounded-2xl overflow-hidden mb-5">
+        <!-- Banner (si tiene) -->
+        <div class="profile-detail-banner" [class.has-banner]="!!p.banner">
+          <img *ngIf="p.banner" [src]="p.banner" alt="" />
+        </div>
+
+        <!-- Header -->
+        <div class="profile-detail-header">
+          <div class="profile-detail-avatar">
+            <img *ngIf="p.photo" [src]="p.photo" alt="" />
+            <span *ngIf="!p.photo">{{ initials(p) }}</span>
+          </div>
+
+          <div class="flex-1 min-w-0 pt-2">
+            <h1 class="text-2xl lg:text-3xl font-black text-bone tracking-tight leading-tight">
+              {{ p.first_name }} {{ p.last_name }}
+            </h1>
+            <p
+              *ngIf="p.professional_title"
+              class="text-sm text-primary font-semibold uppercase tracking-[0.08em] mt-1"
+            >
+              {{ p.professional_title }}
+            </p>
+            <p
+              *ngIf="p.city"
+              class="text-sm text-warm-grey mt-2 inline-flex items-center gap-1"
+            >
+              <span class="material-symbols-outlined" style="font-size: 14px">location_on</span>
+              {{ p.city }}
+            </p>
+
+            <!-- Links -->
+            <div class="flex flex-wrap gap-2 mt-3">
+              <a
+                *ngIf="p.linkedin_url"
+                [href]="p.linkedin_url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="profile-link-pill"
+              >
+                <span class="material-symbols-outlined" style="font-size: 14px">link</span>
+                LinkedIn
+              </a>
+              <a
+                *ngIf="p.portfolio_url"
+                [href]="p.portfolio_url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="profile-link-pill"
+              >
+                <span class="material-symbols-outlined" style="font-size: 14px">language</span>
+                Portfolio
+              </a>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Layout 2 cols: content + side actions -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="lg:col-span-2 space-y-5">
+          <!-- Summary -->
+          <article *ngIf="p.summary" class="glass-strong rounded-2xl p-6">
+            <h2 class="profile-section-title">Resumen profesional</h2>
+            <p class="text-sm text-bone leading-relaxed whitespace-pre-line max-w-2xl">
+              {{ p.summary }}
+            </p>
+          </article>
+
+          <!-- Skills + soft skills -->
+          <article *ngIf="skillPills().length > 0" class="glass-strong rounded-2xl p-6">
+            <h2 class="profile-section-title">Skills técnicas</h2>
+            <div class="flex flex-wrap gap-2">
+              <span *ngFor="let s of skillPills()" class="skill-pill skill-pill--tech">{{ s }}</span>
+            </div>
+
+            <ng-container *ngIf="softSkillPills().length > 0">
+              <h3 class="profile-section-title mt-6">Soft skills</h3>
+              <div class="flex flex-wrap gap-2">
+                <span *ngFor="let s of softSkillPills()" class="skill-pill skill-pill--soft">
+                  {{ s }}
+                </span>
+              </div>
+            </ng-container>
+          </article>
+
+          <!-- Experience -->
+          <article *ngIf="p.experience" class="glass-strong rounded-2xl p-6">
+            <h2 class="profile-section-title">Experiencia</h2>
+            <p class="text-sm text-bone leading-relaxed whitespace-pre-line">
+              {{ p.experience }}
+            </p>
+          </article>
+
+          <!-- Education -->
+          <article *ngIf="p.education" class="glass-strong rounded-2xl p-6">
+            <h2 class="profile-section-title">Educación</h2>
+            <p class="text-sm text-bone leading-relaxed whitespace-pre-line">
+              {{ p.education }}
+            </p>
+          </article>
+
+          <!-- Languages -->
+          <article *ngIf="p.languages" class="glass-strong rounded-2xl p-6">
+            <h2 class="profile-section-title">Idiomas</h2>
+            <p class="text-sm text-bone whitespace-pre-line">{{ p.languages }}</p>
+          </article>
+        </div>
+
+        <!-- Sidebar acciones -->
+        <aside class="space-y-4">
+          <article class="glass-strong rounded-2xl p-5 sticky-actions">
+            <h3 class="profile-section-title">Acciones</h3>
+
+            <!-- Marcar interés -->
+            <button
+              *ngIf="!hasMarkedInterest()"
+              type="button"
+              class="btn-primary w-full py-3 rounded-xl text-sm inline-flex items-center justify-center gap-2 mb-3"
+              (click)="openInterestModal()"
+            >
+              <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'FILL' 1"
+                >favorite</span>
+              Marcar interés
+            </button>
+
+            <div *ngIf="hasMarkedInterest()" class="interest-marked mb-3">
+              <div class="flex items-start gap-2">
+                <span
+                  class="material-symbols-outlined text-emerald-400 shrink-0"
+                  style="font-size: 18px; font-variation-settings: 'FILL' 1"
+                >verified</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-bone font-semibold leading-tight">Ya marcaste interés</p>
+                  <p class="text-xs text-warm-grey mt-0.5">
+                    {{ p.interest_marked_at | date: 'mediumDate' }}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="text-xs text-primary hover:underline mt-2"
+                (click)="openInterestModal()"
+              >
+                Editar mensaje
+              </button>
+            </div>
+
+            <!-- Descargar CV -->
+            <button
+              *ngIf="p.has_resume"
+              type="button"
+              class="btn-secondary w-full py-2.5 rounded-xl text-sm inline-flex items-center justify-center gap-2 disabled:opacity-60"
+              [disabled]="isDownloading()"
+              (click)="downloadResume()"
+            >
+              <span class="material-symbols-outlined" style="font-size: 16px">download</span>
+              {{ isDownloading() ? 'Descargando…' : 'Descargar CV' }}
+            </button>
+
+            <p *ngIf="!p.has_resume" class="text-xs text-warm-grey text-center mt-2">
+              Este profesional no subió CV adjunto.
+            </p>
+
+            <p class="text-[11px] text-dim leading-relaxed mt-5 pt-4 border-t border-white/[0.06]">
+              Al marcar interés, le notificamos al profesional. Si responde positivo, verás su
+              contacto en tu inbox (próximamente).
+            </p>
+          </article>
+        </aside>
+      </div>
+    </ng-container>
+  </div>
+</section>
+
+<!-- Modal "Marcar interés" -->
+<div
+  *ngIf="isInterestModalOpen()"
+  class="interest-modal-overlay"
+  (click)="closeInterestModal()"
+>
+  <div class="interest-modal glass-strong" (click)="$event.stopPropagation()">
+    <header class="flex items-start justify-between gap-2 mb-3">
+      <div>
+        <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold">Marcar interés</p>
+        <h2 class="text-lg font-semibold text-bone">
+          {{ hasMarkedInterest() ? 'Editar tu mensaje' : 'Contactar a este profesional' }}
+        </h2>
+      </div>
+      <button
+        type="button"
+        class="interest-modal-close"
+        (click)="closeInterestModal()"
+        aria-label="Cerrar"
+      >
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </header>
+
+    <p class="text-sm text-warm-grey mb-3">
+      El profesional recibirá una notificación con el nombre de tu empresa y tu responsable. El
+      mensaje es opcional pero ayuda a contextualizar.
+    </p>
+
+    <label class="field-label" for="interest-msg">Mensaje (opcional)</label>
+    <textarea
+      id="interest-msg"
+      rows="4"
+      maxlength="400"
+      class="field-input"
+      placeholder="Buscamos un perfil como el tuyo para un rol de…"
+      [(ngModel)]="interestMessage"
+      [disabled]="isSubmittingInterest()"
+    ></textarea>
+    <p class="text-xs text-dim mt-1 text-right">{{ interestMessage.length }} / 400</p>
+
+    <div class="flex justify-end gap-2 mt-5">
+      <button
+        type="button"
+        class="btn-secondary py-2 px-4 rounded-lg text-sm"
+        (click)="closeInterestModal()"
+        [disabled]="isSubmittingInterest()"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="btn-primary py-2 px-5 rounded-lg text-sm inline-flex items-center gap-1"
+        (click)="submitInterest()"
+        [disabled]="isSubmittingInterest()"
+      >
+        <span *ngIf="!isSubmittingInterest()">
+          {{ hasMarkedInterest() ? 'Actualizar' : 'Enviar interés' }}
+        </span>
+        <span *ngIf="isSubmittingInterest()">Guardando…</span>
+      </button>
+    </div>
+  </div>
+</div>

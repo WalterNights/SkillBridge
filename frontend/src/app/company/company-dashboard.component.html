@@ -135,9 +135,10 @@
         {{ total() === 1 ? 'profesional encontrado' : 'profesionales encontrados' }} — ordenados por match
       </p>
 
-      <article
+      <a
         *ngFor="let p of results(); trackBy: trackProfile"
-        class="profile-card glass-strong rounded-2xl p-5"
+        class="profile-card glass-strong rounded-2xl p-5 block no-underline"
+        [routerLink]="['/company/profiles', p.profile_id]"
       >
         <div class="flex flex-wrap items-start gap-4">
           <div class="profile-avatar">
@@ -192,19 +193,13 @@
           </div>
         </div>
 
-        <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-white/[0.04]">
-          <button
-            type="button"
-            class="btn-secondary py-2 px-4 rounded-lg text-sm inline-flex items-center gap-1 opacity-60 cursor-not-allowed"
-            disabled
-            title="Disponible en la próxima fase"
-          >
-            <span class="material-symbols-outlined" style="font-size: 16px">favorite</span>
-            Marcar interés
-            <span class="text-xs ml-1 opacity-70">(pronto)</span>
-          </button>
+        <div class="flex justify-end items-center gap-2 mt-4 pt-3 border-t border-white/[0.04]">
+          <span class="text-xs text-primary font-semibold inline-flex items-center gap-1">
+            Ver perfil completo
+            <span class="material-symbols-outlined" style="font-size: 14px">arrow_forward</span>
+          </span>
         </div>
-      </article>
+      </a>
     </div>
   </div>
 </section>

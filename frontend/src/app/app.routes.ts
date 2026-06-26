@@ -200,6 +200,13 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./company/company-me.component').then((m) => m.CompanyMeComponent),
           },
+          {
+            path: 'profiles/:id',
+            loadComponent: () =>
+              import('./company/company-profile-detail.component').then(
+                (m) => m.CompanyProfileDetailComponent,
+              ),
+          },
         ],
       },
     ],
