@@ -4,6 +4,8 @@ from rest_framework.routers import DefaultRouter
 from users.views import (
     AnalyzerResumeView,
     ChangePasswordView,
+    CompanyMeView,
+    CompanyRegisterView,
     CvAuditView,
     CvImproveView,
     PasswordResetRequestView,

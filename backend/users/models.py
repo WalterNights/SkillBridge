@@ -157,6 +157,26 @@ class User(AbstractUser):
         ("admin", "Admin"),
     ]
 
+    # ─── Tipo de cuenta ────────────────────────────────────────────────
+    # Distingue marketplaces: profesional busca ofertas, empresa busca
+    # profesionales. Se setea en el signup y no debería cambiar después
+    # (los flujos y datos son distintos). Default `professional` para
+    # backwards-compat: todos los users existentes son profesionales.
+    #
+    # Admin staff puede ser de cualquier tipo — `is_staff` es ortogonal.
+    ACCOUNT_TYPE_PROFESSIONAL = "professional"
+    ACCOUNT_TYPE_COMPANY = "company"
+    ACCOUNT_TYPE_CHOICES = [
+        (ACCOUNT_TYPE_PROFESSIONAL, "Profesional"),
+        (ACCOUNT_TYPE_COMPANY, "Empresa"),
+    ]
+    account_type = models.CharField(
+        max_length=12,
+        choices=ACCOUNT_TYPE_CHOICES,
+        default=ACCOUNT_TYPE_PROFESSIONAL,
+        db_index=True,
+    )
+
     rol = models.CharField(max_length=10, choices=ROL_CHOICES, default="user")
     create_at = models.DateTimeField(auto_now_add=True)
 
@@ -235,6 +255,11 @@ class UserProfile(models.Model):
     # Default True — la mayoría de los users esperan esto al registrarse;
     # se puede apagar desde /settings.
     email_alerts_enabled = models.BooleanField(default=True)
+    # Opt-IN para que las empresas puedan encontrar este perfil en el
+    # buscador de profesionales (lado marketplace empresa). Default False
+    # por privacidad: el user activa explícitamente desde Settings →
+    # Privacidad cuando quiere estar disponible.
+    visible_to_companies = models.BooleanField(default=False, db_index=True)
     # Anti dedup: cuándo le mandamos el último email de alertas. La tarea
     # diaria solo manda si el último envío fue hace más de 20h (margen
     # contra timing drift entre runs del beat).
@@ -286,3 +311,91 @@ class PasswordResetToken(models.Model):
         import secrets
 
         return "".join(str(secrets.randbelow(10)) for _ in range(8))
+
+
+class CompanyProfile(models.Model):
+    """Perfil de empresa — análogo a UserProfile pero para cuentas con
+    `account_type='company'`.
+
+    Diseño: igual que UserProfile, vivimos en una tabla separada y la
+    enlazamos 1:1 con User. Eso evita ensuciar UserProfile con campos
+    irrelevantes para profesionales (tax_id, website, etc.) y permite
+    queries específicas del lado empresa sin tocar el perfil profesional.
+
+    Privacidad: los campos `responsible_*` son la cara visible que el
+    profesional ve cuando una empresa marca interés en él (no exponemos
+    el email del User registrante directamente — el `responsible_email`
+    puede o no coincidir).
+    """
+
+    COMPANY_SIZE_CHOICES = [
+        ("1-10", "1-10 empleados"),
+        ("11-50", "11-50 empleados"),
+        ("51-200", "51-200 empleados"),
+        ("201-500", "201-500 empleados"),
+        ("501-1000", "501-1000 empleados"),
+        ("1000+", "Más de 1000 empleados"),
+    ]
+
+    user = models.OneToOneField(
+        "users.User",
+        on_delete=models.PROTECT,
+        related_name="company_profile",
+    )
+
+    # ─── Datos comerciales ────────────────────────────────────────────
+    legal_name = models.CharField(
+        max_length=120,
+        help_text="Nombre comercial o razón social.",
+    )
+    # País + ciudad (separados; queremos filtrar por país en el feed).
+    country = models.CharField(max_length=60, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    industry = models.CharField(
+        max_length=80,
+        blank=True,
+        help_text="Sector económico (Tech, Salud, Finanzas, etc.).",
+    )
+    website = models.URLField(blank=True)
+    size = models.CharField(
+        max_length=10, choices=COMPANY_SIZE_CHOICES, blank=True
+    )
+    short_description = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Pitch breve (140-200 chars) que ve el profesional.",
+    )
+    logo = models.ImageField(
+        upload_to="company_logos/",
+        null=True,
+        blank=True,
+        validators=[validate_uploaded_image],
+    )
+
+    # ─── Responsable principal ───────────────────────────────────────
+    # La persona de contacto dentro de la empresa que firma el registro.
+    # Se le muestra al profesional cuando recibe "interés" (próxima fase).
+    responsible_name = models.CharField(max_length=100)
+    responsible_role = models.CharField(
+        max_length=80,
+        help_text="Cargo (CEO, HR Lead, CTO, Recruiter, etc.).",
+    )
+    responsible_email = models.EmailField(
+        help_text=(
+            "Email del responsable. Puede coincidir con el email del User "
+            "registrante o ser distinto (ej. recruiting@empresa.com)."
+        )
+    )
+
+    create_at = models.DateTimeField(auto_now_add=True)
+    update_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            # Filtros del search del lado profesional cuando reciba
+            # "empresas interesadas" agrupadas por industria/país.
+            models.Index(fields=["country", "industry"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"Empresa: {self.legal_name}"

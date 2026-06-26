@@ -11,9 +11,11 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from users.models import PasswordResetToken, User, UserProfile
+from users.models import CompanyProfile, PasswordResetToken, User, UserProfile
 from users.serializers import (
     ChangePasswordSerializer,
+    CompanyProfileSerializer,
+    CompanyRegisterSerializer,
     PasswordResetRequestSerializer,
     PasswordResetVerifySerializer,
     UserProfileSerializer,
@@ -60,6 +62,130 @@ class UserRegisterView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@method_decorator(ratelimit(key="ip", rate="5/m", method="POST", block=True), name="post")
+class CompanyRegisterView(APIView):
+    """POST /api/companies/register/ — registro de cuenta empresa.
+
+    Flow:
+      1. Valida el payload (datos User + CompanyProfile en una sola request).
+      2. En transacción crea User(account_type=company) + CompanyProfile.
+      3. Devuelve el shape del CompanyProfileSerializer (incluye User
+         anidado read-only).
+
+    SEGURIDAD:
+      - account_type se fuerza a `company` desde el view — NO se acepta
+        del cliente.
+      - rate-limit 5/min/IP (mismo que UserRegisterView).
+      - El username del User se deriva del email (parte antes del @ +
+        sufijo aleatorio si choca con uno existente). La empresa nunca
+        ve el username — la auth posterior usa email/password vía el
+        endpoint /token/login/.
+    """
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from django.db import transaction
+        import secrets
+
+        serializer = CompanyRegisterSerializer(data=request.data)
+        if not serializer.is_valid():
+            # Si el email ya existe, generalizamos para no filtrar
+            # existencia de cuenta (anti enumeration). Otros campos
+            # devuelven detail específico.
+            if "email" in serializer.errors:
+                return Response(
+                    {"error": "No pudimos crear la cuenta con esos datos."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        email = data["email"]
+
+        # Username: parte antes del @ + sufijo si choca. Esto no afecta
+        # al user-facing (siempre logueamos por email), solo cumple el
+        # constraint unique del modelo User.
+        base_username = email.split("@", 1)[0][:120]
+        username = base_username
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}-{secrets.token_hex(2)}"[:150]
+
+        with transaction.atomic():
+            user = User.objects.create(
+                username=username,
+                email=email,
+                account_type=User.ACCOUNT_TYPE_COMPANY,
+            )
+            user.set_password(data["password"])
+            user.save()
+
+            company = CompanyProfile.objects.create(
+                user=user,
+                legal_name=data["legal_name"],
+                country=data.get("country", ""),
+                city=data.get("city", ""),
+                industry=data.get("industry", ""),
+                website=data.get("website", ""),
+                size=data.get("size", ""),
+                short_description=data.get("short_description", ""),
+                responsible_name=data["responsible_name"],
+                responsible_role=data["responsible_role"],
+                responsible_email=data["responsible_email"],
+            )
+
+        return Response(
+            {
+                "message": "Empresa registrada exitosamente.",
+                "data": CompanyProfileSerializer(company).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class CompanyMeView(APIView):
+    """GET/PATCH /api/companies/me/ — perfil de la empresa logueada.
+
+    GET devuelve el CompanyProfile del request.user.
+    PATCH actualiza campos editables. account_type / user son inmutables.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def _get_company(self, request):
+        if request.user.account_type != User.ACCOUNT_TYPE_COMPANY:
+            return None
+        try:
+            return request.user.company_profile
+        except CompanyProfile.DoesNotExist:
+            return None
+
+    def get(self, request):
+        company = self._get_company(request)
+        if company is None:
+            return Response(
+                {"error": "account_type_mismatch",
+                 "detail": "Esta cuenta no es de tipo empresa."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return Response(CompanyProfileSerializer(company).data)
+
+    def patch(self, request):
+        company = self._get_company(request)
+        if company is None:
+            return Response(
+                {"error": "account_type_mismatch",
+                 "detail": "Esta cuenta no es de tipo empresa."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        serializer = CompanyProfileSerializer(
+            company, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 @method_decorator(
@@ -362,12 +488,30 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # admin (staff) de super-admin (settings de sistema).
         data["is_staff"] = user.is_staff
         data["is_superuser"] = user.is_superuser
+        # Tipo de cuenta — el frontend lo usa para decidir qué AppShell /
+        # sidebar / redirect post-login mostrar. Necesario en el payload
+        # del login (no en cada request) porque la decisión de routing
+        # es síncrona al recibir el token.
+        data["account_type"] = user.account_type
 
-        # Mismo gate que el endpoint /profiles/check/ — más realista
-        # que `number_id is not None`: ese campo es opcional en el
-        # modelo y el form no siempre lo manda, así que muchos perfiles
-        # con datos válidos quedaban marcados como incompletos y el
-        # frontend bouncea al wizard de /profile en cada login.
+        # Las cuentas empresa NO tienen UserProfile — tienen CompanyProfile.
+        # Los campos del payload se llenan desde el modelo apropiado.
+        if user.account_type == User.ACCOUNT_TYPE_COMPANY:
+            self._fill_company_data(data, user)
+        else:
+            self._fill_professional_data(data, user)
+
+        return data
+
+    def _fill_professional_data(self, data: dict, user) -> None:
+        """Completa el payload JWT para cuentas profesional.
+
+        Mismo gate que el endpoint /profiles/check/ — más realista
+        que `number_id is not None`: ese campo es opcional en el
+        modelo y el form no siempre lo manda, así que muchos perfiles
+        con datos válidos quedaban marcados como incompletos y el
+        frontend bouncea al wizard de /profile en cada login.
+        """
         profile = ProfileService.get_profile_by_user(user)
         if profile:
             data["is_profile_complete"] = bool(
@@ -378,13 +522,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 and profile.professional_title
             )
             data["user_name"] = profile.first_name
-            # Sumamos professional_title al payload del login para que el
-            # frontend pueda inferir la profesión del usuario sin un
-            # roundtrip extra a /profiles/ — usado al menos por el widget
-            # de tips del sidebar para pedir tips de su vertical.
             data["professional_title"] = profile.professional_title or ""
-            # URL absoluta de la foto para el avatar del topbar. None si
-            # el user no subió foto — el frontend cae al initial.
             request = self.context.get("request")
             if profile.photo and request is not None:
                 data["profile_photo"] = request.build_absolute_uri(profile.photo.url)
@@ -395,7 +533,34 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             data["professional_title"] = ""
             data["profile_photo"] = ""
 
-        return data
+    def _fill_company_data(self, data: dict, user) -> None:
+        """Completa el payload JWT para cuentas empresa.
+
+        Reusa las mismas keys del lado profesional para no romper el
+        contrato del frontend: `is_profile_complete`, `user_name`,
+        `profile_photo`. `professional_title` no aplica acá (queda en "").
+        """
+        try:
+            company = user.company_profile
+        except CompanyProfile.DoesNotExist:
+            data["is_profile_complete"] = False
+            data["user_name"] = user.username
+            data["professional_title"] = ""
+            data["profile_photo"] = ""
+            return
+
+        data["is_profile_complete"] = bool(
+            company.legal_name and company.responsible_name and company.responsible_role
+        )
+        # `user_name` lo usa el topbar / dropdown — para empresa mostramos
+        # el nombre comercial, no el del registrante.
+        data["user_name"] = company.legal_name
+        data["professional_title"] = company.industry or ""
+        request = self.context.get("request")
+        if company.logo and request is not None:
+            data["profile_photo"] = request.build_absolute_uri(company.logo.url)
+        else:
+            data["profile_photo"] = ""
 
 
 @method_decorator(ratelimit(key="ip", rate="5/m", method="POST", block=True), name="post")

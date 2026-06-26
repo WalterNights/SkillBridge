@@ -1,18 +1,27 @@
 from rest_framework import serializers
 
-from users.models import PasswordResetToken, User, UserProfile, strip_image_metadata
+from users.models import (
+    CompanyProfile,
+    PasswordResetToken,
+    User,
+    UserProfile,
+    strip_image_metadata,
+)
 
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    # SEGURIDAD: `rol`, `is_staff` e `is_superuser` son read-only para
-    # prevenir mass-assignment desde el endpoint público de register.
-    # Sin esto, cualquiera podía POSTear con `{"is_staff": true}` y
-    # crearse cuenta privilegiada. El toggle de roles vive en su
-    # propio endpoint admin-gated (PATCH /dashboard/users/{id}/role/).
+    # SEGURIDAD: `rol`, `is_staff`, `is_superuser` y `account_type` son
+    # read-only para prevenir mass-assignment desde el endpoint público
+    # de register. Sin esto, cualquiera podía POSTear con `{"is_staff":
+    # true}` y crearse cuenta privilegiada. El toggle de roles vive en
+    # su propio endpoint admin-gated (PATCH /dashboard/users/{id}/role/).
+    # `account_type` se setea en el endpoint de registro correspondiente
+    # (UserRegisterView → professional, CompanyRegisterView → company).
     rol = serializers.CharField(read_only=True)
     is_staff = serializers.BooleanField(read_only=True)
     is_superuser = serializers.BooleanField(read_only=True)
+    account_type = serializers.CharField(read_only=True)
 
     class Meta:
         model = User
@@ -24,6 +33,7 @@ class UserSerializer(serializers.ModelSerializer):
             "rol",
             "is_staff",
             "is_superuser",
+            "account_type",
         ]
 
     def create(self, validate_data):
@@ -65,6 +75,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "soft_skills",
             "languages",
             "email_alerts_enabled",
+            "visible_to_companies",
         ]
         # `last_alert_sent_at` no se expone — es contador interno de la
         # tarea de alertas, no debería editarse desde el cliente.
@@ -211,3 +222,91 @@ class ChangePasswordSerializer(serializers.Serializer):
                 {"new_password": "La nueva contraseña debe ser distinta a la actual."}
             )
         return data
+
+
+# =============================================================================
+# CompanyProfile — lado empresa del marketplace
+# =============================================================================
+
+
+class CompanyProfileSerializer(serializers.ModelSerializer):
+    """Vista completa del perfil de empresa — usada para GET /companies/me/
+    y para el PATCH de edición."""
+
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = CompanyProfile
+        fields = [
+            "id",
+            "user",
+            "legal_name",
+            "country",
+            "city",
+            "industry",
+            "website",
+            "size",
+            "short_description",
+            "logo",
+            "responsible_name",
+            "responsible_role",
+            "responsible_email",
+            "create_at",
+            "update_at",
+        ]
+        read_only_fields = ["create_at", "update_at"]
+
+
+class CompanyRegisterSerializer(serializers.Serializer):
+    """Input del POST /api/companies/register/.
+
+    Crea User + CompanyProfile en una sola transacción. El username del
+    User se deriva del email (parte antes del @) — la empresa nunca lo
+    ve, pero Django lo necesita unique.
+
+    SEGURIDAD:
+      - account_type se fuerza a `company` en el view, NO se acepta del
+        cliente (defensa contra mass-assignment).
+      - `is_staff`, `is_superuser`, `rol` jamás aparecen acá — no son
+        seteables desde signup.
+    """
+
+    # ─── User auth ──────────────────────────────────────────────────
+    email = serializers.EmailField()
+    password = serializers.CharField(
+        min_length=8, write_only=True, style={"input_type": "password"}
+    )
+
+    # ─── Company data ────────────────────────────────────────────────
+    legal_name = serializers.CharField(max_length=120, trim_whitespace=True)
+    country = serializers.CharField(
+        max_length=60, required=False, allow_blank=True, default=""
+    )
+    city = serializers.CharField(
+        max_length=100, required=False, allow_blank=True, default=""
+    )
+    industry = serializers.CharField(
+        max_length=80, required=False, allow_blank=True, default=""
+    )
+    website = serializers.URLField(required=False, allow_blank=True, default="")
+    size = serializers.ChoiceField(
+        choices=[c[0] for c in CompanyProfile.COMPANY_SIZE_CHOICES],
+        required=False,
+        allow_blank=True,
+        default="",
+    )
+    short_description = serializers.CharField(
+        max_length=200, required=False, allow_blank=True, default=""
+    )
+
+    # ─── Responsable ─────────────────────────────────────────────────
+    responsible_name = serializers.CharField(max_length=100, trim_whitespace=True)
+    responsible_role = serializers.CharField(max_length=80, trim_whitespace=True)
+    responsible_email = serializers.EmailField()
+
+    def validate_email(self, value: str) -> str:
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError(
+                "Ya existe una cuenta con este correo electrónico."
+            )
+        return value.lower()
