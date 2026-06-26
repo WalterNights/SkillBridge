@@ -1,75 +1,210 @@
 <section class="px-4 lg:px-8 py-8 lg:py-10">
-  <div class="max-w-5xl mx-auto">
-    <!-- Header con saludo -->
-    <header class="mb-7">
+  <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <header class="mb-6">
       <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-2">Empresa</p>
       <h1 class="text-3xl lg:text-4xl font-black text-bone tracking-tight leading-tight">
-        Bienvenido<span *ngIf="company() as c">, {{ c.legal_name }}</span>
+        Buscar profesionales
       </h1>
       <p class="text-sm text-warm-grey mt-2">
-        Desde acá vas a poder buscar profesionales que calcen con los criterios de tu empresa.
+        Definí qué buscás. Te mostramos profesionales que matchean con tus criterios, ordenados por
+        porcentaje de coincidencia. Solo aparecen los que optaron por ser visibles para empresas.
       </p>
     </header>
 
-    <!-- Card de bienvenida + CTA al próximo feature -->
-    <article class="glass-strong rounded-2xl p-8 mb-6 text-center">
+    <!-- Form de criterios -->
+    <article class="glass-strong rounded-2xl p-5 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="field-label" for="c-skills">Skills requeridas</label>
+          <input
+            id="c-skills"
+            type="text"
+            class="field-input"
+            placeholder="react, typescript, node…"
+            [ngModel]="criteria().skills_required"
+            (ngModelChange)="updateCriteria('skills_required', $event)"
+          />
+          <p class="text-xs text-dim mt-1">Separá por coma.</p>
+        </div>
+
+        <div>
+          <label class="field-label" for="c-title">Puesto que buscás llenar</label>
+          <input
+            id="c-title"
+            type="text"
+            class="field-input"
+            placeholder="Senior Frontend Developer"
+            [ngModel]="criteria().target_title"
+            (ngModelChange)="updateCriteria('target_title', $event)"
+          />
+        </div>
+
+        <div>
+          <label class="field-label" for="c-country">País (opcional)</label>
+          <input
+            id="c-country"
+            type="text"
+            class="field-input"
+            placeholder="Colombia, México…"
+            [ngModel]="criteria().country"
+            (ngModelChange)="updateCriteria('country', $event)"
+          />
+        </div>
+
+        <div>
+          <label class="field-label" for="c-min">
+            Match mínimo
+            <span class="text-primary font-bold ml-1 tabular-nums">{{ criteria().min_match }}%</span>
+          </label>
+          <input
+            id="c-min"
+            type="range"
+            min="0"
+            max="100"
+            step="5"
+            class="match-range"
+            [ngModel]="criteria().min_match"
+            (ngModelChange)="updateCriteria('min_match', $event)"
+          />
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-end gap-3 mt-5 pt-4 border-t border-white/[0.06]">
+        <button
+          type="button"
+          class="btn-secondary py-2 px-4 rounded-lg text-sm"
+          (click)="clear()"
+          [disabled]="isLoading()"
+        >
+          Limpiar
+        </button>
+        <button
+          type="button"
+          class="btn-primary py-2.5 px-5 rounded-lg text-sm inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          (click)="search()"
+          [disabled]="!canSearch() || isLoading()"
+        >
+          <span class="material-symbols-outlined" style="font-size: 18px">search</span>
+          {{ isLoading() ? 'Buscando…' : 'Buscar profesionales' }}
+        </button>
+      </div>
+    </article>
+
+    <!-- Empty inicial -->
+    <article
+      *ngIf="!hasSearched() && !isLoading()"
+      class="glass-strong rounded-2xl p-12 text-center"
+    >
       <span
         class="inline-flex w-16 h-16 rounded-2xl bg-primary/15 items-center justify-center mb-4 material-symbols-outlined text-primary"
         style="font-size: 32px; font-variation-settings: 'FILL' 1"
-      >search</span>
+      >person_search</span>
+      <h2 class="text-lg font-semibold text-bone mb-1">Definí los criterios y buscá</h2>
+      <p class="text-sm text-warm-grey max-w-md mx-auto">
+        Ingresá al menos las skills que buscás o el puesto que querés llenar. El sistema te muestra
+        profesionales con match% ordenados de mayor a menor.
+      </p>
+    </article>
 
-      <h2 class="text-xl font-bold text-bone mb-2">Buscar profesionales</h2>
-      <p class="text-sm text-warm-grey max-w-md mx-auto mb-6">
-        Estamos terminando el buscador de perfiles. Pronto vas a poder filtrar por skills,
-        seniority y ubicación, y ver cards con porcentaje de match contra los criterios que definas.
+    <!-- Error -->
+    <article *ngIf="errorMessage()" class="glass-strong rounded-2xl p-6 text-center">
+      <p class="text-sm text-danger">{{ errorMessage() }}</p>
+    </article>
+
+    <!-- Empty post-search -->
+    <article
+      *ngIf="hasSearched() && !isLoading() && !errorMessage() && results().length === 0"
+      class="glass-strong rounded-2xl p-12 text-center"
+    >
+      <span
+        class="inline-flex w-14 h-14 rounded-full bg-warm-grey/15 items-center justify-center mb-4 material-symbols-outlined text-warm-grey"
+        style="font-size: 26px"
+      >search_off</span>
+      <h3 class="text-base font-semibold text-bone mb-1">Sin profesionales visibles</h3>
+      <p class="text-sm text-warm-grey max-w-md mx-auto">
+        No encontramos perfiles con tus criterios. Probá bajar el match mínimo o ampliar las skills.
+        Recordá que solo aparecen profesionales que optaron por ser visibles para empresas.
+      </p>
+    </article>
+
+    <!-- Resultados -->
+    <div *ngIf="results().length > 0" class="space-y-3">
+      <p class="text-xs text-warm-grey px-1">
+        <span class="text-bone font-semibold">{{ total() }}</span>
+        {{ total() === 1 ? 'profesional encontrado' : 'profesionales encontrados' }} — ordenados por match
       </p>
 
-      <button
-        type="button"
-        class="btn-primary py-3 px-6 rounded-xl text-sm inline-flex items-center gap-2 opacity-60 cursor-not-allowed"
-        disabled
-        title="Disponible en la próxima fase"
+      <article
+        *ngFor="let p of results(); trackBy: trackProfile"
+        class="profile-card glass-strong rounded-2xl p-5"
       >
-        <span class="material-symbols-outlined" style="font-size: 18px">person_search</span>
-        Buscar profesionales
-        <span class="text-xs ml-1 opacity-80">(pronto)</span>
-      </button>
-    </article>
+        <div class="flex flex-wrap items-start gap-4">
+          <div class="profile-avatar">
+            <img *ngIf="p.photo_url" [src]="p.photo_url" alt="" />
+            <span *ngIf="!p.photo_url">{{ initials(p) }}</span>
+          </div>
 
-    <!-- Resumen del perfil empresa -->
-    <article *ngIf="company() as c" class="glass-strong rounded-2xl p-6">
-      <header class="flex items-center justify-between mb-4">
-        <div>
-          <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold">Tu empresa</p>
-          <h3 class="text-lg font-semibold text-bone">{{ c.legal_name }}</h3>
-        </div>
-        <a
-          routerLink="/company/me"
-          class="text-xs text-primary font-semibold hover:underline underline-offset-4 inline-flex items-center gap-1"
-        >
-          Editar perfil
-          <span class="material-symbols-outlined" style="font-size: 14px">arrow_forward</span>
-        </a>
-      </header>
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
+              <h3 class="text-base font-semibold text-bone leading-snug">
+                {{ p.first_name }} {{ p.last_name }}
+              </h3>
+              <span *ngIf="p.professional_title" class="profession-tag">
+                {{ p.professional_title }}
+              </span>
+            </div>
 
-      <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div *ngIf="c.industry">
-          <dt class="text-xs uppercase tracking-[0.1em] text-warm-grey font-semibold mb-1">Industria</dt>
-          <dd class="text-sm text-bone">{{ c.industry }}</dd>
+            <p class="text-sm text-warm-grey flex flex-wrap items-center gap-x-3 gap-y-0.5">
+              <span *ngIf="p.city" class="inline-flex items-center gap-1">
+                <span class="material-symbols-outlined" style="font-size: 14px">location_on</span>
+                {{ p.city }}
+              </span>
+            </p>
+
+            <p *ngIf="p.summary" class="text-sm text-warm-grey mt-2 leading-relaxed max-w-2xl">
+              {{ p.summary }}<span *ngIf="p.summary.length === 240">…</span>
+            </p>
+
+            <!-- Skills overlap -->
+            <div class="flex flex-wrap gap-2 mt-3">
+              <span
+                *ngFor="let s of p.matched_skills.slice(0, 8)"
+                class="skill-pill skill-pill--match"
+              >
+                {{ s }}
+              </span>
+              <span
+                *ngFor="let s of p.missing_skills.slice(0, 4)"
+                class="skill-pill skill-pill--missing"
+              >
+                {{ s }}
+              </span>
+            </div>
+          </div>
+
+          <div class="profile-card__match" [attr.data-tone]="matchColor(p.match_percentage)">
+            <p class="text-xs uppercase tracking-[0.1em] font-bold opacity-80">Match</p>
+            <p class="text-3xl font-black tabular-nums leading-none mt-1">{{ p.match_percentage }}%</p>
+            <p class="text-[10px] uppercase tracking-[0.1em] opacity-70 mt-2">
+              {{ p.matched_skills.length }}/{{ p.matched_skills.length + p.missing_skills.length }} skills
+            </p>
+          </div>
         </div>
-        <div *ngIf="c.city">
-          <dt class="text-xs uppercase tracking-[0.1em] text-warm-grey font-semibold mb-1">Ciudad</dt>
-          <dd class="text-sm text-bone">{{ c.city }}</dd>
+
+        <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-white/[0.04]">
+          <button
+            type="button"
+            class="btn-secondary py-2 px-4 rounded-lg text-sm inline-flex items-center gap-1 opacity-60 cursor-not-allowed"
+            disabled
+            title="Disponible en la próxima fase"
+          >
+            <span class="material-symbols-outlined" style="font-size: 16px">favorite</span>
+            Marcar interés
+            <span class="text-xs ml-1 opacity-70">(pronto)</span>
+          </button>
         </div>
-        <div *ngIf="c.responsible_name" class="sm:col-span-2">
-          <dt class="text-xs uppercase tracking-[0.1em] text-warm-grey font-semibold mb-1">Responsable</dt>
-          <dd class="text-sm text-bone">{{ c.responsible_name }}</dd>
-        </div>
-        <div *ngIf="c.short_description" class="sm:col-span-2">
-          <dt class="text-xs uppercase tracking-[0.1em] text-warm-grey font-semibold mb-1">Sobre la empresa</dt>
-          <dd class="text-sm text-bone leading-relaxed">{{ c.short_description }}</dd>
-        </div>
-      </dl>
-    </article>
+      </article>
+    </div>
   </div>
 </section>

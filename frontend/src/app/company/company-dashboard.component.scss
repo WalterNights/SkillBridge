@@ -1,7 +1,169 @@
-// Dashboard del lado empresa — placeholder fase 1.
-// La fase 2 trae el feed de profesionales y este componente se va a
-// rediseñar al estilo de results.component (cards + filtros).
+// Feed empresa — cards de profesionales con match%.
+// Estilo inspirado en results.component (cards del lado profesional)
+// para mantener coherencia visual del lenguaje "card + match badge".
 
 :host {
   display: block;
+}
+
+// ─── Slider de match mínimo ──────────────────────────────────────────
+.match-range {
+  width: 100%;
+  appearance: none;
+  background: transparent;
+  margin: 8px 0;
+  cursor: pointer;
+
+  &::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(
+      to right,
+      rgba(249, 115, 22, 0.45) 0%,
+      rgba(249, 115, 22, 0.15) 100%
+    );
+  }
+
+  &::-moz-range-track {
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(249, 115, 22, 0.2);
+  }
+
+  &::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #f97316;
+    margin-top: -6px;
+    box-shadow: 0 2px 6px rgba(249, 115, 22, 0.4);
+    cursor: grab;
+  }
+
+  &::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #f97316;
+    border: none;
+    box-shadow: 0 2px 6px rgba(249, 115, 22, 0.4);
+    cursor: grab;
+  }
+}
+
+// ─── Cards de profesional ────────────────────────────────────────────
+.profile-card {
+  transition: border-color 200ms ease, transform 200ms ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+  }
+
+  &__match {
+    flex-shrink: 0;
+    min-width: 92px;
+    text-align: center;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid transparent;
+
+    &[data-tone='high'] {
+      color: #34d399;
+      background: rgba(52, 211, 153, 0.1);
+      border-color: rgba(52, 211, 153, 0.3);
+    }
+
+    &[data-tone='mid'] {
+      color: #f97316;
+      background: rgba(249, 115, 22, 0.1);
+      border-color: rgba(249, 115, 22, 0.3);
+    }
+
+    &[data-tone='low'] {
+      color: #8b8a85;
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+  }
+}
+
+.profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 4px 12px -2px rgba(249, 115, 22, 0.3);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.profession-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+}
+
+// ─── Skill pills (matched + missing) ─────────────────────────────────
+.skill-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  letter-spacing: 0.01em;
+
+  &--match {
+    color: #34d399;
+    background: rgba(52, 211, 153, 0.08);
+    border: 1px solid rgba(52, 211, 153, 0.25);
+  }
+
+  &--missing {
+    color: #8b8a85;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    text-decoration: line-through;
+    text-decoration-color: rgba(255, 255, 255, 0.2);
+  }
+}
+
+// ─── Botones (reusan el patrón global pero con overrides locales) ────
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #d8d6cf;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.07);
+  }
 }
