@@ -259,3 +259,208 @@ class TestVisibleToCompaniesToggle:
         assert response.status_code in (200, 201)
         user_profile.refresh_from_db()
         assert user_profile.visible_to_companies is False
+
+
+# ──────────────────────────────────────────────────────────────────────
+# SEARCH PROFILES  (Fase 2 — feed empresa)
+# ──────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestSearchProfiles:
+    URL = "/api/companies/search-profiles/"
+
+    def _make_company(self, api_client):
+        api_client.post(
+            "/api/companies/register/", _VALID_COMPANY_PAYLOAD, format="json"
+        )
+        return User.objects.get(email="hello@acme.com")
+
+    def _make_visible_professional(
+        self, django_user_model, username: str, *, title: str, skills: str, city: str = "Bogotá"
+    ):
+        user = django_user_model.objects.create_user(
+            username=username,
+            email=f"{username}@example.com",
+            password="x",
+        )
+        UserProfile.objects.create(
+            user=user,
+            first_name=username.title(),
+            last_name="Pro",
+            phone="+57",
+            city=city,
+            professional_title=title,
+            skills=skills,
+            experience="...",
+            visible_to_companies=True,
+        )
+        return user
+
+    def test_anon_is_401(self, api_client):
+        response = api_client.post(self.URL, {}, format="json")
+        assert response.status_code == 401
+
+    def test_professional_account_is_403(self, authed_client):
+        response = authed_client.post(
+            self.URL, {"skills_required": ["react"]}, format="json"
+        )
+        assert response.status_code == 403
+        assert response.json()["error"] == "account_type_mismatch"
+
+    def test_empty_criteria_returns_empty_with_flag(self, api_client):
+        company_user = self._make_company(api_client)
+        api_client.force_authenticate(user=company_user)
+        response = api_client.post(self.URL, {}, format="json")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["criteria_empty"] is True
+        assert body["results"] == []
+
+    def test_only_returns_visible_to_companies(self, api_client, django_user_model):
+        company_user = self._make_company(api_client)
+        api_client.force_authenticate(user=company_user)
+
+        visible = self._make_visible_professional(
+            django_user_model, "anna", title="Senior Frontend", skills="react, typescript"
+        )
+        # Profesional con perfil pero opt-out — NO debe aparecer.
+        hidden = django_user_model.objects.create_user(
+            username="hidden", email="hidden@example.com", password="x"
+        )
+        UserProfile.objects.create(
+            user=hidden,
+            first_name="Hidden",
+            last_name="Pro",
+            phone="+57",
+            city="Bogotá",
+            professional_title="Senior Frontend",
+            skills="react, typescript",
+            experience="...",
+            visible_to_companies=False,
+        )
+
+        response = api_client.post(
+            self.URL,
+            {"skills_required": ["react"], "target_title": "Senior Frontend"},
+            format="json",
+        )
+        assert response.status_code == 200
+        names = [r["first_name"] for r in response.json()["results"]]
+        assert "Anna" in names
+        assert "Hidden" not in names
+
+    def test_excludes_company_accounts_from_results(self, api_client, django_user_model):
+        """Otra empresa registrada NO debe aparecer en el feed aunque
+        tenga UserProfile residual."""
+        company_user = self._make_company(api_client)
+        # Visible profesional control
+        self._make_visible_professional(
+            django_user_model, "bea", title="Backend", skills="django"
+        )
+        # Otra empresa — defendemos el filter por account_type.
+        other_company = django_user_model.objects.create_user(
+            username="other-co",
+            email="other-co@example.com",
+            password="x",
+        )
+        other_company.account_type = User.ACCOUNT_TYPE_COMPANY
+        other_company.save(update_fields=["account_type"])
+        UserProfile.objects.create(
+            user=other_company,
+            first_name="Other",
+            last_name="Co",
+            phone="+57",
+            city="Bogotá",
+            professional_title="Backend",
+            skills="django",
+            experience="...",
+            visible_to_companies=True,
+        )
+
+        api_client.force_authenticate(user=company_user)
+        response = api_client.post(
+            self.URL,
+            {"skills_required": ["django"], "target_title": "Backend"},
+            format="json",
+        )
+        names = [r["first_name"] for r in response.json()["results"]]
+        assert "Bea" in names
+        assert "Other" not in names
+
+    def test_orders_by_match_desc(self, api_client, django_user_model):
+        company_user = self._make_company(api_client)
+        api_client.force_authenticate(user=company_user)
+
+        self._make_visible_professional(
+            django_user_model, "high", title="Senior Frontend",
+            skills="react, typescript, node, redux"
+        )
+        self._make_visible_professional(
+            django_user_model, "low", title="Backend",
+            skills="python, django"
+        )
+
+        response = api_client.post(
+            self.URL,
+            {"skills_required": ["react", "typescript"], "target_title": "Frontend"},
+            format="json",
+        )
+        results = response.json()["results"]
+        assert len(results) == 2
+        assert results[0]["first_name"] == "High"
+        assert results[0]["match_percentage"] >= results[1]["match_percentage"]
+
+    def test_min_match_filter(self, api_client, django_user_model):
+        company_user = self._make_company(api_client)
+        api_client.force_authenticate(user=company_user)
+
+        # Match alto
+        self._make_visible_professional(
+            django_user_model, "match",
+            title="Senior Frontend", skills="react, typescript"
+        )
+        # Match bajo
+        self._make_visible_professional(
+            django_user_model, "nope",
+            title="Backend", skills="cobol"
+        )
+
+        response = api_client.post(
+            self.URL,
+            {
+                "skills_required": ["react"],
+                "target_title": "Frontend",
+                "min_match": 50,
+            },
+            format="json",
+        )
+        names = [r["first_name"] for r in response.json()["results"]]
+        assert "Match" in names
+        assert "Nope" not in names
+
+    def test_response_does_not_expose_pii(self, api_client, django_user_model):
+        """SEGURIDAD: el feed empresa NO debe filtrar email ni teléfono.
+        Solo nombre + título + ciudad + skills + match."""
+        company_user = self._make_company(api_client)
+        api_client.force_authenticate(user=company_user)
+
+        self._make_visible_professional(
+            django_user_model, "alice",
+            title="Senior Frontend", skills="react"
+        )
+        response = api_client.post(
+            self.URL,
+            {"skills_required": ["react"], "target_title": "Frontend"},
+            format="json",
+        )
+        row = response.json()["results"][0]
+        # PII fields NO deben aparecer
+        assert "email" not in row
+        assert "phone" not in row
+        assert "number_id" not in row
+        # Datos esperados sí
+        assert row["first_name"] == "Alice"
+        assert row["professional_title"] == "Senior Frontend"
+        assert "match_percentage" in row

@@ -12,9 +12,18 @@ solo el routing está separado por dominio.
 
 from django.urls import path
 
-from users.views import CompanyMeView, CompanyRegisterView
+from users.views import (
+    CompanyMeView,
+    CompanyRegisterView,
+    CompanySearchProfilesView,
+)
 
 urlpatterns = [
     path("register/", CompanyRegisterView.as_view(), name="company-register"),
     path("me/", CompanyMeView.as_view(), name="company-me"),
+    path(
+        "search-profiles/",
+        CompanySearchProfilesView.as_view(),
+        name="company-search-profiles",
+    ),
 ]

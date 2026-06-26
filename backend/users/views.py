@@ -189,6 +189,160 @@ class CompanyMeView(APIView):
 
 
 @method_decorator(
+    # 60/h por user — protege Gemini/DB de búsquedas repetidas.
+    # Suficientemente generoso para que una empresa explore criterios
+    # distintos sin frenarse.
+    ratelimit(key="user", rate="60/h", method="POST", block=True),
+    name="post",
+)
+class CompanySearchProfilesView(APIView):
+    """POST /api/companies/search-profiles/
+
+    Busca profesionales que coincidan con criterios definidos por la
+    empresa. Reusa `JobMatchingService.calculate_match_percentage` con
+    inputs invertidos (el "job_keywords" es lo que pide la empresa, el
+    "user_skills" lo que tiene el profesional).
+
+    Privacidad:
+      - Solo se devuelven UserProfiles con `visible_to_companies=True`.
+      - El response NO incluye email ni teléfono — el contacto va por
+        un flujo de "marcar interés" (Fase 3).
+
+    Body esperado:
+      {
+        "skills_required": ["react", "node", ...],
+        "target_title": "Senior Frontend Developer",
+        "country": "CO",              # opcional, filtro extra
+        "min_match": 50,              # opcional, default 0
+        "limit": 30                   # opcional, default 30, max 100
+      }
+
+    Devuelve lista ordenada por match desc.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Gate por account_type — el endpoint no tiene sentido para
+        # profesional. Defensa en profundidad además del frontend.
+        if request.user.account_type != User.ACCOUNT_TYPE_COMPANY:
+            return Response(
+                {
+                    "error": "account_type_mismatch",
+                    "detail": "Solo cuentas empresa pueden buscar profesionales.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # ── Parseo defensivo del body ───────────────────────────────
+        data = request.data or {}
+
+        skills_required_raw = data.get("skills_required", [])
+        if isinstance(skills_required_raw, str):
+            # Aceptamos tanto array como string separado por coma para
+            # facilitar el debugging desde curl/postman.
+            skills_required = [s.strip() for s in skills_required_raw.split(",") if s.strip()]
+        elif isinstance(skills_required_raw, list):
+            skills_required = [str(s).strip() for s in skills_required_raw if str(s).strip()]
+        else:
+            skills_required = []
+
+        target_title = str(data.get("target_title", "")).strip()
+        country = str(data.get("country", "")).strip()
+
+        try:
+            min_match = int(data.get("min_match", 0))
+        except (TypeError, ValueError):
+            min_match = 0
+        min_match = max(0, min(min_match, 100))
+
+        try:
+            limit = int(data.get("limit", 30))
+        except (TypeError, ValueError):
+            limit = 30
+        limit = max(1, min(limit, 100))
+
+        # Sin skills ni título → no se puede calcular match. Devolvemos
+        # lista vacía (no 400) porque el frontend puede pegarle al
+        # endpoint con criterios sin completar (autosave/preview).
+        if not skills_required and not target_title:
+            return Response(
+                {"results": [], "total": 0, "criteria_empty": True},
+                status=status.HTTP_200_OK,
+            )
+
+        # ── Query base — solo perfiles opt-in ───────────────────────
+        from jobs.services.matching_service import JobMatchingService
+
+        qs = (
+            UserProfile.objects.filter(visible_to_companies=True)
+            .select_related("user")
+            .filter(user__account_type=User.ACCOUNT_TYPE_PROFESSIONAL)
+        )
+        if country:
+            # El UserProfile no tiene field `country` literal — usa `city`.
+            # Para v1 hacemos icontains sobre city; al normalizar países
+            # en perfil agregamos un campo dedicado.
+            qs = qs.filter(city__icontains=country)
+
+        # ── Calcular match por perfil ──────────────────────────────
+        results = []
+        for profile in qs[:500]:  # tope hard para evitar O(N) descontrolado
+            user_skills = [s.strip() for s in (profile.skills or "").split(",") if s.strip()]
+            match = JobMatchingService.calculate_match_percentage(
+                job_keywords=skills_required,
+                user_skills=user_skills,
+                job_title=target_title or None,
+                user_title=profile.professional_title or None,
+            )
+            pct = match.get("match_percentage", 0)
+            if pct < min_match:
+                continue
+
+            request_obj = request
+            photo_url = ""
+            if profile.photo and request_obj is not None:
+                photo_url = request_obj.build_absolute_uri(profile.photo.url)
+
+            results.append({
+                "profile_id": profile.id,
+                "first_name": profile.first_name,
+                "last_name": profile.last_name,
+                "professional_title": profile.professional_title,
+                "city": profile.city,
+                "photo_url": photo_url,
+                # Resumen corto — el detalle va en Fase 3 con un endpoint
+                # separado /api/companies/profiles/{id}/ que requiere
+                # "haber marcado interés".
+                "summary": (profile.summary or "")[:240],
+                "skills_preview": user_skills[:8],
+                "matched_skills": match.get("matched_skills", []),
+                "missing_skills": match.get("missing_skills", []),
+                "match_percentage": pct,
+                "title_score": match.get("title_score"),
+                "skill_score": match.get("skill_score"),
+            })
+
+        # Sort por match desc, después por título score como desempate.
+        results.sort(
+            key=lambda r: (r["match_percentage"], r.get("title_score") or 0),
+            reverse=True,
+        )
+
+        # Aplicamos limit final post-sort.
+        truncated = results[:limit]
+
+        return Response(
+            {
+                "results": truncated,
+                "total": len(results),
+                "criteria_empty": False,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+@method_decorator(
     ratelimit(key="user_or_ip", rate="10/h", method="POST", block=True), name="post"
 )
 class AnalyzerResumeView(APIView):
