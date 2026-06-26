@@ -684,3 +684,199 @@ class TestResumeDownload:
         api_client.force_authenticate(user=company_user)
         response = api_client.get(self._url(hidden.profile.id))
         assert response.status_code == 404
+
+
+# ──────────────────────────────────────────────────────────────────────
+# PROFESSIONAL INBOX  (Fase 4)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def _setup_interest(api_client, django_user_model, *, professional_username="anna"):
+    """Helper: registra empresa Acme y crea un CompanyInterest hacia
+    un professional visible. Devuelve (interest, professional_user, company_user)."""
+    company_user = _make_company_user(api_client)
+    profile = _make_visible_profile(django_user_model, professional_username)
+    api_client.force_authenticate(user=company_user)
+    api_client.post(
+        f"/api/companies/profiles/{profile.id}/interest/",
+        {"message": "Te queremos!"},
+        format="json",
+    )
+    interest = CompanyInterest.objects.get(professional=profile)
+    return interest, profile.user, company_user
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestProfessionalInboxList:
+    URL = "/api/users/me/company-interests/"
+
+    def test_anon_is_401(self, api_client):
+        response = api_client.get(self.URL)
+        assert response.status_code == 401
+
+    def test_company_account_is_403(self, api_client, django_user_model):
+        company_user = _make_company_user(api_client)
+        api_client.force_authenticate(user=company_user)
+        response = api_client.get(self.URL)
+        assert response.status_code == 403
+
+    def test_professional_sees_own_interests(self, api_client, django_user_model):
+        interest, prof_user, _ = _setup_interest(api_client, django_user_model)
+        api_client.force_authenticate(user=prof_user)
+        response = api_client.get(self.URL)
+        assert response.status_code == 200
+        body = response.json()
+        assert body["total"] == 1
+        row = body["results"][0]
+        assert row["company_legal_name"] == "Acme Inc."
+        assert row["responsible_name"] == "Jane Doe"
+        assert row["status"] == "pending"
+        # Email NO debe aparecer en status=pending (privacidad)
+        assert row["responsible_email"] == ""
+
+    def test_email_revealed_only_when_accepted(self, api_client, django_user_model):
+        interest, prof_user, _ = _setup_interest(api_client, django_user_model)
+        # Aceptar
+        interest.status = CompanyInterest.STATUS_ACCEPTED
+        interest.save(update_fields=["status"])
+
+        api_client.force_authenticate(user=prof_user)
+        response = api_client.get(self.URL)
+        row = response.json()["results"][0]
+        assert row["responsible_email"] == "jane@acme.com"
+
+    def test_email_hidden_when_dismissed(self, api_client, django_user_model):
+        interest, prof_user, _ = _setup_interest(api_client, django_user_model)
+        interest.status = CompanyInterest.STATUS_DISMISSED
+        interest.save(update_fields=["status"])
+
+        api_client.force_authenticate(user=prof_user)
+        response = api_client.get(self.URL)
+        row = response.json()["results"][0]
+        assert row["responsible_email"] == ""
+
+    def test_filter_by_status(self, api_client, django_user_model):
+        interest, prof_user, _ = _setup_interest(api_client, django_user_model)
+        api_client.force_authenticate(user=prof_user)
+
+        # ?status=accepted → 0 resultados porque está pending
+        r = api_client.get(self.URL + "?status=accepted")
+        assert r.json()["total"] == 0
+
+        # ?status=pending → 1
+        r = api_client.get(self.URL + "?status=pending")
+        assert r.json()["total"] == 1
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestProfessionalInboxRespond:
+    def _url(self, interest_id: int) -> str:
+        return f"/api/users/me/company-interests/{interest_id}/respond/"
+
+    def test_company_account_is_403(self, api_client, django_user_model):
+        interest, _, _ = _setup_interest(api_client, django_user_model)
+        # ya estamos auth como company_user del _setup_interest
+        response = api_client.post(
+            self._url(interest.id), {"action": "accept"}, format="json"
+        )
+        assert response.status_code == 403
+
+    def test_cannot_respond_other_users_interest(self, api_client, django_user_model):
+        """SEGURIDAD: el profesional A NO puede responder un interest
+        dirigido al profesional B."""
+        interest, _, _ = _setup_interest(api_client, django_user_model, professional_username="anna")
+        # Crear otro profesional
+        other = django_user_model.objects.create_user(
+            username="other", email="other@example.com", password="x"
+        )
+        UserProfile.objects.create(
+            user=other, first_name="Other", last_name="X",
+            phone="+57", city="X", professional_title="X",
+            skills="", experience="", visible_to_companies=True,
+        )
+        api_client.force_authenticate(user=other)
+        response = api_client.post(
+            self._url(interest.id), {"action": "accept"}, format="json"
+        )
+        # No es 403, es 404 — el queryset filtra por ownership así que
+        # ni siquiera reconoce el id.
+        assert response.status_code == 404
+
+    def test_accept_updates_status_and_notifies_company(
+        self, api_client, django_user_model
+    ):
+        from notifications.models import Notification
+
+        interest, prof_user, company_user = _setup_interest(
+            api_client, django_user_model
+        )
+        # Cuántas notifs tenía la empresa antes
+        notifs_before = Notification.objects.filter(user=company_user).count()
+
+        api_client.force_authenticate(user=prof_user)
+        response = api_client.post(
+            self._url(interest.id), {"action": "accept"}, format="json"
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "accepted"
+        # Email se revela en el response porque ya es accepted.
+        assert response.json()["responsible_email"] == "jane@acme.com"
+
+        interest.refresh_from_db()
+        assert interest.status == CompanyInterest.STATUS_ACCEPTED
+
+        # Notificación a la empresa creada
+        assert Notification.objects.filter(user=company_user).count() == notifs_before + 1
+        notif = Notification.objects.filter(user=company_user).first()
+        assert notif.kind == "company_interest"
+        assert "Anna Pro" in notif.title  # full name del profesional
+        assert notif.metadata["professional_email"] == prof_user.email
+
+    def test_dismiss_does_not_notify_company(self, api_client, django_user_model):
+        """Privacidad: si el profesional descarta, la empresa NO recibe
+        notificación de rechazo."""
+        from notifications.models import Notification
+
+        interest, prof_user, company_user = _setup_interest(
+            api_client, django_user_model
+        )
+        notifs_before = Notification.objects.filter(user=company_user).count()
+
+        api_client.force_authenticate(user=prof_user)
+        response = api_client.post(
+            self._url(interest.id), {"action": "dismiss"}, format="json"
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "dismissed"
+        # Sin email en el response porque dismissed
+        assert response.json()["responsible_email"] == ""
+        # Sin nueva noti
+        assert Notification.objects.filter(user=company_user).count() == notifs_before
+
+    def test_invalid_action_returns_400(self, api_client, django_user_model):
+        interest, prof_user, _ = _setup_interest(api_client, django_user_model)
+        api_client.force_authenticate(user=prof_user)
+        response = api_client.post(
+            self._url(interest.id), {"action": "delete"}, format="json"
+        )
+        assert response.status_code == 400
+        assert response.json()["error"] == "invalid_action"
+
+    def test_idempotent_accept_does_not_re_notify(
+        self, api_client, django_user_model
+    ):
+        from notifications.models import Notification
+
+        interest, prof_user, company_user = _setup_interest(
+            api_client, django_user_model
+        )
+        api_client.force_authenticate(user=prof_user)
+
+        # Aceptar dos veces — la segunda no debe duplicar la noti.
+        api_client.post(self._url(interest.id), {"action": "accept"}, format="json")
+        first_count = Notification.objects.filter(user=company_user).count()
+        api_client.post(self._url(interest.id), {"action": "accept"}, format="json")
+        second_count = Notification.objects.filter(user=company_user).count()
+        assert second_count == first_count

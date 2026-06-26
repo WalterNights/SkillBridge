@@ -360,3 +360,66 @@ class CompanyInterestSerializer(serializers.ModelSerializer):
         model = CompanyInterest
         fields = ["id", "status", "message", "created_at", "updated_at"]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class InterestForProfessionalSerializer(serializers.ModelSerializer):
+    """Vista de un CompanyInterest desde el lado del PROFESIONAL
+    (inbox "empresas interesadas en mí").
+
+    Privacy del email del responsable:
+      - status=pending  → email NO se devuelve. El profesional ve el
+        nombre de la empresa y un preview del mensaje, decide si
+        aceptar antes de revelar contacto.
+      - status=accepted → email visible. El profesional aceptó el
+        interés y necesita el contacto para responder por fuera.
+      - status=dismissed → email NO se devuelve. El profesional
+        decidió no continuar; no tiene sentido revelar.
+    """
+
+    company_legal_name = serializers.CharField(source="company.legal_name", read_only=True)
+    company_industry = serializers.CharField(source="company.industry", read_only=True)
+    company_city = serializers.CharField(source="company.city", read_only=True)
+    company_country = serializers.CharField(source="company.country", read_only=True)
+    company_website = serializers.CharField(source="company.website", read_only=True)
+    company_short_description = serializers.CharField(
+        source="company.short_description", read_only=True
+    )
+    company_logo = serializers.SerializerMethodField()
+    responsible_name = serializers.CharField(source="company.responsible_name", read_only=True)
+    responsible_role = serializers.CharField(source="company.responsible_role", read_only=True)
+    # Email gated por status (solo accepted).
+    responsible_email = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CompanyInterest
+        fields = [
+            "id",
+            "status",
+            "message",
+            "created_at",
+            "updated_at",
+            "company_legal_name",
+            "company_industry",
+            "company_city",
+            "company_country",
+            "company_website",
+            "company_short_description",
+            "company_logo",
+            "responsible_name",
+            "responsible_role",
+            "responsible_email",
+        ]
+        read_only_fields = fields
+
+    def get_company_logo(self, obj: CompanyInterest) -> str:
+        request = self.context.get("request")
+        if obj.company.logo and request is not None:
+            return request.build_absolute_uri(obj.company.logo.url)
+        return ""
+
+    def get_responsible_email(self, obj: CompanyInterest) -> str:
+        # Solo revelamos el email cuando el profesional aceptó el
+        # interés. En pending/dismissed devolvemos string vacío.
+        if obj.status == CompanyInterest.STATUS_ACCEPTED:
+            return obj.company.responsible_email
+        return ""

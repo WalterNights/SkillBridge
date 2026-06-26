@@ -23,6 +23,7 @@ from users.serializers import (
     CompanyInterestSerializer,
     CompanyProfileSerializer,
     CompanyRegisterSerializer,
+    InterestForProfessionalSerializer,
     PasswordResetRequestSerializer,
     PasswordResetVerifySerializer,
     ProfileDetailForCompanySerializer,
@@ -1208,3 +1209,151 @@ class CompanyProfileInterestView(APIView):
             body,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
+
+
+# =============================================================================
+# Professional inbox: empresas interesadas en mi (FASE 4)
+# =============================================================================
+
+
+class MyCompanyInterestsListView(APIView):
+    """GET /api/users/me/company-interests/
+
+    Lista los CompanyInterest dirigidos al profesional logueado. Filtros
+    por status via query param ?status=pending|accepted|dismissed|all
+    (default: all).
+
+    El email del responsable solo aparece en interests con status=accepted
+    (privacy by design: el contacto se revela cuando el profesional acepta).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Gating: solo cuentas profesional tienen profile + received_interests.
+        if request.user.account_type != User.ACCOUNT_TYPE_PROFESSIONAL:
+            return Response(
+                {
+                    "error": "account_type_mismatch",
+                    "detail": "Este endpoint es del lado profesional.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        try:
+            profile = request.user.profile
+        except UserProfile.DoesNotExist:
+            return Response({"results": [], "total": 0}, status=status.HTTP_200_OK)
+
+        qs = (
+            CompanyInterest.objects.filter(professional=profile)
+            .select_related("company", "company__user")
+            .order_by("-created_at")
+        )
+
+        status_filter = request.query_params.get("status", "all")
+        if status_filter in (
+            CompanyInterest.STATUS_PENDING,
+            CompanyInterest.STATUS_ACCEPTED,
+            CompanyInterest.STATUS_DISMISSED,
+        ):
+            qs = qs.filter(status=status_filter)
+
+        results = InterestForProfessionalSerializer(
+            qs, many=True, context={"request": request}
+        ).data
+
+        return Response({"results": results, "total": len(results)})
+
+
+@method_decorator(
+    # 60/h por user — el profesional no debería responder más rápido
+    # que esto manualmente; protege contra scripts maliciosos.
+    ratelimit(key="user", rate="60/h", method="POST", block=True),
+    name="post",
+)
+class MyCompanyInterestRespondView(APIView):
+    """POST /api/users/me/company-interests/{interest_id}/respond/
+
+    El profesional responde un interés con `action=accept` o
+    `action=dismiss`.
+
+    Side effects:
+      - status del CompanyInterest pasa a `accepted` o `dismissed`.
+      - Si accept: dispara notificación a la empresa con
+        kind="company_interest" (reusamos para no agregar otro kind)
+        y title "{profesional} aceptó tu interés. Podés contactarlo".
+      - Si dismiss: NO notificamos a la empresa (privacidad — el
+        profesional puede ignorar sin que sea explícito).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, interest_id: int):
+        # Gating account_type
+        if request.user.account_type != User.ACCOUNT_TYPE_PROFESSIONAL:
+            return Response(
+                {"error": "account_type_mismatch"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        try:
+            profile = request.user.profile
+        except UserProfile.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        # Ownership: el interest debe pertenecer al profile del request.user
+        try:
+            interest = CompanyInterest.objects.select_related(
+                "company", "company__user", "professional", "professional__user"
+            ).get(pk=interest_id, professional=profile)
+        except CompanyInterest.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        action = str(request.data.get("action", "")).strip().lower()
+        if action == "accept":
+            new_status = CompanyInterest.STATUS_ACCEPTED
+        elif action == "dismiss":
+            new_status = CompanyInterest.STATUS_DISMISSED
+        else:
+            return Response(
+                {
+                    "error": "invalid_action",
+                    "detail": "action debe ser 'accept' o 'dismiss'.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # No-op si ya está en ese estado — devolvemos 200 con el interest
+        # pero sin disparar otra notificación.
+        if interest.status != new_status:
+            interest.status = new_status
+            interest.save(update_fields=["status", "updated_at"])
+
+            if new_status == CompanyInterest.STATUS_ACCEPTED:
+                from notifications.models import Notification
+
+                # Empresa = User registrante de la empresa.
+                company_user = interest.company.user
+                full_name = (
+                    f"{profile.first_name} {profile.last_name}".strip()
+                    or profile.user.username
+                )
+                Notification.objects.create(
+                    user=company_user,
+                    kind="company_interest",
+                    title=f"{full_name} aceptó tu interés",
+                    body=(
+                        f"Ahora podés contactarlo. Revisalo en el feed o "
+                        f"escribile a su email registrado."
+                    ),
+                    metadata={
+                        "interest_id": interest.id,
+                        "professional_id": profile.id,
+                        "professional_name": full_name,
+                        "professional_email": profile.user.email,
+                    },
+                )
+
+        data = InterestForProfessionalSerializer(
+            interest, context={"request": request}
+        ).data
+        return Response(data, status=status.HTTP_200_OK)
