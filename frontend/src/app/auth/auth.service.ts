@@ -10,6 +10,28 @@ interface RegisterData {
   password: string;
 }
 
+/** Tipo de cuenta. Refleja el backend `User.account_type`.
+ *  Mantenido en union (no enum) para que pueda llegar como string del
+ *  JWT sin coerciones raras. */
+export type AccountType = 'professional' | 'company';
+
+/** Payload del POST /api/companies/register/ — matchea el serializer
+ *  CompanyRegisterSerializer del backend. */
+export interface CompanyRegisterData {
+  email: string;
+  password: string;
+  legal_name: string;
+  country?: string;
+  city?: string;
+  industry?: string;
+  website?: string;
+  size?: string;
+  short_description?: string;
+  responsible_name: string;
+  responsible_role: string;
+  responsible_email: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -26,6 +48,15 @@ export class AuthService {
    *  se refresca hasta el próximo login — aceptable para v1 (cambios de
    *  rol son raros). */
   isAdmin$ = this.isAdminSubject.asObservable();
+
+  /** Tipo de cuenta — `professional` (busca ofertas) o `company` (busca
+   *  perfiles). Misma mecánica que `isAdmin`: viene en el JWT payload,
+   *  se cachea en storage, se refresca al re-loguear. */
+  private accountTypeSubject = new BehaviorSubject<AccountType>(
+    this.getAccountType(),
+  );
+  accountType$ = this.accountTypeSubject.asObservable();
+
   StorageKey = [
     'access_token',
     'refresh_token',
@@ -37,6 +68,7 @@ export class AuthService {
     'profile_photo',
     'is_profile_complete',
     'is_staff',
+    'account_type',
     'manual_profile_draft',
   ];
   storage: 'session' | 'local' = 'session';
@@ -85,6 +117,46 @@ export class AuthService {
    *  consumidores reactivos pueden suscribirse a `isAdmin$`. */
   isAdmin(): boolean {
     return this.getIsAdmin();
+  }
+
+  /** Lee el account_type cacheado. Default `professional` si no está
+   *  set — coincide con el default del backend y mantiene back-compat
+   *  con sesiones previas al feature de empresa. */
+  private getAccountType(): AccountType {
+    const useLocal = localStorage.getItem('storage') === 'true';
+    const raw = useLocal
+      ? localStorage.getItem('account_type')
+      : sessionStorage.getItem('account_type');
+    return raw === 'company' ? 'company' : 'professional';
+  }
+
+  /** Snapshot sincrónico — usado por guards y router redirects. Para
+   *  binding reactivo, suscribirse a `accountType$`. */
+  accountType(): AccountType {
+    return this.getAccountType();
+  }
+
+  isCompany(): boolean {
+    return this.getAccountType() === 'company';
+  }
+
+  isProfessional(): boolean {
+    return this.getAccountType() === 'professional';
+  }
+
+  /** Ruta home según account_type. Usada por:
+   *   - el redirect post-login
+   *   - el AutoGuard cuando el user logueado entra a una ruta raíz
+   *   - el AdminGuard / CompanyGuard al rechazar acceso cross-type
+   *
+   *  Profesional con `is_profile_complete=false` se manda al wizard
+   *  /profile como hoy. Para empresa el wizard equivalente se setea
+   *  durante el registro (form único), así que va directo a su
+   *  dashboard.
+   */
+  homeRouteForAccountType(): string {
+    if (this.isCompany()) return '/company/dashboard';
+    return '/dashboard';
   }
 
   updateProfileStatus(): void {
@@ -158,6 +230,14 @@ export class AuthService {
     return this.http.post(this.apiUrl, data);
   }
 
+  /** POST /api/companies/register/ — registro de cuenta empresa.
+   *  Sigue el mismo patrón que `register()`: NO loguea automáticamente;
+   *  el componente redirige a /auth/login tras 201.
+   */
+  registerCompany(data: CompanyRegisterData): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/companies/register/`, data);
+  }
+
   /**
    * @param remember Si true, persiste el token en localStorage para
    *   sobrevivir el cierre del browser. Si false (default), va a
@@ -216,9 +296,18 @@ export class AuthService {
           'is_staff',
           res.is_staff ? 'true' : 'false',
         );
+        // Tipo de cuenta — viene del JWT payload. Si el backend no lo
+        // manda (sesión cacheada de versión vieja), default `professional`
+        // para back-compat.
+        this.storageMethod.setStorageItem(
+          this.storage,
+          'account_type',
+          res.account_type === 'company' ? 'company' : 'professional',
+        );
         sessionStorage.setItem('user_email', res.email);
         this.isLoggedInSubject.next(true);
         this.isAdminSubject.next(this.getIsAdmin());
+        this.accountTypeSubject.next(this.getAccountType());
         this.updateProfileStatus();
       }),
     );
@@ -231,6 +320,7 @@ export class AuthService {
     });
     this.isLoggedInSubject.next(false);
     this.isAdminSubject.next(false);
+    this.accountTypeSubject.next('professional');
     this.updateProfileStatus();
   }
 

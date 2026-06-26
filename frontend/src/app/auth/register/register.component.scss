@@ -81,3 +81,43 @@
 .oauth-icon {
   flex-shrink: 0;
 }
+
+// ─── Selector de tipo de cuenta (step 'select') ──────────────────────
+.account-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  text-align: left;
+  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+
+  &:hover {
+    background: rgba(249, 115, 22, 0.06);
+    border-color: rgba(249, 115, 22, 0.35);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: rgba(249, 115, 22, 0.5);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.12);
+  }
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(249, 115, 22, 0.06));
+    color: #f97316;
+    border: 1px solid rgba(249, 115, 22, 0.25);
+  }
+}

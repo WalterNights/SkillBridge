@@ -11,174 +11,437 @@
 
 <!-- Minimal page header above the split. -->
 <header class="absolute top-0 inset-x-0 z-10">
-  <div class="max-w-6xl mx-auto flex items-center px-6 py-6">
+  <div class="max-w-6xl mx-auto flex items-center justify-between px-6 py-6">
     <a routerLink="/" class="text-xl font-bold text-bone tracking-tight">
       SkilTak<span class="text-primary">.</span>
     </a>
+    <button
+      *ngIf="step() !== 'select'"
+      type="button"
+      class="text-sm text-warm-grey hover:text-bone inline-flex items-center gap-1"
+      (click)="backToSelect()"
+    >
+      <span class="material-symbols-outlined" style="font-size: 16px">arrow_back</span>
+      Cambiar tipo de cuenta
+    </button>
   </div>
 </header>
 
-<!-- Split layout: form left (always visible), editorial photo + testimonial right (lg+). -->
-<main class="h-screen flex overflow-hidden">
-  <section class="flex-1 flex items-center justify-center px-6 py-14">
+<main class="min-h-screen flex flex-col lg:flex-row">
+  <!-- ─── Columna izquierda (siempre visible) ─────────────────────── -->
+  <section class="flex-1 flex items-center justify-center px-6 py-20 lg:py-14">
     <div class="w-full max-w-md">
-      <div class="text-center mb-4">
-        <h1 class="text-3xl font-black text-bone tracking-tight leading-tight mb-2">
-          Empezá <span class="hero-accent">gratis</span>
-        </h1>
-        <p class="text-sm text-warm-grey">100% gratis. Empezá en 3 minutos.</p>
-      </div>
+      <!-- ═══ Step: SELECT ═══════════════════════════════════════════ -->
+      <ng-container *ngIf="step() === 'select'">
+        <div class="text-center mb-7">
+          <h1 class="text-3xl font-black text-bone tracking-tight leading-tight mb-2">
+            ¿Qué tipo de cuenta querés crear?
+          </h1>
+          <p class="text-sm text-warm-grey">
+            Elegí cómo vas a usar SkilTak. Después del registro no se puede cambiar.
+          </p>
+        </div>
 
-      <div class="glass-strong rounded-2xl p-5">
-        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-3">
-          <!-- Username -->
-          <div>
-            <label class="field-label" for="register-username">Nombre de usuario</label>
-            <input
-              id="register-username"
-              type="text"
-              class="field-input"
-              formControlName="username"
-              placeholder="Tu usuario"
-              autocomplete="username"
-            />
-            <p
-              *ngIf="registerForm.get('username')?.invalid && registerForm.get('username')?.touched"
-              class="text-xs text-danger mt-2"
-            >
-              El nombre de usuario es obligatorio.
-            </p>
-          </div>
-
-          <!-- Email -->
-          <div>
-            <label class="field-label" for="register-email">Email</label>
-            <input
-              id="register-email"
-              type="email"
-              class="field-input"
-              formControlName="email"
-              placeholder="walter@email.com"
-              autocomplete="email"
-            />
-            <p
-              *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
-              class="text-xs text-danger mt-2"
-            >
-              Email inválido.
-            </p>
-          </div>
-
-          <!-- Password -->
-          <div>
-            <label class="field-label" for="register-password">Contraseña</label>
-            <div class="relative">
-              <input
-                id="register-password"
-                [type]="showPassword ? 'text' : 'password'"
-                class="field-input pr-12"
-                formControlName="password"
-                placeholder="Mínimo 8 caracteres"
-                autocomplete="new-password"
-              />
-              <button
-                type="button"
-                class="btn-ghost absolute right-3 top-1/2 -translate-y-1/2 p-1"
-                (click)="togglePasswordVisibility()"
-                [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-              >
-                <span class="material-symbols-outlined" style="font-size: 20px; font-variation-settings: 'wght' 300">{{
-                  showPassword ? 'visibility_off' : 'visibility'
-                }}</span>
-              </button>
+        <div class="flex flex-col gap-3">
+          <button
+            type="button"
+            class="account-card"
+            (click)="goToStep('professional')"
+          >
+            <span
+              class="account-card__icon material-symbols-outlined"
+              style="font-size: 24px; font-variation-settings: 'FILL' 1"
+            >person</span>
+            <div class="text-left">
+              <h2 class="text-base font-semibold text-bone">Soy profesional</h2>
+              <p class="text-xs text-warm-grey mt-0.5">
+                Buscás trabajo. Cargás tu CV y recibís ofertas que calzan con tu perfil.
+              </p>
             </div>
-            <p
-              *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
-              class="text-xs text-danger mt-2"
-            >
-              Mínimo 8 caracteres, una letra, un número y un símbolo.
-            </p>
-          </div>
+            <span class="material-symbols-outlined text-warm-grey" style="font-size: 20px">arrow_forward</span>
+          </button>
 
-          <!-- Confirm password -->
-          <div>
-            <label class="field-label" for="register-confirm">Confirmar contraseña</label>
-            <div class="relative">
+          <button
+            type="button"
+            class="account-card"
+            (click)="goToStep('company')"
+          >
+            <span
+              class="account-card__icon material-symbols-outlined"
+              style="font-size: 24px; font-variation-settings: 'FILL' 1"
+            >corporate_fare</span>
+            <div class="text-left">
+              <h2 class="text-base font-semibold text-bone">Soy empresa</h2>
+              <p class="text-xs text-warm-grey mt-0.5">
+                Buscás profesionales. Definís criterios y ves cards de perfiles que calzan.
+              </p>
+            </div>
+            <span class="material-symbols-outlined text-warm-grey" style="font-size: 20px">arrow_forward</span>
+          </button>
+        </div>
+
+        <p class="text-center mt-7 text-sm text-warm-grey">
+          ¿Ya tienes cuenta?
+          <a routerLink="/auth/login" class="text-bone font-semibold hover:underline underline-offset-4 ml-1">
+            Ingresar
+          </a>
+        </p>
+      </ng-container>
+
+      <!-- ═══ Step: PROFESIONAL ════════════════════════════════════════ -->
+      <ng-container *ngIf="step() === 'professional'">
+        <div class="text-center mb-4">
+          <h1 class="text-3xl font-black text-bone tracking-tight leading-tight mb-2">
+            Empezá <span class="hero-accent">gratis</span>
+          </h1>
+          <p class="text-sm text-warm-grey">100% gratis. Empezá en 3 minutos.</p>
+        </div>
+
+        <div class="glass-strong rounded-2xl p-5">
+          <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-3">
+            <div>
+              <label class="field-label" for="register-username">Nombre de usuario</label>
               <input
-                id="register-confirm"
-                [type]="showConfirmPassword ? 'text' : 'password'"
-                class="field-input pr-12"
+                id="register-username"
+                type="text"
+                class="field-input"
+                formControlName="username"
+                placeholder="Tu usuario"
+                autocomplete="username"
+              />
+              <p
+                *ngIf="registerForm.get('username')?.invalid && registerForm.get('username')?.touched"
+                class="text-xs text-danger mt-2"
+              >
+                El nombre de usuario es obligatorio.
+              </p>
+            </div>
+
+            <div>
+              <label class="field-label" for="register-email">Email</label>
+              <input
+                id="register-email"
+                type="email"
+                class="field-input"
+                formControlName="email"
+                placeholder="tu@email.com"
+                autocomplete="email"
+              />
+              <p
+                *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
+                class="text-xs text-danger mt-2"
+              >
+                Email inválido.
+              </p>
+            </div>
+
+            <div>
+              <label class="field-label" for="register-password">Contraseña</label>
+              <div class="relative">
+                <input
+                  id="register-password"
+                  [type]="showPassword ? 'text' : 'password'"
+                  class="field-input pr-10"
+                  formControlName="password"
+                  placeholder="Mínimo 8 caracteres"
+                  autocomplete="new-password"
+                />
+                <button
+                  type="button"
+                  class="absolute top-1/2 -translate-y-1/2 right-2 w-8 h-8 inline-flex items-center justify-center text-warm-grey hover:text-bone"
+                  (click)="togglePasswordVisibility()"
+                  [attr.aria-label]="showPassword ? 'Ocultar' : 'Mostrar'"
+                >
+                  <span class="material-symbols-outlined" style="font-size: 18px">
+                    {{ showPassword ? 'visibility_off' : 'visibility' }}
+                  </span>
+                </button>
+              </div>
+              <p
+                *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
+                class="text-xs text-danger mt-2"
+              >
+                Min 8 caracteres, letras, números y un símbolo.
+              </p>
+            </div>
+
+            <div>
+              <label class="field-label" for="register-confirm">Confirmar contraseña</label>
+              <div class="relative">
+                <input
+                  id="register-confirm"
+                  [type]="showConfirmPassword ? 'text' : 'password'"
+                  class="field-input pr-10"
+                  formControlName="confirmPassword"
+                  placeholder="Repetí la contraseña"
+                  autocomplete="new-password"
+                />
+                <button
+                  type="button"
+                  class="absolute top-1/2 -translate-y-1/2 right-2 w-8 h-8 inline-flex items-center justify-center text-warm-grey hover:text-bone"
+                  (click)="toggleConfirmPasswordVisibility()"
+                  [attr.aria-label]="showConfirmPassword ? 'Ocultar' : 'Mostrar'"
+                >
+                  <span class="material-symbols-outlined" style="font-size: 18px">
+                    {{ showConfirmPassword ? 'visibility_off' : 'visibility' }}
+                  </span>
+                </button>
+              </div>
+              <p
+                *ngIf="registerForm.hasError('passwordsDoNotMatch') && registerForm.get('confirmPassword')?.touched"
+                class="text-xs text-danger mt-2"
+              >
+                Las contraseñas no coinciden.
+              </p>
+            </div>
+
+            <p *ngIf="errorMessage" class="text-xs text-danger">{{ errorMessage }}</p>
+
+            <button
+              type="submit"
+              class="btn-primary w-full py-3 rounded-xl text-sm font-semibold disabled:opacity-60"
+              [disabled]="registerForm.invalid || isLoading"
+            >
+              Crear cuenta
+            </button>
+
+            <div class="oauth-divider"><span>o</span></div>
+
+            <a [href]="linkedInLoginUrl" class="oauth-btn linkedin">
+              <svg
+                class="oauth-icon"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.063 2.063 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+                />
+              </svg>
+              Continuar con LinkedIn
+            </a>
+          </form>
+        </div>
+
+        <p class="text-center mt-4 text-sm text-warm-grey">
+          ¿Ya tienes cuenta?
+          <a routerLink="/auth/login" class="text-bone font-semibold hover:underline underline-offset-4 ml-1">
+            Ingresar
+          </a>
+        </p>
+      </ng-container>
+
+      <!-- ═══ Step: EMPRESA ═══════════════════════════════════════════ -->
+      <ng-container *ngIf="step() === 'company'">
+        <div class="text-center mb-4">
+          <h1 class="text-3xl font-black text-bone tracking-tight leading-tight mb-2">
+            Registra tu <span class="hero-accent">empresa</span>
+          </h1>
+          <p class="text-sm text-warm-grey">
+            Vas a poder buscar profesionales que calcen con tus criterios.
+          </p>
+        </div>
+
+        <div class="glass-strong rounded-2xl p-5">
+          <form [formGroup]="companyForm" (ngSubmit)="onSubmitCompany()" class="space-y-3">
+            <!-- Empresa: nombre + email + pass -->
+            <div>
+              <label class="field-label" for="c-legal-name">Nombre comercial *</label>
+              <input
+                id="c-legal-name"
+                type="text"
+                class="field-input"
+                formControlName="legal_name"
+                placeholder="Acme Inc."
+              />
+            </div>
+
+            <div>
+              <label class="field-label" for="c-email">Email corporativo *</label>
+              <input
+                id="c-email"
+                type="email"
+                class="field-input"
+                formControlName="email"
+                placeholder="hello@acme.com"
+                autocomplete="email"
+              />
+            </div>
+
+            <div>
+              <label class="field-label" for="c-pass">Contraseña *</label>
+              <div class="relative">
+                <input
+                  id="c-pass"
+                  [type]="showCompanyPassword ? 'text' : 'password'"
+                  class="field-input pr-10"
+                  formControlName="password"
+                  placeholder="Mínimo 8 caracteres"
+                  autocomplete="new-password"
+                />
+                <button
+                  type="button"
+                  class="absolute top-1/2 -translate-y-1/2 right-2 w-8 h-8 inline-flex items-center justify-center text-warm-grey hover:text-bone"
+                  (click)="toggleCompanyPasswordVisibility()"
+                  [attr.aria-label]="showCompanyPassword ? 'Ocultar' : 'Mostrar'"
+                >
+                  <span class="material-symbols-outlined" style="font-size: 18px">
+                    {{ showCompanyPassword ? 'visibility_off' : 'visibility' }}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="field-label" for="c-pass2">Confirmar contraseña *</label>
+              <input
+                id="c-pass2"
+                [type]="showCompanyPassword ? 'text' : 'password'"
+                class="field-input"
                 formControlName="confirmPassword"
                 placeholder="Repetí la contraseña"
                 autocomplete="new-password"
               />
-              <button
-                type="button"
-                class="btn-ghost absolute right-3 top-1/2 -translate-y-1/2 p-1"
-                (click)="toggleConfirmPasswordVisibility()"
-                [attr.aria-label]="showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              <p
+                *ngIf="companyForm.hasError('passwordsDoNotMatch') && companyForm.get('confirmPassword')?.touched"
+                class="text-xs text-danger mt-2"
               >
-                <span class="material-symbols-outlined" style="font-size: 20px; font-variation-settings: 'wght' 300">{{
-                  showConfirmPassword ? 'visibility_off' : 'visibility'
-                }}</span>
-              </button>
+                Las contraseñas no coinciden.
+              </p>
             </div>
-            <p
-              *ngIf="registerForm.errors?.['passwordsDoNotMatch'] && registerForm.get('confirmPassword')?.touched"
-              class="text-xs text-danger mt-2"
-            >
-              Las contraseñas no coinciden.
-            </p>
-          </div>
 
-          <!-- Backend error (duplicate email, etc) -->
-          <div
-            *ngIf="errorMessage"
-            class="text-sm text-danger bg-danger/10 border border-danger/30 rounded-lg px-4 py-3"
-          >
-            {{ errorMessage }}
-          </div>
+            <!-- Datos comerciales (opcionales) -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="field-label" for="c-country">País</label>
+                <input
+                  id="c-country"
+                  type="text"
+                  class="field-input"
+                  formControlName="country"
+                  placeholder="Colombia"
+                />
+              </div>
+              <div>
+                <label class="field-label" for="c-city">Ciudad</label>
+                <input
+                  id="c-city"
+                  type="text"
+                  class="field-input"
+                  formControlName="city"
+                  placeholder="Medellín"
+                />
+              </div>
+            </div>
 
-          <button
-            type="submit"
-            class="btn-primary w-full py-3.5 rounded-xl text-base mt-2"
-            [disabled]="registerForm.invalid || isLoading"
-          >
-            Crear cuenta
-          </button>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="field-label" for="c-industry">Industria</label>
+                <input
+                  id="c-industry"
+                  type="text"
+                  class="field-input"
+                  formControlName="industry"
+                  placeholder="Tech, Salud, Retail…"
+                />
+              </div>
+              <div>
+                <label class="field-label" for="c-size">Tamaño</label>
+                <select id="c-size" class="field-input" formControlName="size">
+                  <option value="">—</option>
+                  <option *ngFor="let o of companySizeOptions" [value]="o.value">{{ o.label }}</option>
+                </select>
+              </div>
+            </div>
 
-          <!-- Divider + OAuth alternative -->
-          <div class="oauth-divider">
-            <span>o</span>
-          </div>
-
-          <a [href]="linkedInLoginUrl" class="oauth-btn linkedin">
-            <svg
-              class="oauth-icon"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.063 2.063 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+            <div>
+              <label class="field-label" for="c-web">Sitio web</label>
+              <input
+                id="c-web"
+                type="url"
+                class="field-input"
+                formControlName="website"
+                placeholder="https://acme.com"
               />
-            </svg>
-            Continuar con LinkedIn
-          </a>
-        </form>
-      </div>
+            </div>
 
-      <p class="text-center mt-4 text-sm text-warm-grey">
-        ¿Ya tienes cuenta?
-        <a routerLink="/auth/login" class="text-bone font-semibold hover:underline underline-offset-4 ml-1">
-          Ingresar
-        </a>
-      </p>
+            <div>
+              <label class="field-label" for="c-desc">Descripción corta</label>
+              <textarea
+                id="c-desc"
+                class="field-input"
+                rows="2"
+                maxlength="200"
+                formControlName="short_description"
+                placeholder="Qué hace tu empresa (1-2 líneas)"
+              ></textarea>
+            </div>
+
+            <!-- Responsable -->
+            <div class="pt-2 border-t border-white/[0.06]">
+              <p class="text-xs uppercase tracking-[0.15em] text-warm-grey font-semibold mb-3">
+                Responsable principal
+              </p>
+
+              <div class="space-y-3">
+                <div>
+                  <label class="field-label" for="c-resp-name">Nombre *</label>
+                  <input
+                    id="c-resp-name"
+                    type="text"
+                    class="field-input"
+                    formControlName="responsible_name"
+                    placeholder="Jane Doe"
+                  />
+                </div>
+                <div>
+                  <label class="field-label" for="c-resp-role">Cargo *</label>
+                  <input
+                    id="c-resp-role"
+                    type="text"
+                    class="field-input"
+                    formControlName="responsible_role"
+                    placeholder="Head of People / CEO / Recruiter"
+                  />
+                </div>
+                <div>
+                  <label class="field-label" for="c-resp-email">Email de contacto *</label>
+                  <input
+                    id="c-resp-email"
+                    type="email"
+                    class="field-input"
+                    formControlName="responsible_email"
+                    placeholder="jane@acme.com"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <p *ngIf="errorMessage" class="text-xs text-danger">{{ errorMessage }}</p>
+
+            <button
+              type="submit"
+              class="btn-primary w-full py-3 rounded-xl text-sm font-semibold disabled:opacity-60"
+              [disabled]="companyForm.invalid || isLoading"
+            >
+              Crear cuenta empresa
+            </button>
+          </form>
+        </div>
+
+        <p class="text-center mt-4 text-sm text-warm-grey">
+          ¿Ya tienes cuenta?
+          <a routerLink="/auth/login" class="text-bone font-semibold hover:underline underline-offset-4 ml-1">
+            Ingresar
+          </a>
+        </p>
+      </ng-container>
     </div>
   </section>
 
+  <!-- ─── Columna derecha — solo en desktop ──────────────────────── -->
   <aside class="hidden lg:block w-[42%] relative">
     <div class="photo absolute inset-0">
       <img

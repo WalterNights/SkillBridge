@@ -132,6 +132,14 @@ export class LoginComponent {
               storage,
               STORAGE_KEYS.PROFILE_COMPLETE,
             ) === 'true';
+
+          // Empresa: el form de registro ya pidió todos los datos, así
+          // que el wizard de /profile no aplica — va directo a su
+          // dashboard. Profesional: si perfil incompleto, al wizard.
+          if (this.authService.isCompany()) {
+            this.router.navigate(['/company/dashboard']);
+            return;
+          }
           this.router.navigate([profileComplete ? '/dashboard' : '/profile']);
         }, 400);
       },

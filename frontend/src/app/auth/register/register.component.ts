@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
-import { AuthService } from '../auth.service';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { AuthService, CompanyRegisterData } from '../auth.service';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -15,8 +15,33 @@ import {
 import { HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../../environment/environment';
 
+/** Step que está mostrando la vista. `select` es la pantalla inicial
+ *  con dos cards; los otros dos son los forms específicos. Persistir
+ *  el step en signal permite "volver" sin perder el form ya iniciado. */
+type RegisterStep = 'select' | 'professional' | 'company';
+
+/** Catálogo de "tamaños de empresa" — debe matchear el backend
+ *  `CompanyProfile.COMPANY_SIZE_CHOICES`. */
+const COMPANY_SIZE_OPTIONS = [
+  { value: '1-10', label: '1-10 empleados' },
+  { value: '11-50', label: '11-50 empleados' },
+  { value: '51-200', label: '51-200 empleados' },
+  { value: '201-500', label: '201-500 empleados' },
+  { value: '501-1000', label: '501-1000 empleados' },
+  { value: '1000+', label: 'Más de 1000 empleados' },
+];
+
 /**
- * Registration component for new user sign-up
+ * Registro con selector inicial: profesional o empresa.
+ *
+ * Flow:
+ *   1. Step `select` — dos cards visuales.
+ *   2. Click → step `professional` (form existente) o `company` (form nuevo).
+ *   3. Submit → POST al endpoint correspondiente → redirect a /auth/login.
+ *
+ * Query param `?type=professional|company` salta directo al form
+ * apropiado — útil para deep-links desde el landing ("Soy empresa")
+ * sin pasar por la pantalla de selección.
  */
 @Component({
   selector: 'app-register',
@@ -25,37 +50,62 @@ import { environment } from '../../../environment/environment';
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss'],
 })
-export class RegisterComponent {
-  registerForm!: FormGroup;
+export class RegisterComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private titleService = inject(Title);
+
+  /** Step actual. Signal porque el HTML toma decisiones de render
+   *  según este valor — más limpio que una propiedad pública mutable. */
+  step = signal<RegisterStep>('select');
+
+  // ─── Forms ────────────────────────────────────────────────────────
+  registerForm!: FormGroup; // Profesional (mantenido idéntico al original)
+  companyForm!: FormGroup; // Nuevo — empresa
+
+  // ─── Estado UI ────────────────────────────────────────────────────
   isLoading = false;
   errorMessage = '';
   showPassword = false;
   showConfirmPassword = false;
+  showCompanyPassword = false;
+
+  readonly companySizeOptions = COMPANY_SIZE_OPTIONS;
 
   /** Mismo endpoint del backend que en login — arranca el flow OAuth
-   * con LinkedIn. Si el user nunca se registró, find_or_create lo da
-   * de alta automáticamente; si ya existe con ese email, lo linkea. */
+   * con LinkedIn. Solo aplica al form profesional. */
   readonly linkedInLoginUrl = `${environment.apiUrl}/auth/linkedin/start/`;
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router,
-    private titleService: Title,
-  ) {
+  constructor() {
     this.titleService.setTitle('SkilTak - Registro');
   }
 
-  /**
-   * Initializes component and sets up form
-   */
   ngOnInit(): void {
     this.initializeForm();
+    this.initializeCompanyForm();
+
+    // Permitir deep-link directo a un form via ?type=
+    const typeParam = this.route.snapshot.queryParamMap.get('type');
+    if (typeParam === 'professional' || typeParam === 'company') {
+      this.step.set(typeParam);
+    }
   }
 
-  /**
-   * Initializes the registration form with validators
-   */
+  // ─── Step navigation ──────────────────────────────────────────────
+
+  goToStep(next: RegisterStep): void {
+    this.errorMessage = '';
+    this.step.set(next);
+  }
+
+  backToSelect(): void {
+    this.goToStep('select');
+  }
+
+  // ─── Profesional (legacy form, intacto) ───────────────────────────
+
   private initializeForm(): void {
     this.registerForm = this.fb.group(
       {
@@ -71,31 +121,14 @@ export class RegisterComponent {
         ],
         confirmPassword: ['', Validators.required],
       },
-      { validators: [this.passwordMatchValidator()] },
+      { validators: [this.passwordMatchValidator('password', 'confirmPassword')] },
     );
   }
 
-  /**
-   * Custom validator to check if password and confirmPassword match
-   * @returns Validator function
-   */
-  passwordMatchValidator(): ValidatorFn {
-    return (group: AbstractControl): ValidationErrors | null => {
-      const password = group.get('password')?.value;
-      const confirmPassword = group.get('confirmPassword')?.value;
-      return password === confirmPassword ? null : { passwordsDoNotMatch: true };
-    };
-  }
-
-  /**
-   * Handles form submission and registration process
-   */
   onSubmit(): void {
     if (this.registerForm.invalid) return;
 
     const { username, email, password } = this.registerForm.value;
-
-    // Validate password doesn't match username or email
     if (password === username || password === email) {
       this.errorMessage = 'La contraseña no puede ser igual al nombre de usuario o correo';
       return;
@@ -111,29 +144,13 @@ export class RegisterComponent {
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading = false;
-
-        // Log full error for debugging
         console.error('Registration error:', err);
-
-        // Handle specific backend validation errors
         if (err.error && typeof err.error === 'object') {
-          if (
-            err.error.username &&
-            Array.isArray(err.error.username) &&
-            err.error.username.length > 0
-          ) {
+          if (Array.isArray(err.error.username) && err.error.username.length > 0) {
             this.errorMessage = 'El nombre de usuario ya está en uso';
-          } else if (
-            err.error.email &&
-            Array.isArray(err.error.email) &&
-            err.error.email.length > 0
-          ) {
+          } else if (Array.isArray(err.error.email) && err.error.email.length > 0) {
             this.errorMessage = 'El correo electrónico ya está registrado';
-          } else if (
-            err.error.password &&
-            Array.isArray(err.error.password) &&
-            err.error.password.length > 0
-          ) {
+          } else if (Array.isArray(err.error.password) && err.error.password.length > 0) {
             this.errorMessage = 'La contraseña no cumple con los requisitos';
           } else {
             this.errorMessage =
@@ -146,17 +163,106 @@ export class RegisterComponent {
     });
   }
 
-  /**
-   * Toggle password visibility
-   */
+  // ─── Empresa ──────────────────────────────────────────────────────
+
+  private initializeCompanyForm(): void {
+    this.companyForm = this.fb.group(
+      {
+        // Auth
+        email: ['', [Validators.required, Validators.email]],
+        password: ['', [Validators.required, Validators.minLength(8)]],
+        confirmPassword: ['', Validators.required],
+
+        // Empresa
+        legal_name: ['', [Validators.required, Validators.maxLength(120)]],
+        country: [''],
+        city: [''],
+        industry: [''],
+        website: [''],
+        size: [''],
+        short_description: ['', Validators.maxLength(200)],
+
+        // Responsable
+        responsible_name: ['', [Validators.required, Validators.maxLength(100)]],
+        responsible_role: ['', [Validators.required, Validators.maxLength(80)]],
+        responsible_email: ['', [Validators.required, Validators.email]],
+      },
+      { validators: [this.passwordMatchValidator('password', 'confirmPassword')] },
+    );
+  }
+
+  onSubmitCompany(): void {
+    this.errorMessage = '';
+    if (this.companyForm.invalid) {
+      this.companyForm.markAllAsTouched();
+      this.errorMessage = 'Revisá los campos marcados antes de continuar.';
+      return;
+    }
+
+    const v = this.companyForm.value;
+    const payload: CompanyRegisterData = {
+      email: v.email,
+      password: v.password,
+      legal_name: v.legal_name,
+      country: v.country || '',
+      city: v.city || '',
+      industry: v.industry || '',
+      website: v.website || '',
+      size: v.size || '',
+      short_description: v.short_description || '',
+      responsible_name: v.responsible_name,
+      responsible_role: v.responsible_role,
+      responsible_email: v.responsible_email,
+    };
+
+    this.isLoading = true;
+    this.authService.registerCompany(payload).subscribe({
+      next: () => {
+        setTimeout(() => {
+          this.isLoading = false;
+          this.router.navigate(['/auth/login']);
+        }, 1200);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.isLoading = false;
+        console.error('Company registration error:', err);
+        const body = err.error;
+        if (body?.error) {
+          this.errorMessage = body.error;
+        } else if (body?.responsible_email?.length) {
+          this.errorMessage =
+            'Revisa el email del responsable — el formato no es válido.';
+        } else if (body?.password?.length) {
+          this.errorMessage = 'La contraseña debe tener al menos 8 caracteres.';
+        } else if (body && typeof body === 'object') {
+          // dict de field errors → fallback genérico mostrando el primer field
+          const firstField = Object.keys(body)[0];
+          const msg = Array.isArray(body[firstField]) ? body[firstField][0] : body[firstField];
+          this.errorMessage = `${firstField}: ${msg}`;
+        } else {
+          this.errorMessage = 'Error al registrar la empresa. Intenta nuevamente.';
+        }
+      },
+    });
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────
+
+  passwordMatchValidator(passwordKey: string, confirmKey: string): ValidatorFn {
+    return (group: AbstractControl): ValidationErrors | null => {
+      const password = group.get(passwordKey)?.value;
+      const confirmPassword = group.get(confirmKey)?.value;
+      return password === confirmPassword ? null : { passwordsDoNotMatch: true };
+    };
+  }
+
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
-
-  /**
-   * Toggle confirm password visibility
-   */
   toggleConfirmPasswordVisibility(): void {
     this.showConfirmPassword = !this.showConfirmPassword;
+  }
+  toggleCompanyPasswordVisibility(): void {
+    this.showCompanyPassword = !this.showCompanyPassword;
   }
 }
