@@ -88,6 +88,28 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
         ),
     ),
     (
+        # IMPORTANTE: 'agro' va ANTES que 'health' porque "Médico
+        # Veterinario" matchea 'médico' del patrón health primero. Si
+        # cambiamos el orden, los veterinarios caen a salud humana.
+        # Caso real del cliente zootecnista (2026-06-27) que caía a
+        # 'general' y el router no encontraba portales relevantes.
+        # Cubre veterinaria animal, zootecnia, agronomía, ganadería,
+        # agroindustria y roles técnicos del sector pecuario / avícola
+        # / porcícola.
+        "agro",
+        re.compile(
+            r"\b(zootecnista|zootecnia|veterinario|veterinaria|médico veterinario|"
+            r"medico veterinario|mvz|agrónomo|agronomo|agronomía|agronomia|"
+            r"ingeniero agrónomo|ingeniero agronomo|ganadero|ganadería|ganaderia|"
+            r"agricultor|agrícola|agricola|agropecuario|agroindustria|"
+            r"agroindustrial|avicultor|avicultura|porcicultor|porcicultura|"
+            r"nutrición animal|nutricion animal|producción animal|"
+            r"produccion animal|producción pecuaria|produccion pecuaria|"
+            r"fitomejorador|agronegocios)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
         "health",
         re.compile(
             r"\b(médico|medico|doctor|enfermero|enfermera|nurse|"

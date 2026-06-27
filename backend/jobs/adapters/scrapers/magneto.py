@@ -54,8 +54,10 @@ class MagnetoScraper(JobScraper):
     portal_name = "magneto"
     description = (
         "Bolsa generalista de Colombia (Magneto365). Fuerte en operativos, "
-        "ventas, call center, salud, administrativos y técnico. Requiere "
-        "Playwright headless — puede degradar a [] si no está disponible."
+        "ventas, call center, salud, administrativos, técnico, agro y "
+        "agropecuario (empresas como clínicas veterinarias y agroindustria "
+        "publican directo acá). Requiere Playwright headless — puede "
+        "degradar a [] si no está disponible."
     )
     categories = ("all",)
 

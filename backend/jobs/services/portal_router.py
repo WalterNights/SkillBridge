@@ -60,7 +60,11 @@ _CACHE_TTL_SECONDS = 24 * 3600
 #   v3 — 2026-06-27: +Freelancer en el grupo creative del WebSearch para
 #        cubrir proyectos freelance cortos (diseñadores que toman gigs
 #        mientras buscan full-time).
-_CACHE_PREFIX = "portal_router:v3:"
+#   v4 — 2026-06-27: +categoría 'agro' al classifier + portales agro al
+#        WebSearch (AgroJobs, AgCareers) + descripciones de Computrabajo/
+#        LinkedIn/Indeed/Magneto mencionan agro/veterinaria explícito +
+#        prompt del router refinado para output JSON puro.
+_CACHE_PREFIX = "portal_router:v4:"
 
 
 @dataclass(frozen=True)
@@ -184,25 +188,25 @@ class PortalRouterService:
 
 # ---- prompt template + helpers --------------------------------------
 
-_PROMPT_TEMPLATE = """Eres un experto en bolsas de empleo de LATAM y debes decidir en qué portales tiene sentido buscar ofertas para el siguiente perfil profesional.
+_PROMPT_TEMPLATE = """Sos un experto en bolsas de empleo de LATAM. Decidí en qué portales buscar ofertas para este perfil.
 
-PERFIL DEL USUARIO
-- Título profesional: {title}
+PERFIL
+- Título: {title}
 - Skills: {skills}
 - Ciudad: {city}
 
-CATÁLOGO DE PORTALES DISPONIBLES
+CATÁLOGO
 {catalog}
 
 REGLAS
-1. Elegí ÚNICAMENTE los portales que tengan probabilidad real de cubrir este perfil. Mejor un subset corto y certero que uno amplio y ruidoso.
-2. Si el perfil es claramente NO-TECH (diseño, marketing, salud, ventas, etc.) NO incluyas portales tech-only (ej. hireline). Si es tech, sí.
-3. Para cada portal elegido, sugerí un `query` corto (1-4 palabras) optimizado para ese portal. Usá el idioma típico del portal (español para LATAM, inglés para WeWorkRemotely). Para diseñadores/marketing usá términos del oficio en español neutro ("diseñador UX", "diseñador gráfico") antes que tecnologías sueltas ("Figma", "Photoshop").
-4. El `location` para portales LATAM debe ser la ciudad o el país del usuario. Para portales globales/remotos podés pasar string vacío.
-5. No incluyas explicaciones ni texto adicional. Solo el JSON.
+1. Subset corto y certero, no amplio y ruidoso.
+2. Perfil NO-TECH (diseño, marketing, salud, ventas, agro, etc.) NO usa portales tech-only (hireline).
+3. Query corto (1-4 palabras), en el idioma del portal (ES para LATAM, EN para WeWorkRemotely). Para no-tech usá el oficio en ES neutro ("diseñador UX", "zootecnista", "veterinario") antes que herramientas sueltas.
+4. Location: ciudad o país para LATAM, vacío para globales/remotos.
 
-FORMATO DE SALIDA
-Devolvé ÚNICAMENTE un JSON array con esta forma exacta:
+OUTPUT
+Respondé SOLO con el JSON array a continuación. Sin texto antes, sin texto después, sin markdown, sin explicaciones. Si dudás, devolvé el JSON igual.
+
 [
   {{"portal": "nombre_del_portal", "query": "query corto", "location": "ciudad o pais o vacio"}}
 ]

@@ -421,6 +421,7 @@ class CompanyProfileCategoriesView(APIView):
         "finance": "Finanzas",
         "hr": "Recursos Humanos",
         "operations": "Operaciones",
+        "agro": "Agro y veterinaria",
         "health": "Salud",
         "education": "Educación",
         "legal": "Legal",

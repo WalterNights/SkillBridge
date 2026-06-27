@@ -51,9 +51,11 @@ class LinkedInGuestScraper(JobScraper):
     portal_name = "linkedin"
     description = (
         "Red profesional global. Cobertura amplia: tech, marketing, "
-        "ventas, finanzas, RRHH, ejecutivo. Más útil para perfiles "
-        "mid-senior. Puede rate-limitear o devolver 0 si la query es "
-        "muy específica en español."
+        "ventas, finanzas, RRHH, ejecutivo, agro/agronegocios y "
+        "veterinaria animal (multinacionales del sector publican "
+        "exclusivamente acá). Más útil para perfiles mid-senior. Puede "
+        "rate-limitear o devolver 0 si la query es muy específica en "
+        "español."
     )
     categories = ("all",)
 

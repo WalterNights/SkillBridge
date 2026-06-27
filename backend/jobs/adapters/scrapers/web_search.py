@@ -89,9 +89,21 @@ _JOB_SITES_CREATIVE = (
     "freelancer.com",
 )
 
+# Portales del sector agropecuario / veterinario / agroindustria.
+# Caso real (2026-06-27) del cliente zootecnista que veía 0 ofertas
+# porque ningún portal generalista del registry indexaba bien ese
+# vertical. Lista corta y curada — sumar nuevos solo si reportamos
+# alguno que falta. Pasada separada en `search()` para garantizar
+# visibilidad en SERP sin competir contra LinkedIn/Elempleo.
+_JOB_SITES_AGRO = (
+    "agrojobs.com.co",
+    "agcareers.com",
+    "agrojobs.com",
+)
+
 # Unión usada por filtros (whitelist al parsear SERP). El `_build_query`
 # usa los grupos por separado para particionar las pasadas a DDG.
-_JOB_SITES = _JOB_SITES_GENERAL + _JOB_SITES_CREATIVE
+_JOB_SITES = _JOB_SITES_GENERAL + _JOB_SITES_CREATIVE + _JOB_SITES_AGRO
 
 # Marcadores que indican que el buscador nos sirvió rate-limit o
 # captcha en vez de SERP. Si vemos cualquiera, abortamos sin reintentar.
@@ -171,6 +183,10 @@ _INDIVIDUAL_PATTERNS: dict[str, str] = {
     "dribbble.com": "/jobs/",
     # Freelancer usa /projects/<slug> para detail; /jobs es el listing.
     "freelancer.com": "/projects/",
+    # Portales agro — la mayoría usa /job/ singular o /vacante/.
+    "agrojobs.com": "/job/",
+    "agrojobs.com.co": "/job/",
+    "agcareers.com": "/job-",  # agcareers.com/job-12345
 }
 
 # Elempleo mezcla 2 esquemas de URL:
@@ -262,17 +278,17 @@ class WebSearchJobsScraper(JobScraper):
     portal_name = "websearch"
     description = (
         "Meta-scraper: usa búsqueda web (DDG) restringida a portales sin "
-        "scraper dedicado. Cubre dos grupos: tradicionales (elempleo, "
-        "bumeran, getonbrd) y CREATIVOS/FREELANCE (Domestika, Behance, "
-        "Workana, Dribbble, Freelancer) — fuente principal para perfiles "
-        "de diseño UI/UX, 3D, animación, motion graphics, video editing "
-        "y proyectos freelance cortos en LATAM. Recall medio (snippet "
-        "del SERP como summary) pero único acceso a portales nicho."
+        "scraper dedicado. Cubre tres grupos: tradicionales (elempleo, "
+        "bumeran, getonbrd), CREATIVOS/FREELANCE (Domestika, Behance, "
+        "Workana, Dribbble, Freelancer) y AGRO/VETERINARIA (AgroJobs, "
+        "AgCareers). Único acceso a portales nicho — esencial para "
+        "perfiles diseño, motion, video editing, zootecnia, veterinaria "
+        "animal, agronomía, ganadería. Recall medio (snippet del SERP)."
     )
-    # Sumamos 'design' a las categorías para que el PortalRouter lo
-    # priorice para perfiles design. 'all' se queda para que siga siendo
-    # invocado en perfiles que no caen claramente en una categoría.
-    categories = ("all", "design")
+    # Sumamos 'design' y 'agro' a las categorías para que el PortalRouter
+    # priorice este scraper en perfiles de esos verticales. 'all' se
+    # queda como fallback general.
+    categories = ("all", "design", "agro")
 
     def search(self, query: str, location: str, pages: int = 1) -> list[JobOfferData]:
         if not query:
@@ -300,6 +316,7 @@ class WebSearchJobsScraper(JobScraper):
                 ),
             ),
             ("creative", self._build_query(query, location, sites=_JOB_SITES_CREATIVE)),
+            ("agro", self._build_query(query, location, sites=_JOB_SITES_AGRO)),
         ):
             logger.info("WebSearch scrape (%s): query=%r", label, ddg_query)
             html = self._fetch_serp(ddg_query)

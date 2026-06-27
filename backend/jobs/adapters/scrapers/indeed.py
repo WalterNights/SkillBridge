@@ -44,9 +44,11 @@ class IndeedScraper(JobScraper):
     portal_name = "indeed"
     description = (
         "Agregador global con presencia fuerte en Colombia, México y "
-        "España. Generalista — sirve para casi cualquier vertical pero "
-        "depende de Playwright (puede fallar silencioso) y a veces lo "
-        "bloquea Cloudflare."
+        "España. Generalista — sirve para casi cualquier vertical "
+        "(tech, ventas, salud, agro/veterinaria, agroindustria, "
+        "nutrición animal, producción avícola/porcícola, multinacionales "
+        "del sector). Depende de Playwright (puede fallar silencioso) y "
+        "a veces lo bloquea Cloudflare."
     )
     categories = ("all",)
 

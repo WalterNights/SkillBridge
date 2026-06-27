@@ -21,6 +21,7 @@ import requests
 from jobs.adapters.scrapers.base import ScraperError
 from jobs.adapters.scrapers.web_search import (
     WebSearchJobsScraper,
+    _JOB_SITES_AGRO,
     _JOB_SITES_CREATIVE,
     _JOB_SITES_GENERAL,
     _is_individual_offer_url,
@@ -139,6 +140,19 @@ class TestBuildQuery:
         # Garantía clave: NO se mezclan los generales en esta pasada.
         assert "site:linkedin.com" not in q
         assert "site:elempleo.com" not in q
+
+    def test_agro_sites_query_only_includes_agro_portals(self):
+        """Pasada `agro` debe usar exclusivamente portales del sector
+        — sin que LinkedIn/Elempleo dominen la SERP. Caso del cliente
+        zootecnista que reportó 0 ofertas (2026-06-27)."""
+        q = WebSearchJobsScraper._build_query(
+            "zootecnista", "Bogotá", sites=_JOB_SITES_AGRO
+        )
+        assert "site:agrojobs.com" in q
+        assert "site:agcareers.com" in q
+        # Garantía: NO mezclar con generales/creativos en esta pasada.
+        assert "site:linkedin.com" not in q
+        assert "site:domestika.org" not in q
 
     def test_exclude_linkedin_filters_only_from_general(self):
         """`exclude_linkedin=True` en la pasada general debe sacar LinkedIn

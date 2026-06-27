@@ -57,7 +57,9 @@ class ComputrabajoScraper(JobScraper):
     description = (
         "Bolsa generalista líder en Colombia, México, Perú, Chile, Argentina y "
         "España. Fuerte en operativos, ventas, call center, administrativos, "
-        "salud y comercial. Cobertura tech presente pero no especializada."
+        "salud, comercial y agro/zootecnia/veterinaria (sector agropecuario "
+        "tiene buen volumen en CO y MX). Cobertura tech presente pero no "
+        "especializada."
     )
     categories = ("all",)
 
