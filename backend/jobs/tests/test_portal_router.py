@@ -1,14 +1,12 @@
 """Tests para `PortalRouterService`.
 
-Cubre los 3 paths del servicio:
-- Cache hit → no llama a Gemini.
-- Cache miss + Gemini OK → parsea JSON y cachea.
-- Cache miss + Gemini falla (sin API key / excepción / JSON inválido) →
-  fallback determinístico basado en `infer_profession_category` y las
-  `categories` de cada scraper.
-
-Mockea `google.generativeai.GenerativeModel` para no pegar a la API
-real desde CI.
+Arquitectura post-rediseño 2026-06-27:
+- `suggest_portals(profile)` (path crítico) es 100% determinístico —
+  NO llama a Gemini. Tests verifican el clasificador + matching de
+  categorías + el fallback ultra-rare cuando ningún scraper matchea.
+- `preview_with_ai(profile)` (opt-in admin/cron) sí llama Gemini.
+  Tests con mock para verificar happy path + degradación cuando
+  falla la API o el JSON viene mal.
 """
 
 from __future__ import annotations
@@ -17,7 +15,6 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
-from django.core.cache import cache
 
 from jobs.services.portal_router import (
     PortalPlan,
@@ -27,19 +24,10 @@ from jobs.services.portal_router import (
 )
 
 
-@pytest.fixture(autouse=True)
-def clear_cache():
-    """El router cachea por user_id 24h — limpiamos antes/después de
-    cada test para que no se pisen entre sí."""
-    cache.clear()
-    yield
-    cache.clear()
-
-
 @pytest.fixture
 def designer_profile(django_user_model):
     """Perfil no-tech (diseñador UX). Sirve para verificar que el
-    fallback determinístico NO sugiera Hireline (tech-only)."""
+    suggest_portals NO sugiera Hireline (tech-only)."""
     from users.models import UserProfile
 
     user = django_user_model.objects.create_user(
@@ -102,47 +90,67 @@ def test_strip_markdown_fences():
     assert _strip_markdown_fences(raw_plain) == raw_plain
 
 
-# ---- Fallback determinístico ----------------------------------------
+# ---- suggest_portals (path crítico, sin AI) -------------------------
 
 
 @pytest.mark.django_db
-class TestFallback:
-    """Sin GEMINI_API_KEY (o con Gemini caído), el router debe degradar
-    a una lista basada en categorías + portales generalistas."""
+class TestSuggestPortals:
+    """Path crítico — 100% determinístico, sin red, sin AI."""
 
-    def test_no_api_key_falls_back_to_categories(self, settings, user_profile):
-        """user_profile es Backend Developer (tech). Esperamos:
-          - hireline (tech-only) presente.
-          - portales `all` presentes (computrabajo, etc).
-        """
-        settings.GEMINI_API_KEY = ""
+    def test_tech_profile_includes_hireline_and_generalists(self, user_profile):
+        """user_profile.professional_title = 'Backend Developer' → tech.
+        Esperamos hireline (tech-only) + todos los `all`."""
         plans = PortalRouterService.suggest_portals(user_profile)
         portals = {p.portal for p in plans}
         assert "hireline" in portals  # tech matchea
         assert "computrabajo" in portals  # all matchea
-        # Query es el título completo en fallback (sin refinado)
+        # query es el título crudo (path determinístico no lo refina)
         for p in plans:
             assert p.query == "Backend Developer"
 
-    def test_designer_fallback_excludes_tech_only(self, settings, designer_profile):
+    def test_designer_profile_excludes_tech_only(self, designer_profile):
         """Diseñador NO debe disparar Hireline (tech-only). Sí debe
         incluir weworkremotely si está marcado para design."""
-        settings.GEMINI_API_KEY = ""
         plans = PortalRouterService.suggest_portals(designer_profile)
         portals = {p.portal for p in plans}
-        assert "hireline" not in portals, "Hireline es tech-only — no debería sugerirse para diseñador"
+        assert "hireline" not in portals, (
+            "Hireline es tech-only — no debería sugerirse para diseñador"
+        )
         # weworkremotely está marcado como ('tech', 'design', 'marketing')
         assert "weworkremotely" in portals
         # Los generalistas también
         assert "computrabajo" in portals
 
+    def test_returns_at_least_one_plan(self, user_profile):
+        """Garantía: nunca devolvemos lista vacía si el perfil tiene
+        título. Aún para una categoría rara, los `all` sirven."""
+        plans = PortalRouterService.suggest_portals(user_profile)
+        assert len(plans) > 0
 
-# ---- Gemini happy path ----------------------------------------------
+    def test_location_propagated_to_plans(self, user_profile):
+        """Todos los plans heredan el city del perfil."""
+        plans = PortalRouterService.suggest_portals(user_profile)
+        for p in plans:
+            assert p.location == user_profile.city
+
+    def test_does_not_call_gemini(self, user_profile):
+        """Regresión hard: el path crítico NUNCA debe tocar la API de
+        Gemini. Si alguien futuro mete una llamada, este test grita."""
+        with patch("jobs.services.portal_router.genai") as mock_genai:
+            plans = PortalRouterService.suggest_portals(user_profile)
+        assert mock_genai.GenerativeModel.call_count == 0
+        assert mock_genai.configure.call_count == 0
+        assert len(plans) > 0  # sanity: igualmente devolvió algo
+
+
+# ---- preview_with_ai (opt-in, admin/cron) ---------------------------
 
 
 @pytest.mark.django_db
-class TestGeminiPath:
-    """Con GEMINI_API_KEY presente, el router debe usar la respuesta del LLM."""
+class TestPreviewWithAI:
+    """`preview_with_ai` SÍ usa Gemini — reservado para admin trigger
+    y crons de optimización diaria. Mockeado para no pegar a la API
+    real desde CI."""
 
     @patch("jobs.services.portal_router.genai")
     def test_gemini_response_used(self, mock_genai, settings, user_profile):
@@ -155,79 +163,36 @@ class TestGeminiPath:
         mock_model.generate_content.return_value = MagicMock(text=json.dumps(gemini_response))
         mock_genai.GenerativeModel.return_value = mock_model
 
-        plans = PortalRouterService.suggest_portals(user_profile)
+        plans = PortalRouterService.preview_with_ai(user_profile)
 
         portals = {p.portal for p in plans}
         assert portals == {"linkedin", "hireline"}
         linkedin_plan = next(p for p in plans if p.portal == "linkedin")
         assert linkedin_plan.query == "backend python"
 
+    def test_returns_empty_without_api_key(self, settings, user_profile):
+        """Sin GEMINI_API_KEY no llamamos a la API — devolvemos []."""
+        settings.GEMINI_API_KEY = ""
+        plans = PortalRouterService.preview_with_ai(user_profile)
+        assert plans == []
+
     @patch("jobs.services.portal_router.genai")
-    def test_gemini_exception_falls_back(self, mock_genai, settings, user_profile):
-        """Si Gemini tira (timeout, quota, network) → fallback determinístico."""
+    def test_gemini_exception_returns_empty(self, mock_genai, settings, user_profile):
+        """Si Gemini tira (timeout, quota, network) → []. El caller
+        decide qué hacer (típicamente caer al determinístico)."""
         settings.GEMINI_API_KEY = "fake-key"
         mock_genai.GenerativeModel.side_effect = RuntimeError("API down")
 
-        plans = PortalRouterService.suggest_portals(user_profile)
-        # Fallback determinístico debe haber corrido — al menos hireline para tech
-        assert any(p.portal == "hireline" for p in plans)
+        plans = PortalRouterService.preview_with_ai(user_profile)
+        assert plans == []
 
     @patch("jobs.services.portal_router.genai")
-    def test_gemini_invalid_json_falls_back(self, mock_genai, settings, user_profile):
-        """Si Gemini devuelve texto que no es JSON → fallback."""
+    def test_gemini_invalid_json_returns_empty(self, mock_genai, settings, user_profile):
+        """Si Gemini devuelve texto que no es JSON → []."""
         settings.GEMINI_API_KEY = "fake-key"
         mock_model = MagicMock()
         mock_model.generate_content.return_value = MagicMock(text="esto no es json")
         mock_genai.GenerativeModel.return_value = mock_model
 
-        plans = PortalRouterService.suggest_portals(user_profile)
-        assert len(plans) > 0  # fallback corrió
-
-
-# ---- Cache + invalidación -------------------------------------------
-
-
-@pytest.mark.django_db
-class TestCaching:
-    @patch("jobs.services.portal_router.genai")
-    def test_second_call_uses_cache(self, mock_genai, settings, user_profile):
-        """La segunda llamada al mismo user no debe pegar a Gemini de nuevo."""
-        settings.GEMINI_API_KEY = "fake-key"
-        gemini_response = [{"portal": "linkedin", "query": "x", "location": "Y"}]
-        mock_model = MagicMock()
-        mock_model.generate_content.return_value = MagicMock(text=json.dumps(gemini_response))
-        mock_genai.GenerativeModel.return_value = mock_model
-
-        first = PortalRouterService.suggest_portals(user_profile)
-        second = PortalRouterService.suggest_portals(user_profile)
-
-        # Solo una llamada a Gemini
-        assert mock_genai.GenerativeModel.call_count == 1
-        assert first == second
-
-    def test_invalidate_clears_cache(self, user_profile, settings):
-        """`invalidate(user_id)` debe forzar refresh en la próxima llamada."""
-        settings.GEMINI_API_KEY = ""  # forzamos fallback (determinístico)
-        plans_before = PortalRouterService.suggest_portals(user_profile)
-        PortalRouterService.invalidate(user_profile.user_id)
-        # Pisamos manualmente el resultado del fallback para detectar refresh.
-        # Truco: como invalidate borró el cache, la próxima call corre fallback
-        # de nuevo y debe devolver lo mismo (determinístico).
-        plans_after = PortalRouterService.suggest_portals(user_profile)
-        assert plans_before == plans_after  # mismo fallback determinístico
-
-    def test_profile_save_invalidates_cache(self, user_profile, settings):
-        """El signal post_save del UserProfile debe invalidar el cache.
-        Sin esto, un user que edita su título seguiría viendo el plan
-        viejo durante 24h."""
-        settings.GEMINI_API_KEY = ""
-        # Poblar cache
-        PortalRouterService.suggest_portals(user_profile)
-        cache_key = f"portal_router:v4:{user_profile.user_id}"
-        assert cache.get(cache_key) is not None
-
-        # Save dispara signal → invalidación
-        user_profile.professional_title = "UX Designer"
-        user_profile.save()
-
-        assert cache.get(cache_key) is None
+        plans = PortalRouterService.preview_with_ai(user_profile)
+        assert plans == []

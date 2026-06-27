@@ -1,70 +1,47 @@
 """Servicio que decide en qué portales scrapear, para qué query, dado un
 perfil de usuario.
 
-Antes del router (junio 2026) el endpoint `/scrape/` disparaba TODOS los
-portales del registry con `query=profile.professional_title` y
-`location=profile.city`. Eso traía cientos de ofertas off-topic para
-perfiles no-tech (un diseñador UI/UX recibía "Líder de Mantenimiento" y
-"Asesor de Ventas" porque Trabajos Colombia las publica todo el tiempo).
-Con el threshold de match al 60% (Fase 1 del rediseño) muchas eran
-descartadas, pero el costo en tiempo y rate-limit de los portales seguía.
+ARQUITECTURA (rediseño 2026-06-27):
+El path crítico (lo que se ejecuta cada vez que un user toca "Obtener
+ofertas") es 100% determinístico — NO llama a Gemini. Usa
+`infer_profession_category(professional_title)` para clasificar el
+perfil y matchea contra las `categories` que cada scraper declara.
+Resultado: latencia <1ms, cero costo de API, predictible.
 
-Este servicio resuelve el problema con un LLM (Gemini) que recibe:
-  - el perfil del usuario (título + skills + ciudad/país).
-  - el catálogo de portales disponibles, con su descripción y categorías.
+Motivos del cambio:
+- Gemini Flash es barato pero igual aporta latencia (200-500ms) en el
+  path interactivo donde el user ya está esperando 15-30s del scrape.
+- El fallback determinístico cubre bien los casos típicos (perfiles
+  tech / design / marketing / sales / agro / etc. que tienen título
+  claro y matchean alguna categoría conocida).
+- Sin Gemini en el path, el rate limit del scrape pasa a depender solo
+  del costo real (compute del VPS + bans de portales externos), no de
+  la cuota de Gemini.
 
-…y devuelve una lista de `PortalPlan` indicando qué portales tienen
-sentido para ese perfil Y con qué query refinar la búsqueda (por ejemplo
-"diseñador UX" en vez de "UI/UX Designer Diseñador 3D Animador Web" que
-era el título crudo del usuario y rompía la búsqueda en LinkedIn).
-
-Diseño:
-  - Cache 24h por user_id (los planes cambian poco mientras el perfil no
-    cambie). Invalidado en `UserProfile.save()` via signal.
-  - Fail-open: si Gemini no está configurado / responde malformado /
-    timeout → fallback determinístico basado en
-    `users.services.profession_classifier` + las `categories` de cada
-    scraper. Nunca devolvemos una lista vacía si el perfil es válido.
+AI queda RESERVADA para:
+- Análisis y mejora de CV (`users.adapters.gemini_analyzer`,
+  `users.services.cv_improver`). Uso bajo, alto valor por call.
+- Generación de cartas de presentación (`applications.cover_letter_generator`).
+- FAQs (`faq.services.faq_responder`).
+- Futuro: optimización diaria por cron (precomputar planes ideales por
+  user) o trigger admin manual via `PortalRouterService.preview_with_ai()`.
+  Estos paths son one-shot, no se ejecutan por cada scrape.
 """
 
 from __future__ import annotations
 
 import json
 import logging
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 
 import google.generativeai as genai
 from django.conf import settings
-from django.core.cache import cache
 
 from jobs.adapters.scrapers.registry import _REGISTRY, available_portals
 from users.models import UserProfile
 from users.services.profession_classifier import infer_profession_category
 
 logger = logging.getLogger(__name__)
-
-# TTL del cache de planes. 24h porque el perfil del usuario cambia poco;
-# si cambia, la invalidación vía signal en UserProfile.save() refresca
-# antes de que expire el TTL.
-_CACHE_TTL_SECONDS = 24 * 3600
-
-# Bump del prefix cuando cambian (a) la lista de portales del registry,
-# (b) las descripciones que Gemini ve en el prompt, o (c) las categorías
-# que clasifican cada scraper. Sin bump, perfiles con plan cacheado siguen
-# viendo el catálogo viejo durante 24h después del deploy y nunca
-# disparan los portales nuevos. Historial:
-#   v1 — inicial (8 portales, sin Torre, WebSearch sin pasada creative)
-#   v2 — 2026-06-27: +Torre, +pasadas creative en WebSearch (Domestika,
-#        Behance, Workana, Dribbble), descripciones más detalladas para
-#        que el LLM filtre mejor por categoría profesional.
-#   v3 — 2026-06-27: +Freelancer en el grupo creative del WebSearch para
-#        cubrir proyectos freelance cortos (diseñadores que toman gigs
-#        mientras buscan full-time).
-#   v4 — 2026-06-27: +categoría 'agro' al classifier + portales agro al
-#        WebSearch (AgroJobs, AgCareers) + descripciones de Computrabajo/
-#        LinkedIn/Indeed/Magneto mencionan agro/veterinaria explícito +
-#        prompt del router refinado para output JSON puro.
-_CACHE_PREFIX = "portal_router:v4:"
 
 
 @dataclass(frozen=True)
@@ -87,50 +64,65 @@ class PortalRouterService:
     def suggest_portals(cls, profile: UserProfile) -> list[PortalPlan]:
         """Devuelve la lista de planes de scrape para `profile`.
 
-        Cache hit → devuelve cacheado. Cache miss → consulta a Gemini;
-        si Gemini falla, fallback determinístico. NUNCA devuelve [] si
-        el perfil tiene título — siempre hay un plan razonable.
+        Path determinístico: `infer_profession_category` + las
+        `categories` de cada scraper. <1ms, sin AI, sin red.
+
+        NUNCA devuelve [] si el perfil tiene título — si no hay match
+        por categoría (caso muy raro), cae a "todos los portales".
         """
-        cache_key = f"{_CACHE_PREFIX}{profile.user_id}"
-        cached = cache.get(cache_key)
-        if cached:
-            return [PortalPlan(**p) for p in cached]
+        category = infer_profession_category(profile.professional_title)
+        query = profile.professional_title or ""
+        location = profile.city or ""
 
-        plans = cls._call_gemini(profile)
+        plans: list[PortalPlan] = []
+        for portal_name, scraper_cls in _REGISTRY.items():
+            cats = scraper_cls.categories
+            if "all" in cats or category in cats:
+                plans.append(PortalPlan(portal=portal_name, query=query, location=location))
+
         if not plans:
-            plans = cls._fallback(profile)
-            logger.info(
-                "PortalRouter: usando fallback determinístico para user=%s (%d portales)",
-                profile.user_id,
-                len(plans),
+            # Fallback de último recurso: ningún scraper declaró categoría
+            # 'all' ni la categoría inferida. No debería pasar pero igual
+            # devolvemos algo para no tirar el scrape entero.
+            logger.warning(
+                "PortalRouter: ningún scraper matchea categoría %r — usando todos",
+                category,
             )
-        else:
-            logger.info(
-                "PortalRouter: Gemini sugirió %d portales para user=%s",
-                len(plans),
-                profile.user_id,
-            )
+            plans = [
+                PortalPlan(portal=p, query=query, location=location)
+                for p in available_portals()
+            ]
 
-        cache.set(cache_key, [asdict(p) for p in plans], timeout=_CACHE_TTL_SECONDS)
+        logger.info(
+            "PortalRouter: %d portales para user=%s (categoría=%s)",
+            len(plans),
+            profile.user_id,
+            category,
+        )
         return plans
 
-    @classmethod
-    def invalidate(cls, user_id: int) -> None:
-        """Invalida el cache para `user_id`. Llamar cuando el perfil cambia
-        (signal en UserProfile.save). Idempotente — no falla si no había
-        nada cacheado.
-        """
-        cache.delete(f"{_CACHE_PREFIX}{user_id}")
-
-    # ---- internals ----------------------------------------------------
+    # ---- AI-assisted preview (opt-in) ---------------------------------
+    # Reservado para herramientas admin / crons de optimización diaria.
+    # NO se llama desde `suggest_portals` para mantener el path crítico
+    # libre de Gemini y de latencia de red.
 
     @classmethod
-    def _call_gemini(cls, profile: UserProfile) -> list[PortalPlan]:
-        """Pide a Gemini que elija portales. Devuelve [] si:
-          - GEMINI_API_KEY no está configurada
-          - la llamada falla / timeout
-          - la respuesta no es JSON válido
-        En todos esos casos el caller usa el fallback determinístico.
+    def preview_with_ai(cls, profile: UserProfile) -> list[PortalPlan]:
+        """Pide a Gemini que elija portales para `profile`.
+
+        Devuelve [] si:
+          - GEMINI_API_KEY no está configurada.
+          - la llamada falla / timeout.
+          - la respuesta no es JSON válido o no tiene portales válidos.
+
+        Pensado para:
+          - Endpoint admin "/api/jobs/router/preview/<user_id>/" que
+            permite comparar la sugerencia AI vs el plan determinístico.
+          - Cron de optimización diaria (futuro) que precomputa planes
+            ideales para users activos.
+
+        NUNCA llamar desde el path interactivo del user — agrega latencia
+        + costo de API. Usar `suggest_portals()` ahí.
         """
         if not settings.GEMINI_API_KEY:
             return []
@@ -148,45 +140,23 @@ class PortalRouterService:
             response = model.generate_content(prompt)
             raw = (response.text or "").strip()
         except Exception as exc:
-            logger.warning("PortalRouter: Gemini call failed: %s", exc)
+            logger.warning("PortalRouter.preview_with_ai: Gemini call failed: %s", exc)
             return []
 
         raw = _strip_markdown_fences(raw)
         try:
             data = json.loads(raw)
         except json.JSONDecodeError as exc:
-            logger.warning("PortalRouter: Gemini devolvió JSON inválido (%s)", exc)
+            logger.warning(
+                "PortalRouter.preview_with_ai: JSON inválido (%s)", exc
+            )
             logger.debug("Raw response (truncated): %r", raw[:500])
             return []
 
         return _parse_plans(data, fallback_location=profile.city or "")
 
-    @classmethod
-    def _fallback(cls, profile: UserProfile) -> list[PortalPlan]:
-        """Sin Gemini disponible: matcheamos `infer_profession_category`
-        contra `scraper.categories`. Portales `all` van siempre.
-        Si no hay match alguno (cosa rara), devolvemos todos los portales
-        — peor inundar un poco que devolver un feed vacío sin razón.
-        """
-        category = infer_profession_category(profile.professional_title)
-        query = profile.professional_title or ""
-        location = profile.city or ""
 
-        plans: list[PortalPlan] = []
-        for portal_name, scraper_cls in _REGISTRY.items():
-            cats = scraper_cls.categories
-            if "all" in cats or category in cats:
-                plans.append(PortalPlan(portal=portal_name, query=query, location=location))
-
-        if plans:
-            return plans
-        return [
-            PortalPlan(portal=p, query=query, location=location)
-            for p in available_portals()
-        ]
-
-
-# ---- prompt template + helpers --------------------------------------
+# ---- prompt template + helpers (usados solo por preview_with_ai) ----
 
 _PROMPT_TEMPLATE = """Sos un experto en bolsas de empleo de LATAM. Decidí en qué portales buscar ofertas para este perfil.
 
