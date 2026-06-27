@@ -49,11 +49,14 @@ _SEARCH_URL = "https://search.torre.co/opportunities/_search/"
 # floja que igual van a quedar bajo el threshold de match% downstream.
 MAX_RESULTS = 50
 
-# URL canónica de cada oferta. Torre usa `torre.co/jobs/{id}` para el
-# detail page público — distinto del endpoint de API. Si la oferta trae
-# `slug`, lo concatenamos para una URL legible; sino, solo el id.
-_OPPORTUNITY_URL_TEMPLATE = "https://torre.co/jobs/{id}"
-_OPPORTUNITY_URL_WITH_SLUG = "https://torre.co/jobs/{id}/{slug}"
+# URL canónica de cada oferta. Verificado contra producción 2026-06-27:
+#   - Dominio: torre.ai (NO torre.co — torre.co redirige 301 pero a un
+#     path que no existe → 404).
+#   - Sin slug: /jobs/{id}
+#   - Con slug: /jobs/{id}-{slug}  (id y slug PEGADOS con guion, NO con
+#     `/`. El formato `/jobs/{id}/{slug}` también devuelve 404.)
+_OPPORTUNITY_URL_TEMPLATE = "https://torre.ai/jobs/{id}"
+_OPPORTUNITY_URL_WITH_SLUG = "https://torre.ai/jobs/{id}-{slug}"
 
 
 class TorreScraper(JobScraper):

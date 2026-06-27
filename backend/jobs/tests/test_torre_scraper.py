@@ -107,6 +107,24 @@ class TestTorreScraperSearch:
         assert skill_role.get("text") == "designer"
         assert skill_role.get("experience") == "potential-to-develop"
 
+    def test_url_uses_torre_ai_domain_and_dash_separator(self):
+        """Regresion guard: torre.co devuelve 404 (el dominio publico es
+        torre.ai) y `/jobs/{id}/{slug}` también 404 (el formato correcto
+        es id-slug concatenado con guion). Verificado contra prod
+        2026-06-27. Sin este test, futuras tweaks pueden silenciosamente
+        re-introducir el bug del 404."""
+        scraper = TorreScraper()
+        with patch("jobs.adapters.scrapers.torre.requests.post") as mock_post:
+            mock_post.return_value = _fake_response(json_body=_VALID_RESPONSE)
+            offers = scraper.search("designer", "X")
+        first = offers[0]
+        assert first.url.startswith("https://torre.ai/jobs/")
+        assert "torre.co" not in first.url
+        # id (Yd6mbYOw) y slug pegados con `-`, NO con `/`.
+        assert (
+            first.url == "https://torre.ai/jobs/Yd6mbYOw-acme-senior-product-designer-1"
+        )
+
     def test_remote_opportunity_without_location_uses_Remote_marker(self):
         """Para que extract_modality detecte la modalidad remote, ponemos
         'Remote' como location cuando la opp es remota y no tiene
