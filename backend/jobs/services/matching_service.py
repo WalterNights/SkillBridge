@@ -53,10 +53,15 @@ _PROTECTED_SLASH_TERMS: tuple[str, ...] = (
 )
 
 # Separadores que indican multi-rol en el `professional_title` del user
-# ("Designer, Developer y Artist" / "Designer / Developer | Artist").
+# ("Designer, Developer y Artist" / "Designer / Developer | Artist" /
+# "Zootecnista - Peluquero canino"). Incluimos guiones (-, –, —) y middle
+# dot (·) SOLO cuando vienen rodeados de espacios — sino "Front-End
+# Developer" o "Full-Stack" se partirían incorrectamente.
 # El `/` se incluye porque después de proteger _PROTECTED_SLASH_TERMS lo
 # que queda son slash que sí separan roles distintos.
-_PRIMARY_ROLE_SPLIT_RE = re.compile(r"[,/|]|\sand\s|\sy\s", re.IGNORECASE)
+_PRIMARY_ROLE_SPLIT_RE = re.compile(
+    r"[,/|]|\sand\s|\sy\s|\s[-–—·]\s", re.IGNORECASE
+)
 
 
 def _extract_primary_role(title: str) -> str:

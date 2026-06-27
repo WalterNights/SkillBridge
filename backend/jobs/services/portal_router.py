@@ -38,6 +38,7 @@ import google.generativeai as genai
 from django.conf import settings
 
 from jobs.adapters.scrapers.registry import _REGISTRY, available_portals
+from jobs.services.matching_service import _extract_primary_role
 from users.models import UserProfile
 from users.services.profession_classifier import infer_profession_category
 
@@ -67,11 +68,26 @@ class PortalRouterService:
         Path determinístico: `infer_profession_category` + las
         `categories` de cada scraper. <1ms, sin AI, sin red.
 
+        El `query` que se pasa a cada scraper es el ROL PRINCIPAL del
+        título (extraído via `_extract_primary_role`), no el título
+        crudo. Esto es esencial para escalabilidad: títulos largos como
+        "UI/UX Designer/Industrial designer/expert in 3d, augmented
+        reality and animation" o "Zootecnista - Peluquero canino"
+        devolvían 0 ofertas en LinkedIn/Indeed porque el query era muy
+        específico. Con solo el rol principal ("UI/UX Designer",
+        "Zootecnista") el recall sube dramáticamente — los generalistas
+        LATAM (Computrabajo, LinkedIn, Indeed, Trabajando, Magneto,
+        Trabajos_co) cubren prácticamente cualquier oficio si reciben
+        un query razonable.
+
         NUNCA devuelve [] si el perfil tiene título — si no hay match
         por categoría (caso muy raro), cae a "todos los portales".
         """
         category = infer_profession_category(profile.professional_title)
-        query = profile.professional_title or ""
+        # Rol principal — corto, claro, optimizado para los buscadores
+        # de los portales. Para profiles sin título, query vacío (el
+        # scraper decide si igual scrapear o levantar error).
+        query = _extract_primary_role(profile.professional_title or "")
         location = profile.city or ""
 
         plans: list[PortalPlan] = []

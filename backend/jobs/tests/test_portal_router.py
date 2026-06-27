@@ -104,7 +104,8 @@ class TestSuggestPortals:
         portals = {p.portal for p in plans}
         assert "hireline" in portals  # tech matchea
         assert "computrabajo" in portals  # all matchea
-        # query es el título crudo (path determinístico no lo refina)
+        # query es el rol principal extraído del título — para títulos
+        # simples como este, coincide con el título completo.
         for p in plans:
             assert p.query == "Backend Developer"
 
@@ -132,6 +133,35 @@ class TestSuggestPortals:
         plans = PortalRouterService.suggest_portals(user_profile)
         for p in plans:
             assert p.location == user_profile.city
+
+    def test_long_multirole_title_refined_to_primary_role(self, django_user_model):
+        """Garantía crítica para escalabilidad: títulos largos / multi-rol
+        ('UI/UX Designer/Industrial designer/expert in 3d',
+        'Zootecnista - Peluquero canino') deben ir al scraper con SOLO
+        el rol principal — sino LinkedIn/Indeed devuelven 0 por query
+        demasiado específica."""
+        from users.models import UserProfile
+
+        user = django_user_model.objects.create_user(
+            username="multi", email="multi@example.com", password="x"
+        )
+        profile = UserProfile.objects.create(
+            user=user,
+            first_name="Multi",
+            last_name="Pro",
+            phone="+57",
+            city="Bogotá",
+            professional_title="Zootecnista - Peluquero canino",
+            skills="",
+        )
+        plans = PortalRouterService.suggest_portals(profile)
+        # El rol principal es "Zootecnista" — todos los planes deben
+        # usar ese query, no el título completo.
+        for p in plans:
+            assert p.query == "Zootecnista", (
+                f"Esperaba query='Zootecnista', obtuve {p.query!r}. El "
+                f"refinement via _extract_primary_role no se está aplicando."
+            )
 
     def test_does_not_call_gemini(self, user_profile):
         """Regresión hard: el path crítico NUNCA debe tocar la API de

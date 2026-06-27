@@ -251,6 +251,19 @@ class TestExtractPrimaryRole:
             == "Product Designer"
         )
 
+    def test_splits_by_dash_with_spaces(self):
+        """Guion rodeado de espacios = separador. Caso real: cliente
+        zootecnista que tenía 'Zootecnista - Peluquero canino'."""
+        assert _extract_primary_role("Zootecnista - Peluquero canino") == "Zootecnista"
+        assert _extract_primary_role("Designer — Photographer") == "Designer"
+        assert _extract_primary_role("Marketing · Sales") == "Marketing"
+
+    def test_dash_without_spaces_does_not_split(self):
+        """Guion SIN espacios es parte del rol — 'Front-End Developer'
+        no debe romperse en 'Front'."""
+        assert _extract_primary_role("Front-End Developer") == "Front-End Developer"
+        assert _extract_primary_role("Full-Stack Engineer") == "Full-Stack Engineer"
+
     def test_jorges_real_title(self):
         """Caso real del cliente jorgeluisq07 que motivó el fix."""
         result = _extract_primary_role(

@@ -24,20 +24,24 @@ _NOTIF_MATCH_THRESHOLD = 70
 
 logger = logging.getLogger(__name__)
 
-# Rate limit del scrape — caro (3 portales en paralelo + Gemini calls).
+# Rate limit del scrape. El scrape es costoso en compute (HTTP paralelo
+# a 7-10 portales + parsing + Playwright para Magneto/Indeed) y nos
+# expone a bans de portales externos si abusamos.
 # Implementado via cache propio porque django_ratelimit no es trivial de
 # aplicar a un @action de ViewSet (decoradores compuestos).
 #
 # Historial del cap:
-#   5/h — inicial. Razonable para uso normal pero clientes legítimos
-#         lo tocaban durante onboarding/testing (varios scrapes seguidos
-#         para validar que el feed traía lo esperado tras cambios).
-#  10/h — 2026-06-27. Subido tras reporte de cliente zootecnista
-#         bloqueado por 429. Mantiene la protección anti-abuso (Gemini
-#         + DDG no se drenan con 10 calls/h por user) pero da margen
-#         para que usuarios reales no se topen con el muro.
+#   5/h  — inicial. Conservador para proteger Gemini (router).
+#  10/h — 2026-06-27. Subido tras reporte de cliente bloqueado.
+#  20/h — 2026-06-27. Subido de nuevo tras sacar Gemini del path crítico
+#         (refactor 708484bd). Sin AI en el path, el único costo real
+#         es CPU/RAM del VPS + risk de ban externo — eso escala mejor
+#         que la cuota de Gemini. 20/h = 1 scrape cada 3 min, suficiente
+#         para etapa de testing actual con margen sin saturar el VPS.
+#         Cuando crezca el volumen de usuarios reales, considerar bajar
+#         a 5-10/h y agregar bypass para admin/staff.
 _SCRAPE_RATE_WINDOW_SECONDS = 60 * 60  # 1h
-_SCRAPE_RATE_MAX_PER_USER = 10
+_SCRAPE_RATE_MAX_PER_USER = 20
 
 
 def _check_and_bump_scrape_rate(user_id: int) -> bool:
