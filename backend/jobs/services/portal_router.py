@@ -48,7 +48,16 @@ logger = logging.getLogger(__name__)
 # antes de que expire el TTL.
 _CACHE_TTL_SECONDS = 24 * 3600
 
-_CACHE_PREFIX = "portal_router:v1:"
+# Bump del prefix cuando cambian (a) la lista de portales del registry,
+# (b) las descripciones que Gemini ve en el prompt, o (c) las categorías
+# que clasifican cada scraper. Sin bump, perfiles con plan cacheado siguen
+# viendo el catálogo viejo durante 24h después del deploy y nunca
+# disparan los portales nuevos. Historial:
+#   v1 — inicial (8 portales, sin Torre, WebSearch sin pasada creative)
+#   v2 — 2026-06-27: +Torre, +pasadas creative en WebSearch (Domestika,
+#        Behance, Workana, Dribbble), descripciones más detalladas para
+#        que el LLM filtre mejor por categoría profesional.
+_CACHE_PREFIX = "portal_router:v2:"
 
 
 @dataclass(frozen=True)

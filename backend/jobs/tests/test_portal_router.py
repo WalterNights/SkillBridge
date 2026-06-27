@@ -223,7 +223,7 @@ class TestCaching:
         settings.GEMINI_API_KEY = ""
         # Poblar cache
         PortalRouterService.suggest_portals(user_profile)
-        cache_key = f"portal_router:v1:{user_profile.user_id}"
+        cache_key = f"portal_router:v2:{user_profile.user_id}"
         assert cache.get(cache_key) is not None
 
         # Save dispara signal → invalidación
