@@ -12,6 +12,7 @@ import pytest
 from jobs.services.matching_service import (
     JobMatchingService,
     _calc_title_score,
+    _extract_primary_role,
     _tokenize_title,
 )
 
@@ -190,6 +191,126 @@ class TestCalculateMatchPercentageCombined:
         )
         # 0.6 * 0 + 0.4 * 100 = 40 — pasa el umbral 25 pero está claramente abajo del 60+
         assert result["match_percentage"] == 40
+
+
+@pytest.mark.unit
+class TestExtractPrimaryRole:
+    """El normalizer de `user_title` que destraba perfiles multi-rol.
+
+    Antes de existir esta función, un perfil como "UI/UX Designer/
+    Industrial designer/expert in 3d, augmented reality and animation"
+    generaba 9 user_tokens y NI siquiera una oferta perfecta de
+    'Diseñador UI/UX' alcanzaba el threshold de 60% (33% title × 0.6 +
+    100% skills × 0.4 = 59.8%, borderline). Ahora ese perfil normaliza
+    a 'UI/UX Designer' (3 tokens) y la oferta perfecta llega a 100%.
+    """
+
+    def test_empty_returns_empty(self):
+        assert _extract_primary_role("") == ""
+        assert _extract_primary_role(None) == ""  # type: ignore
+        assert _extract_primary_role("   ") == ""
+
+    def test_single_role_passes_through_unchanged(self):
+        """Títulos simples no se modifican."""
+        assert _extract_primary_role("Backend Developer") == "Backend Developer"
+        assert _extract_primary_role("Senior Full Stack Engineer") == "Senior Full Stack Engineer"
+
+    def test_protects_ui_ux_abbreviation(self):
+        """`UI/UX` es parte del rol, no separador. No debe romperse."""
+        assert _extract_primary_role("UI/UX Designer") == "UI/UX Designer"
+        assert _extract_primary_role("UX/UI Designer Senior") == "UX/UI Designer Senior"
+
+    def test_splits_multi_role_by_slash(self):
+        """Slash entre roles sí separa."""
+        assert (
+            _extract_primary_role("Backend Developer / DevOps Engineer")
+            == "Backend Developer"
+        )
+
+    def test_splits_by_comma(self):
+        assert (
+            _extract_primary_role("Data Scientist, ML Engineer")
+            == "Data Scientist"
+        )
+
+    def test_splits_by_spanish_y(self):
+        assert (
+            _extract_primary_role("Diseñador UI/UX y Motion Designer")
+            == "Diseñador UI/UX"
+        )
+
+    def test_splits_by_english_and(self):
+        assert (
+            _extract_primary_role("Frontend Engineer and Mobile Developer")
+            == "Frontend Engineer"
+        )
+
+    def test_splits_by_pipe(self):
+        assert (
+            _extract_primary_role("Product Designer | UX Researcher")
+            == "Product Designer"
+        )
+
+    def test_jorges_real_title(self):
+        """Caso real del cliente jorgeluisq07 que motivó el fix."""
+        result = _extract_primary_role(
+            "UI/UX Designer/Industrial designer/expert in 3d, "
+            "augmented reality and animation"
+        )
+        assert result == "UI/UX Designer"
+
+    def test_protects_ai_ml_abbreviation(self):
+        assert _extract_primary_role("AI/ML Engineer / Data Scientist") == "AI/ML Engineer"
+
+    def test_combined_separators(self):
+        """Cuando hay varios separadores, gana el más temprano."""
+        # `,` aparece antes que `/` → split por `,` primero.
+        assert (
+            _extract_primary_role("UX Designer, 3D Modeler/Animator")
+            == "UX Designer"
+        )
+
+
+@pytest.mark.unit
+class TestMatchingWithMultiRoleTitle:
+    """Garantías post-fix: el perfil de Jorge debe poder llegar al 60%
+    con ofertas realistas. Antes del normalizer, ni siquiera una oferta
+    perfecta alcanzaba el threshold."""
+
+    JORGE_TITLE = (
+        "UI/UX Designer/Industrial designer/expert in 3d, "
+        "augmented reality and animation"
+    )
+
+    def test_perfect_ui_ux_offer_reaches_90_plus(self):
+        """Oferta de 'Diseñador UI/UX Senior' con skills 75% match
+        debe llegar >= 60% (era 50% antes del fix)."""
+        result = JobMatchingService.calculate_match_percentage(
+            job_keywords=["figma", "sketch", "photoshop", "illustrator"],
+            user_skills=["figma", "sketch", "photoshop"],  # 3/4 = 75%
+            job_title="Diseñador UI/UX Senior",
+            user_title=self.JORGE_TITLE,
+        )
+        # title_score: tokens user normalizado {ui, ux, designer} vs
+        # job tokens {diseñador→designer, ui, ux, senior} → overlap = 3,
+        # title_score = 3/3 = 100%. skill_score = 3/4 = 75%.
+        # combined = 0.6*100 + 0.4*75 = 90%.
+        assert result["match_percentage"] >= 60
+        assert result["match_percentage"] == 90
+
+    def test_motion_designer_offer_still_filtered(self):
+        """Oferta tangente ('Motion Designer Sr.') NO debe alcanzar 60%
+        — sigue siendo otro rol aunque comparta 'designer'."""
+        result = JobMatchingService.calculate_match_percentage(
+            job_keywords=["after effects", "premiere"],
+            user_skills=["figma", "photoshop"],  # 0 match
+            job_title="Motion Designer Sr.",
+            user_title=self.JORGE_TITLE,
+        )
+        # title_score: {ui, ux, designer} vs {motion, designer, sr} →
+        # overlap = 1 (designer), title_score = 1/3 = 33%.
+        # skill_score = 0%. combined = 0.6*33 + 0.4*0 = 20%.
+        assert result["match_percentage"] < 60
 
 
 @pytest.mark.django_db

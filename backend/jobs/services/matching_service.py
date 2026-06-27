@@ -35,6 +35,78 @@ _TITLE_STOPWORDS: frozenset[str] = frozenset({
     "un", "una", "the", "a", "an", "of", "for", "in", "and", "or", "with",
 })
 
+# Abreviaturas con `/` que SON parte del rol y no separadores de roles
+# distintos. Si splitteamos por `/` ingenuamente, "UI/UX Designer" se
+# rompe en ["UI", "UX Designer"] y perdemos el rol. Las protegemos
+# temporalmente antes del split.
+_PROTECTED_SLASH_TERMS: tuple[str, ...] = (
+    "UI/UX",
+    "UX/UI",
+    "AI/ML",
+    "ML/AI",
+    "I/O",
+    "B2B/B2C",
+    "B2C/B2B",
+    "Pre/Post",
+    "Front/Back",
+    "Back/Front",
+)
+
+# Separadores que indican multi-rol en el `professional_title` del user
+# ("Designer, Developer y Artist" / "Designer / Developer | Artist").
+# El `/` se incluye porque después de proteger _PROTECTED_SLASH_TERMS lo
+# que queda son slash que sí separan roles distintos.
+_PRIMARY_ROLE_SPLIT_RE = re.compile(r"[,/|]|\sand\s|\sy\s", re.IGNORECASE)
+
+
+def _extract_primary_role(title: str) -> str:
+    """Devuelve el rol principal de un `professional_title` posiblemente
+    multi-rol.
+
+    Sin esto, perfiles con título largo ("UI/UX Designer/Industrial
+    designer/expert in 3d, augmented reality and animation") generan
+    9+ tokens en `_calc_title_score` — la fórmula `overlap/user_tokens`
+    los penaliza tanto que NI siquiera una oferta de "Diseñador UI/UX
+    Senior" llega al 60% de match. Tomar solo el primer rol baja los
+    user_tokens a 3-4 y el matching vuelve a ser realista.
+
+    Estrategia: split por separadores estándar (`,`, `|`, ` and `,
+    ` y `, `/`), tomar el primer fragmento no vacío. Las abreviaciones
+    con slash que son parte de un rol (UI/UX, AI/ML, etc.) se protegen
+    antes del split para no quebrar incorrectamente.
+
+    >>> _extract_primary_role('UI/UX Designer/Industrial designer/expert in 3d')
+    'UI/UX Designer'
+    >>> _extract_primary_role('Senior Backend Developer')
+    'Senior Backend Developer'
+    >>> _extract_primary_role('Data Scientist, ML Engineer y AI Researcher')
+    'Data Scientist'
+    >>> _extract_primary_role('')
+    ''
+    """
+    if not title or not title.strip():
+        return ""
+
+    # Proteger abreviaturas con slash que NO separan roles. Reemplazo
+    # case-insensitive pero recordamos la ortografía original para
+    # restaurar al final.
+    protected = title
+    placeholders: list[tuple[str, str]] = []
+    for i, term in enumerate(_PROTECTED_SLASH_TERMS):
+        placeholder = f"__PROT{i}__"
+        pattern = re.compile(re.escape(term), re.IGNORECASE)
+        match = pattern.search(protected)
+        if match:
+            placeholders.append((placeholder, match.group(0)))
+            protected = pattern.sub(placeholder, protected)
+
+    parts = _PRIMARY_ROLE_SPLIT_RE.split(protected)
+    primary = next((p.strip() for p in parts if p.strip()), title.strip())
+
+    for placeholder, original in placeholders:
+        primary = primary.replace(placeholder, original)
+    return primary
+
 # Equivalencias bidireccionales para rol/función. Sin esto, un cargo
 # "Desarrollador Full Stack" no matchearía con jobs titulados "Full
 # Stack Developer" (palabras compartidas: full, stack — pierde el rol).
@@ -160,7 +232,16 @@ class JobMatchingService:
                 "match_percentage": skill_score,
             }
 
-        title_score = _calc_title_score(job_title, user_title)
+        # Normalizamos el title del usuario al rol PRINCIPAL antes de
+        # calcular el score. Sin esto, perfiles multi-rol ("UI/UX
+        # Designer/Industrial designer/expert in 3d") generan tantos
+        # user_tokens que ninguna oferta real llega al 60% (incluso una
+        # oferta perfecta de "Diseñador UI/UX" saca 33%). Ver el
+        # docstring de `_extract_primary_role` para el racional completo.
+        # El job_title NO se normaliza — los títulos de ofertas son por
+        # diseño un único rol, agregar más overhead no aporta.
+        normalized_user_title = _extract_primary_role(user_title)
+        title_score = _calc_title_score(job_title, normalized_user_title)
 
         if not job_keywords_clean:
             # Descripción vaga sin stack listado — confiamos en el título
