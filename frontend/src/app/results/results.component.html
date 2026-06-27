@@ -326,11 +326,16 @@
       <ng-template #noMatches>
         <h3 class="text-lg font-semibold text-bone mb-1">Aún no encontramos ofertas para tu perfil</h3>
         <p class="text-sm text-warm-grey mb-2">
-          Buscamos en {{ lastScrapeStats() }} pero ninguna oferta alcanzó el 50% de coincidencia con tu título o tus skills.
+          Tu feed se filtra por <span class="text-bone font-semibold">tu área profesional</span> —
+          no mezclamos verticales para evitar ruido (un abogado nunca ve ofertas de diseño web).
+        </p>
+        <p class="text-sm text-warm-grey mb-2">
+          Buscamos en {{ lastScrapeStats() }} pero ninguna oferta de tu área alcanzó el 50% de coincidencia con tu título o skills.
         </p>
         <p class="text-xs text-dim mb-5">
           Nuestro lema es <span class="text-primary font-semibold">cero ruido</span> — preferimos no mostrarte
-          ofertas mediocres. Probá afinar tu título profesional o agregar más skills relevantes.
+          ofertas mediocres. Probá afinar tu título profesional, agregar más skills relevantes,
+          o hacer click en "Buscar de nuevo" para traer ofertas frescas de tu vertical.
         </p>
         <div class="flex flex-col sm:flex-row gap-2 justify-center">
           <button

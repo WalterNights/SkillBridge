@@ -210,16 +210,22 @@ class JobService:
         de Computrabajo > 200 chars que rompía todas las demás.
         """
         from jobs.utils.offer_attributes import extract_country, extract_modality
+        from users.services.profession_classifier import infer_profession_category
 
         created: list[JobOffer] = []
         skipped = 0
         for data in offers_data:
             try:
-                # Atributos derivados (country + modality) calculados acá
-                # —no en cada scraper— para tener un único punto de verdad.
-                # Los scrapers solo devuelven los campos crudos.
+                # Atributos derivados (country + modality + category)
+                # calculados acá —no en cada scraper— para tener un único
+                # punto de verdad. Los scrapers solo devuelven los campos
+                # crudos.
                 country = extract_country(data.location)
                 modality = extract_modality(data.location, data.summary)
+                # Category: clasificamos sobre title + summary porque hay
+                # ofertas donde el rol está claro en summary pero el
+                # title es genérico (ej. "Oferta urgente · Empresa X").
+                category = infer_profession_category(f"{data.title} {data.summary}")
                 obj, was_created = JobOffer.objects.get_or_create(
                     url=data.url,
                     defaults={
@@ -231,6 +237,7 @@ class JobService:
                         "portal": data.portal,
                         "country": country,
                         "modality": modality,
+                        "category": category,
                     },
                 )
                 if was_created:

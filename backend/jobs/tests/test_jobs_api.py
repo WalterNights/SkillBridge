@@ -237,6 +237,115 @@ class TestJobsListMinMatch:
 
 @pytest.mark.integration
 @pytest.mark.django_db
+class TestFeedFiltersByUserCategory:
+    """Guarantía crítica de privacidad/separación de verticales: cada
+    user solo ve ofertas de su categoría profesional (+ 'general'). Un
+    abogado nunca debe ver 'Senior React Native Developer' aunque otro
+    user lo haya scrapeado y esté en la DB compartida."""
+
+    def _setup_offers(self):
+        """Crea 3 ofertas — una de cada categoría — para validar el filtro."""
+        from jobs.models import JobOffer
+
+        return {
+            "tech": JobOffer.objects.create(
+                title="Senior React Native Developer",
+                url="https://x.com/dev1",
+                summary="React Native, TypeScript",
+                keywords="react native",
+                portal="hireline",
+                category="tech",
+            ),
+            "legal": JobOffer.objects.create(
+                title="Abogada Penalista",
+                url="https://x.com/legal1",
+                summary="Derecho penal y procesal",
+                keywords="derecho penal",
+                portal="computrabajo",
+                category="legal",
+            ),
+            "general": JobOffer.objects.create(
+                title="Asistente Multifuncional",
+                url="https://x.com/gen1",
+                summary="Apoyo en general",
+                keywords="",
+                portal="trabajando",
+                category="general",
+            ),
+        }
+
+    def _make_user_with_profile(self, django_user_model, *, title):
+        from users.models import UserProfile
+
+        user = django_user_model.objects.create_user(
+            username=f"u_{title[:5]}".replace(" ", "_"),
+            email=f"{title.replace(' ', '_')}@example.com",
+            password="x",
+        )
+        UserProfile.objects.create(
+            user=user,
+            first_name="X",
+            last_name="Y",
+            phone="+57",
+            city="Bogotá",
+            professional_title=title,
+            skills="",
+            experience="",
+        )
+        return user
+
+    def test_tech_user_only_sees_tech_and_general(self, api_client, django_user_model):
+        """User con título 'Backend Developer' (categoría tech) NO ve
+        la oferta de Abogada. Sí ve la tech y la general."""
+        self._setup_offers()
+        user = self._make_user_with_profile(django_user_model, title="Backend Developer")
+        api_client.force_authenticate(user=user)
+        response = api_client.get("/api/jobs/jobs/?min_match=0")
+        titles = {r["title"] for r in response.json()["results"]}
+        assert "Senior React Native Developer" in titles
+        assert "Asistente Multifuncional" in titles
+        assert "Abogada Penalista" not in titles
+
+    def test_legal_user_only_sees_legal_and_general(self, api_client, django_user_model):
+        """Mirror del test anterior — abogada NO ve tech."""
+        self._setup_offers()
+        user = self._make_user_with_profile(django_user_model, title="Abogada Civilista")
+        api_client.force_authenticate(user=user)
+        response = api_client.get("/api/jobs/jobs/?min_match=0")
+        titles = {r["title"] for r in response.json()["results"]}
+        assert "Abogada Penalista" in titles
+        assert "Asistente Multifuncional" in titles
+        assert "Senior React Native Developer" not in titles
+
+    def test_general_user_sees_everything(self, api_client, django_user_model):
+        """User cuyo título no clasifica (categoría 'general') ve todas
+        las ofertas — es el comodín / fallback."""
+        self._setup_offers()
+        user = self._make_user_with_profile(
+            django_user_model, title="Foo Bar Baz Random"
+        )
+        api_client.force_authenticate(user=user)
+        response = api_client.get("/api/jobs/jobs/?min_match=0")
+        titles = {r["title"] for r in response.json()["results"]}
+        assert "Senior React Native Developer" in titles
+        assert "Abogada Penalista" in titles
+        assert "Asistente Multifuncional" in titles
+
+    def test_user_without_profile_sees_everything(self, api_client, django_user_model):
+        """Sin UserProfile, no podemos clasificar — fallback a 'general'
+        que muestra todo. Sin esto, users sin perfil verían feed vacío."""
+        self._setup_offers()
+        user = django_user_model.objects.create_user(
+            username="noprofile", email="np@example.com", password="x"
+        )
+        api_client.force_authenticate(user=user)
+        response = api_client.get("/api/jobs/jobs/?min_match=0")
+        titles = {r["title"] for r in response.json()["results"]}
+        assert len(titles) == 3
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
 class TestFilterOptionsEndpoint:
     def test_returns_countries_and_modalities_with_counts(self, authed_client, offers_set):
         response = authed_client.get("/api/jobs/jobs/filter-options/")

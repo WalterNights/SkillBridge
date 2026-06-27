@@ -85,23 +85,50 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Aplica filtros del dashboard (?country=, ?modality=).
+        """Aplica filtros del dashboard (?country=, ?modality=) y el
+        filtro por categoría profesional del user.
 
-        Por default filtra `is_active=True` — solo mostramos ofertas que
-        siguen disponibles en el portal de origen. Las marcadas como
-        inactivas (vía sync por sitemap o probe HTTP) quedan ocultas
-        para honrar el slogan "cero ruido". Para debug se puede pasar
-        `?include_inactive=true` (futuro — no expuesto en UI).
+        Filtro por categoría (clave para no mezclar verticales):
+          - Cada JobOffer está tageada con una categoría macro (tech,
+            design, agro, legal, etc) calculada al guardarla.
+          - El feed filtra por la categoría del user (inferida del
+            professional_title via `infer_profession_category`) +
+            'general' (comodín para ofertas no clasificables).
+          - Si el user es 'general' (admin sin perfil, perfil sin
+            título), ve TODO — comportamiento legacy.
+          - Sin esto, un abogado veía 'Senior React Native Developer
+            · 0% match' en su feed porque otro user lo scrapeó. Ahora
+            cada user ve solo su universo relevante.
 
-        Filtros adicionales:
+        Por default también filtra `is_active=True` — solo ofertas que
+        siguen disponibles en el portal de origen.
+
+        Filtros opcionales por query param:
           ?country=MX,CO     → ofertas de México o Colombia
           ?modality=remote   → solo remotas
           ?modality=remote,hybrid → remotas o híbridas
 
-        Sin params → todas las activas, orden por recencia. Si un param
-        viene con valor inválido, se ignora silenciosamente.
+        Sin params → todas las activas de su categoría, orden por
+        recencia. Si un param viene inválido, se ignora silenciosamente.
         """
+        from users.services.profession_classifier import infer_profession_category
+
         qs = JobOffer.objects.filter(is_active=True).order_by("-created_at")
+
+        # Filtro por categoría del user. Solo aplica si el user tiene
+        # perfil con título — sino caemos al fallback que muestra todo.
+        try:
+            profile = self.request.user.profile
+            user_category = infer_profession_category(profile.professional_title)
+        except UserProfile.DoesNotExist:
+            user_category = "general"
+        if user_category != "general":
+            # User con vertical claro → su categoría + general (comodín
+            # para ofertas que no se pudieron clasificar — preferimos
+            # mostrarlas a esconderlas).
+            qs = qs.filter(category__in=[user_category, "general"])
+        # else: user 'general' (admin sin perfil, perfil sin título o
+        # con título genérico) → ve todas las categorías sin filtrar.
 
         country_param = (self.request.query_params.get("country") or "").strip()
         if country_param:

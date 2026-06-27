@@ -59,6 +59,24 @@ class JobOffer(models.Model):
         db_index=True,
         help_text="Modalidad de trabajo detectada heurísticamente",
     )
+    # Categoría profesional macro de la oferta, calculada al guardar via
+    # `users.services.profession_classifier.infer_profession_category`
+    # sobre `title + summary`. CRITICO para evitar mezclar ofertas entre
+    # verticales: un abogado nunca debe ver ofertas de diseño web; un
+    # zootecnista nunca debe ver Senior React Native Developer. El feed
+    # filtra por `category == user_category OR category == 'general'`.
+    # 'general' funciona como comodín — ofertas no clasificables las
+    # ven todos los users (mejor mostrar que ocultar de más).
+    # Indexed porque casi todas las queries del feed filtran por este
+    # campo. Valores válidos: los keys de `infer_profession_category`
+    # (tech / design / marketing / sales / finance / hr / operations /
+    # agro / health / education / legal / admin / trades / general).
+    category = models.CharField(
+        max_length=20,
+        default="general",
+        db_index=True,
+        help_text="Categoría profesional macro inferida del título+summary",
+    )
     # Disponibilidad — false cuando detectamos que la oferta ya no está en
     # el portal de origen (vía sync por sitemap, probe HTTP, etc). El feed
     # filtra is_active=True por default — "cero ruido". Indexed porque
