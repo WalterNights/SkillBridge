@@ -25,6 +25,7 @@ Notas de robustez:
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 
 import requests
 
@@ -48,6 +49,15 @@ _SEARCH_URL = "https://search.torre.co/opportunities/_search/"
 # 30-50 resultados — más allá empieza a meter ofertas con relevancia
 # floja que igual van a quedar bajo el threshold de match% downstream.
 MAX_RESULTS = 50
+
+# Edad máxima aceptable para una oferta de Torre. El user del cliente
+# jorgeluisq07 (2026-06-27) reportó haber visto una oferta de 4 años
+# atrás marcada `status=open` por Torre — su API no purga ofertas
+# viejas, las deja "open" indefinidamente. Por eso filtramos también
+# por created. 30 días vs los 7 del MAX_OFFER_AGE_DAYS global porque
+# Torre tiene menor volumen y queremos preservar recall — si bajamos
+# a 7 el feed queda con casi nada.
+_MAX_AGE_DAYS = 30
 
 # URL canónica de cada oferta. Verificado contra producción 2026-06-27:
 #   - Dominio: torre.ai (NO torre.co — torre.co redirige 301 pero a un
@@ -145,13 +155,54 @@ class TorreScraper(JobScraper):
         }
 
     @staticmethod
+    def _is_fresh_and_open(item: dict) -> bool:
+        """Filtro de calidad: descarta ofertas cerradas o con más de
+        `_MAX_AGE_DAYS`. Torre marca `status=open` indefinidamente
+        (vimos ofertas de 4 años atrás aún "abiertas"), así que el
+        filtro por status SOLO no alcanza — combinamos con `created`.
+
+        Devuelve False (descarta) si:
+          - `status` no es exactamente "open".
+          - `created` no es parseable como ISO 8601.
+          - la oferta tiene > _MAX_AGE_DAYS de antigüedad.
+          - `deadline` ya pasó.
+        """
+        if item.get("status") != "open":
+            return False
+
+        deadline_raw = item.get("deadline")
+        if isinstance(deadline_raw, str) and deadline_raw.strip():
+            try:
+                deadline = datetime.fromisoformat(deadline_raw.replace("Z", "+00:00"))
+                if deadline < datetime.now(timezone.utc):
+                    return False
+            except ValueError:
+                pass  # deadline malformado, no descartar por eso solo
+
+        created_raw = item.get("created")
+        if not isinstance(created_raw, str) or not created_raw.strip():
+            return False  # sin fecha confiable, mejor descartar
+        try:
+            created = datetime.fromisoformat(created_raw.replace("Z", "+00:00"))
+        except ValueError:
+            return False
+        age_days = (datetime.now(timezone.utc) - created).days
+        return age_days <= _MAX_AGE_DAYS
+
+    @staticmethod
     def _to_offer(item: dict, location_hint: str) -> JobOfferData | None:
         """Convierte un resultado de la API en `JobOfferData`. Devuelve
-        None si faltan campos críticos (id, objective). `location_hint`
-        es el location pedido por el caller — sirve de fallback si la
-        oferta no trae location estructurado.
+        None si faltan campos críticos (id, objective), la oferta está
+        cerrada, o tiene más de `_MAX_AGE_DAYS` de antigüedad.
+        `location_hint` es el location pedido por el caller — sirve de
+        fallback si la oferta no trae location estructurado.
         """
         if not isinstance(item, dict):
+            return None
+
+        # Filtro de calidad ANTES de cualquier parsing — barato y evita
+        # meter basura a la DB.
+        if not TorreScraper._is_fresh_and_open(item):
             return None
 
         opp_id = item.get("id")

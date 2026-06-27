@@ -10,6 +10,7 @@ Cubre:
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pytest
@@ -20,6 +21,14 @@ from jobs.adapters.scrapers.torre import (
     _OPPORTUNITY_URL_TEMPLATE,
     _OPPORTUNITY_URL_WITH_SLUG,
 )
+
+
+def _iso_now(days_ago: int = 0) -> str:
+    """Helper: ISO 8601 con `Z` para `days_ago` días atrás. Usado por los
+    fixtures para que la oferta NO sea descartada por el filtro de edad."""
+    return (datetime.now(timezone.utc) - timedelta(days=days_ago)).isoformat().replace(
+        "+00:00", "Z"
+    )
 
 
 def _fake_response(json_body=None, status_code: int = 200, text: str = ""):
@@ -56,6 +65,8 @@ _VALID_RESPONSE = {
                 {"name": "Figma", "experience": "potential-to-develop"},
                 {"name": "User Research", "experience": "potential-to-develop"},
             ],
+            "status": "open",
+            "created": _iso_now(days_ago=5),
         },
         {
             "id": "AbCd1234",
@@ -64,6 +75,8 @@ _VALID_RESPONSE = {
             "locations": [],
             "remote": True,
             "skills": [{"name": "After Effects"}, {"name": "Cinema 4D"}],
+            "status": "open",
+            "created": _iso_now(days_ago=10),
         },
     ],
 }
@@ -196,6 +209,8 @@ class TestTorreScraperToOffer:
                 "id": "OPP-1",
                 "objective": "Designer",
                 "skills": ["Figma", "Sketch"],
+                "status": "open",
+                "created": _iso_now(days_ago=2),
             },
             location_hint="Bogotá",
         )
@@ -209,7 +224,12 @@ class TestTorreScraperToOffer:
         """Sin location estructurado y sin remote, usamos el location
         pedido por el caller — no quedar con location vacío."""
         offer = TorreScraper._to_offer(
-            {"id": "OPP-1", "objective": "Designer"},
+            {
+                "id": "OPP-1",
+                "objective": "Designer",
+                "status": "open",
+                "created": _iso_now(days_ago=2),
+            },
             location_hint="Lima, Perú",
         )
         assert offer is not None
@@ -221,8 +241,105 @@ class TestTorreScraperToOffer:
                 "id": "OPP-1",
                 "objective": "Designer",
                 "organizations": [{"name": "Big Co"}, {"name": "Other"}],
+                "status": "open",
+                "created": _iso_now(days_ago=2),
             },
             location_hint="",
         )
         assert offer is not None
         assert offer.company == "Big Co"
+
+
+@pytest.mark.unit
+class TestTorreFreshnessFilter:
+    """Filtros de calidad post-incident 2026-06-27: el cliente
+    jorgeluisq07 vio una oferta de Torre con match 87% que al clickear
+    mostraba 'Este trabajo se encuentra cerrado' — publicada hace 4
+    años. Torre marca status=open indefinidamente, así que combinamos
+    status + created + deadline para descartar basura antes de guardar."""
+
+    def _base_item(self, **overrides):
+        item = {
+            "id": "OPP-1",
+            "objective": "Designer",
+            "status": "open",
+            "created": _iso_now(days_ago=5),
+        }
+        item.update(overrides)
+        return item
+
+    def test_open_and_recent_passes(self):
+        assert TorreScraper._is_fresh_and_open(self._base_item()) is True
+
+    def test_status_not_open_is_rejected(self):
+        """Caso de la captura del cliente — oferta cerrada que Torre
+        seguia devolviendo en _search."""
+        assert TorreScraper._is_fresh_and_open(self._base_item(status="closed")) is False
+        assert TorreScraper._is_fresh_and_open(self._base_item(status=None)) is False
+
+    def test_created_more_than_30_days_old_is_rejected(self):
+        """Aunque status=open, > 30 dias se descarta. La oferta de 4
+        anios atras del incident habria sido descartada aca."""
+        assert (
+            TorreScraper._is_fresh_and_open(
+                self._base_item(created=_iso_now(days_ago=45))
+            )
+            is False
+        )
+
+    def test_created_exactly_at_threshold_passes(self):
+        """30 días exactos pasa (no <, <=)."""
+        assert (
+            TorreScraper._is_fresh_and_open(
+                self._base_item(created=_iso_now(days_ago=30))
+            )
+            is True
+        )
+
+    def test_missing_created_is_rejected(self):
+        """Sin fecha confiable, mejor descartar que aceptar y mostrar
+        ofertas potencialmente viejas al usuario."""
+        item = self._base_item()
+        item.pop("created")
+        assert TorreScraper._is_fresh_and_open(item) is False
+
+    def test_malformed_created_is_rejected(self):
+        assert (
+            TorreScraper._is_fresh_and_open(self._base_item(created="not-a-date"))
+            is False
+        )
+
+    def test_expired_deadline_is_rejected(self):
+        """Si deadline ya pasó, descartar aunque status=open y created
+        sea reciente — el employer ya cerró aplicaciones."""
+        past_deadline = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat().replace(
+            "+00:00", "Z"
+        )
+        assert (
+            TorreScraper._is_fresh_and_open(
+                self._base_item(deadline=past_deadline)
+            )
+            is False
+        )
+
+    def test_future_deadline_passes(self):
+        future_deadline = (datetime.now(timezone.utc) + timedelta(days=10)).isoformat().replace(
+            "+00:00", "Z"
+        )
+        assert (
+            TorreScraper._is_fresh_and_open(
+                self._base_item(deadline=future_deadline)
+            )
+            is True
+        )
+
+    def test_to_offer_rejects_stale_item(self):
+        """Integración: _to_offer ahora devuelve None si el item no
+        pasa el filtro de freshness, incluso si tiene id+title válidos."""
+        stale = {
+            "id": "OPP-1",
+            "objective": "Designer",
+            "status": "open",
+            "created": _iso_now(days_ago=400),  # 4 años
+        }
+        assert TorreScraper._to_offer(stale, location_hint="") is None
