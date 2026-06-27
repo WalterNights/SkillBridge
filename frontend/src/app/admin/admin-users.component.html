@@ -260,7 +260,7 @@
     <div class="detail-modal glass-strong" (click)="$event.stopPropagation()">
       <header class="detail-modal__header">
         <div class="user-avatar detail-modal__avatar">{{
-          (detail.first_name?.[0] ?? '?') + (detail.last_name?.[0] ?? '')
+          (detail.first_name[0] || '?') + (detail.last_name[0] || '')
         }}</div>
         <div class="flex-1 min-w-0">
           <h2 class="text-lg font-semibold text-bone leading-snug truncate">

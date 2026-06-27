@@ -107,6 +107,10 @@ class TestJobsListOrdering:
         Diferenciar scores es clave: si dos empatan, el orden secundario
         depende del `-created_at` del DB que varía entre runs aislados
         vs conjuntos por la resolución del timestamp en SQLite.
+
+        Todas marcadas `category='tech'` explícito — el filtro estricto
+        del feed (2026-06-27) descarta 'general' para users de vertical
+        específico, y este test mide ORDEN por match%, no clasificación.
         """
         return [
             JobOffer.objects.create(
@@ -114,24 +118,32 @@ class TestJobsListOrdering:
                 url="https://x.com/best",
                 summary="", keywords="python, django, postgresql, docker",
                 portal="hireline", country="MX", modality="remote",
+                category="tech",
             ),
             JobOffer.objects.create(
                 title="Software Developer",
                 url="https://x.com/mid-high",
                 summary="", keywords="python",
                 portal="hireline", country="MX", modality="remote",
+                category="tech",
             ),
             JobOffer.objects.create(
                 title="Senior Engineer",
                 url="https://x.com/mid-low",
                 summary="", keywords="python, django",
                 portal="hireline", country="MX", modality="remote",
+                category="tech",
             ),
             JobOffer.objects.create(
-                title="Recepcionista Bilingüe",
+                # Tech con skills java/kotlin → 0% match con perfil python.
+                # Sustituye al ejemplo viejo de "Recepcionista" que era
+                # category general — el filtro nuevo lo descartaría
+                # antes de calcular score.
+                title="Mobile Developer Kotlin",
                 url="https://x.com/zero",
-                summary="", keywords="atención, cliente, ventas",
+                summary="", keywords="java, kotlin, swift",
                 portal="hireline", country="MX", modality="remote",
+                category="tech",
             ),
         ]
 
@@ -142,14 +154,14 @@ class TestJobsListOrdering:
         assert response.status_code == 200
         titles = [r["title"] for r in response.json()["results"]]
         assert titles[0] == "Backend Developer Python"
-        assert titles[-1] == "Recepcionista Bilingüe"
+        assert titles[-1] == "Mobile Developer Kotlin"
 
     def test_match_asc_orders_worst_first(self, authed_client, user_profile):
         self._setup_offers_with_keywords(user_profile)
         response = authed_client.get("/api/jobs/jobs/?ordering=match_asc&min_match=0")
         assert response.status_code == 200
         titles = [r["title"] for r in response.json()["results"]]
-        assert titles[0] == "Recepcionista Bilingüe"
+        assert titles[0] == "Mobile Developer Kotlin"
         assert titles[-1] == "Backend Developer Python"
 
     def test_invalid_ordering_falls_back_to_default(self, authed_client, user_profile):
@@ -169,18 +181,25 @@ class TestJobsListMinMatch:
     """
 
     def _setup(self, user_profile):
+        """Ofertas tageadas tech explícito — user_profile es Backend
+        Developer (categoría tech) y el filtro estricto del feed
+        (2026-06-27) excluye 'general' para users con vertical
+        específica. Sin marcar category='tech', estos tests fallarían
+        por el filtro, no por el threshold de match%."""
         return [
             JobOffer.objects.create(
                 title="Senior Python Developer",
                 url="https://x.com/dev",
                 summary="", keywords="python, django, postgresql",
                 portal="hireline", country="MX", modality="remote",
+                category="tech",
             ),
             JobOffer.objects.create(
                 title="Analista Control de Accesos",
                 url="https://x.com/access",
                 summary="", keywords="auditoría, calidad, crm, gdpr",
                 portal="hireline", country="MX", modality="remote",
+                category="tech",
             ),
         ]
 
@@ -294,27 +313,30 @@ class TestFeedFiltersByUserCategory:
         )
         return user
 
-    def test_tech_user_only_sees_tech_and_general(self, api_client, django_user_model):
-        """User con título 'Backend Developer' (categoría tech) NO ve
-        la oferta de Abogada. Sí ve la tech y la general."""
+    def test_tech_user_only_sees_tech_offers(self, api_client, django_user_model):
+        """User con título 'Backend Developer' (categoría tech) SOLO ve
+        ofertas tech. NO ve legal ni 'general' (comodín fue eliminado
+        2026-06-27 — reporte de cliente: 'NADA que no tenga que ver
+        con la profesión')."""
         self._setup_offers()
         user = self._make_user_with_profile(django_user_model, title="Backend Developer")
         api_client.force_authenticate(user=user)
         response = api_client.get("/api/jobs/jobs/?min_match=0")
         titles = {r["title"] for r in response.json()["results"]}
         assert "Senior React Native Developer" in titles
-        assert "Asistente Multifuncional" in titles
+        # 'general' YA NO se muestra a users con vertical específica.
+        assert "Asistente Multifuncional" not in titles
         assert "Abogada Penalista" not in titles
 
-    def test_legal_user_only_sees_legal_and_general(self, api_client, django_user_model):
-        """Mirror del test anterior — abogada NO ve tech."""
+    def test_legal_user_only_sees_legal_offers(self, api_client, django_user_model):
+        """Mirror del test anterior — abogada SOLO ve ofertas legales."""
         self._setup_offers()
         user = self._make_user_with_profile(django_user_model, title="Abogada Civilista")
         api_client.force_authenticate(user=user)
         response = api_client.get("/api/jobs/jobs/?min_match=0")
         titles = {r["title"] for r in response.json()["results"]}
         assert "Abogada Penalista" in titles
-        assert "Asistente Multifuncional" in titles
+        assert "Asistente Multifuncional" not in titles
         assert "Senior React Native Developer" not in titles
 
     def test_general_user_sees_everything(self, api_client, django_user_model):

@@ -115,20 +115,30 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
 
         qs = JobOffer.objects.filter(is_active=True).order_by("-created_at")
 
-        # Filtro por categoría del user. Solo aplica si el user tiene
-        # perfil con título — sino caemos al fallback que muestra todo.
+        # Filtro estricto por categoría del user. Sin esto, el feed
+        # incluía 'general' como comodín y los users con vertical
+        # específica veían ruido cross-domain: un zootecnista veía
+        # 'Project Officer', 'Scientific Affairs Manager', 'Supervisor
+        # de Producción' (todas tageadas 'general' por no clasificar
+        # explícitamente). Reportado por cliente 2026-06-27: "NADA que
+        # no tenga que ver con la profesión del usuario".
+        #
+        # Trade-off aceptado: ofertas válidas mal clasificadas (ej.
+        # "Veterinario Rural" que el classifier no capture) se pierden
+        # en el corto plazo. Compensamos mejorando el classifier de
+        # manera incremental ante reportes concretos.
         try:
             profile = self.request.user.profile
             user_category = infer_profession_category(profile.professional_title)
         except UserProfile.DoesNotExist:
             user_category = "general"
         if user_category != "general":
-            # User con vertical claro → su categoría + general (comodín
-            # para ofertas que no se pudieron clasificar — preferimos
-            # mostrarlas a esconderlas).
-            qs = qs.filter(category__in=[user_category, "general"])
+            # User con vertical claro → SOLO ofertas de su vertical.
+            # 'general' no se incluye — era el origen del ruido.
+            qs = qs.filter(category=user_category)
         # else: user 'general' (admin sin perfil, perfil sin título o
-        # con título genérico) → ve todas las categorías sin filtrar.
+        # con título genérico) → ve todas las categorías sin filtrar
+        # (no podemos clasificarlo, mejor mostrar de más que esconder).
 
         country_param = (self.request.query_params.get("country") or "").strip()
         if country_param:
