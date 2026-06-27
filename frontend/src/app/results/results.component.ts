@@ -121,11 +121,14 @@ export class ResultsComponent {
   /** Threshold a pedir al backend según el toggle.
    * - Sin checkbox: undefined → backend usa su default (50%) que coincide
    *   con el chip "Regular 50-69%" ya visible en los filtros.
-   * - Con checkbox: 30 → extiende el feed al rango 30-49% (matches
-   *   débiles que normalmente NO querés ver, pero el toggle es útil
-   *   para perfiles con poca oferta arriba del 50%). */
+   * - Con checkbox: 0 → modo DIAGNÓSTICO. Muestra todo lo que el
+   *   scraper trajo, incluso ofertas que matchearon 0%. Sirve para que
+   *   admin/cliente vea si las ofertas off-topic son realmente
+   *   off-topic (matcher correcto) o si el matcher se equivoca y deja
+   *   afuera ofertas válidas. Bajado de 30 a 0 el 2026-06-27 tras
+   *   reporte de cliente sin recall en perfiles nicho. */
   private currentMinMatch(): number | undefined {
-    return this.showLowMatches() ? 30 : undefined;
+    return this.showLowMatches() ? 0 : undefined;
   }
 
   /** Label legible para un código ISO. */

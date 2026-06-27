@@ -58,12 +58,13 @@
         Regular <span class="text-dim ml-1">50–69%</span>
       </button>
 
-      <!-- Checkbox "Ver matches débiles" — toggle controlado por feature
-           flag show_low_match_filter. Sin activar, el feed muestra
-           matches 50%+ (el default del backend). Activado, el backend
-           extiende el feed al rango 30-49% — útil para perfiles con
-           poca oferta arriba del 50%. El admin puede desactivar el
-           flag desde /admin/feature-flags. -->
+      <!-- Checkbox "Ver matches débiles" — modo DIAGNÓSTICO. Sin activar,
+           el feed muestra matches 50%+ (default del backend). Activado,
+           muestra TODO lo que el scraper trajo (incluyendo 0% match).
+           Usado por admin/cliente para entender si las ofertas off-topic
+           son correctamente filtradas o si el matcher esta dejando
+           pasar/descartar mal. El admin puede desactivar el flag desde
+           /admin/feature-flags. -->
       <label
         *ngIf="featureFlags.isEnabled('show_low_match_filter')"
         class="low-match-toggle"
@@ -75,7 +76,7 @@
           (change)="toggleLowMatches()"
         />
         <span class="material-symbols-outlined" style="font-size: 14px">visibility</span>
-        Ver matches débiles <span class="text-dim ml-1">30-49%</span>
+        Ver matches débiles <span class="text-dim ml-1">0-49%</span>
       </label>
 
       <!-- Sort + counter agrupados — w-full + justify-between en mobile;
