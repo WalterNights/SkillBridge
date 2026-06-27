@@ -35,7 +35,12 @@
       />
     </div>
 
-    <div class="flex flex-wrap items-center gap-2 mt-4">
+    <!-- Layout responsive de filtros:
+         - Mobile (<sm): filtros wrappean naturalmente; sort + counter
+           caen abajo en una fila propia (mt-3) con space-between.
+         - Desktop (sm+): todo en una fila; sort + counter empujados a
+           la derecha con ml-auto. -->
+    <div class="mt-4 flex flex-wrap items-center gap-2">
       <button class="filter-pill" [class.active]="selectedFilter === 'all'" (click)="setFilter('all')">
         <span class="material-symbols-outlined" style="font-size: 16px">apps</span>
         Todas
@@ -73,24 +78,32 @@
         Ver matches bajos <span class="text-dim ml-1">30%+</span>
       </label>
 
-      <!-- Sort toggle: alterna entre mayor→menor y menor→mayor por % match. -->
-      <button
-        type="button"
-        class="sort-btn ml-auto"
-        (click)="toggleSortOrder()"
-        [title]="sortOrder() === 'desc' ? 'Ordenando: mejor match primero' : 'Ordenando: peor match primero'"
-        [attr.aria-label]="sortOrder() === 'desc' ? 'Cambiar a peor match primero' : 'Cambiar a mejor match primero'"
+      <!-- Sort + counter agrupados — w-full + justify-between en mobile;
+           ml-auto + width auto en sm+ para que se peguen a la derecha
+           del bloque de filtros. -->
+      <div
+        class="flex items-center gap-3 w-full justify-between mt-3
+               sm:w-auto sm:ml-auto sm:justify-end sm:mt-0"
       >
-        <span class="material-symbols-outlined" style="font-size: 16px">
-          {{ sortOrder() === 'desc' ? 'arrow_downward' : 'arrow_upward' }}
-        </span>
-        <span>{{ sortOrder() === 'desc' ? 'Mayor % primero' : 'Menor % primero' }}</span>
-      </button>
+        <!-- Sort toggle: alterna entre mayor→menor y menor→mayor por % match. -->
+        <button
+          type="button"
+          class="sort-btn"
+          (click)="toggleSortOrder()"
+          [title]="sortOrder() === 'desc' ? 'Ordenando: mejor match primero' : 'Ordenando: peor match primero'"
+          [attr.aria-label]="sortOrder() === 'desc' ? 'Cambiar a peor match primero' : 'Cambiar a mejor match primero'"
+        >
+          <span class="material-symbols-outlined" style="font-size: 16px">
+            {{ sortOrder() === 'desc' ? 'arrow_downward' : 'arrow_upward' }}
+          </span>
+          <span>{{ sortOrder() === 'desc' ? 'Mayor % primero' : 'Menor % primero' }}</span>
+        </button>
 
-      <p class="text-xs text-warm-grey">
-        Mostrando <span class="text-bone font-semibold">{{ filteredOffer.length }}</span>
-        de <span class="text-bone font-semibold">{{ totalCount() || offers.length }}</span>
-      </p>
+        <p class="text-xs text-warm-grey shrink-0">
+          Mostrando <span class="text-bone font-semibold">{{ filteredOffer.length }}</span>
+          de <span class="text-bone font-semibold">{{ totalCount() || offers.length }}</span>
+        </p>
+      </div>
     </div>
 
     <!-- Filtros país + modalidad — colapsable para no quitar foco visual.
