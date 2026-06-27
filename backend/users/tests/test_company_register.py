@@ -309,14 +309,72 @@ class TestSearchProfiles:
         assert response.status_code == 403
         assert response.json()["error"] == "account_type_mismatch"
 
-    def test_empty_criteria_returns_empty_with_flag(self, api_client):
+    def test_empty_criteria_returns_browse_list(self, api_client, django_user_model):
+        """Sin criterios entramos en modo NAVEGAR — lista cruda de
+        profiles visibles (ordenados por recencia), sin match%. Antes
+        devolvíamos lista vacía obligando a la empresa a definir
+        criterios primero; cambiado en redesign 2026-06-27 a lista-first."""
         company_user = self._make_company(api_client)
+        self._make_visible_professional(
+            django_user_model, "anna", title="UX Designer", skills="figma, sketch"
+        )
+        self._make_visible_professional(
+            django_user_model, "bob", title="Backend Developer", skills="django, python"
+        )
         api_client.force_authenticate(user=company_user)
         response = api_client.post(self.URL, {}, format="json")
         assert response.status_code == 200
         body = response.json()
         assert body["criteria_empty"] is True
-        assert body["results"] == []
+        assert body["browse_mode"] is True
+        names = sorted(r["first_name"] for r in body["results"])
+        assert names == ["Anna", "Bob"]
+        # En modo browse no hay matching → match_percentage None.
+        for r in body["results"]:
+            assert r["match_percentage"] is None
+
+    def test_browse_mode_filters_by_profession_category(self, api_client, django_user_model):
+        """Modo NAVEGAR + profession_category devuelve solo perfiles
+        cuyo título clasifica a esa categoría."""
+        company_user = self._make_company(api_client)
+        self._make_visible_professional(
+            django_user_model, "designer", title="UX Designer", skills="figma"
+        )
+        self._make_visible_professional(
+            django_user_model, "dev", title="Backend Developer", skills="python"
+        )
+        api_client.force_authenticate(user=company_user)
+        response = api_client.post(
+            self.URL, {"profession_category": "design"}, format="json"
+        )
+        assert response.status_code == 200
+        names = [r["first_name"] for r in response.json()["results"]]
+        assert names == ["Designer"]
+
+    def test_search_mode_filters_by_profession_category(self, api_client, django_user_model):
+        """Mismo filtro en modo BÚSQUEDA: solo matchea con perfiles de
+        la categoría pedida, aunque otros perfiles tengan skills altas."""
+        company_user = self._make_company(api_client)
+        self._make_visible_professional(
+            django_user_model, "designer", title="UX Designer", skills="figma, react"
+        )
+        self._make_visible_professional(
+            django_user_model, "dev", title="Frontend Developer", skills="figma, react"
+        )
+        api_client.force_authenticate(user=company_user)
+        response = api_client.post(
+            self.URL,
+            {
+                "skills_required": ["react"],
+                "target_title": "Designer",
+                "profession_category": "design",
+            },
+            format="json",
+        )
+        assert response.status_code == 200
+        names = [r["first_name"] for r in response.json()["results"]]
+        assert "Designer" in names
+        assert "Dev" not in names
 
     def test_only_returns_visible_to_companies(self, api_client, django_user_model):
         company_user = self._make_company(api_client)
@@ -972,3 +1030,115 @@ class TestAdminCanBrowseProfiles:
             format="json",
         )
         assert response.status_code == 403
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestProfileCategoriesEndpoint:
+    """GET /api/companies/profile-categories/ — fuente del dropdown smart
+    del lado empresa."""
+
+    URL = "/api/companies/profile-categories/"
+
+    def _make_company(self, api_client):
+        api_client.post(
+            "/api/companies/register/", _VALID_COMPANY_PAYLOAD, format="json"
+        )
+        return User.objects.get(email="hello@acme.com")
+
+    def _make_visible_professional(self, django_user_model, username, *, title):
+        user = django_user_model.objects.create_user(
+            username=username, email=f"{username}@example.com", password="x"
+        )
+        UserProfile.objects.create(
+            user=user,
+            first_name=username.title(),
+            last_name="Pro",
+            phone="+57",
+            city="Bogotá",
+            professional_title=title,
+            skills="x",
+            experience="...",
+            visible_to_companies=True,
+        )
+
+    def test_anon_is_401(self, api_client):
+        assert api_client.get(self.URL).status_code == 401
+
+    def test_professional_account_is_403(self, authed_client):
+        response = authed_client.get(self.URL)
+        assert response.status_code == 403
+
+    def test_empty_platform_returns_empty_list(self, api_client):
+        company_user = self._make_company(api_client)
+        api_client.force_authenticate(user=company_user)
+        response = api_client.get(self.URL)
+        assert response.status_code == 200
+        assert response.json() == {"categories": []}
+
+    def test_aggregates_visible_profiles_by_category(self, api_client, django_user_model):
+        """3 designers + 1 dev + 1 abogado deben devolver 3 categorias
+        con sus respectivos counts."""
+        company_user = self._make_company(api_client)
+        self._make_visible_professional(django_user_model, "designer1", title="UX Designer")
+        self._make_visible_professional(django_user_model, "designer2", title="UI Designer")
+        self._make_visible_professional(django_user_model, "designer3", title="Motion Designer")
+        self._make_visible_professional(django_user_model, "dev", title="Backend Developer")
+        # "Abogada Penalista" (en vez de "Comercial") — "comercial" cae
+        # en el patrón de sales antes que en legal.
+        self._make_visible_professional(django_user_model, "lawyer", title="Abogada Penalista")
+
+        api_client.force_authenticate(user=company_user)
+        response = api_client.get(self.URL)
+        assert response.status_code == 200
+        cats = {c["value"]: c["count"] for c in response.json()["categories"]}
+        assert cats == {"design": 3, "tech": 1, "legal": 1}
+
+    def test_excludes_invisible_profiles(self, api_client, django_user_model):
+        company_user = self._make_company(api_client)
+        # Hidden no debe contar.
+        hidden = django_user_model.objects.create_user(
+            username="hidden", email="hidden@example.com", password="x"
+        )
+        UserProfile.objects.create(
+            user=hidden,
+            first_name="Hidden",
+            last_name="Pro",
+            phone="+57",
+            city="Bogotá",
+            professional_title="UX Designer",
+            skills="x",
+            experience="...",
+            visible_to_companies=False,
+        )
+        api_client.force_authenticate(user=company_user)
+        response = api_client.get(self.URL)
+        assert response.json()["categories"] == []
+
+    def test_excludes_general_when_other_categories_present(
+        self, api_client, django_user_model
+    ):
+        """`general` se usa de fallback cuando el título no matchea
+        ninguna categoría conocida — no aporta valor en el dropdown si
+        hay categorías específicas, lo escondemos."""
+        company_user = self._make_company(api_client)
+        self._make_visible_professional(django_user_model, "designer", title="UX Designer")
+        self._make_visible_professional(django_user_model, "weirdo", title="Foo Bar Baz")  # general
+
+        api_client.force_authenticate(user=company_user)
+        response = api_client.get(self.URL)
+        values = [c["value"] for c in response.json()["categories"]]
+        assert "design" in values
+        assert "general" not in values
+
+    def test_keeps_general_when_only_category(self, api_client, django_user_model):
+        """Si SOLO hay generales (caso muy temprano), no escondemos —
+        la lista no queda vacía."""
+        company_user = self._make_company(api_client)
+        self._make_visible_professional(django_user_model, "weirdo1", title="Foo Bar")
+        self._make_visible_professional(django_user_model, "weirdo2", title="Baz Qux")
+
+        api_client.force_authenticate(user=company_user)
+        response = api_client.get(self.URL)
+        values = [c["value"] for c in response.json()["categories"]]
+        assert values == ["general"]

@@ -207,10 +207,17 @@ class CompanyMeView(APIView):
 class CompanySearchProfilesView(APIView):
     """POST /api/companies/search-profiles/
 
-    Busca profesionales que coincidan con criterios definidos por la
-    empresa. Reusa `JobMatchingService.calculate_match_percentage` con
-    inputs invertidos (el "job_keywords" es lo que pide la empresa, el
-    "user_skills" lo que tiene el profesional).
+    Lista profesionales visibles para empresas. Dos modos según body:
+
+    Modo NAVEGAR (sin skills_required ni target_title):
+      Devuelve todos los profiles visibles ordenados por recencia.
+      Sin cálculo de match — los profiles vienen con `match_percentage=null`
+      para que el frontend no muestre porcentajes falsos.
+
+    Modo BÚSQUEDA (con al menos uno de skills_required / target_title):
+      Calcula match% con `JobMatchingService.calculate_match_percentage`
+      (inputs invertidos: lo que la empresa pide vs lo que el profesional
+      tiene). Ordena por match desc.
 
     Privacidad:
       - Solo se devuelven UserProfiles con `visible_to_companies=True`.
@@ -219,14 +226,13 @@ class CompanySearchProfilesView(APIView):
 
     Body esperado:
       {
-        "skills_required": ["react", "node", ...],
-        "target_title": "Senior Frontend Developer",
+        "skills_required": ["react", "node", ...],   # opcional
+        "target_title": "Senior Frontend Developer", # opcional
         "country": "CO",              # opcional, filtro extra
+        "profession_category": "design",  # opcional (tech/design/marketing/...)
         "min_match": 50,              # opcional, default 0
         "limit": 30                   # opcional, default 30, max 100
       }
-
-    Devuelve lista ordenada por match desc.
     """
 
     permission_classes = [IsAuthenticated]
@@ -258,6 +264,7 @@ class CompanySearchProfilesView(APIView):
 
         target_title = str(data.get("target_title", "")).strip()
         country = str(data.get("country", "")).strip()
+        profession_category = str(data.get("profession_category", "")).strip().lower()
 
         try:
             min_match = int(data.get("min_match", 0))
@@ -271,17 +278,16 @@ class CompanySearchProfilesView(APIView):
             limit = 30
         limit = max(1, min(limit, 100))
 
-        # Sin skills ni título → no se puede calcular match. Devolvemos
-        # lista vacía (no 400) porque el frontend puede pegarle al
-        # endpoint con criterios sin completar (autosave/preview).
-        if not skills_required and not target_title:
-            return Response(
-                {"results": [], "total": 0, "criteria_empty": True},
-                status=status.HTTP_200_OK,
-            )
+        # Si NO hay criterios de match (skills ni título), entramos en
+        # modo NAVEGAR: lista completa de profiles visibles ordenados por
+        # recencia. Sin esto, una empresa que entra fresh ve un vacío
+        # vacuo y tiene que adivinar qué tipear. Listar primero, filtrar
+        # después es mucho mejor UX.
+        browse_mode = not (skills_required or target_title)
 
         # ── Query base — solo perfiles opt-in ───────────────────────
         from jobs.services.matching_service import JobMatchingService
+        from users.services.profession_classifier import infer_profession_category
 
         qs = (
             UserProfile.objects.filter(visible_to_companies=True)
@@ -294,9 +300,34 @@ class CompanySearchProfilesView(APIView):
             # en perfil agregamos un campo dedicado.
             qs = qs.filter(city__icontains=country)
 
-        # ── Calcular match por perfil ──────────────────────────────
+        # ── Path NAVEGAR — sin match, lista cruda ──────────────────
+        if browse_mode:
+            # NOTA: UserProfile usa `create_at` (typo histórico en el
+            # modelo, sin la "d"). Ver `users/models.py:251`.
+            qs = qs.order_by("-create_at")
+            results = []
+            for profile in qs[:500]:
+                if profession_category:
+                    if infer_profession_category(profile.professional_title) != profession_category:
+                        continue
+                results.append(_browse_profile_payload(profile, request))
+            truncated = results[:limit]
+            return Response(
+                {
+                    "results": truncated,
+                    "total": len(results),
+                    "criteria_empty": True,
+                    "browse_mode": True,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        # ── Path BÚSQUEDA — calcular match por perfil ──────────────
         results = []
         for profile in qs[:500]:  # tope hard para evitar O(N) descontrolado
+            if profession_category:
+                if infer_profession_category(profile.professional_title) != profession_category:
+                    continue
             user_skills = [s.strip() for s in (profile.skills or "").split(",") if s.strip()]
             match = JobMatchingService.calculate_match_percentage(
                 job_keywords=skills_required,
@@ -346,9 +377,123 @@ class CompanySearchProfilesView(APIView):
                 "results": truncated,
                 "total": len(results),
                 "criteria_empty": False,
+                "browse_mode": False,
             },
             status=status.HTTP_200_OK,
         )
+
+
+class CompanyProfileCategoriesView(APIView):
+    """GET /api/companies/profile-categories/
+
+    Devuelve las categorías de profesión que TIENEN profiles visibles
+    en la plataforma. Hace de fuente para el dropdown "smart" del lado
+    empresa: solo aparecen las verticals donde hay al menos 1 candidato.
+
+    Sin esto, el dropdown listaría las 11 categorías hardcoded de
+    `profession_classifier` y la empresa elegiría "Salud" para no
+    encontrar nada — UX frustrante. Mostrando solo lo que hay, cada
+    opción es accionable.
+
+    Cacheable: lista cambia lento (cuando usuarios nuevos se registran
+    o cambian su título). El frontend la consulta una vez al mount
+    del dashboard.
+
+    Response:
+      {
+        "categories": [
+          {"value": "design", "label": "Diseño", "count": 12},
+          {"value": "tech", "label": "Tecnología", "count": 8},
+          ...
+        ]
+      }
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    # Etiqueta visible por categoría. Las keys vienen de
+    # `infer_profession_category` y deben coincidir 1:1 con ese set.
+    _LABELS = {
+        "tech": "Tecnología",
+        "design": "Diseño",
+        "marketing": "Marketing",
+        "sales": "Ventas",
+        "finance": "Finanzas",
+        "hr": "Recursos Humanos",
+        "operations": "Operaciones",
+        "health": "Salud",
+        "education": "Educación",
+        "legal": "Legal",
+        "general": "Otros",
+    }
+
+    def get(self, request):
+        # Gate: empresa o admin (mismo que search-profiles).
+        if not request.user.is_staff and request.user.account_type != User.ACCOUNT_TYPE_COMPANY:
+            return Response(
+                {
+                    "error": "account_type_mismatch",
+                    "detail": "Solo cuentas empresa o admin pueden ver categorías.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        from collections import Counter
+
+        from users.services.profession_classifier import infer_profession_category
+
+        qs = UserProfile.objects.filter(
+            visible_to_companies=True,
+            user__account_type=User.ACCOUNT_TYPE_PROFESSIONAL,
+        ).values_list("professional_title", flat=True)
+
+        counts: Counter = Counter()
+        for title in qs:
+            counts[infer_profession_category(title)] += 1
+
+        # Excluimos `general` cuando hay otras categorías — no aporta
+        # valor en el dropdown. Si SOLO hay generales (caso muy temprano),
+        # lo dejamos para que la lista no esté vacía.
+        categories_with_specifics = [k for k in counts if k != "general"]
+        if categories_with_specifics:
+            counts.pop("general", None)
+
+        categories = [
+            {
+                "value": key,
+                "label": self._LABELS.get(key, key.title()),
+                "count": count,
+            }
+            for key, count in counts.most_common()  # orden por count desc
+        ]
+        return Response({"categories": categories}, status=status.HTTP_200_OK)
+
+
+def _browse_profile_payload(profile, request) -> dict:
+    """Payload para una card en modo NAVEGAR (sin match%). Mantiene el
+    mismo shape que el modo búsqueda para que el frontend reuse el mismo
+    componente — solo `match_percentage` viene None."""
+    user_skills = [s.strip() for s in (profile.skills or "").split(",") if s.strip()]
+    photo_url = ""
+    if profile.photo and request is not None:
+        photo_url = request.build_absolute_uri(profile.photo.url)
+    return {
+        "profile_id": profile.id,
+        "first_name": profile.first_name,
+        "last_name": profile.last_name,
+        "professional_title": profile.professional_title,
+        "city": profile.city,
+        "photo_url": photo_url,
+        "summary": (profile.summary or "")[:240],
+        "skills_preview": user_skills[:8],
+        # Sin búsqueda no hay matching, esos campos vienen None — el
+        # frontend usa esto para ocultar el badge de match%.
+        "matched_skills": [],
+        "missing_skills": [],
+        "match_percentage": None,
+        "title_score": None,
+        "skill_score": None,
+    }
 
 
 @method_decorator(
