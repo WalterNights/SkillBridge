@@ -14,6 +14,10 @@ _DEFAULT_FLAGS = [
     {
         "key": "show_low_match_filter",
         "value_bool": False,
+        # NOTA: la descripcion se actualizo en 0003. Si reverteas hasta
+        # esta migration y volves a aplicar, el seed original que arranca
+        # de "30" se reemplaza por la version "50" mediante la 0003.
+        # Mantengo esta string como historica.
         "description": (
             "Si está activo, en el feed aparece un checkbox 'Ver matches bajos' "
             "junto al filtro 'Regular 50-69%'. Cuando el usuario lo activa, el "

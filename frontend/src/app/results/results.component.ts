@@ -118,10 +118,13 @@ export class ResultsComponent {
     sessionStorage.getItem('show_low_matches') === 'true',
   );
 
-  /** Threshold a pedir al backend según el toggle. 30 = mediocre+;
-   * undefined = backend usa su default (60). */
+  /** Threshold a pedir al backend según el toggle. 50 = arranca en el
+   * chip "Regular" que ya está visible en los filtros — bajar de 50
+   * traería ofertas que el usuario ni siquiera puede filtrar localmente
+   * y se sintió raro en feedback de cliente (2026-06-27).
+   * Sin checkbox: undefined = backend usa su default (60). */
   private currentMinMatch(): number | undefined {
-    return this.showLowMatches() ? 30 : undefined;
+    return this.showLowMatches() ? 50 : undefined;
   }
 
   /** Label legible para un código ISO. */
