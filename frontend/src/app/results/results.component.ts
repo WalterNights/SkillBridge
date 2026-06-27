@@ -118,13 +118,14 @@ export class ResultsComponent {
     sessionStorage.getItem('show_low_matches') === 'true',
   );
 
-  /** Threshold a pedir al backend según el toggle. 50 = arranca en el
-   * chip "Regular" que ya está visible en los filtros — bajar de 50
-   * traería ofertas que el usuario ni siquiera puede filtrar localmente
-   * y se sintió raro en feedback de cliente (2026-06-27).
-   * Sin checkbox: undefined = backend usa su default (60). */
+  /** Threshold a pedir al backend según el toggle.
+   * - Sin checkbox: undefined → backend usa su default (50%) que coincide
+   *   con el chip "Regular 50-69%" ya visible en los filtros.
+   * - Con checkbox: 30 → extiende el feed al rango 30-49% (matches
+   *   débiles que normalmente NO querés ver, pero el toggle es útil
+   *   para perfiles con poca oferta arriba del 50%). */
   private currentMinMatch(): number | undefined {
-    return this.showLowMatches() ? 50 : undefined;
+    return this.showLowMatches() ? 30 : undefined;
   }
 
   /** Label legible para un código ISO. */

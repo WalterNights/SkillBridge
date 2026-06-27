@@ -156,12 +156,17 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
         JobMatchingService.enrich_with_match(offers, profile)
 
     # Umbral mínimo de match para que una oferta aparezca en el feed.
-    # 60% honra el slogan "cero ruido" — preferimos feed vacío + CTA a que
-    # el usuario tenga que filtrar ofertas mediocres mentalmente. Subido
-    # desde 25% tras feedback de cliente: el feed se llenaba de jobs de
-    # ventas/mantenimiento que matcheaban 10-20% por palabras sueltas y
-    # arruinaban la promesa del producto.
-    _DEFAULT_MIN_MATCH = 60
+    # Historial:
+    #   25% — inicial. Feed se llenaba de jobs ventas/mantenimiento
+    #         matcheando 10-20% por palabras sueltas → arruinaba la
+    #         promesa "cero ruido".
+    #   60% — fix junio 2026. Preferíamos feed vacío + CTA antes que
+    #         mediocre. Funcionó pero dejaba afuera mucha oferta válida
+    #         (50-59%) que el usuario sí quería ver.
+    #   50% — ajuste 2026-06-27. Coincide con el chip "Regular 50-69%"
+    #         visible en los filtros. El checkbox "Ver matches débiles"
+    #         (gated por feature flag) extiende a 30-49% cuando se activa.
+    _DEFAULT_MIN_MATCH = 50
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -224,7 +229,7 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
     def _parse_min_match(self, request) -> int:
-        """Lee `?min_match=N` y lo clampa a [0, 100]. Default = 25.
+        """Lee `?min_match=N` y lo clampa a [0, 100]. Default = `_DEFAULT_MIN_MATCH`.
 
         Inválidos (no-numérico, fuera de rango) caen al default — el
         feed no debería romperse por un query param mal formado.

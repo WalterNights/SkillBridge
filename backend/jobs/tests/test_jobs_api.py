@@ -185,7 +185,7 @@ class TestJobsListMinMatch:
         ]
 
     def test_default_min_match_excludes_zero_score_offers(self, authed_client, user_profile):
-        """Default 60% — la oferta off-topic con 0% no debe aparecer."""
+        """Default 50% — la oferta off-topic con 0% no debe aparecer."""
         self._setup(user_profile)
         response = authed_client.get("/api/jobs/jobs/")
         titles = [r["title"] for r in response.json()["results"]]
@@ -208,7 +208,7 @@ class TestJobsListMinMatch:
         assert response.json()["count"] == 0
 
     def test_min_match_invalid_falls_back_to_default(self, authed_client, user_profile):
-        """?min_match=foo no rompe — cae al default 60."""
+        """?min_match=foo no rompe — cae al default 50."""
         self._setup(user_profile)
         response = authed_client.get("/api/jobs/jobs/?min_match=foo")
         assert response.status_code == 200
