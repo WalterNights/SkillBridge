@@ -23,6 +23,7 @@ from jobs.adapters.scrapers.hireline import HirelineScraper
 from jobs.adapters.scrapers.indeed import IndeedScraper
 from jobs.adapters.scrapers.linkedin import LinkedInGuestScraper
 from jobs.adapters.scrapers.magneto import MagnetoScraper
+from jobs.adapters.scrapers.torre import TorreScraper
 from jobs.adapters.scrapers.trabajando import TrabajandoScraper
 from jobs.adapters.scrapers.trabajos_co import TrabajosColombiaScraper
 from jobs.adapters.scrapers.web_search import WebSearchJobsScraper
@@ -45,6 +46,7 @@ _REGISTRY: dict[str, type[JobScraper]] = {
     LinkedInGuestScraper.portal_name: LinkedInGuestScraper,
     MagnetoScraper.portal_name: MagnetoScraper,
     IndeedScraper.portal_name: IndeedScraper,
+    TorreScraper.portal_name: TorreScraper,
     TrabajandoScraper.portal_name: TrabajandoScraper,
     TrabajosColombiaScraper.portal_name: TrabajosColombiaScraper,
     WebSearchJobsScraper.portal_name: WebSearchJobsScraper,
