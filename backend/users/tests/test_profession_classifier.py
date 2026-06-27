@@ -100,6 +100,34 @@ class TestInferProfessionCategory:
             # Fallback general
             ("Foo Bar Baz", "general"),
             ("", "general"),
+            # PLURALES — bug crítico descubierto 2026-06-27.
+            # El classifier viejo NO detectaba plurales (la `s` del
+            # plural rompía el word boundary). Ofertas reales suelen
+            # venir en plural ("Buscamos Diseñadores", "Veterinarios
+            # necesarios") y caían todas a 'general'.
+            ("Buscamos Zootecnistas para granja", "agro"),
+            ("Veterinarios necesarios", "agro"),
+            ("Empresas agrícolas", "agro"),
+            ("Diseñadores Gráficos", "design"),
+            ("Desarrolladores Backend", "tech"),
+            ("Programadoras Junior", "tech"),
+            ("Contadores Públicos", "finance"),
+            ("Enfermeras Quirúrgicas", "health"),
+            ("Abogadas Civilistas", "legal"),
+            ("Plomeros con experiencia", "trades"),
+            ("Electricistas industriales", "trades"),
+            # PET CARE — agro incluye servicios para mascotas.
+            # Caso real del cliente Fabio "Zootecnista - Peluquero canino".
+            ("Peluquero canino", "agro"),
+            ("Estilista canina", "agro"),
+            ("Adiestrador canino", "agro"),
+            ("Paseador de perros", "agro"),
+            ("Auxiliar Veterinario", "agro"),
+            ("Cuidador de animales", "agro"),
+            # Docencia veterinaria queda en agro, no en education —
+            # la palabra clave "veterinaria" gana antes que "docente".
+            ("Docente de Veterinaria", "agro"),
+            ("Profesor de Ciencias Agropecuarias", "agro"),
         ],
     )
     def test_categories(self, title, expected):
