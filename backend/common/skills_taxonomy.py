@@ -173,6 +173,29 @@ HARD_SKILLS: frozenset[str] = frozenset(
         "zeplin",
         "principle",
         "blender",
+        # 3D / VFX / motion (mercado creativo LATAM crece rápido — perfiles
+        # tipo "diseñador 3D + animación" no son tech-dev pero generaban
+        # 0% match porque ninguna de estas herramientas estaba en taxonomy)
+        "cinema 4d",
+        "maya",
+        "unreal engine",
+        "unity",
+        "houdini",
+        "zbrush",
+        "substance painter",
+        "substance designer",
+        "nuke",
+        "davinci resolve",
+        "final cut pro",
+        # Video edition (separado de premiere/after effects que ya estaban)
+        "video editing",
+        # Animación
+        "2d animation",
+        "3d animation",
+        # VFX / composición / extended reality
+        "visual effects",
+        "augmented reality",
+        "virtual reality",
         # Métodos / outputs
         "wireframes",
         "prototyping",
@@ -185,12 +208,15 @@ HARD_SKILLS: frozenset[str] = frozenset(
         "accessibility",
         "wcag",
         "branding",
+        "brand identity",
         "typography",
         "color theory",
         "motion graphics",
         "3d modeling",
         "illustration",
+        "vector illustration",
         "logo design",
+        "content creation",
 
         # ============ MARKETING DIGITAL ============
         # Ads platforms
@@ -627,6 +653,42 @@ ALIASES: dict[str, str] = {
     "adobe lightroom": "lightroom",
     "ui design": "design system",
     "ux design": "user research",
+    # 3D / VFX — abreviaciones comunes y nombres alternos
+    "c4d": "cinema 4d",
+    "ue5": "unreal engine",
+    "ue4": "unreal engine",
+    "unreal": "unreal engine",
+    "autodesk maya": "maya",
+    "3ds max": "maya",  # cercano - en LATAM se cita junto y muchos perfiles cubren ambos
+    "vfx": "visual effects",
+    "efectos visuales": "visual effects",
+    "compositing": "visual effects",
+    # Animación — plural y traducción
+    "2d animations": "2d animation",
+    "3d animations": "3d animation",
+    "animación 2d": "2d animation",
+    "animacion 2d": "2d animation",
+    "animación 3d": "3d animation",
+    "animacion 3d": "3d animation",
+    # Realidad extendida — abreviaciones y traducciones
+    "ar": "augmented reality",
+    "vr": "virtual reality",
+    "realidad aumentada": "augmented reality",
+    "realidad virtual": "virtual reality",
+    "mixed reality": "augmented reality",  # cercano, agrupamos
+    "xr": "augmented reality",
+    # Video — traducción y nombres alternos
+    "video edition": "video editing",
+    "edición de video": "video editing",
+    "edicion de video": "video editing",
+    "video editor": "video editing",
+    # Diseño / branding — variantes
+    "vector illustrations": "vector illustration",
+    "ilustración vectorial": "vector illustration",
+    "ilustracion vectorial": "vector illustration",
+    "identidad de marca": "brand identity",
+    "creación de contenido": "content creation",
+    "creacion de contenido": "content creation",
     # ===== Marketing =====
     "facebook ads manager": "facebook ads",
     "meta business": "meta ads",

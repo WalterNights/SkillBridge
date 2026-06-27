@@ -89,3 +89,44 @@ class TestAllRecognizable:
         assert "react" in recognized  # canónica
         assert "react.js" in recognized  # alias
         assert "liderazgo" in recognized  # soft skill
+
+
+@pytest.mark.unit
+class TestCreativeSkillsCoverage:
+    """Cobertura específica del vertical creativo (3D, VFX, animación,
+    video). Sin estos terms, perfiles tipo "diseñador 3D + motion +
+    animación" generaban match% 0% en sus skills aunque las ofertas
+    las mencionaran explícitamente."""
+
+    @pytest.mark.parametrize(
+        "skill_in_cv,expected_canonical",
+        [
+            # Caso real del cliente jorgeluisq07 — todas las skills de su CV
+            # que antes de este fix no estaban en taxonomy.
+            ("Cinema 4D", "cinema 4d"),
+            ("Unreal Engine", "unreal engine"),
+            ("UE5", "unreal engine"),
+            ("Maya", "maya"),
+            ("3ds Max", "maya"),  # cercano, agrupado
+            ("ZBrush", "zbrush"),
+            ("video editing", "video editing"),
+            ("Video Editor", "video editing"),
+            ("edición de video", "video editing"),
+            ("2D animations", "2d animation"),
+            ("3D animations", "3d animation"),
+            ("animación 3d", "3d animation"),
+            ("visual effects", "visual effects"),
+            ("VFX", "visual effects"),
+            ("efectos visuales", "visual effects"),
+            ("augmented reality", "augmented reality"),
+            ("AR", "augmented reality"),
+            ("realidad aumentada", "augmented reality"),
+            ("virtual reality", "virtual reality"),
+            ("VR", "virtual reality"),
+            ("brand identity", "brand identity"),
+            ("vector illustrations", "vector illustration"),
+            ("content creation", "content creation"),
+        ],
+    )
+    def test_creative_skill_normalizes_correctly(self, skill_in_cv, expected_canonical):
+        assert normalize(skill_in_cv) == expected_canonical
