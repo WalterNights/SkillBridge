@@ -34,10 +34,6 @@
         <p class="nm">{{ userName() }}</p>
         <p class="em" *ngIf="userEmail()">{{ userEmail() }}</p>
       </div>
-      <a routerLink="/dashboard" (click)="userMenuOpen.set(false)">
-        <span class="material-symbols-outlined">home</span>
-        Inicio
-      </a>
       <a routerLink="/me" (click)="userMenuOpen.set(false)">
         <span class="material-symbols-outlined">person_outline</span>
         Mi perfil
