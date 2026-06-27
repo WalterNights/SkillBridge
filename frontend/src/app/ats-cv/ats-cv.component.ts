@@ -125,10 +125,18 @@ const PAGINATION = {
    *  feo y rompe el "no cortar entries". */
   MIN_BULLETS_TO_KEEP_ENTRY: 2,
   /** Cap anti-desperdicio del orphan fix: no retroceder el cut si parte 1
-   *  queda con menos del N% de lo que cabía. Evita el efecto perverso de
-   *  vaciar la página entera por mover un entry chico — ahí preferimos el
-   *  orphan visual a la hoja casi vacía. */
-  MIN_PART1_FILL_RATIO: 0.5,
+   *  queda con menos del N% de lo que cabía. Bajado de 0.5 → 0.4 tras el
+   *  caso real del cliente jorgeluisq07 (2026-06-27): el guard abortaba
+   *  el orphan fix en CVs largos y el bullet quedaba cortado visualmente
+   *  al pie de página. 0.4 da más margen al fix sin vaciar la hoja. */
+  MIN_PART1_FILL_RATIO: 0.4,
+  /** Factor de seguridad sobre `linesCanFit` en text-block split. La
+   *  fórmula `availableForLines / lineAvgHeight` asume que cada línea
+   *  ocupa el promedio — pero los bullets largos wrappean a más altura
+   *  física que el promedio. Si la última línea calculada es uno de
+   *  esos, queda visualmente cortada por overflow:hidden del .cv-page.
+   *  Reducir el cap al 85% deja buffer contra esta subestimación. */
+  TEXT_SPLIT_SAFETY_RATIO: 0.85,
 } as const;
 
 /** Regex de marker de bullet — `-`, `•` o `*` seguido de espacio. */
@@ -924,7 +932,14 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     if (lineAvgHeight <= 0) return null;
     const availableForLines = availableHeight - PAGINATION.TEXT_SECTION_H2_PX;
     if (availableForLines <= 0) return null;
-    const linesCanFit = Math.floor(availableForLines / lineAvgHeight);
+    // Safety margin: la fórmula promedio subestima cuando hay bullets
+    // largos que wrappean. Reducir el cap evita que la última línea
+    // calculada quede visualmente cortada por overflow:hidden del
+    // .cv-page. Sin esto, vimos en producción casos donde el algoritmo
+    // estimaba 4 líneas pero solo entraban 3 + medio bullet.
+    const linesCanFit = Math.floor(
+      (availableForLines / lineAvgHeight) * PAGINATION.TEXT_SPLIT_SAFETY_RATIO,
+    );
     if (linesCanFit < PAGINATION.MIN_LINES_FIRST_PART) return null;
     if (linesCanFit >= lines.length) return null;
 
