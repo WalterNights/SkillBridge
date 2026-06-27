@@ -73,6 +73,117 @@
 }
 
 /* ===========================================
+   CV action buttons — Auditar / Mejorar / Descargar / Ver ofertas.
+
+   Desktop: tamaño completo con flex-wrap.
+   Mobile (<=640px): comprimimos padding + font-size + icon + gap para
+   que los 4 botones quepan en una sola línea. Sin esto, "Ver ofertas"
+   quedaba solo en una segunda fila visualmente desbalanceada.
+   En anchos extra-chicos (<=420px) ocultamos el texto del label y
+   dejamos solo el ícono — los tooltips/title cubren la accesibilidad.
+   =========================================== */
+.cv-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cv-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+  flex-shrink: 0;
+
+  &--ai {
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.3);
+    color: #f97316;
+
+    &:hover {
+      background: rgba(249, 115, 22, 0.14);
+    }
+  }
+
+  &--secondary {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #e8e5dd;
+
+    &:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+  }
+
+  &--primary {
+    background: #f97316;
+    border-color: #f97316;
+    color: #0d0c0a;
+
+    &:hover {
+      background: #ea580c;
+    }
+  }
+}
+
+.cv-action-btn-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .cv-action-bar {
+    flex-wrap: nowrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .cv-action-btn {
+    /* Distribución igual entre los 4 botones — cada uno se estira
+       para usar 1/4 del ancho disponible. */
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 9px 8px;
+    font-size: 12px;
+    gap: 5px;
+    justify-content: center;
+  }
+
+  .cv-action-btn-icon {
+    font-size: 16px;
+  }
+
+  .cv-action-btn-label {
+    /* En anchos muy chicos los labels se truncan en vez de wrappear. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  /* En pantallas muy chicas (Galaxy S8, iPhone SE), 4 labels visibles
+     se cortan feo. Ocultamos el texto y dejamos solo el ícono — el
+     título HTML cubre accesibilidad cuando hace hover/longpress. */
+  .cv-action-btn-label {
+    display: none;
+  }
+
+  .cv-action-btn {
+    padding: 10px 0;
+  }
+}
+
+/* ===========================================
    Measure layer — invisible y off-screen. Rendera cada bloque por
    separado para medir su altura natural. El ancho matchea el área útil
    de una .cv-page (215.9 - 2*22 = 171.9mm) para que el wrap del texto
