@@ -154,10 +154,21 @@
             </p>
           </div>
 
-          <!-- Role actions — ocultas en la propia fila (anti-lockout UX) -->
-          <div *ngIf="!isSelf(u) && u.user?.id" class="flex items-center gap-2 flex-wrap justify-end">
+          <!-- Acciones — Detalles siempre visible, role-toggle solo si
+               no es la propia fila (anti-lockout UX). -->
+          <div class="flex items-center gap-2 flex-wrap justify-end">
             <button
-              *ngIf="!isStaff(u)"
+              *ngIf="u.user?.id"
+              type="button"
+              class="role-btn role-btn--secondary"
+              (click)="openDetail(u)"
+              title="Ver detalle profesional"
+            >
+              <span class="material-symbols-outlined" style="font-size: 16px">badge</span>
+              Detalles
+            </button>
+            <button
+              *ngIf="!isSelf(u) && u.user?.id && !isStaff(u)"
               type="button"
               class="role-btn role-btn--promote"
               (click)="promptRoleChange(u, 'is_staff', true)"
@@ -167,7 +178,7 @@
               Promover
             </button>
             <button
-              *ngIf="isStaff(u) && !isSuperuser(u)"
+              *ngIf="!isSelf(u) && u.user?.id && isStaff(u) && !isSuperuser(u)"
               type="button"
               class="role-btn role-btn--demote"
               (click)="promptRoleChange(u, 'is_staff', false)"
@@ -177,7 +188,7 @@
               Degradar
             </button>
             <button
-              *ngIf="isSuperuser(u)"
+              *ngIf="!isSelf(u) && u.user?.id && isSuperuser(u)"
               type="button"
               class="role-btn role-btn--demote"
               (click)="promptRoleChange(u, 'is_superuser', false)"
@@ -236,6 +247,147 @@
           <span *ngIf="!isSavingRole()">Confirmar</span>
           <span *ngIf="isSavingRole()">Guardando…</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal "Detalles" del perfil profesional -->
+  <div
+    *ngIf="detailOpen() as detail"
+    class="detail-modal-overlay"
+    (click)="closeDetail()"
+  >
+    <div class="detail-modal glass-strong" (click)="$event.stopPropagation()">
+      <header class="detail-modal__header">
+        <div class="user-avatar detail-modal__avatar">{{
+          (detail.first_name?.[0] ?? '?') + (detail.last_name?.[0] ?? '')
+        }}</div>
+        <div class="flex-1 min-w-0">
+          <h2 class="text-lg font-semibold text-bone leading-snug truncate">
+            {{ detail.first_name }} {{ detail.last_name }}
+          </h2>
+          <p *ngIf="detail.professional_title" class="text-sm text-primary font-semibold mt-0.5">
+            {{ detail.professional_title }}
+          </p>
+          <p class="text-xs text-warm-grey mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+            <span class="inline-flex items-center gap-1">
+              <span class="material-symbols-outlined" style="font-size: 12px">mail</span>
+              {{ detail.email }}
+            </span>
+            <span *ngIf="detail.city" class="inline-flex items-center gap-1">
+              <span class="material-symbols-outlined" style="font-size: 12px">location_on</span>
+              {{ detail.city }}
+            </span>
+          </p>
+        </div>
+        <button
+          type="button"
+          class="detail-modal__close"
+          (click)="closeDetail()"
+          aria-label="Cerrar"
+          [disabled]="isLoadingDetail()"
+        >
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </header>
+
+      <!-- Body -->
+      <div class="detail-modal__body">
+        <p *ngIf="isLoadingDetail()" class="text-sm text-warm-grey text-center py-6">
+          Cargando…
+        </p>
+
+        <p *ngIf="!isLoadingDetail() && detailError()" class="text-sm text-danger text-center py-4">
+          {{ detailError() }}
+        </p>
+
+        <ng-container *ngIf="!isLoadingDetail() && !detailError()">
+          <p
+            *ngIf="!detail.has_profile"
+            class="text-sm text-warm-grey text-center py-6"
+          >
+            Este usuario aún no completó su perfil.
+          </p>
+
+          <ng-container *ngIf="detail.has_profile">
+            <!-- Visibilidad para empresas -->
+            <div class="detail-modal__visibility" *ngIf="detail.visible_to_companies">
+              <span class="material-symbols-outlined" style="font-size: 14px">visibility</span>
+              Visible para empresas
+            </div>
+
+            <!-- Skills -->
+            <section *ngIf="detail.skills.length > 0" class="detail-section">
+              <h3 class="detail-section__title">Skills técnicas</h3>
+              <div class="flex flex-wrap gap-2">
+                <span *ngFor="let s of detail.skills" class="detail-pill detail-pill--tech">{{ s }}</span>
+              </div>
+            </section>
+
+            <!-- Soft skills -->
+            <section *ngIf="detail.soft_skills.length > 0" class="detail-section">
+              <h3 class="detail-section__title">Soft skills</h3>
+              <div class="flex flex-wrap gap-2">
+                <span *ngFor="let s of detail.soft_skills" class="detail-pill detail-pill--soft">{{ s }}</span>
+              </div>
+            </section>
+
+            <!-- Languages -->
+            <section *ngIf="detail.languages.length > 0" class="detail-section">
+              <h3 class="detail-section__title">Idiomas</h3>
+              <ul class="detail-languages">
+                <li *ngFor="let l of detail.languages">
+                  <span class="text-bone font-semibold">{{ l.language }}</span>
+                  <span *ngIf="l.level" class="text-dim ml-1">— {{ l.level }}</span>
+                </li>
+              </ul>
+            </section>
+
+            <!-- Links -->
+            <section
+              *ngIf="detail.linkedin_url || detail.portfolio_url"
+              class="detail-section"
+            >
+              <h3 class="detail-section__title">Enlaces</h3>
+              <div class="flex flex-wrap gap-2">
+                <a
+                  *ngIf="detail.linkedin_url"
+                  [href]="detail.linkedin_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="detail-link"
+                >
+                  <span class="material-symbols-outlined" style="font-size: 14px">link</span>
+                  LinkedIn
+                </a>
+                <a
+                  *ngIf="detail.portfolio_url"
+                  [href]="detail.portfolio_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="detail-link"
+                >
+                  <span class="material-symbols-outlined" style="font-size: 14px">language</span>
+                  Portafolio
+                </a>
+              </div>
+            </section>
+
+            <!-- Empty state — perfil sin skills/idiomas/links -->
+            <p
+              *ngIf="
+                detail.skills.length === 0 &&
+                detail.soft_skills.length === 0 &&
+                detail.languages.length === 0 &&
+                !detail.linkedin_url &&
+                !detail.portfolio_url
+              "
+              class="text-sm text-warm-grey text-center py-4"
+            >
+              El usuario tiene perfil pero aún no agregó skills, idiomas ni enlaces.
+            </p>
+          </ng-container>
+        </ng-container>
       </div>
     </div>
   </div>

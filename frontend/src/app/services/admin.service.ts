@@ -45,6 +45,31 @@ export interface UserRoleResponse {
   is_superuser: boolean;
 }
 
+/** Cada idioma listado en el perfil. `language` es el nombre legible
+ *  (Español, English); `level` puede venir vacío para perfiles legacy. */
+export interface ProfileLanguage {
+  language: string;
+  level: string;
+}
+
+/** Detalle profesional ligero de un user — alimenta el modal "Detalles"
+ *  en /admin/users. NO incluye experience/education/summary. */
+export interface AdminUserProfileDetail {
+  user_id: number;
+  email: string;
+  has_profile: boolean;
+  first_name: string;
+  last_name: string;
+  professional_title: string;
+  city: string;
+  skills: string[];
+  soft_skills: string[];
+  languages: ProfileLanguage[];
+  linkedin_url: string | null;
+  portfolio_url: string | null;
+  visible_to_companies: boolean;
+}
+
 /**
  * Llamadas a los endpoints admin (`/api/dashboard/*`). Todas están
  * protegidas por `IsAdminUser` en el backend — los users sin `is_staff`
@@ -65,6 +90,15 @@ export class AdminService {
     return this.http.patch<UserRoleResponse>(
       `${environment.apiUrl}/dashboard/users/${userId}/role/`,
       payload,
+    );
+  }
+
+  /** Detalle profesional ligero — alimenta el modal "Detalles" en
+   *  /admin/users. Foco en skills/idiomas/links; NO trae experience
+   *  ni education (densos, no aportan a la decisión rápida del admin). */
+  getUserProfileDetail(userId: number): Observable<AdminUserProfileDetail> {
+    return this.http.get<AdminUserProfileDetail>(
+      `${environment.apiUrl}/dashboard/users/${userId}/profile-detail/`,
     );
   }
 }

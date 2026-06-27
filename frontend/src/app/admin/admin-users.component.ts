@@ -9,6 +9,7 @@ import { User } from '../models/user.model';
 import {
   AdminService,
   AdminStats,
+  AdminUserProfileDetail,
   UserRoleResponse,
   UserRoleUpdate,
 } from '../services/admin.service';
@@ -64,6 +65,13 @@ export class AdminUsersComponent implements OnInit {
   /** Modal de confirmación de cambio de rol. Null = cerrado. */
   pendingChange = signal<PendingRoleChange | null>(null);
   isSavingRole = signal(false);
+
+  /** Modal "Detalles" del perfil profesional. Null = cerrado, undefined
+   *  no aplica. Cargamos on-demand al hacer click — sin precargar todo
+   *  cuando la lista tiene cientos de users. */
+  detailOpen = signal<AdminUserProfileDetail | null>(null);
+  isLoadingDetail = signal(false);
+  detailError = signal('');
 
   filteredUsers = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
@@ -204,6 +212,59 @@ export class AdminUsersComponent implements OnInit {
       },
     });
   }
+
+  // ─── Detail modal ─────────────────────────────────────────────────
+
+  /** Abre el modal Detalles para el user de la fila. Pide el detalle
+   *  on-demand para no precargar para toda la lista. */
+  openDetail(profile: User): void {
+    const userId = profile.user?.id;
+    if (!userId) {
+      this.toast.error('No se encontró el ID del usuario.', 'Error');
+      return;
+    }
+    this.detailError.set('');
+    this.isLoadingDetail.set(true);
+    // Pre-abrimos con placeholder para que el overlay se renderice ya
+    // (sin esperar al request). Skills/idiomas vacíos hasta el response.
+    this.detailOpen.set({
+      user_id: userId,
+      email: this.emailOf(profile),
+      has_profile: false,
+      first_name: profile.first_name || profile.username || '',
+      last_name: profile.last_name || '',
+      professional_title: profile.professional_title || '',
+      city: profile.city || '',
+      skills: [],
+      soft_skills: [],
+      languages: [],
+      linkedin_url: null,
+      portfolio_url: null,
+      visible_to_companies: false,
+    });
+    this.adminService.getUserProfileDetail(userId).subscribe({
+      next: (detail) => {
+        this.detailOpen.set(detail);
+        this.isLoadingDetail.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.isLoadingDetail.set(false);
+        this.detailError.set(
+          err.status === 404
+            ? 'No se encontró el perfil del usuario.'
+            : 'No pudimos cargar el detalle.',
+        );
+      },
+    });
+  }
+
+  closeDetail(): void {
+    if (this.isLoadingDetail()) return;
+    this.detailOpen.set(null);
+    this.detailError.set('');
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────
 
   /** Reemplaza el `user` nested en la fila afectada con el snapshot
    *  devuelto por el backend, sin tener que recargar la lista entera. */
