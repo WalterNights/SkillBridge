@@ -50,9 +50,10 @@ _SEARCH_URL = "https://search.torre.co/opportunities/_search/"
 MAX_RESULTS = 50
 
 # URL canónica de cada oferta. Torre usa `torre.co/jobs/{id}` para el
-# detail page público — distinto del endpoint de API. Construimos el URL
-# acá porque la API devuelve `id` pero no `url`.
+# detail page público — distinto del endpoint de API. Si la oferta trae
+# `slug`, lo concatenamos para una URL legible; sino, solo el id.
 _OPPORTUNITY_URL_TEMPLATE = "https://torre.co/jobs/{id}"
+_OPPORTUNITY_URL_WITH_SLUG = "https://torre.co/jobs/{id}/{slug}"
 
 
 class TorreScraper(JobScraper):
@@ -122,14 +123,22 @@ class TorreScraper(JobScraper):
 
     @staticmethod
     def _build_body(query: str) -> dict:
-        """Body mínimo para el endpoint `_search`. Filtros adicionales
-        (remote, salary, etc.) los dejamos abiertos para que el matching
-        downstream decida — más recall, mismo precision tras el filtro
-        de match%."""
+        """Body mínimo para el endpoint `_search`.
+
+        IMPORTANTE: `experience` o `proficiency` es OBLIGATORIO dentro
+        de `skill/role` — si falta, la API devuelve 400 BAD_REQUEST.
+        Usamos `potential-to-develop` (el más permisivo) para maximizar
+        recall: el matching downstream decide qué ofertas son buenas
+        según el perfil del user, no filtramos en la fuente.
+
+        Verificado contra la API real el 2026-06-27 con curl —
+        responses tipo `{"total": 5282, "results": [...]}`.
+        """
         return {
-            "skill/role": {"text": query.strip()},
-            "torreGGH": False,
-            "deleted": False,
+            "skill/role": {
+                "text": query.strip(),
+                "experience": "potential-to-develop",
+            },
         }
 
     @staticmethod
@@ -190,21 +199,26 @@ class TorreScraper(JobScraper):
                     names.append(sk.strip())
             skills_text = ", ".join(names)
 
-        # `details` o `additionalInformation` suelen tener la descripción
-        # rica. Caemos a string vacío si no hay nada — title + skills
-        # solos ya alimentan el match.
-        summary = (
-            item.get("details")
-            or item.get("additionalInformation")
-            or item.get("descripcion")
-            or ""
-        )
-        if not isinstance(summary, str):
-            summary = ""
-        summary = summary.strip()
+        # NOTA: el endpoint `_search` NO devuelve la descripción larga del
+        # job (solo title + skills + meta). El detail page tendría más
+        # info pero requeriría un GET extra por oferta — caro. Usamos el
+        # `tagline` (one-liner de la org) como fallback y rellenamos con
+        # skills si todo lo demás falla. El matcher downstream igual
+        # funciona porque el match se calcula sobre title + keywords.
+        tagline = item.get("tagline") or ""
+        if not isinstance(tagline, str):
+            tagline = ""
+        summary = tagline.strip()
 
         keywords = extract_keywords(f"{title} {skills_text} {summary}")
-        url = _OPPORTUNITY_URL_TEMPLATE.format(id=opp_id)
+
+        # URL: si la oferta trae `slug`, lo usamos para una URL legible
+        # (mejor preview/share). Sino caemos al template solo-id.
+        slug = item.get("slug")
+        if isinstance(slug, str) and slug.strip():
+            url = _OPPORTUNITY_URL_WITH_SLUG.format(id=opp_id, slug=slug.strip())
+        else:
+            url = _OPPORTUNITY_URL_TEMPLATE.format(id=opp_id)
 
         return JobOfferData(
             title=title,

@@ -15,7 +15,11 @@ from unittest.mock import patch
 import pytest
 
 from jobs.adapters.scrapers.base import ScraperError
-from jobs.adapters.scrapers.torre import TorreScraper, _OPPORTUNITY_URL_TEMPLATE
+from jobs.adapters.scrapers.torre import (
+    TorreScraper,
+    _OPPORTUNITY_URL_TEMPLATE,
+    _OPPORTUNITY_URL_WITH_SLUG,
+)
 
 
 def _fake_response(json_body=None, status_code: int = 200, text: str = ""):
@@ -37,25 +41,31 @@ def _fake_response(json_body=None, status_code: int = 200, text: str = ""):
 
 
 _VALID_RESPONSE = {
+    "total": 5282,
+    "size": 10,
     "results": [
         {
-            "id": "OPP-12345",
+            "id": "Yd6mbYOw",
             "objective": "Senior Product Designer",
+            "slug": "acme-senior-product-designer-1",
+            "tagline": "Diseña la próxima generación de productos digitales.",
             "organizations": [{"name": "Acme Inc"}],
             "locations": ["Bogotá, Colombia"],
             "remote": False,
-            "skills": [{"name": "Figma"}, {"name": "User Research"}],
-            "details": "Diseña la próxima generación de productos digitales.",
+            "skills": [
+                {"name": "Figma", "experience": "potential-to-develop"},
+                {"name": "User Research", "experience": "potential-to-develop"},
+            ],
         },
         {
-            "id": "OPP-67890",
+            "id": "AbCd1234",
             "objective": "Motion Designer",
             "organizations": [{"name": "Creative Studio"}],
             "locations": [],
             "remote": True,
             "skills": [{"name": "After Effects"}, {"name": "Cinema 4D"}],
         },
-    ]
+    ],
 }
 
 
@@ -73,7 +83,29 @@ class TestTorreScraperSearch:
         assert first.company == "Acme Inc"
         assert first.location == "Bogotá, Colombia"
         assert first.portal == "torre"
-        assert first.url == _OPPORTUNITY_URL_TEMPLATE.format(id="OPP-12345")
+        # Cuando hay slug, la URL lo usa para ser legible / shareable.
+        assert first.url == _OPPORTUNITY_URL_WITH_SLUG.format(
+            id="Yd6mbYOw", slug="acme-senior-product-designer-1"
+        )
+
+    def test_url_without_slug_falls_back_to_id_only(self):
+        scraper = TorreScraper()
+        with patch("jobs.adapters.scrapers.torre.requests.post") as mock_post:
+            mock_post.return_value = _fake_response(json_body=_VALID_RESPONSE)
+            offers = scraper.search("motion", "Bogotá")
+        # La 2da oferta del fixture no tiene `slug` → fallback al template id-only.
+        motion = next(o for o in offers if o.title == "Motion Designer")
+        assert motion.url == _OPPORTUNITY_URL_TEMPLATE.format(id="AbCd1234")
+
+    def test_body_includes_experience_field(self):
+        """La API rebota con 400 si falta `experience` o `proficiency`
+        dentro de `skill/role`. Caso real verificado contra producción
+        2026-06-27 — sin este campo el scraper devolvia [] silenciosamente."""
+        body = TorreScraper._build_body("designer")
+        skill_role = body.get("skill/role")
+        assert isinstance(skill_role, dict)
+        assert skill_role.get("text") == "designer"
+        assert skill_role.get("experience") == "potential-to-develop"
 
     def test_remote_opportunity_without_location_uses_Remote_marker(self):
         """Para que extract_modality detecte la modalidad remote, ponemos
