@@ -255,11 +255,14 @@ class UserProfile(models.Model):
     # Default True — la mayoría de los users esperan esto al registrarse;
     # se puede apagar desde /settings.
     email_alerts_enabled = models.BooleanField(default=True)
-    # Opt-IN para que las empresas puedan encontrar este perfil en el
-    # buscador de profesionales (lado marketplace empresa). Default False
-    # por privacidad: el user activa explícitamente desde Settings →
-    # Privacidad cuando quiere estar disponible.
-    visible_to_companies = models.BooleanField(default=False, db_index=True)
+    # Visibilidad del perfil para el lado empresa del marketplace.
+    # Default True desde 2026-06-27 (era False): el usuario que se
+    # registra en una plataforma de empleo claramente QUIERE que las
+    # empresas lo encuentren — pedirle que entre a /settings a activarlo
+    # generaba una bolsa vacía y feedback de cliente confuso ("¿por qué
+    # no me encuentran?"). Si quiere ocultarse, lo apaga manualmente
+    # desde Settings → Privacidad.
+    visible_to_companies = models.BooleanField(default=True, db_index=True)
     # Anti dedup: cuándo le mandamos el último email de alertas. La tarea
     # diaria solo manda si el último envío fue hace más de 20h (margen
     # contra timing drift entre runs del beat).

@@ -237,28 +237,32 @@ class TestJwtAccountType:
 class TestVisibleToCompaniesToggle:
     URL = "/api/users/profiles/"
 
-    def test_default_is_false(self, user_profile):
-        assert user_profile.visible_to_companies is False
-
-    def test_professional_can_opt_in(self, authed_client, user_profile):
-        """El profesional puede activar el opt-in desde el endpoint
-        estándar de profiles (usado por Settings)."""
-        response = authed_client.post(
-            self.URL, {"visible_to_companies": True}, format="json"
-        )
-        assert response.status_code in (200, 201)
-        user_profile.refresh_from_db()
+    def test_default_is_true(self, user_profile):
+        """Default cambió a True en 2026-06-27 (era False). El usuario
+        que se registra en una plataforma de empleo claramente quiere
+        que las empresas lo encuentren — pedirle que entre a /settings
+        a activarlo generaba bolsa vacía y confusión."""
         assert user_profile.visible_to_companies is True
 
     def test_professional_can_opt_out(self, authed_client, user_profile):
-        user_profile.visible_to_companies = True
-        user_profile.save(update_fields=["visible_to_companies"])
+        """Quien NO quiere ser visible lo apaga manualmente."""
         response = authed_client.post(
             self.URL, {"visible_to_companies": False}, format="json"
         )
         assert response.status_code in (200, 201)
         user_profile.refresh_from_db()
         assert user_profile.visible_to_companies is False
+
+    def test_professional_can_opt_back_in(self, authed_client, user_profile):
+        """Tras opt-out, puede reactivar la visibilidad."""
+        user_profile.visible_to_companies = False
+        user_profile.save(update_fields=["visible_to_companies"])
+        response = authed_client.post(
+            self.URL, {"visible_to_companies": True}, format="json"
+        )
+        assert response.status_code in (200, 201)
+        user_profile.refresh_from_db()
+        assert user_profile.visible_to_companies is True
 
 
 # ──────────────────────────────────────────────────────────────────────
