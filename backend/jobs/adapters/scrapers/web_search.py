@@ -56,9 +56,16 @@ USER_AGENT = (
 )
 
 # Portales a los que restringimos la búsqueda. Cualquier resultado fuera
-# de esta lista se descarta (no es una oferta). Mantener corta —
-# agregar uno nuevo dispara más OR site: en el query.
-_JOB_SITES = (
+# de esta lista se descarta (no es una oferta).
+#
+# Mantener corta — cada entry agrega un `OR site:X` al query de DDG. Más
+# de ~12-15 sites empieza a fallar (el query supera el límite de DDG y
+# devuelve vacío). Por eso los partimos en dos grupos: portales "de
+# trabajo tradicionales" y portales "creativos / diseño / video". El
+# scraper hace una pasada por cada grupo así un perfil design tiene
+# garantía de ver Domestika/Behance/Workana en la SERP sin competir con
+# el peso de LinkedIn/Elempleo que tiende a dominar.
+_JOB_SITES_GENERAL = (
     "linkedin.com/jobs",
     "elempleo.com",
     "bumeran.com.co",
@@ -67,6 +74,17 @@ _JOB_SITES = (
     "getonbrd.com",
     "magneto365.com",
 )
+
+_JOB_SITES_CREATIVE = (
+    "domestika.org",
+    "behance.net",
+    "workana.com",
+    "dribbble.com",
+)
+
+# Unión usada por filtros (whitelist al parsear SERP). El `_build_query`
+# usa los grupos por separado para particionar las pasadas a DDG.
+_JOB_SITES = _JOB_SITES_GENERAL + _JOB_SITES_CREATIVE
 
 # Marcadores que indican que el buscador nos sirvió rate-limit o
 # captcha en vez de SERP. Si vemos cualquiera, abortamos sin reintentar.
@@ -138,6 +156,12 @@ _INDIVIDUAL_PATTERNS: dict[str, str] = {
     "linkedin.com": "/jobs/view/",
     "computrabajo.com": "/ofertas-de-trabajo/oferta-",
     "indeed.com": "/viewjob",
+    # Portales creativos. Patterns conservadores — capturan los detail
+    # pages y descartan listings (`/jobs` sin id-slug).
+    "domestika.org": "/jobs/",
+    "behance.net": "/joblist/",
+    "workana.com": "/job/",  # singular — listings usan `/jobs`
+    "dribbble.com": "/jobs/",
 }
 
 # Elempleo mezcla 2 esquemas de URL:
@@ -229,25 +253,44 @@ class WebSearchJobsScraper(JobScraper):
     portal_name = "websearch"
     description = (
         "Meta-scraper: usa búsqueda web (DDG) restringida a portales sin "
-        "scraper dedicado (elempleo, bumeran, getonbrd, occ, zonajobs). "
-        "Generalista de bajo recall pero cubre nichos no atendidos."
+        "scraper dedicado. Cubre dos grupos: tradicionales (elempleo, "
+        "bumeran, getonbrd) y CREATIVOS (Domestika, Behance, Workana, "
+        "Dribbble) — fuente principal para perfiles de diseño UI/UX, "
+        "3D, animación, motion graphics y video editing en LATAM. "
+        "Recall medio (snippet del SERP como summary) pero único acceso "
+        "a portales nicho creativos."
     )
-    categories = ("all",)
+    # Sumamos 'design' a las categorías para que el PortalRouter lo
+    # priorice para perfiles design. 'all' se queda para que siga siendo
+    # invocado en perfiles que no caen claramente en una categoría.
+    categories = ("all", "design")
 
     def search(self, query: str, location: str, pages: int = 1) -> list[JobOfferData]:
         if not query:
             raise ScraperError("query es obligatorio")
 
-        # Doble pasada: la primera saca el mix natural (suele dominar
-        # LinkedIn), la segunda excluye LinkedIn explícitamente para
-        # forzar que afloren Magneto, Indeed, Elempleo y Bumeran que en
-        # la SERP default quedan tapados. Dedup por URL al final.
+        # Triple pasada con propósitos distintos:
+        #   - primary: mix natural (suele dominar LinkedIn).
+        #   - non-linkedin: excluye LinkedIn para hacer aflorar Magneto,
+        #     Indeed, Elempleo, Bumeran que en la SERP default quedan
+        #     tapados por el peso de LinkedIn.
+        #   - creative-only: SOLO portales creativos (Domestika, Behance,
+        #     Workana, Dribbble). Sin esta pasada, esos sites quedan
+        #     ahogados por LinkedIn/Elempleo en las dos primeras —
+        #     necesario para que perfiles design vean recall real ahí.
+        # Dedup por URL al final.
         all_offers: list[JobOfferData] = []
         seen_urls: set[str] = set()
 
         for label, ddg_query in (
-            ("primary", self._build_query(query, location)),
-            ("non-linkedin", self._build_query(query, location, exclude_linkedin=True)),
+            ("primary", self._build_query(query, location, sites=_JOB_SITES_GENERAL)),
+            (
+                "non-linkedin",
+                self._build_query(
+                    query, location, sites=_JOB_SITES_GENERAL, exclude_linkedin=True
+                ),
+            ),
+            ("creative", self._build_query(query, location, sites=_JOB_SITES_CREATIVE)),
         ):
             logger.info("WebSearch scrape (%s): query=%r", label, ddg_query)
             html = self._fetch_serp(ddg_query)
@@ -269,15 +312,21 @@ class WebSearchJobsScraper(JobScraper):
     # ---- Query / detection ---------------------------------------------
 
     @staticmethod
-    def _build_query(query: str, location: str, exclude_linkedin: bool = False) -> str:
+    def _build_query(
+        query: str,
+        location: str,
+        sites: tuple[str, ...],
+        exclude_linkedin: bool = False,
+    ) -> str:
         """Arma el query con quotes en el rol + ubicación + clause de sites.
 
-        Si `exclude_linkedin=True`, omite LinkedIn de la lista de sites y
+        `sites` es la lista whitelisteada para esta pasada (general o
+        creative). `exclude_linkedin=True` filtra LinkedIn del clause y
         agrega un `-site:linkedin.com` explícito — DDG a veces lo cuela
         igual aunque no esté en el OR si tiene mucha relevancia.
         """
-        sites = [s for s in _JOB_SITES if not (exclude_linkedin and "linkedin" in s)]
-        sites_clause = " OR ".join(f"site:{s}" for s in sites)
+        filtered = [s for s in sites if not (exclude_linkedin and "linkedin" in s)]
+        sites_clause = " OR ".join(f"site:{s}" for s in filtered)
         loc = f'"{location}"' if location else ""
         base = f'"{query}" {loc} ({sites_clause})'.strip()
         if exclude_linkedin:

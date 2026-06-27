@@ -21,6 +21,8 @@ import requests
 from jobs.adapters.scrapers.base import ScraperError
 from jobs.adapters.scrapers.web_search import (
     WebSearchJobsScraper,
+    _JOB_SITES_CREATIVE,
+    _JOB_SITES_GENERAL,
     _is_individual_offer_url,
 )
 
@@ -103,19 +105,50 @@ _SERP_HTML = """
 @pytest.mark.unit
 class TestBuildQuery:
     def test_includes_query_and_location_in_quotes(self):
-        q = WebSearchJobsScraper._build_query("Full Stack Developer", "Medellín")
+        q = WebSearchJobsScraper._build_query(
+            "Full Stack Developer", "Medellín", sites=_JOB_SITES_GENERAL
+        )
         assert '"Full Stack Developer"' in q
         assert '"Medellín"' in q
 
     def test_includes_at_least_one_site_operator(self):
-        q = WebSearchJobsScraper._build_query("Backend", "Bogotá")
+        q = WebSearchJobsScraper._build_query(
+            "Backend", "Bogotá", sites=_JOB_SITES_GENERAL
+        )
         assert "site:linkedin.com/jobs" in q
         assert "site:elempleo.com" in q
 
     def test_empty_location_is_ok(self):
-        q = WebSearchJobsScraper._build_query("Backend Developer", "")
+        q = WebSearchJobsScraper._build_query(
+            "Backend Developer", "", sites=_JOB_SITES_GENERAL
+        )
         assert '""' not in q
         assert '"Backend Developer"' in q
+
+    def test_creative_sites_query_only_includes_creative_portals(self):
+        """Pasada `creative` debe usar exclusivamente los portales de
+        diseño — sin LinkedIn/Elempleo ahogándolos en la SERP."""
+        q = WebSearchJobsScraper._build_query(
+            "diseñador UX", "Bogotá", sites=_JOB_SITES_CREATIVE
+        )
+        assert "site:domestika.org" in q
+        assert "site:behance.net" in q
+        assert "site:workana.com" in q
+        assert "site:dribbble.com" in q
+        # Garantía clave: NO se mezclan los generales en esta pasada.
+        assert "site:linkedin.com" not in q
+        assert "site:elempleo.com" not in q
+
+    def test_exclude_linkedin_filters_only_from_general(self):
+        """`exclude_linkedin=True` en la pasada general debe sacar LinkedIn
+        y agregar el `-site:linkedin.com` negativo."""
+        q = WebSearchJobsScraper._build_query(
+            "Backend", "Bogotá", sites=_JOB_SITES_GENERAL, exclude_linkedin=True
+        )
+        assert "site:linkedin.com/jobs" not in q
+        assert "-site:linkedin.com" in q
+        # Los otros generales siguen.
+        assert "site:elempleo.com" in q
 
 
 @pytest.mark.unit
@@ -529,3 +562,37 @@ class TestIsIndividualOfferUrl:
         del dominio (mejor falso positivo que perder ofertas reales)."""
         assert _is_individual_offer_url("https://www.bumeran.com.co/cualquier-path")
         assert _is_individual_offer_url("https://www.magneto365.com/empleos/foo")
+
+    # Portales creativos (Tier 1.5) — Domestika, Behance, Workana, Dribbble.
+    def test_domestika_detail_is_individual(self):
+        assert _is_individual_offer_url(
+            "https://www.domestika.org/es/jobs/12345-motion-designer"
+        )
+
+    def test_domestika_root_listing_is_not_individual(self):
+        assert not _is_individual_offer_url("https://www.domestika.org/es/jobs")
+
+    def test_behance_detail_is_individual(self):
+        assert _is_individual_offer_url(
+            "https://www.behance.net/joblist/12345/Senior-Designer"
+        )
+
+    def test_behance_root_listing_is_not_individual(self):
+        assert not _is_individual_offer_url("https://www.behance.net/joblist")
+
+    def test_workana_detail_is_individual(self):
+        """Workana usa singular `/job/` para detail y plural `/jobs` para listing."""
+        assert _is_individual_offer_url(
+            "https://www.workana.com/job/diseno-de-logo-empresa-12345"
+        )
+
+    def test_workana_listing_is_not_individual(self):
+        assert not _is_individual_offer_url("https://www.workana.com/jobs?category=design")
+
+    def test_dribbble_detail_is_individual(self):
+        assert _is_individual_offer_url(
+            "https://dribbble.com/jobs/123456-senior-product-designer"
+        )
+
+    def test_dribbble_root_listing_is_not_individual(self):
+        assert not _is_individual_offer_url("https://dribbble.com/jobs")
