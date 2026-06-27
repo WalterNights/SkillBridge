@@ -22,6 +22,7 @@ from jobs.adapters.scrapers.base import (
     JobOfferData,
     JobScraper,
     ScraperError,
+    clean_city_for_slug,
     extract_age_days,
     extract_keywords,
 )
@@ -68,7 +69,11 @@ class ComputrabajoScraper(JobScraper):
             raise ScraperError("query y location son obligatorios")
 
         slug_query = query.replace(" ", "-").lower()
-        slug_location = unidecode(location.lower())
+        # Limpiar sufijos administrativos del city ("Bogotá D.C." → "Bogotá")
+        # — sin esto la URL queda con un slug mal-formado y Computrabajo
+        # devuelve 200 OK con 0 ofertas. Verificado contra prod 2026-06-27.
+        cleaned_location = clean_city_for_slug(location)
+        slug_location = unidecode(cleaned_location.lower()).replace(" ", "-")
         base = f"{BASE_URL}/trabajo-de-{slug_query}-en-{slug_location}?p="
 
         logger.info(

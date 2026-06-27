@@ -146,3 +146,27 @@ class TestComputrabajoSearch:
         offers = ComputrabajoScraper().search("Backend", "Bogotá", pages=1)
         assert all(o.summary == "" for o in offers)
         assert all(o.keywords == "" for o in offers)
+
+    def test_city_with_admin_suffix_is_cleaned_for_url(self, mocker):
+        """Bug critico verificado en produccion 2026-06-27: el cliente
+        Fabio tiene city='Bogota D.C.' y el scraper armaba la URL con
+        slug 'bogota-d.c.' que Computrabajo devolvia vacia (200 OK pero
+        0 ofertas). El helper `clean_city_for_slug` trunca al primer
+        sufijo admin para que la URL quede limpia."""
+        captured_urls: list[str] = []
+
+        def fake_get(url, **kwargs):
+            captured_urls.append(url)
+            return _mock_response(LISTING_HTML)
+
+        mocker.patch("jobs.adapters.scrapers.computrabajo.requests.get", side_effect=fake_get)
+        ComputrabajoScraper().search("Zootecnista", "Bogotá D.C.", pages=1)
+
+        # Filtramos solo URLs de listing (contienen "trabajo-de-...") —
+        # las URLs de detail (oferta-de-trabajo-X) no incluyen city.
+        listing_urls = [u for u in captured_urls if "trabajo-de-" in u]
+        assert listing_urls, f"no se pego al listing: {captured_urls}"
+        for url in listing_urls:
+            assert "bogota" in url, f"city no aparece en {url}"
+            assert "d.c." not in url, f"sufijo admin no filtrado en {url}"
+            assert " " not in url, f"espacio sin slugificar en {url}"

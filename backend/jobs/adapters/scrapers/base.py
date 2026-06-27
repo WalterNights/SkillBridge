@@ -64,6 +64,56 @@ class JobScraper(ABC):
         """
 
 
+# Tokens administrativos que rompen las URLs de portales tipo
+# Computrabajo cuando aparecen en el city. "Bogotá D.C." → la URL queda
+# con "bogota-d.c." y el portal devuelve 0 ofertas (página vacía con
+# 200 OK, peor que un 404). Truncamos el city al primer token útil
+# antes de cualquiera de estos.
+_CITY_ADMIN_STOPS: frozenset[str] = frozenset({
+    "d.c.", "dc", "df", "d.f.",
+    "sa", "s.a.", "lp", "l.p.",
+    "rm", "r.m.",
+    "cdmx",  # Ciudad de México: si lo escriben sólo así, queda.
+})
+
+
+def clean_city_for_slug(city: str) -> str:
+    """Limpia el `city` antes de convertirlo en slug para URLs de
+    portales. Devuelve la versión "nombre puro de ciudad" sin sufijos
+    administrativos.
+
+    Reglas:
+      - Trunca al primer token que sea un sufijo administrativo conocido
+        (D.C., DF, etc.) o que contenga un punto (típico de
+        abreviaturas: "S.A.", "L.P.").
+      - Si todos los tokens son válidos, devuelve el city sin cambios.
+      - Si NINGÚN token es válido (edge case), devuelve el original.
+
+    Casos:
+      >>> clean_city_for_slug("Bogotá D.C.")
+      'Bogotá'
+      >>> clean_city_for_slug("Ciudad de México")
+      'Ciudad de México'
+      >>> clean_city_for_slug("Buenos Aires")
+      'Buenos Aires'
+      >>> clean_city_for_slug("Lima")
+      'Lima'
+      >>> clean_city_for_slug("")
+      ''
+    """
+    if not city:
+        return city
+    parts = city.split()
+    clean: list[str] = []
+    for token in parts:
+        if token.lower() in _CITY_ADMIN_STOPS:
+            break
+        if "." in token:
+            break
+        clean.append(token)
+    return " ".join(clean) if clean else city
+
+
 def extract_keywords(text: str) -> str:
     """Detecta skills conocidas en `text` y devuelve sus nombres canónicos.
 
