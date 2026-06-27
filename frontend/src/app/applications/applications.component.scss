@@ -25,6 +25,23 @@
   border-radius: 14px;
   width: fit-content;
   max-width: 100%;
+
+  /* Mobile: scroll horizontal en vez de wrap. Con wrap, "Todas" cae
+     sola en la segunda fila y el contenedor queda visualmente roto
+     (el fondo + border-radius de la tab-bar no abraza limpio dos
+     filas). Scroll horizontal es el patrón estándar mobile para
+     grupos de tabs que no caben en una línea. */
+  @media (max-width: 640px) {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
 }
 
 .tab {
@@ -43,6 +60,9 @@
   transition:
     background 180ms ease,
     color 180ms ease;
+  /* En mobile (scroll horizontal) cada tab no debe encogerse o el
+     texto largo ("Rechazadas") se cortaría. */
+  flex-shrink: 0;
 
   &:hover {
     color: #e8e5dd;

@@ -412,6 +412,15 @@ textarea.field-input:-webkit-autofill {
     font-size: 22px;
   }
 
+  /* Título profesional en mobile: bajar font-size y mejorar leading
+     porque perfiles multi-rol ("UI/UX Designer/Industrial designer/
+     expert in 3d, augmented reality and animation") ocupan 4+ líneas
+     y a 15px se ven dominantes respecto del nombre. */
+  .hero-title {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
   .edit-toggle {
     margin-top: 8px;
     width: 100%;
