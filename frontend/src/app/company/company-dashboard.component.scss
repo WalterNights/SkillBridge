@@ -149,6 +149,14 @@
     text-decoration: line-through;
     text-decoration-color: rgba(255, 255, 255, 0.2);
   }
+
+  // Pill neutra para el modo NAVEGAR (sin match%). Solo muestra
+  // las skills del perfil tal cual, sin connotación de match/missing.
+  &--neutral {
+    color: #c4c1b8;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
 }
 
 // ─── Botones (reusan el patrón global pero con overrides locales) ────

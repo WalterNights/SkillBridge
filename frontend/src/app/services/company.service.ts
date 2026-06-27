@@ -4,19 +4,25 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environment/environment';
 
-/** Criterios que la empresa define para buscar profesionales.
- *  Matchea el body esperado por `POST /api/companies/search-profiles/`. */
+/** Criterios opcionales que la empresa define para refinar la búsqueda.
+ *  Todos opcionales — si se pasan vacíos, el backend devuelve la lista
+ *  completa de profiles visibles (modo NAVEGAR). */
 export interface CompanySearchCriteria {
-  skills_required: string[];
-  target_title: string;
+  skills_required?: string[];
+  target_title?: string;
   country?: string;
+  profession_category?: string;
   min_match?: number;
   limit?: number;
 }
 
 /** Shape de cada card de profesional en el feed empresa.
  *  El backend filtra PII activamente — email/telefono/number_id NO
- *  vienen acá nunca. */
+ *  vienen acá nunca.
+ *
+ *  `match_percentage` es null cuando el endpoint corre en modo NAVEGAR
+ *  (sin criterios de match) — el frontend usa esto para esconder el
+ *  badge "%" en las cards y mostrar solo info biográfica. */
 export interface ProfileSearchResult {
   profile_id: number;
   first_name: string;
@@ -28,18 +34,35 @@ export interface ProfileSearchResult {
   skills_preview: string[];
   matched_skills: string[];
   missing_skills: string[];
-  match_percentage: number;
-  title_score?: number;
-  skill_score?: number;
+  match_percentage: number | null;
+  title_score?: number | null;
+  skill_score?: number | null;
 }
 
 export interface ProfileSearchResponse {
   results: ProfileSearchResult[];
   total: number;
-  /** True cuando el endpoint recibió criterios vacíos — el frontend lo
-   *  usa para mostrar empty-state "definí criterios" en vez de "sin
-   *  resultados". */
+  /** True si el endpoint no recibió skills ni título — devolvió lista
+   *  cruda sin calcular match. */
   criteria_empty: boolean;
+  /** Alias semántico de `criteria_empty` desde el rediseño 2026-06-27.
+   *  El frontend usa este nombre para decidir qué empty-state mostrar
+   *  y si renderizar badges de match%. */
+  browse_mode: boolean;
+}
+
+/** Cada categoría profesional que tiene perfiles en plataforma. Solo
+ *  aparecen las que tienen al menos 1 profile visible — el dropdown del
+ *  frontend muestra estas opciones para que cada selección sea
+ *  accionable. */
+export interface ProfileCategory {
+  value: string;   // 'design' | 'tech' | 'marketing' | ...
+  label: string;   // 'Diseño' | 'Tecnología' | ...
+  count: number;
+}
+
+export interface ProfileCategoriesResponse {
+  categories: ProfileCategory[];
 }
 
 /** Shape del detalle de perfil que la empresa recibe en
@@ -87,11 +110,18 @@ export class CompanyService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/companies`;
 
-  searchProfiles(criteria: CompanySearchCriteria): Observable<ProfileSearchResponse> {
+  searchProfiles(criteria: CompanySearchCriteria = {}): Observable<ProfileSearchResponse> {
     return this.http.post<ProfileSearchResponse>(
       `${this.base}/search-profiles/`,
       criteria,
     );
+  }
+
+  /** Categorías profesionales presentes en plataforma — fuente del
+   *  dropdown smart de filtros. Se llama una sola vez al mount del
+   *  dashboard (las categorías cambian lento). */
+  getProfileCategories(): Observable<ProfileCategoriesResponse> {
+    return this.http.get<ProfileCategoriesResponse>(`${this.base}/profile-categories/`);
   }
 
   getProfileDetail(profileId: number): Observable<ProfileDetail> {
