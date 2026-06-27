@@ -53,17 +53,50 @@ class TestInferProfessionCategory:
             ("Veterinaria de Pequeños Animales", "agro"),
             ("Coordinador de Producción Pecuaria", "agro"),
             ("Especialista en Nutrición Animal", "agro"),
+            # Edge case "Nutricionista Animal" (sin "nutrición") — sin la
+            # entrada explícita 'nutricionista animal' en agro, esto
+            # caería en health por matchear 'nutricionista'.
+            ("Nutricionista Animal", "agro"),
             ("Asesor Técnico en Avicultura", "agro"),
             # Health humano — no debe confundirse con agro.
             ("Médico Pediatra", "health"),
             ("Enfermera Quirúrgica", "health"),
             ("Psicólogo Clínico", "health"),
+            ("Nutricionista Deportiva", "health"),  # nutricionista humano
             # Legal
             ("Abogada Penalista", "legal"),
             ("Compliance Officer", "legal"),
             # Operations
             ("Operations Manager", "operations"),
             ("Jefe de Producción", "operations"),
+            # ADMIN — agregado 2026-06-27. Solo términos puramente
+            # administrativos para no robarle palabras a sales/operations.
+            ("Administrador de Empresa", "admin"),
+            ("Asistente Administrativa", "admin"),
+            ("Auxiliar Administrativo", "admin"),
+            ("Gerente General", "admin"),
+            ("Director General", "admin"),
+            ("CEO", "admin"),
+            ("Secretaria Ejecutiva", "admin"),
+            ("Recepcionista", "admin"),
+            # TRADES — agregado 2026-06-27. Oficios concretos + servicios.
+            ("Plomero", "trades"),
+            ("Electricista", "trades"),
+            ("Mecánico Industrial", "trades"),
+            ("Soldador", "trades"),
+            ("Carpintero", "trades"),
+            ("Técnico en Refrigeración", "trades"),
+            ("Vigilante", "trades"),
+            ("Conductor de Camión", "trades"),
+            ("Personal de Servicios Generales", "trades"),
+            ("Operario de Planta", "trades"),
+            ("Mensajero Motorizado", "trades"),
+            # Anti-regresión: estos NO deberían caer en admin/trades aunque
+            # contengan palabras superficialmente similares.
+            ("Gerente Comercial", "sales"),         # "comercial" > "gerente"
+            ("Director de Operaciones", "operations"),
+            ("Director Comercial", "sales"),
+            ("Operations Director", "operations"),  # "operations" matchea ✓
             # Fallback general
             ("Foo Bar Baz", "general"),
             ("", "general"),
@@ -76,3 +109,28 @@ class TestInferProfessionCategory:
 
     def test_none_input_returns_general(self):
         assert infer_profession_category(None) == "general"
+
+    @pytest.mark.parametrize(
+        "title",
+        [
+            # Lista de perfiles que el cliente mencionó como cobertura
+            # mínima esperada (2026-06-27). Cada uno debe clasificar a
+            # ALGO que no sea 'general' — sino el router no le activa
+            # portales especializados y queda con el set 'all' solo.
+            "Administrador de Empresa",
+            "Abogado Civilista",
+            "Médico Pediatra",
+            "Ingeniero de Sistemas",
+            "Desarrollador de Software",
+            "Veterinario",
+            "Zootecnista",
+            "Enfermera",
+            "Plomero",
+            "Personal de Servicios Generales",
+        ],
+    )
+    def test_real_world_titles_dont_fall_to_general(self, title):
+        assert infer_profession_category(title) != "general", (
+            f"{title!r} cayó a 'general' — el router no le va a sugerir "
+            f"portales especializados. Considerar agregar al classifier."
+        )

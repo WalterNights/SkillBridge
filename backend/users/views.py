@@ -425,6 +425,8 @@ class CompanyProfileCategoriesView(APIView):
         "health": "Salud",
         "education": "Educación",
         "legal": "Legal",
+        "admin": "Administración",
+        "trades": "Oficios y servicios",
         "general": "Otros",
     }
 

@@ -21,13 +21,25 @@ ProfessionCategory = str  # 'tech' | 'design' | 'marketing' | ...
 # tenemos un grupo más fino — pero por ahora el granularidad es macro.
 _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
+        # NOTA: "ingeniero" suelto NO matchea acá adrede — sino captura
+        # ingeniero civil/mecánico/industrial que NO son tech. Solo
+        # matcheamos las variantes "Ingeniero de Sistemas/Software/
+        # Informático" que sí son tech. Otros ingenieros caen a general
+        # (o a operations si el título incluye "industrial").
         "tech",
         re.compile(
             r"\b(developer|engineer|programmer|programador|desarrollador|"
             r"devops|sysadmin|sre|qa|tester|architect|arquitecto|fullstack|"
             r"frontend|backend|mobile|ios|android|data scientist|"
             r"data engineer|data analyst|machine learning|ml engineer|"
-            r"product owner|technical lead|tech lead|cto|cio)\b",
+            r"product owner|technical lead|tech lead|cto|cio|"
+            r"ingeniero de sistemas|ingeniera de sistemas|"
+            r"ingeniero de software|ingeniera de software|"
+            r"ingeniero en sistemas|ingeniera en sistemas|"
+            r"ingeniero informático|ingeniero informatico|"
+            r"ingeniera informática|ingeniera informatica|"
+            r"ingeniero en computación|ingeniero en computacion|"
+            r"ingeniero de datos|ingeniera de datos)\b",
             re.IGNORECASE,
         ),
     ),
@@ -96,6 +108,9 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
         # Cubre veterinaria animal, zootecnia, agronomía, ganadería,
         # agroindustria y roles técnicos del sector pecuario / avícola
         # / porcícola.
+        # NOTA: "nutricionista animal" lo agregamos explícito porque
+        # "nutricionista" suelta cae en health y "Nutricionista Animal"
+        # (sin "nutrición") sería mal-clasificado sin esta entrada.
         "agro",
         re.compile(
             r"\b(zootecnista|zootecnia|veterinario|veterinaria|médico veterinario|"
@@ -103,9 +118,9 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
             r"ingeniero agrónomo|ingeniero agronomo|ganadero|ganadería|ganaderia|"
             r"agricultor|agrícola|agricola|agropecuario|agroindustria|"
             r"agroindustrial|avicultor|avicultura|porcicultor|porcicultura|"
-            r"nutrición animal|nutricion animal|producción animal|"
-            r"produccion animal|producción pecuaria|produccion pecuaria|"
-            r"fitomejorador|agronegocios)\b",
+            r"nutrición animal|nutricion animal|nutricionista animal|"
+            r"producción animal|produccion animal|producción pecuaria|"
+            r"produccion pecuaria|fitomejorador|agronegocios)\b",
             re.IGNORECASE,
         ),
     ),
@@ -134,6 +149,45 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
         re.compile(
             r"\b(abogado|abogada|lawyer|jurídico|juridico|legal counsel|"
             r"paralegal|notario|notaria|compliance officer|jurista)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        # Administración/gerencia general. Va casi al final porque palabras
+        # como "gerente" o "director" sueltas son muy genéricas — si va
+        # antes, captura "Gerente Comercial" (debería caer en sales) o
+        # "Director de Operaciones" (debería caer en operations). Por eso
+        # solo matcheamos los términos puramente administrativos:
+        # "gerente general", "asistente administrativo", "secretaria",
+        # "recepcionista", "auxiliar contable" (cuando NO matchea finance).
+        "admin",
+        re.compile(
+            r"\b(administrador|administradora|administracion|administración|"
+            r"asistente administrativ\w*|auxiliar administrativ\w*|"
+            r"jefe administrativ\w*|director administrativ\w*|"
+            r"gerente general|gerente administrativ\w*|"
+            r"director general|ceo|coordinador administrativ\w*|"
+            r"secretaria|secretario|recepcionista|asistente ejecutiv\w*)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        # Oficios técnicos y servicios generales (plomero, electricista,
+        # mecánico, vigilante, mensajero, conductor, limpieza, etc.).
+        # Va al final por el mismo motivo que admin — "técnico" suelta
+        # captura demasiado. Solo matcheamos oficios concretos.
+        # NOTA: "Operario" no se confunde con "Operations" porque son
+        # palabras distintas (no comparten substring).
+        "trades",
+        re.compile(
+            r"\b(plomero|electricista|mecánico|mecanico|soldador|soldadora|"
+            r"carpintero|carpintera|albañil|albanil|pintor|pintora|cerrajero|"
+            r"técnico en refrigeración|tecnico en refrigeracion|"
+            r"técnico mecánico|tecnico mecanico|técnico electricista|"
+            r"tecnico electricista|técnico industrial|tecnico industrial|"
+            r"operario|operaria|conductor|conductora|chofer|mensajero|"
+            r"mensajera|vigilante|vigilancia|guardia de seguridad|"
+            r"servicios generales|aseo|limpieza|jardinero|jardinera)\b",
             re.IGNORECASE,
         ),
     ),
