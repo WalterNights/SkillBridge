@@ -203,3 +203,140 @@ class TestUserRoleUpdate:
         assert target_user.is_staff is True
         assert target_user.username == original_username
         assert target_user.email == "target@example.com"
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestAdminUserProfileDetail:
+    """GET /api/dashboard/users/{id}/profile-detail/ — vista admin del
+    detalle profesional. Foco en skills/links; NO incluye experience,
+    education ni summary (denso, no aporta a la decisión rápida del
+    admin — eso vive en /me o /companies/profiles/{id})."""
+
+    @pytest.fixture
+    def target_user(self, django_user_model):
+        """User regular sobre el que se consulta el perfil."""
+        return django_user_model.objects.create_user(
+            username="target",
+            email="target@example.com",
+            password="testpass123",
+        )
+
+    def _url(self, user_id):
+        return f"/api/dashboard/users/{user_id}/profile-detail/"
+
+    def test_anon_is_401(self, api_client, target_user):
+        response = api_client.get(self._url(target_user.id))
+        assert response.status_code == 401
+
+    def test_non_admin_is_403(self, api_client, target_user):
+        api_client.force_authenticate(user=target_user)
+        response = api_client.get(self._url(target_user.id))
+        assert response.status_code == 403
+
+    def test_404_for_unknown_user(self, api_client, admin_user):
+        api_client.force_authenticate(user=admin_user)
+        response = api_client.get(self._url(99999))
+        assert response.status_code == 404
+
+    def test_returns_placeholder_when_no_profile(
+        self, api_client, admin_user, target_user
+    ):
+        """User existe pero no creó perfil todavía — devolvemos
+        placeholder con has_profile=False, no 404."""
+        api_client.force_authenticate(user=admin_user)
+        response = api_client.get(self._url(target_user.id))
+        assert response.status_code == 200
+        body = response.json()
+        assert body["has_profile"] is False
+        assert body["email"] == target_user.email
+        assert body["skills"] == []
+        assert body["languages"] == []
+
+    def test_returns_split_skills_and_links(
+        self, api_client, admin_user, target_user
+    ):
+        from users.models import UserProfile
+
+        UserProfile.objects.create(
+            user=target_user,
+            first_name="Jorge",
+            last_name="Pro",
+            phone="+57",
+            city="Bogotá",
+            professional_title="UX Designer",
+            skills="figma, sketch, photoshop",
+            soft_skills="liderazgo, comunicación",
+            experience="...",
+            linkedin_url="https://linkedin.com/in/jorge",
+            portfolio_url="https://jorge.dev",
+        )
+        api_client.force_authenticate(user=admin_user)
+        response = api_client.get(self._url(target_user.id))
+        assert response.status_code == 200
+        body = response.json()
+        assert body["has_profile"] is True
+        assert body["first_name"] == "Jorge"
+        assert body["professional_title"] == "UX Designer"
+        assert body["skills"] == ["figma", "sketch", "photoshop"]
+        assert body["soft_skills"] == ["liderazgo", "comunicación"]
+        assert body["linkedin_url"] == "https://linkedin.com/in/jorge"
+        assert body["portfolio_url"] == "https://jorge.dev"
+
+    def test_languages_json_parsed(self, api_client, admin_user, target_user):
+        from users.models import UserProfile
+
+        UserProfile.objects.create(
+            user=target_user,
+            first_name="X", last_name="Y", phone="+57", city="Z",
+            professional_title="Dev",
+            skills="python",
+            experience="...",
+            languages='[{"language": "Español", "level": "Nativo"}, {"language": "Inglés", "level": "B2"}]',
+        )
+        api_client.force_authenticate(user=admin_user)
+        body = api_client.get(self._url(target_user.id)).json()
+        assert body["languages"] == [
+            {"language": "Español", "level": "Nativo"},
+            {"language": "Inglés", "level": "B2"},
+        ]
+
+    def test_languages_legacy_text_wrapped(
+        self, api_client, admin_user, target_user
+    ):
+        """Perfiles viejos pre-Gemini guardaban idiomas como texto libre.
+        El endpoint debe devolverlos sin romper (1 entry con level vacío)."""
+        from users.models import UserProfile
+
+        UserProfile.objects.create(
+            user=target_user,
+            first_name="X", last_name="Y", phone="+57", city="Z",
+            professional_title="Dev", skills="python", experience="...",
+            languages="Inglés básico, Español nativo",
+        )
+        api_client.force_authenticate(user=admin_user)
+        body = api_client.get(self._url(target_user.id)).json()
+        assert body["languages"] == [
+            {"language": "Inglés básico, Español nativo", "level": ""}
+        ]
+
+    def test_does_not_include_experience_or_education(
+        self, api_client, admin_user, target_user
+    ):
+        """Contrato del endpoint: NO incluir experience/education/summary
+        — el admin no los necesita para la decisión rápida."""
+        from users.models import UserProfile
+
+        UserProfile.objects.create(
+            user=target_user,
+            first_name="X", last_name="Y", phone="+57", city="Z",
+            professional_title="Dev", skills="python",
+            experience="5 años en backend con Django y PostgreSQL.",
+            education="Lic. en Sistemas",
+            summary="Senior backend.",
+        )
+        api_client.force_authenticate(user=admin_user)
+        body = api_client.get(self._url(target_user.id)).json()
+        assert "experience" not in body
+        assert "education" not in body
+        assert "summary" not in body

@@ -121,6 +121,88 @@ class UserRoleUpdateView(APIView):
         )
 
 
+class AdminUserProfileDetailView(APIView):
+    """GET /api/dashboard/users/{user_id}/profile-detail/
+
+    Devuelve el detalle "profesional" de un user para que el admin lo
+    inspeccione desde el panel /admin/users sin tener que abrir el
+    perfil completo. Foco en lo que el admin necesita para curar /
+    dar soporte: skills, idiomas, links — NO experiencia ni educación
+    (que son densos en texto y no aportan a la decisión rápida).
+
+    Privacidad: este endpoint es admin-only (IsAdminUser). Incluye
+    email del usuario porque el admin lo necesita para contactar /
+    revocar acceso; el flow normal de empresa NO recibe email (eso
+    está en /api/companies/profiles/{id}/).
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, user_id: int):
+        user = get_object_or_404(User, pk=user_id)
+        profile = UserProfile.objects.filter(user=user).first()
+
+        # Profile inexistente o vacío — devolvemos placeholder para que
+        # el frontend no rompa, pero marcamos `has_profile=False`.
+        if profile is None:
+            return Response(
+                {
+                    "user_id": user.id,
+                    "email": user.email,
+                    "has_profile": False,
+                    "first_name": "",
+                    "last_name": "",
+                    "professional_title": "",
+                    "city": "",
+                    "skills": [],
+                    "soft_skills": [],
+                    "languages": [],
+                    "linkedin_url": None,
+                    "portfolio_url": None,
+                    "visible_to_companies": False,
+                }
+            )
+
+        # Skills/soft_skills viven como CSV en TextField. Split + trim.
+        skills = [s.strip() for s in (profile.skills or "").split(",") if s.strip()]
+        soft_skills = [s.strip() for s in (profile.soft_skills or "").split(",") if s.strip()]
+
+        # Languages es un TextField con JSON adentro (o string libre en
+        # perfiles viejos pre-Gemini). Intentamos parsear como JSON; si
+        # falla, devolvemos texto crudo para que el frontend lo muestre.
+        languages_raw = (profile.languages or "").strip()
+        languages: list = []
+        if languages_raw:
+            import json
+
+            try:
+                parsed = json.loads(languages_raw)
+                if isinstance(parsed, list):
+                    languages = parsed
+            except (ValueError, TypeError):
+                # Formato legacy — texto libre. Lo devolvemos como single
+                # entry para que el frontend muestre algo en vez de [].
+                languages = [{"language": languages_raw, "level": ""}]
+
+        return Response(
+            {
+                "user_id": user.id,
+                "email": user.email,
+                "has_profile": True,
+                "first_name": profile.first_name,
+                "last_name": profile.last_name,
+                "professional_title": profile.professional_title,
+                "city": profile.city,
+                "skills": skills,
+                "soft_skills": soft_skills,
+                "languages": languages,
+                "linkedin_url": profile.linkedin_url,
+                "portfolio_url": profile.portfolio_url,
+                "visible_to_companies": profile.visible_to_companies,
+            }
+        )
+
+
 class dashboardStats(APIView):
     """Métricas de plataforma para el dashboard admin.
 
