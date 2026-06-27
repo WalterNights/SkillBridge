@@ -27,8 +27,17 @@ logger = logging.getLogger(__name__)
 # Rate limit del scrape — caro (3 portales en paralelo + Gemini calls).
 # Implementado via cache propio porque django_ratelimit no es trivial de
 # aplicar a un @action de ViewSet (decoradores compuestos).
+#
+# Historial del cap:
+#   5/h — inicial. Razonable para uso normal pero clientes legítimos
+#         lo tocaban durante onboarding/testing (varios scrapes seguidos
+#         para validar que el feed traía lo esperado tras cambios).
+#  10/h — 2026-06-27. Subido tras reporte de cliente zootecnista
+#         bloqueado por 429. Mantiene la protección anti-abuso (Gemini
+#         + DDG no se drenan con 10 calls/h por user) pero da margen
+#         para que usuarios reales no se topen con el muro.
 _SCRAPE_RATE_WINDOW_SECONDS = 60 * 60  # 1h
-_SCRAPE_RATE_MAX_PER_USER = 5
+_SCRAPE_RATE_MAX_PER_USER = 10
 
 
 def _check_and_bump_scrape_rate(user_id: int) -> bool:

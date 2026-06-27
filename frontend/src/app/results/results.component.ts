@@ -465,8 +465,15 @@ export class ResultsComponent {
           message = 'Necesitamos tu título profesional y ciudad antes de buscar ofertas.';
         } else if (err.status === 404) {
           message = 'No se encontró tu perfil. Creá uno primero.';
+        } else if (err.status === 429) {
+          // Rate limit: el backend lo aplica por 1h (no segundos). El
+          // mensaje vacío usa el del backend si vino, sino un default
+          // honesto.
+          message =
+            err.error?.error ||
+            'Hiciste muchas búsquedas en la última hora. Esperá un rato antes de volver a intentar.';
         } else {
-          message = 'No pudimos obtener ofertas. Intentá de nuevo en unos segundos.';
+          message = 'No pudimos obtener ofertas. Intentá de nuevo en unos minutos.';
         }
         this.scrapeProgress.fail(message);
       },
