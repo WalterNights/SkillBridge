@@ -57,7 +57,10 @@ _CACHE_TTL_SECONDS = 24 * 3600
 #   v2 — 2026-06-27: +Torre, +pasadas creative en WebSearch (Domestika,
 #        Behance, Workana, Dribbble), descripciones más detalladas para
 #        que el LLM filtre mejor por categoría profesional.
-_CACHE_PREFIX = "portal_router:v2:"
+#   v3 — 2026-06-27: +Freelancer en el grupo creative del WebSearch para
+#        cubrir proyectos freelance cortos (diseñadores que toman gigs
+#        mientras buscan full-time).
+_CACHE_PREFIX = "portal_router:v3:"
 
 
 @dataclass(frozen=True)

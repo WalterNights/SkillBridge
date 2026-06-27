@@ -127,7 +127,7 @@ class TestBuildQuery:
 
     def test_creative_sites_query_only_includes_creative_portals(self):
         """Pasada `creative` debe usar exclusivamente los portales de
-        diseño — sin LinkedIn/Elempleo ahogándolos en la SERP."""
+        diseño/freelance — sin LinkedIn/Elempleo ahogándolos en la SERP."""
         q = WebSearchJobsScraper._build_query(
             "diseñador UX", "Bogotá", sites=_JOB_SITES_CREATIVE
         )
@@ -135,6 +135,7 @@ class TestBuildQuery:
         assert "site:behance.net" in q
         assert "site:workana.com" in q
         assert "site:dribbble.com" in q
+        assert "site:freelancer.com" in q
         # Garantía clave: NO se mezclan los generales en esta pasada.
         assert "site:linkedin.com" not in q
         assert "site:elempleo.com" not in q
@@ -596,3 +597,15 @@ class TestIsIndividualOfferUrl:
 
     def test_dribbble_root_listing_is_not_individual(self):
         assert not _is_individual_offer_url("https://dribbble.com/jobs")
+
+    def test_freelancer_project_is_individual(self):
+        """Freelancer usa /projects/<slug>/ para detail page."""
+        assert _is_individual_offer_url(
+            "https://www.freelancer.com/projects/graphic-design/logo-design-12345"
+        )
+
+    def test_freelancer_jobs_root_is_not_individual(self):
+        """`/jobs` es el listing de Freelancer, no una oferta puntual."""
+        assert not _is_individual_offer_url(
+            "https://www.freelancer.com/jobs/graphic-design/"
+        )

@@ -80,6 +80,13 @@ _JOB_SITES_CREATIVE = (
     "behance.net",
     "workana.com",
     "dribbble.com",
+    # Freelancer.com agrupa proyectos cortos (freelance puro), no empleo
+    # full-time. Lo incluimos en el grupo creative porque tiene mucha
+    # demanda real de design/3D/video editing en LATAM — un perfil
+    # como Jorge puede usarlo como puente mientras consigue full-time.
+    # El user va a ver una mezcla de "empleo" y "proyectos" en su feed,
+    # pero todos vienen con el mismo formato del SERP.
+    "freelancer.com",
 )
 
 # Unión usada por filtros (whitelist al parsear SERP). El `_build_query`
@@ -162,6 +169,8 @@ _INDIVIDUAL_PATTERNS: dict[str, str] = {
     "behance.net": "/joblist/",
     "workana.com": "/job/",  # singular — listings usan `/jobs`
     "dribbble.com": "/jobs/",
+    # Freelancer usa /projects/<slug> para detail; /jobs es el listing.
+    "freelancer.com": "/projects/",
 }
 
 # Elempleo mezcla 2 esquemas de URL:
@@ -254,11 +263,11 @@ class WebSearchJobsScraper(JobScraper):
     description = (
         "Meta-scraper: usa búsqueda web (DDG) restringida a portales sin "
         "scraper dedicado. Cubre dos grupos: tradicionales (elempleo, "
-        "bumeran, getonbrd) y CREATIVOS (Domestika, Behance, Workana, "
-        "Dribbble) — fuente principal para perfiles de diseño UI/UX, "
-        "3D, animación, motion graphics y video editing en LATAM. "
-        "Recall medio (snippet del SERP como summary) pero único acceso "
-        "a portales nicho creativos."
+        "bumeran, getonbrd) y CREATIVOS/FREELANCE (Domestika, Behance, "
+        "Workana, Dribbble, Freelancer) — fuente principal para perfiles "
+        "de diseño UI/UX, 3D, animación, motion graphics, video editing "
+        "y proyectos freelance cortos en LATAM. Recall medio (snippet "
+        "del SERP como summary) pero único acceso a portales nicho."
     )
     # Sumamos 'design' a las categorías para que el PortalRouter lo
     # priorice para perfiles design. 'all' se queda para que siga siendo
