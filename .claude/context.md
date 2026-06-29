@@ -1,107 +1,76 @@
 # Project context
 
-_Last updated: 2026-06-24 by Walter — segunda sesión del día, foco en mejoras del CV y editor._
+_Last updated: 2026-06-29 by Walter — sesión enfocada en separación de verticales + loosening del feed + setup de GitHub MCP._
 
 ## Current focus
 
-Después de cerrar el roadmap original, esta sesión se dedicó a pulir el flow del CV: extractor mejorado, "Mejorar con AI", auditor, formato Oficio con paginación, toolbar de formato Markdown-light, render de bullets/bold en /cv. También hubo trabajo en sidebar (categorías, Recursos+Blog para auth) y un bug crítico de loop en el token-refresh interceptor. **El feature de paginación del CV quedó funcionalmente OK pero perfeccionable** (ver Open questions).
+Hacer el feed viable para CUALQUIER perfil profesional sin tunear caso por caso. El sistema ahora taggea cada `JobOffer` con una `category` macro (tech, agro, legal, health, trades, admin, etc.) y filtra el feed estricto por la categoría del user — un abogado nunca ve ofertas de diseño, un zootecnista solo ve ofertas agro/veterinarias. Cliente piloto de validación: **Fabio (cuenta `minos009`)**, zootecnista en Bogotá.
 
 ## State of the tree
 
 - **Branch**: `main`
-- **Last commit**: `ab6b2563` — feat(cv): formato Oficio + paginación visual cuando supera 1 hoja
-- **Uncommitted**: 5 archivos modificados (snap algorithm rewrite + markdown line breaks + bold cross-line fix) — listos para commit al cierre de sesión
+- **Last commit**: `7a0d42d5` — fix(feed): aflojar min_match a 0 para users con vertical claro
+- **Uncommitted**: ninguno
 - **Open PRs**: N/A (workflow es commit directo a main, GitHub Actions despliega auto)
-- **Tests**: backend 272/272 passing
+- **Tests**: 676/676 passing
+- **Último deploy GHA**: #128 `success` (commit 7a0d42d5, verificado en prod 2026-06-29)
 
-## Recent work (sesión 2026-06-24)
+## Recent work (sesiones 2026-06-27 / 28 / 29)
 
-- **Extractor de CV mejorado** — el prompt de Gemini ahora preserva todos los bullets de experiencia (antes los comprimía a 2 oraciones), captura `languages` (array {language, level}) + `soft_skills` (texto comma-sep). UserProfile gana campos `soft_skills` y `languages` (migración 0010). Render en /cv tiene secciones nuevas.
-- **"Mejorar mi CV con AI"** — endpoint `POST /api/users/cv/improve/` que devuelve propuesta (no persiste). Modal con before/after de summary, skills y sample de experiencia. Defensivo: si Gemini cambia el count de experiences o se inventa empresas/fechas, descartamos esas mejoras y caemos al original (no perdemos roles).
-- **Auditor del CV** (entregado sesión anterior pero usado y validado acá) — botón "🧠 Auditar con AI" en /cv, modal con score 0-100 + 6 categorías + top 3 recomendaciones + botón "Aplicar mejoras con AI" que abre el improver.
-- **Toolbar de formato sticky** en /me edit mode — Negrita, Cursiva, Lista, Numerada, Limpiar. `position: fixed` a la izquierda del form (sin robar ancho). En mobile cae como franja sticky-top. Solo visible en edit mode.
-- **RichTextComponent** (shared) — parser Markdown-light propio (sin librerías). Soporta `**bold**`, `*italic*`, listas con `- /• /*`, listas numeradas, párrafos por línea + spacer entre bloques (blank line del input). Pre-procesa bold multi-línea para tolerar selecciones que cruzan newlines.
-- **Formato Oficio (215.9×355.6mm)** en /cv — antes era A4. PDF export actualizado a `'legal'` en jsPDF.
-- **Paginación visual del CV** — separadores "Página N" entre hojas Oficio. **Algoritmo actual**: snappea solo `.cv-entry` (no `.cv-section` enteras), inyecta `margin-top` para empujar entries que cruzan el boundary al inicio de la próxima hoja. Markers derivados de las posiciones reales de los snaps (no de fórmula teórica). Cache de altura natural para evitar loop en `ngAfterViewChecked`.
-- **Sidebar reorganizado** — "Inicio" → "Ofertas", secciones "Trabajo" (Ofertas/Postulaciones/CV) y "Aprender" (Recursos/Blog). Recursos y Blog accesibles auth y unauth (componentes detectan `insideShell` via AuthService.isAuthenticated y skip PublicNav/PublicFooter cuando están en shell).
-- **Routing con `canMatch`** — nuevo `authMatchGuard` para que `/recursos` y `/blog` se renderean dentro del shell cuando hay auth y caigan al fallback público cuando no.
-- **Filtros dashboard "Cargar más"** — antes el feed mostraba solo 20 (DRF default) y daba sensación de que se reemplazaban tras cada scrape. Ahora `JobService.getJobs(filters, page)` devuelve envelope completo + frontend acumula páginas con botón "Cargar más ofertas (N restantes)".
-- **Bug fix crítico — token refresh loop** — el interceptor capturaba 401 de `/token/refresh/` y disparaba otro refresh → loop infinito que martillaba el backend. Skip de refresh para URLs `/token/*` y `/register/*` y cuando no hay refresh_token guardado.
-- **Bug fix — GEMINI_API_KEY no declarada** — 500 en /cv/audit/. Los nuevos services accedían via `settings.GEMINI_API_KEY` que nunca se declaró en core/settings.py (los modules viejos leían `config()` directo). Declaradas las dos vars con defaults seguros.
-- **Bug fix — "Ver más recursos" en Tip widget** — apuntaba a `href="#"` → ahora `routerLink="/recursos"`. Después se quitó el link por redundante (Recursos ya está en el sidebar como item de primer nivel).
-- **Categorías en sidebar** — secciones "Trabajo" + "Aprender" en vez de un solo "Menú".
-- **Editor de imágenes ya subidas** — botón "Reajustar" en banner y avatar de /me. Fetch del URL público → blob → File → reusa el cropper existente.
-- **Textareas resize:vertical only** — override en styles.scss para que summary/experience/education solo se redimensionen vertical, no horizontal (rompía el grid del form).
+- **Separación de verticales** (commit 56cfccb1) — `JobOffer.category` (migración 0013), `JobService.save_new_offers` infiere category al guardar via `infer_profession_category(title + summary)`. Feed filtra `category=user_category`. Cliente Fabio pasó de "ver de todo" a ver solo agro.
+- **Filtro estricto sin 'general' como comodín** (a9d3a27d) — eliminado el fallback que incluía `category='general'` para users con vertical. Reportado por el cliente: "NADA que no tenga que ver con la profesión del usuario".
+- **Classifier robusto a plurales + pet care en agro** (15fadbb6) — helper `_word_with_plurals` agrega plurales españoles automáticamente al regex; categoría `agro` incluye veterinaria, zootecnia, pet care (peluquero canino, estilista canina, paseador de perros). Migración 0014 re-taggea TODAS las ofertas viejas con el classifier corregido.
+- **Limpieza de city para URLs de portales** (87582122) — helper `clean_city_for_slug` trunca al primer sufijo administrativo ("Bogotá D.C." → "Bogotá"). Sin esto, Computrabajo devolvía página 200 OK con 0 ofertas porque el slug quedaba mal armado.
+- **Loosening de min_match para vertical claro** (7a0d42d5, ESTA sesión) — para users con `user_category != 'general'`, el threshold default se afloja a 0 (el filtro por categoría ya garantiza relevancia, match% solo ordena). Verificado en prod con Fabio: default pasó de **2 → 10 ofertas**. Si user pide `?min_match=80` explícito, se respeta.
+- **GitHub MCP global setup** (ESTA sesión) — binary `github-mcp-server v1.5.0` en `~/.claude/bin/`, wrapper `.cmd` lee `GITHUB_MCP` de `.env` del proyecto al lanzar, toolsets `default,actions`. PAT vive **solo** en `<project>/.env`, nunca en `.claude.json`. Permite consultar workflow runs / jobs / logs desde Claude sessions.
+- **Rate limit del scrape 5→10→20/h** (946e05e9 + 1710a3f7) — escalable después de sacar Gemini del path crítico.
+- **Gemini fuera del PortalRouter** (708484bd) — el `PortalRouterService` ahora usa `infer_profession_category` + `scraper.categories` determinístico, sin AI en el path crítico. Quita costo + dependencia externa.
+- **Checkbox "Ver matches débiles" como modo DIAGNOSTICO** (63bac7e1 + eb8b1183) — gated por feature flag `show_low_match_filter`. Default 50%, checkbox extiende a 0-49% (diagnostic). Después del loosening de 7a0d42d5, en users con vertical el checkbox es semánticamente redundante (todas las same-vertical ya muestran en default) — el feature flag sigue siendo útil para users `general`.
 
 ## Active decisions
 
-- **AppShell wraps authenticated routes EXCEPTO `/profile`** — wizard de onboarding standalone full-page. `/cv` ahora SÍ está dentro del shell (cambio reciente — antes era standalone).
-- **`/profile` ≠ `/me`** — wizard una vez vs edición continua. `/profile` redirige a `/me` si el perfil ya está completo.
-- **Dark-only** — sin toggle de modo claro.
-- **Filtros dashboard**: country ISO alpha-2 ('XX' = desconocido, excluido del dropdown). Modality enum cerrado. Multi-select OR intra-categoría, AND inter-categoría.
-- **Scrapers JSON-LD-first**: si un portal tiene `JobPosting` server-rendered (Hireline, Trabajando.com), usar sitemap + JSON-LD en vez de CSS selectors.
-- **BNE México y BNE Chile deferidos** — SPAs gov sin API, requieren Playwright. ROI dudoso.
+- **Vertical filter es la puerta principal de relevancia**, no el match%. Si el offer es de la categoría del user, debe verse — match% sirve para ordenar dentro. Esto cambia la semántica histórica donde min_match=50 era el filtro principal.
+- **Gemini fuera del path crítico del scrape**. Router determinístico via classifier + scraper categories. Razón: costo + dependency externa + observabilidad.
+- **PAT del GitHub MCP en `.env` del proyecto, nunca en `.claude.json`**. Un wrapper `.cmd` los junta al lanzar. Rotación: editar `.env` y reload de VSCode.
 - **Co-Authored-By en commits**: NO incluir.
-- **CV en formato Oficio** (215.9×355.6mm = US Legal) — estándar para LATAM. PDF export con `'legal'`.
-- **Paginación del CV via snap a `.cv-entry`** — NO snappear `.cv-section` (demasiado grandes, dejarían páginas casi vacías). Markers derivados de snaps reales, no de fórmula teórica.
-- **Markdown light en CV/profile**: sintaxis propia (`**bold**`, `- bullet`, `1. numbered`, `*italic*`). RichTextComponent renderea con Angular templates sin `[innerHTML]` (sin riesgo de XSS). No usamos `marked` + DOMPurify para mantener cero deps.
-- **Toolbar de formato wrappea por línea** cuando la selección abarca múltiples líneas. Sin esto, un solo `**...**` cruzando newlines no es detectado por el parser line-by-line.
-- **Routing con `canMatch`** para rutas con fallback público (`/recursos`, `/blog`). El shell route las cubre cuando hay auth; cuando no, caen al fallback público que renderea con PublicNav.
+- **CV en formato Oficio** (215.9×355.6mm = US Legal) — estándar LATAM.
+- **AppShell wraps authenticated routes EXCEPTO `/profile`** — wizard standalone. `/cv` está dentro del shell.
+- **Dark-only** — sin toggle modo claro.
+- **Scrapers JSON-LD-first** cuando el portal sirve `JobPosting` server-rendered.
+- **BNE México y Chile deferidos** — SPAs gov sin API, ROI dudoso.
 
 ## Open questions / blockers
 
-- **Paginación del CV — perfectible**:
-  - Si un solo `.cv-entry` es más alto que una hoja Oficio (raro pero posible con un rol con 20 bullets), se desborda sin snap. Falta una pasada que split entries demasiado grandes.
-  - Orphaned section headers — el h2 "Experiencia profesional" puede quedar al final de una hoja con su primera entry en la siguiente. Para fixearlo bien habría que tratar (h2 + primer entry) como unidad indivisible.
-  - El marker visual es de 14mm y se centra en el gap; con gaps muy chicos puede solaparse con contenido. Acotado a `Math.max(0, gapMid - 27)`.
-- **Render Markdown en CV — limitado**:
-  - No soporta links, headings inline, código, tablas, imágenes. Suficiente para CV ATS, no para blog/docs.
-  - `**bold**` cross-line ya se pre-procesa, pero italic cross-line no (raro que aparezca, baja prioridad).
-- **Resize de fotos en backend** — el cropper ya genera output controlado (1024px avatar / 1920px banner). Falta validación server-side para users que carguen un PNG 4K sin pasar por el cropper.
-- **Comments / feedback widget** — el muro del home logged-in usa `STUB_COMMENTS` hardcoded. Scope sin decidir.
+- **Falso positivo del classifier** — "Tecnico auxiliar de cocina" tageado como `agro` en producción (aparece en el feed de Fabio). Probable: alguna keyword del summary matcheando una palabra agro. Pending: inspeccionar la oferta puntual + ajustar el regex de agro para no matchear esos casos.
+- **Scrapers con bajo recall** — Magneto/Indeed/Trabajos_co/WebSearch volviendo 0 en últimos runs. Sospechas: Playwright issues o ban por IP. LinkedIn recall ~11 vs ~36 manual (personalización por IP del guest API).
+- **Trabajando sitemap-based desperdicia cuota** — el sitemap recorre todas las ofertas; para users de vertical específico hace mucho parseo inútil.
+- **Verificar disponibilidad de ofertas en portal origen** (backlog viejo, no resuelto) — caso reportado: ofertas con 85% match cuyas URLs devuelven "oferta no disponible". Implementar probe asíncrono que marque `is_active=False` cuando 404.
 
-## Backlog priorizado para próxima sesión
+## Backlog UI/UX (no resuelto desde 2026-06-24)
 
-Tres bugs/features reportados por Walter al cierre de esta sesión que NO se implementaron — están registrados para retomar:
+1. **Bug visual /settings dropdown idioma** — `<select>` native con fondo claro y options casi invisibles. Fix de contraste o reemplazar por custom dropdown.
+2. **Badge "1" quemado en /applications tab "Todas"** — estilo del badge no respeta los otros tabs. Quick fix de CSS.
+3. **Paginación CV perfectible** — entries más grandes que una hoja Oficio no se splittean, orphaned h2 al final de página.
 
-1. **Verificar disponibilidad de las ofertas en su portal de origen** — caso reportado: en el feed apareció "Desarrollador Fullstack Senior" de ZEMSANIA con 85% de match, al clickear y abrir el portal origen el portal devuelve "Esta oferta ya no está disponible". Va contra el slogan "cero ruido" (mostrar ofertas caducas es noise). Posibles approaches:
-   - Probe síncrono al portal antes de mostrar la oferta (caro, latency)
-   - Probe asíncrono diario que marca ofertas como `is_active=False` cuando el portal devuelve 404 / página de "no disponible" (preferible — ya tenemos pattern en `web_search.py` con LinkedIn closed probe)
-   - Para los scrapers que ya usan sitemap, recomputar cada vez (las URLs faltantes en el nuevo sitemap = expired)
-   - Filtrar `is_active` en el queryset del feed por default
+## Next steps
 
-2. **Bug visual en /settings dropdown de idioma** — el `<select>` native abierto muestra fondo claro y opciones "English" / "Português" con color claro casi invisible contra ese fondo. Probable: el `<select>` no tiene estilos custom para las `<option>` (limitación de navegadores — opciones del dropdown nativo no son styleables, usan defaults del OS). Soluciones:
-   - Mejorar contraste de las opciones (cambiar el color del option a uno legible sobre fondo claro)
-   - Reemplazar el select nativo por un custom dropdown con `<div>` + signals (más esfuerzo)
-
-3. **Badge "1" quemado en /applications tab "Todas"** — el counter pegado al label del tab "Todas" tiene estilo roto (el badge no respeta el styling de los otros tabs). Probablemente un caso edge en el SCSS que no estilizó correctamente el badge cuando es del tab activo o cuando el count es bajo. Quick fix de CSS.
-
-## Otros next steps (sin orden, esperando prioridad)
-
-- **Mejorar paginación CV**: split de entries demasiado grandes para 1 hoja Oficio, manejo de orphaned section headers (h2 al final de página con content en la siguiente).
-- **Más portales**: BNE MX/CL (deferred), OCC, Bumeran, CompuTrabajo otros países.
-- **Sentry o similar** para monitoring en prod — solo tenemos logs en gunicorn/celery.
-- **Test E2E del flow LinkedIn OAuth** — hay 10 unit tests pero no smoke end-to-end.
-- **Limpieza técnica**: tipado `any` en `MyProfileComponent.unwrapProfile`, borrar `ngx-image-cropper` del package.json (no se usa).
-- **Backfill prod de `country` + `modality`**: la migración 0007 corre auto en deploy y trae RunPython. Verificar después del próximo deploy que los conteos del endpoint `/filter-options/` no sean todos `XX`/`unknown`.
+1. Investigar el falso positivo "Tecnico auxiliar de cocina" → agro (classifier fix puntual).
+2. Diagnosticar por qué Magneto/Indeed/Trabajos_co/WebSearch vuelven 0 — empezar por logs del último scrape para ver si es timeout, ban o cambio de HTML.
+3. Subir el probe de disponibilidad de ofertas (backlog viejo) — patron de LinkedIn closed probe en `web_search.py` es buen punto de partida.
 
 ## Pointers
 
-- [docs/clean_code.md](docs/clean_code.md) — reglas del proyecto
-- [docs/seo-submission.md](docs/seo-submission.md) — GSC + Bing Webmaster
-- [backend/jobs/services/matching_service.py](backend/jobs/services/matching_service.py) — scoring título 60% + skills 40%
+- [backend/jobs/views.py](backend/jobs/views.py) — `JobOfferViewSet.get_queryset` (filtro estricto) + `list` (loosening same-vertical)
+- [backend/jobs/services/job_service.py](backend/jobs/services/job_service.py) — `save_new_offers` calcula category al guardar
+- [backend/jobs/services/matching_service.py](backend/jobs/services/matching_service.py) — scoring título 60% + skills 40%, `_extract_primary_role`
+- [backend/jobs/adapters/scrapers/base.py](backend/jobs/adapters/scrapers/base.py) — `clean_city_for_slug` + `extract_age_days` + `JobScraper.categories`
 - [backend/jobs/adapters/scrapers/registry.py](backend/jobs/adapters/scrapers/registry.py) — single source of truth de scrapers
-- [backend/jobs/utils/offer_attributes.py](backend/jobs/utils/offer_attributes.py) — extractores country + modality
-- [backend/users/services/cv_auditor.py](backend/users/services/cv_auditor.py) — auditor del CV
-- [backend/users/services/cv_improver.py](backend/users/services/cv_improver.py) — improver del CV (defensivo: preserva counts originales)
-- [backend/users/services/achievement_quantifier.py](backend/users/services/achievement_quantifier.py) — cuantificador per-bullet
-- [backend/users/adapters/gemini_analyzer.py](backend/users/adapters/gemini_analyzer.py) — extractor de CV (prompt mejorado para preservar bullets + languages + soft_skills)
-- [backend/applications/cover_letter_generator.py](backend/applications/cover_letter_generator.py)
-- [backend/users/oauth_linkedin.py](backend/users/oauth_linkedin.py)
+- [backend/jobs/services/portal_router.py](backend/jobs/services/portal_router.py) — router determinístico (sin Gemini en critical path)
+- [backend/jobs/migrations/0013_joboffer_category.py](backend/jobs/migrations/0013_joboffer_category.py) — agrega `category` + backfill
+- [backend/jobs/migrations/0014_retag_categories_after_plurals_fix.py](backend/jobs/migrations/0014_retag_categories_after_plurals_fix.py) — re-taggea todas las ofertas con classifier corregido
+- [backend/users/services/profession_classifier.py](backend/users/services/profession_classifier.py) — `_word_with_plurals`, categorías macro (tech, design, marketing, agro, health, legal, admin, trades, etc.)
+- [backend/jobs/tests/test_jobs_api.py](backend/jobs/tests/test_jobs_api.py) — tests del feed incluyen separación de verticales + loosening
+- [docs/clean_code.md](docs/clean_code.md) — reglas del proyecto
 - [deploy/README.md](deploy/README.md) — incluye sección de cómo subir `.env` al VPS
-- [frontend/src/app/shared/rich-text/rich-text.component.ts](frontend/src/app/shared/rich-text/rich-text.component.ts) — parser Markdown-light propio
-- [frontend/src/app/shared/text-format-toolbar/text-format-toolbar.component.ts](frontend/src/app/shared/text-format-toolbar/text-format-toolbar.component.ts) — toolbar sticky en /me edit
-- [frontend/src/app/auth/auth-match.guard.ts](frontend/src/app/auth/auth-match.guard.ts) — canMatch guard para rutas con fallback público
-- [frontend/src/app/ats-cv/ats-cv.component.ts](frontend/src/app/ats-cv/ats-cv.component.ts) — viewer del CV con snap-pagination
-- [frontend/src/app/shared/portal.ts](frontend/src/app/shared/portal.ts) — mapeo URL → portal para avatares
-- [frontend/src/app/auth/token-interceptor.service.ts](frontend/src/app/auth/token-interceptor.service.ts) — interceptor JWT con fix anti-loop
+- `~/.claude/bin/github-mcp-wrapper.cmd` — wrapper que lee `GITHUB_MCP` de `.env` para el MCP de GitHub
+- `~/.claude/projects/d--WalterNights-software-projects-SkillBridge/memory/reference_skiltak_ci.md` — pattern de uso del GitHub MCP (paginar runs, traer logs)
