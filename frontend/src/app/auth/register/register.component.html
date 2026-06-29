@@ -27,9 +27,9 @@
   </div>
 </header>
 
-<main class="min-h-screen flex flex-col lg:flex-row">
+<main class="h-screen flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
   <!-- ─── Columna izquierda (siempre visible) ─────────────────────── -->
-  <section class="flex-1 flex items-center justify-center px-6 py-20 lg:py-14">
+  <section class="flex-1 flex items-center justify-center px-6 py-20">
     <div class="w-full max-w-md">
       <!-- ═══ Step: SELECT ═══════════════════════════════════════════ -->
       <ng-container *ngIf="step() === 'select'">
