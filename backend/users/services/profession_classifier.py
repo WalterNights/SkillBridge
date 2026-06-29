@@ -29,6 +29,12 @@ def _word_with_plurals(word: str) -> str:
     Reglas:
       - Si la palabra YA termina en 's' (ej. 'sales', 'finanzas',
         'operaciones'), no agregamos sufijo.
+      - Si la palabra tiene ≤2 caracteres alfanuméricos (ej. 'hr', 'ui',
+        'qa'), NO agregamos plural — son siglas/abreviaturas que casi
+        siempre matcheean falsos positivos. Bug real (2026-06-29):
+        "FT 42 Hrs" en titulos retail matcheaba "hr" + plural "hrs",
+        clasificando ofertas operario como HR. Para abreviaturas
+        cortas, exigir el word boundary exacto sin plural.
       - Si termina en vocal (a/e/i/o/u): aceptar `s?` opcional
         ('diseñador' → 'diseñador'; 'designer' → 'designers').
       - Si termina en consonante: aceptar `(?:es|s)?` opcional
@@ -41,6 +47,8 @@ def _word_with_plurals(word: str) -> str:
     if not word:
         return base
     if word.endswith("s"):
+        return base
+    if len(word) <= 2:
         return base
     last = word[-1].lower()
     if not last.isalpha():

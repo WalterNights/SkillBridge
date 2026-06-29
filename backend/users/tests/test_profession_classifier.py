@@ -141,6 +141,32 @@ class TestInferProfessionCategory:
     @pytest.mark.parametrize(
         "title",
         [
+            # Bug real 2026-06-29: el patron de "hr" + plural aceptaba
+            # "hrs" (abreviatura de horas) y tagueaba retail/operario
+            # como HR. Fix: no agregar plural a palabras de ≤2 chars.
+            "Asistente de Visual, FT 42 Hrs, Falabella Rancagua",
+            "CADETE PART TIME 30 HRS TIENDA PARIS",
+            "Operativo Tienda Sodimac FT42 hrs",
+            "Vendedor Part Time 24 Hrs Falabella",
+        ],
+    )
+    def test_hrs_abbreviation_does_not_match_hr(self, title):
+        """`Hrs`/`HRS`/`hrs` como abreviatura de horas NO debe matchear
+        el patrón de `hr` (human resources)."""
+        assert infer_profession_category(title) != "hr", (
+            f"{title!r} cayó en HR — el plural 'hrs' de 'hr' está "
+            f"generando falsos positivos por matchear 'horas'."
+        )
+
+    def test_hr_proper_match_still_works(self):
+        """Verifica que el fix no rompe el match legítimo de HR."""
+        assert infer_profession_category("HR Manager") == "hr"
+        assert infer_profession_category("Talent Acquisition Lead") == "hr"
+        assert infer_profession_category("Reclutadora Tech") == "hr"
+
+    @pytest.mark.parametrize(
+        "title",
+        [
             # Lista de perfiles que el cliente mencionó como cobertura
             # mínima esperada (2026-06-27). Cada uno debe clasificar a
             # ALGO que no sea 'general' — sino el router no le activa
