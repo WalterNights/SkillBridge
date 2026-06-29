@@ -49,7 +49,7 @@ export const DAILY_TIPS: readonly string[] = [
   // ----- Networking / marca personal -----
   'Un LinkedIn con foto y headline claro recibe 14x más visitas que uno sin foto.',
   'Pide a 3 colegas que te escriban una recommendation en LinkedIn. La conversión en mensajes sube notable.',
-  'Tu URL de LinkedIn debería ser tu nombre. /walternights vs /walter-juan-perez-12345 — cambia mucho.',
+  'Tu URL de LinkedIn debería ser tu nombre. /mariagonzalez vs /maria-gonzalez-12345 — cambia mucho.',
   'Comentar 1 post por día en tu industria te hace más visible que postear 1 vez por semana.',
   'No conectes con "Hola, vi tu perfil". Menciona algo específico — un proyecto, un post, un interés en común.',
   'Muestra lo que estás aprendiendo, no solo lo que ya sabes. Recruiters siguen a quien crece.',
