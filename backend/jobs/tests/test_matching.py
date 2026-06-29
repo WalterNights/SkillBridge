@@ -285,6 +285,118 @@ class TestExtractPrimaryRole:
 
 
 @pytest.mark.unit
+class TestSameVerticalBoost:
+    """Caso real cliente Fabio (zootecnista, 2026-06-29):
+
+    El matcher daba 0% a ofertas claramente del area del user porque
+    los titulos no compartian tokens:
+      - 'Zootecnista' (user) vs 'Medico Veterinario' (job) -> overlap 0
+      - 'Zootecnista' vs 'Avicultura' -> overlap 0
+      - 'Zootecnista' vs 'Empresas agricolas' -> overlap 0
+
+    El classifier YA reconoce ambos titulos como `agro`. El boost
+    aprovecha esa info: cuando `job_category == user_category != 'general'`,
+    el title_score recibe piso de 50 y se ignoran skills del job que
+    suelen ser ruido generico dentro del vertical."""
+
+    AGRO = dict(job_category="agro", user_category="agro")
+
+    def test_same_category_no_overlap_floors_at_50(self):
+        """Caso del bug original: titulos sin overlap pero same-vertical."""
+        result = JobMatchingService.calculate_match_percentage(
+            job_keywords=["excel"],  # ruido generico tipico de Computrabajo
+            user_skills=["ganado", "pasturas"],
+            job_title="Medico Veterinario",
+            user_title="Zootecnista",
+            **self.AGRO,
+        )
+        # title_score raw = 0, floored a 50; skill_score = 0; combined = min(50,90) = 50
+        assert result["match_percentage"] == 50
+        assert result["title_score"] == 0  # raw para diagnostico
+
+    def test_same_category_direct_title_overlap_caps_at_90(self):
+        """Direct title match same-vertical sin skills sale a 90 (capado)."""
+        result = JobMatchingService.calculate_match_percentage(
+            job_keywords=["excel"],
+            user_skills=["ganado"],
+            job_title="Medico Veterinario y/o Zootecnista",
+            user_title="Zootecnista",
+            **self.AGRO,
+        )
+        # title_score = 100 (overlap completo), skill_score = 0
+        # same_cat + skill<50 -> combined = min(100, 90) = 90
+        assert result["match_percentage"] == 90
+
+    def test_same_category_with_strong_skills_uses_combined(self):
+        """Si skills aportan senal real (>=50%), usar formula combinada."""
+        result = JobMatchingService.calculate_match_percentage(
+            job_keywords=["veterinaria", "ganado"],
+            user_skills=["veterinaria", "ganado"],  # 100% skill match
+            job_title="Veterinario Senior",
+            user_title="Zootecnista",
+            **self.AGRO,
+        )
+        # title_score raw = 0, floored 50; skill_score = 100
+        # skill>=50 -> combined = 0.6*50 + 0.4*100 = 70
+        assert result["match_percentage"] == 70
+
+    def test_same_category_low_skill_match_uses_title_only(self):
+        """Skill match marginal (<50) NO debe arrastrar el match abajo del piso."""
+        result = JobMatchingService.calculate_match_percentage(
+            job_keywords=["excel", "ofimatica", "comunicacion"],
+            user_skills=["excel"],  # 1/3 = 33% -> < 50
+            job_title="Responsable de Produccion Avicola",
+            user_title="Zootecnista",
+            **self.AGRO,
+        )
+        # title_score raw = 0, floored 50; skill_score = 33 < 50
+        # -> path title-only: combined = min(50, 90) = 50
+        # Sin el guard "skill<50", seria 0.6*50 + 0.4*33 = 43 (peor)
+        assert result["match_percentage"] == 50
+
+    def test_different_category_no_boost(self):
+        """Si categorias difieren, el boost NO aplica — comportamiento legacy."""
+        result = JobMatchingService.calculate_match_percentage(
+            job_keywords=["python"],
+            user_skills=["ganado"],
+            job_title="Backend Developer",
+            user_title="Zootecnista",
+            job_category="tech",
+            user_category="agro",
+        )
+        # title_score = 0, skill_score = 0 -> combined = 0
+        assert result["match_percentage"] == 0
+
+    def test_general_user_category_no_boost(self):
+        """User con category='general' (titulo no clasificable) NO recibe boost,
+        incluso si el job es de alguna categoria. Sin esto users 'general'
+        verian todo a 50% sin discriminacion."""
+        result = JobMatchingService.calculate_match_percentage(
+            job_keywords=["excel"],
+            user_skills=["ganado"],
+            job_title="Medico Veterinario",
+            user_title="Foo Bar Baz",  # no clasifica
+            job_category="agro",
+            user_category="general",
+        )
+        # same_category=False -> formula legacy
+        # title 0, skill 0 -> combined 0
+        assert result["match_percentage"] == 0
+
+    def test_backward_compat_without_categories(self):
+        """Sin pasar categories, comportamiento es el legacy (boost no aplica)."""
+        result = JobMatchingService.calculate_match_percentage(
+            job_keywords=["excel"],
+            user_skills=["ganado"],
+            job_title="Medico Veterinario",
+            user_title="Zootecnista",
+        )
+        # Sin user_category/job_category -> same_category=False -> legacy
+        # title 0, skill 0 -> combined 0
+        assert result["match_percentage"] == 0
+
+
+@pytest.mark.unit
 class TestMatchingWithMultiRoleTitle:
     """Garantías post-fix: el perfil de Jorge debe poder llegar al 60%
     con ofertas realistas. Antes del normalizer, ni siquiera una oferta

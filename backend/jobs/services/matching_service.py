@@ -187,6 +187,8 @@ class JobMatchingService:
         use_semantic: bool = False,
         job_title: str | None = None,
         user_title: str | None = None,
+        job_category: str | None = None,
+        user_category: str | None = None,
     ) -> dict[str, any]:
         """
         Calcula el porcentaje de match entre keywords de job y skills de usuario.
@@ -200,11 +202,27 @@ class JobMatchingService:
             use_semantic: Si True, usa similaridad semántica con NLP
             job_title: Título del job (opcional, habilita scoring combinado)
             user_title: Cargo profesional del usuario (opcional)
+            job_category: Categoria macro del job (`agro`, `tech`, etc.)
+            user_category: Categoria macro del user
 
         Returns:
             Dict con matched_skills, missing_skills, match_percentage.
             Cuando se pasan `job_title` y `user_title` también incluye
             `title_score` y `skill_score` para diagnóstico.
+
+        Same-vertical boost: cuando `job_category == user_category` y la
+        categoria no es 'general', el matcher reconoce que la oferta
+        pertenece al area del user (un Zootecnista y un Medico Veterinario
+        comparten el universo agro aunque sus titulos no compartan tokens).
+        En ese caso:
+          - title_score recibe un piso de 50 (la categoria es evidencia
+            de relevancia que el word overlap por si solo no captura)
+          - si skill_score < 50, los keywords del job se consideran
+            ruido generico dentro del vertical y se ignoran — el match
+            se basa solo en title_score, capado a 90 (reservamos 100
+            para evidencia completa de overlap + skills)
+          - si skill_score >= 50, se usa la formula combinada normal
+            (los skills aportan senal real)
         """
         # Normalizar (lowercase + strip + aliases del taxonomía)
         job_keywords_clean = [normalize(kw) for kw in job_keywords if kw.strip()]
@@ -248,7 +266,30 @@ class JobMatchingService:
         normalized_user_title = _extract_primary_role(user_title)
         title_score = _calc_title_score(job_title, normalized_user_title)
 
-        if not job_keywords_clean:
+        same_category = (
+            user_category is not None
+            and user_category != "general"
+            and job_category == user_category
+        )
+
+        if same_category:
+            # La categoria ya garantiza relevancia a alto nivel — un
+            # Zootecnista y un Medico Veterinario son del mismo universo
+            # aun cuando sus titulos no compartan ningun token. Sin este
+            # piso, ofertas claramente del area del user (Veterinario,
+            # Avicultor, Agricola) salian con 0% en el feed de Fabio
+            # mientras solo "Medico Veterinario y/o Zootecnista" llegaba
+            # al 60% por contener literalmente la palabra "zootecnista".
+            effective_title = max(title_score, 50)
+            if skill_score >= 50:
+                combined = round(0.6 * effective_title + 0.4 * skill_score)
+            else:
+                # Skills del job suelen ser ruido generico dentro del
+                # vertical ("excel", "atencion al cliente") — el title
+                # con piso manda. Cap a 90 para reservar 100 al match
+                # completo (overlap real + skills).
+                combined = min(effective_title, 90)
+        elif not job_keywords_clean:
             # Descripción vaga sin stack listado — confiamos en el título
             # solo, capado a 70% para reservar 100% a evidencia completa.
             combined = min(title_score, 70)
@@ -277,8 +318,11 @@ class JobMatchingService:
         Si el usuario no tiene skills definidas, los atributos quedan
         con defaults (0% / [] / keywords del job como missing).
         """
+        from users.services.profession_classifier import infer_profession_category
+
         user_skills = (user_profile.skills or "").split(",")
         user_title = user_profile.professional_title or ""
+        user_category = infer_profession_category(user_title)
         for job in offers:
             job_keywords = (job.keywords or "").split(",")
             match_data = JobMatchingService.calculate_match_percentage(
@@ -286,6 +330,8 @@ class JobMatchingService:
                 user_skills,
                 job_title=job.title,
                 user_title=user_title,
+                job_category=getattr(job, "category", None),
+                user_category=user_category,
             )
             job.matched_skills = match_data["matched_skills"]
             job.missing_skills = match_data["missing_skills"]
@@ -315,8 +361,11 @@ class JobMatchingService:
         if not user_profile.skills and not user_profile.professional_title:
             return []
 
+        from users.services.profession_classifier import infer_profession_category
+
         user_skills = (user_profile.skills or "").split(",")
         user_title = user_profile.professional_title or ""
+        user_category = infer_profession_category(user_title)
         filtered_jobs = []
 
         for job in jobs:
@@ -328,6 +377,8 @@ class JobMatchingService:
                 user_skills,
                 job_title=job.title,
                 user_title=user_title,
+                job_category=getattr(job, "category", None),
+                user_category=user_category,
             )
 
             if match_data["match_percentage"] >= min_match_percentage:
