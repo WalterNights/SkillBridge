@@ -175,9 +175,19 @@ class TestJobsListOrdering:
 @pytest.mark.integration
 @pytest.mark.django_db
 class TestJobsListMinMatch:
-    """El feed filtra ofertas con match bajo el umbral — sino aparecen
-    ofertas totalmente off-topic con 0% (ej: 'Analista Control de Accesos'
-    para un perfil de developer).
+    """Umbral de match% — semántica en dos partes desde 2026-06-29:
+
+      - Para users con vertical claro (tech, agro, legal, etc): el
+        filtro por categoría ya garantiza relevancia, así que en MODO
+        DEFAULT el umbral se afloja a 0 (todas las ofertas same-vertical
+        se ven). Si el user pide explícitamente `?min_match=N`, ese
+        valor se respeta. Reportado por cliente Fabio (zootecnista):
+        feed con default 50% mostraba 2 ofertas mientras la búsqueda
+        traía 9 same-vertical relevantes ranqueando 30-49%.
+
+      - Para users 'general' (sin perfil clasificable): se mantiene el
+        umbral default de 50% porque NO hay filtro de categoría que
+        guarde relevancia (ven todo el catálogo).
     """
 
     def _setup(self, user_profile):
@@ -203,13 +213,17 @@ class TestJobsListMinMatch:
             ),
         ]
 
-    def test_default_min_match_excludes_zero_score_offers(self, authed_client, user_profile):
-        """Default 50% — la oferta off-topic con 0% no debe aparecer."""
+    def test_default_for_vertical_user_shows_all_same_category(self, authed_client, user_profile):
+        """User tech en MODO DEFAULT (sin `?min_match=`) ve TODAS las
+        ofertas tech — incluso las que matchean 0% por skills. El
+        filtro de categoría ya garantizó relevancia a alto nivel."""
         self._setup(user_profile)
         response = authed_client.get("/api/jobs/jobs/")
         titles = [r["title"] for r in response.json()["results"]]
         assert "Senior Python Developer" in titles
-        assert "Analista Control de Accesos" not in titles
+        # Antes (default 50%) esta quedaba afuera. Ahora aparece porque
+        # es de la categoría del user — el match% solo desempata orden.
+        assert "Analista Control de Accesos" in titles
 
     def test_min_match_0_includes_everything(self, authed_client, user_profile):
         """min_match=0 = modo exploración, no filtra nada."""
@@ -219,23 +233,28 @@ class TestJobsListMinMatch:
         assert "Senior Python Developer" in titles
         assert "Analista Control de Accesos" in titles
 
-    def test_min_match_high_threshold(self, authed_client, user_profile):
-        """min_match=80 corta ofertas con match medio."""
+    def test_explicit_min_match_high_threshold_respected(self, authed_client, user_profile):
+        """Si el user PIDE explícitamente `?min_match=80`, respetamos —
+        el loosening del default no aplica."""
         self._setup(user_profile)
         response = authed_client.get("/api/jobs/jobs/?min_match=80")
         # Nadie alcanza 80% en este setup
         assert response.json()["count"] == 0
 
     def test_min_match_invalid_falls_back_to_default(self, authed_client, user_profile):
-        """?min_match=foo no rompe — cae al default 50."""
+        """?min_match=foo no rompe — cae al default 50, y como user
+        tiene vertical claro, ese default se afloja a 0. Todas las
+        same-vertical aparecen."""
         self._setup(user_profile)
         response = authed_client.get("/api/jobs/jobs/?min_match=foo")
         assert response.status_code == 200
         titles = [r["title"] for r in response.json()["results"]]
-        assert "Analista Control de Accesos" not in titles
+        assert "Senior Python Developer" in titles
+        assert "Analista Control de Accesos" in titles
 
     def test_min_match_clamped_above_100(self, authed_client, user_profile):
-        """min_match=999 se clampa a 100 — devuelve solo matches perfectos."""
+        """min_match=999 se clampa a 100 — devuelve solo matches perfectos.
+        Como 100 != default, el loosening no aplica."""
         self._setup(user_profile)
         response = authed_client.get("/api/jobs/jobs/?min_match=999")
         assert response.status_code == 200
@@ -252,6 +271,36 @@ class TestJobsListMinMatch:
         response = authed_client.get("/api/jobs/jobs/")
         assert response.status_code == 200
         assert response.json()["count"] == 1
+
+    def test_default_for_general_user_keeps_50_threshold(
+        self, api_client, django_user_model
+    ):
+        """User cuya profesión no clasifica (categoría 'general') NO
+        tiene filtro de vertical activo, así que el default 50% sigue
+        siendo el filtro principal contra ofertas off-topic."""
+        from users.models import UserProfile
+
+        u = django_user_model.objects.create_user(
+            username="generic", email="g@example.com", password="x",
+        )
+        UserProfile.objects.create(
+            user=u, first_name="G", last_name="G", phone="+1",
+            city="X", professional_title="Foo Bar Baz Random",
+            skills="python", experience="",
+        )
+        # Una oferta general con 0% match — sin filtro de categoría
+        # apretando, el min_match=50 default tiene que excluirla.
+        JobOffer.objects.create(
+            title="Random gig", url="https://x.com/rand",
+            summary="", keywords="cobol",
+            portal="hireline", country="MX", modality="remote",
+            category="general",
+        )
+        api_client.force_authenticate(user=u)
+        response = api_client.get("/api/jobs/jobs/")
+        assert response.status_code == 200
+        # 0% match + default 50% threshold → no aparece
+        assert response.json()["count"] == 0
 
 
 @pytest.mark.integration

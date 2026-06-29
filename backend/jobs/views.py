@@ -253,6 +253,23 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
         # Threshold configurable — el frontend puede bajar a 0 para
         # "modo exploración" o subir si quiere solo top matches.
         min_match = self._parse_min_match(request)
+
+        # Loosening para users con vertical claro. El filtro por categoría
+        # (get_queryset) YA garantiza que la oferta es del área del user
+        # (agro, tech, legal, etc). El match% sirve para ordenar dentro
+        # de esa categoría, no para filtrar — si pasó el filtro de
+        # vertical, debe verse. Sin este loosening, perfiles con
+        # vocabulario corto (zootecnia, plomería, servicios generales)
+        # mostraban 2-3 ofertas en default mientras el scrape había
+        # traído 9+ relevantes — todas tageadas correctamente pero con
+        # match% bajo por falta de overlap explícito de skills.
+        # Solo aplica si el user no tocó el threshold (vino del default);
+        # si pidió `?min_match=80` u otro valor explícito, respetamos.
+        from users.services.profession_classifier import infer_profession_category
+        user_category = infer_profession_category(profile.professional_title)
+        if user_category != "general" and min_match == self._DEFAULT_MIN_MATCH:
+            min_match = 0
+
         # Orden — match_desc por default (la promesa del hero: "ordenadas
         # por match"). El user puede invertir con match_asc para revisar
         # qué quedó al final.
