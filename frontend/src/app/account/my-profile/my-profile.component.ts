@@ -124,7 +124,7 @@ export class MyProfileComponent implements OnInit {
       },
       error: () => {
         this.isLoading = false;
-        this.errorMessage = 'No pudimos cargar tu perfil. Probá refrescar la página.';
+        this.errorMessage = 'No pudimos cargar tu perfil. Prueba refrescar la página.';
       },
     });
   }
@@ -291,7 +291,7 @@ export class MyProfileComponent implements OnInit {
       error: () => {
         this.isUploadingMedia.set(false);
         this.cropperFile.set(null);
-        this.errorMessage = 'No pudimos subir la imagen. Verificá el formato (JPG/PNG).';
+        this.errorMessage = 'No pudimos subir la imagen. Verifica el formato (JPG/PNG).';
         setTimeout(() => (this.errorMessage = ''), 4000);
       },
     });
@@ -315,7 +315,7 @@ export class MyProfileComponent implements OnInit {
       },
       () => {
         this.isLoading = false;
-        this.errorMessage = 'No pudimos guardar los cambios. Intentalo nuevamente.';
+        this.errorMessage = 'No pudimos guardar los cambios. Inténtalo nuevamente.';
       },
       false,
     );

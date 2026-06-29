@@ -222,7 +222,7 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
   onImproveApplied(proposal: CvImproveResponse): void {
     const profile = this.profileData;
     if (!profile?.id) {
-      this.toast.error('No pudimos identificar tu perfil. Recargá la página.');
+      this.toast.error('No pudimos identificar tu perfil. Recarga la página.');
       return;
     }
 
@@ -260,7 +260,7 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
         // Rollback usando el snapshot tomado antes del optimistic update.
         const current = this.profileData;
         if (current) this.profileData = { ...current, ...prev };
-        this.toast.error('No pudimos guardar las mejoras. Intentá de nuevo.');
+        this.toast.error('No pudimos guardar las mejoras. Intenta de nuevo.');
       },
     });
   }
@@ -717,7 +717,7 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     const profile = this.profileData;
     const exps = this.experienceArray();
     if (!profile?.id || !exps) {
-      this.toast.error('No pudimos identificar tu perfil. Recargá la página.');
+      this.toast.error('No pudimos identificar tu perfil. Recarga la página.');
       return;
     }
 
@@ -732,7 +732,7 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
       },
       error: () => {
         exps[target.index] = { ...exps[target.index], description: previousText };
-        this.toast.error('No pudimos guardar el cambio. Intentá de nuevo.');
+        this.toast.error('No pudimos guardar el cambio. Intenta de nuevo.');
       },
     });
   }
@@ -779,7 +779,7 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
       doc.save('skiltak-ats-cv.pdf');
     } catch (err) {
       console.error('PDF export failed:', err);
-      this.toast.error('No pudimos exportar el PDF. Intentá de nuevo.');
+      this.toast.error('No pudimos exportar el PDF. Intenta de nuevo.');
     } finally {
       this.isExporting.set(false);
     }

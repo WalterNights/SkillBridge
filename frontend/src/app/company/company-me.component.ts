@@ -98,7 +98,7 @@ export class CompanyMeComponent implements OnInit {
           this.errorMessage.set(
             err.status === 403
               ? 'Esta cuenta no es de tipo empresa.'
-              : 'No pudimos cargar el perfil. Recargá la página.',
+              : 'No pudimos cargar el perfil. Recarga la página.',
           );
           this.isLoading.set(false);
         },

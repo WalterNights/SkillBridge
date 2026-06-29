@@ -45,7 +45,7 @@ export interface SelectOption {
  *   <app-select
  *     [options]="[{value:'es', label:'Español'}, ...]"
  *     [(value)]="lang"
- *     placeholder="Seleccioná un idioma"
+ *     placeholder="Selecciona un idioma"
  *   />
  */
 @Component({
@@ -59,7 +59,7 @@ export class SelectComponent implements OnDestroy {
   @Input({ required: true }) options: SelectOption[] = [];
   @Input() value = '';
   @Output() valueChange = new EventEmitter<string>();
-  @Input() placeholder = 'Seleccioná una opción';
+  @Input() placeholder = 'Selecciona una opción';
   /** Anchura del trigger (por default 100% del contenedor). */
   @Input() widthClass = 'w-full';
 

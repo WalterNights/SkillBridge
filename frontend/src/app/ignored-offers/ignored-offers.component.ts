@@ -67,7 +67,7 @@ export class IgnoredOffersComponent {
       next: () => this.toast.success('Oferta restaurada — vuelve a aparecer en tu feed.'),
       error: () => {
         this.offers.set(original);
-        this.toast.error('No pudimos restaurar la oferta. Intentá de nuevo.');
+        this.toast.error('No pudimos restaurar la oferta. Intenta de nuevo.');
       },
     });
   }

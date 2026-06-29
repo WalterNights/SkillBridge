@@ -14,8 +14,8 @@
         <p class="tfa-subtitle">
           {{
             mode === 'enable'
-              ? 'Agregá una capa extra de seguridad usando una app authenticator (Google Authenticator, Authy, 1Password).'
-              : 'Ingresá un código de tu app authenticator para confirmar.'
+              ? 'Agrega una capa extra de seguridad usando una app authenticator (Google Authenticator, Authy, 1Password).'
+              : 'Ingresa un código de tu app authenticator para confirmar.'
           }}
         </p>
       </div>
@@ -39,13 +39,13 @@
     <!-- Enable flow — muestra QR + secret + input -->
     <div *ngIf="view() !== 'loading' && view() !== 'error' && mode === 'enable' && setupData() as data" class="tfa-body">
       <section class="tfa-steps">
-        <p class="tfa-step-label">1 · Escaneá el código QR</p>
+        <p class="tfa-step-label">1 · Escanea el código QR</p>
         <div class="tfa-qr-wrap">
           <img [src]="data.qr_data_url" alt="Código QR para 2FA" class="tfa-qr" />
         </div>
 
         <p class="tfa-step-label tfa-step-label--secondary">
-          ¿No podés escanear? Ingresá este código manualmente:
+          ¿No puedes escanear? Ingresa este código manualmente:
         </p>
         <div class="tfa-secret-row">
           <code class="tfa-secret">{{ data.secret }}</code>
@@ -57,7 +57,7 @@
       </section>
 
       <section class="tfa-verify">
-        <p class="tfa-step-label">2 · Ingresá el código de 6 dígitos que muestra tu app</p>
+        <p class="tfa-step-label">2 · Ingresa el código de 6 dígitos que muestra tu app</p>
         <input
           type="text"
           inputmode="numeric"
@@ -92,7 +92,7 @@
     <!-- Disable flow — solo input de código -->
     <div *ngIf="view() !== 'loading' && view() !== 'error' && mode === 'disable'" class="tfa-body">
       <section class="tfa-verify">
-        <p class="tfa-step-label">Ingresá el código actual de tu app authenticator</p>
+        <p class="tfa-step-label">Ingresa el código actual de tu app authenticator</p>
         <input
           type="text"
           inputmode="numeric"

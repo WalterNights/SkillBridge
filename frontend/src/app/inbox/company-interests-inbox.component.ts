@@ -120,7 +120,7 @@ export class CompanyInterestsInboxComponent implements OnInit {
         });
         this.toast.success(
           action === 'accept'
-            ? 'Aceptaste el interés. Ya podés contactar a la empresa.'
+            ? 'Aceptaste el interés. Ya puedes contactar a la empresa.'
             : 'Interés descartado.',
         );
       },

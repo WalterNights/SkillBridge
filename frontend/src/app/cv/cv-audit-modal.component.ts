@@ -54,7 +54,7 @@ export class CvAuditModalComponent implements OnInit {
         this.view.set('ready');
       },
       error: (err) => {
-        const detail = err?.error?.detail || 'No pudimos analizar tu CV. Intentá de nuevo.';
+        const detail = err?.error?.detail || 'No pudimos analizar tu CV. Intenta de nuevo.';
         this.errorMsg = detail;
         this.view.set('error');
       },

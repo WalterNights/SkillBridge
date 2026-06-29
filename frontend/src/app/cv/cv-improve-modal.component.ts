@@ -93,7 +93,7 @@ export class CvImproveModalComponent implements OnInit {
         this.view.set('ready');
       },
       error: (err) => {
-        const detail = err?.error?.detail || 'No pudimos generar mejoras. Intentá de nuevo.';
+        const detail = err?.error?.detail || 'No pudimos generar mejoras. Intenta de nuevo.';
         this.errorMsg = detail;
         this.view.set('error');
       },

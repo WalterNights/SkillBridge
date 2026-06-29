@@ -72,7 +72,7 @@ export class QuantifyModalComponent implements OnInit {
         this.view.set('ready');
       },
       error: (err) => {
-        const detail = err?.error?.detail || 'No pudimos generar sugerencias. Intentá de nuevo.';
+        const detail = err?.error?.detail || 'No pudimos generar sugerencias. Intenta de nuevo.';
         this.errorMsg = detail;
         this.view.set('error');
       },
@@ -87,7 +87,7 @@ export class QuantifyModalComponent implements OnInit {
   apply(): void {
     const text = this.editorContent.trim();
     if (!text) {
-      this.toast.error('No podés guardar un texto vacío.');
+      this.toast.error('No puedes guardar un texto vacío.');
       return;
     }
     if (text === this.originalText.trim()) {

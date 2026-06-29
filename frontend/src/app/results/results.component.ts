@@ -273,7 +273,7 @@ export class ResultsComponent {
       },
       error: () => {
         this.isLoadingMore.set(false);
-        this.toast.error('No pudimos cargar más ofertas. Intentá de nuevo.');
+        this.toast.error('No pudimos cargar más ofertas. Intenta de nuevo.');
       },
     });
   }
@@ -420,7 +420,7 @@ export class ResultsComponent {
       error: () => {
         this.offers = original;
         this.totalCount.update((n) => n + 1);
-        this.toast.error('No pudimos ignorar la oferta. Intentá de nuevo.');
+        this.toast.error('No pudimos ignorar la oferta. Intenta de nuevo.');
       },
     });
   }
@@ -476,7 +476,7 @@ export class ResultsComponent {
             err.error?.error ||
             'Hiciste muchas búsquedas en la última hora. Esperá un rato antes de volver a intentar.';
         } else {
-          message = 'No pudimos obtener ofertas. Intentá de nuevo en unos minutos.';
+          message = 'No pudimos obtener ofertas. Intenta de nuevo en unos minutos.';
         }
         this.scrapeProgress.fail(message);
       },

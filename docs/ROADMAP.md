@@ -235,7 +235,7 @@ class ScraperRegistry:
 1. **Landing** (`/`) — hero impactante. Hoy probablemente es genérico.
    - Hero con video/animación sutil de personas trabajando + headline emocional.
    - Sección de social proof (logos, testimonios, métricas: "X CVs analizados", "Y matches exitosos").
-   - CTA principal: "Subí tu CV y encontrá tu próximo empleo" — un solo botón gigante.
+   - CTA principal: "Sube tu CV y encuentra tu próximo empleo" — un solo botón gigante.
    - Microcopy enfocado en aspiraciones, no en features.
 2. **Onboarding / Subida de CV** (`/profile-builder`) — primer wow moment.
    - Drag & drop con preview en vivo del PDF.

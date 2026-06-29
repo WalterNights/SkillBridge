@@ -276,7 +276,7 @@ export class JobDetailComponent implements OnInit {
       },
       error: () => {
         this.isIgnoring = false;
-        this.toast.error('No pudimos ignorar la oferta. Intentá de nuevo.');
+        this.toast.error('No pudimos ignorar la oferta. Intenta de nuevo.');
       },
     });
   }

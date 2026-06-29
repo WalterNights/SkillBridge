@@ -75,7 +75,7 @@ export class CoverLetterModalComponent implements OnInit {
         }
       },
       error: () => {
-        this.errorMsg = 'No pudimos cargar tu carta. Intentá de nuevo.';
+        this.errorMsg = 'No pudimos cargar tu carta. Intenta de nuevo.';
         this.view.set('error');
       },
     });
@@ -100,7 +100,7 @@ export class CoverLetterModalComponent implements OnInit {
           this.view.set('ready');
         },
         error: (err) => {
-          const detail = err?.error?.detail || 'No pudimos generar la carta. Intentá de nuevo.';
+          const detail = err?.error?.detail || 'No pudimos generar la carta. Intenta de nuevo.';
           this.errorMsg = detail;
           this.view.set(this.letter() ? 'ready' : 'empty');
         },

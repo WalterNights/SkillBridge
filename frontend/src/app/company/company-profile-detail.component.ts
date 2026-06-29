@@ -99,7 +99,7 @@ export class CompanyProfileDetailComponent implements OnInit {
           this.toast.error('No tienes permisos para ver este perfil.');
           this.router.navigate(['/company/dashboard']);
         } else {
-          this.toast.error('No pudimos cargar el perfil. Intentá de nuevo.');
+          this.toast.error('No pudimos cargar el perfil. Intenta de nuevo.');
         }
       },
     });
@@ -151,7 +151,7 @@ export class CompanyProfileDetailComponent implements OnInit {
             'Has marcado interés demasiadas veces. Esperá una hora antes de seguir.',
           );
         } else {
-          this.toast.error('No pudimos guardar tu interés. Intentá de nuevo.');
+          this.toast.error('No pudimos guardar tu interés. Intenta de nuevo.');
         }
       },
     });

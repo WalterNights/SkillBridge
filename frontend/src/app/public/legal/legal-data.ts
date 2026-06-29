@@ -113,7 +113,7 @@ const PRIVACIDAD: LegalDoc = {
       heading: '7. Tus derechos',
       anchor: 'derechos',
       body: [
-        'Como titular de tus datos personales, tenés derecho a:',
+        'Como titular de tus datos personales, tienes derecho a:',
       ],
       bullets: [
         'Acceder a los datos que tenemos sobre ti.',
@@ -159,7 +159,7 @@ const PRIVACIDAD: LegalDoc = {
       heading: '12. Contacto',
       anchor: 'contacto',
       body: [
-        'Para ejercer tus derechos, hacer preguntas o reportar una inquietud sobre el tratamiento de tus datos, escribinos a privacy@skiltak.com. Respondemos en un plazo máximo de 15 días hábiles.',
+        'Para ejercer tus derechos, hacer preguntas o reportar una inquietud sobre el tratamiento de tus datos, escríbenos a privacy@skiltak.com. Respondemos en un plazo máximo de 15 días hábiles.',
       ],
     },
   ],
@@ -171,13 +171,13 @@ const TERMINOS: LegalDoc = {
   subtitle: 'Reglas de uso de la plataforma SkilTak.',
   lastUpdated: '23 de junio de 2026',
   excerpt:
-    'Términos y Condiciones de uso de SkilTak. Al crear una cuenta aceptás estas reglas.',
+    'Términos y Condiciones de uso de SkilTak. Al crear una cuenta aceptas estas reglas.',
   sections: [
     {
       heading: '1. Aceptación',
       anchor: 'aceptacion',
       body: [
-        'Al crear una cuenta o usar SkilTak aceptás estos Términos y Condiciones y la Política de Privacidad. Si no estás de acuerdo con alguna parte, no debés usar el servicio.',
+        'Al crear una cuenta o usar SkilTak aceptas estos Términos y Condiciones y la Política de Privacidad. Si no estás de acuerdo con alguna parte, no debes usar el servicio.',
         'Estos términos pueden actualizarse. Te notificaremos cambios materiales con 15 días de antelación.',
       ],
     },
@@ -186,14 +186,14 @@ const TERMINOS: LegalDoc = {
       anchor: 'servicio',
       body: [
         'SkilTak es una plataforma que agrega ofertas de empleo públicas de múltiples portales y las muestra rankeadas según el match con el perfil de cada usuario. También ofrece herramientas de análisis de CV y seguimiento de postulaciones.',
-        'SkilTak no es un empleador ni un intermediario laboral. No participamos en el proceso de contratación entre vos y las empresas. Las ofertas que mostramos son de terceros y la postulación ocurre en el portal de origen.',
+        'SkilTak no es un empleador ni un intermediario laboral. No participamos en el proceso de contratación entre tú y las empresas. Las ofertas que mostramos son de terceros y la postulación ocurre en el portal de origen.',
       ],
     },
     {
       heading: '3. Cuenta de usuario',
       anchor: 'cuenta',
       body: [
-        'Para usar las funciones principales tenés que crear una cuenta. Sos responsable de:',
+        'Para usar las funciones principales tienes que crear una cuenta. Eres responsable de:',
       ],
       bullets: [
         'Mantener la confidencialidad de tu contraseña.',
@@ -206,7 +206,7 @@ const TERMINOS: LegalDoc = {
       heading: '4. Uso aceptable',
       anchor: 'uso',
       body: [
-        'No podés usar SkilTak para:',
+        'No puedes usar SkilTak para:',
       ],
       bullets: [
         'Hacer scraping automatizado de nuestros datos o reutilizarlos en otro servicio sin autorización escrita.',
@@ -229,15 +229,15 @@ const TERMINOS: LegalDoc = {
       anchor: 'ia',
       body: [
         'Las funciones de análisis de CV y sugerencias usan modelos de IA de terceros (actualmente Google Gemini). Los resultados son orientativos y no constituyen asesoría profesional vinculante.',
-        'Vos sos responsable de revisar y editar cualquier sugerencia antes de aplicarla. SkilTak no se responsabiliza por decisiones tomadas únicamente con base en sugerencias automáticas.',
+        'Tú eres responsable de revisar y editar cualquier sugerencia antes de aplicarla. SkilTak no se responsabiliza por decisiones tomadas únicamente con base en sugerencias automáticas.',
       ],
     },
     {
       heading: '7. Propiedad intelectual',
       anchor: 'propiedad',
       body: [
-        'El código, diseño, marca, logo y contenido editorial de SkilTak son propiedad nuestra o de nuestros licenciantes. No podés copiar, modificar ni redistribuir nuestro contenido sin autorización escrita.',
-        'Vos retenés la propiedad sobre el contenido que subís (CV, datos de perfil). Nos otorgás una licencia limitada para procesarlo con el único fin de operar el servicio.',
+        'El código, diseño, marca, logo y contenido editorial de SkilTak son propiedad nuestra o de nuestros licenciantes. No puedes copiar, modificar ni redistribuir nuestro contenido sin autorización escrita.',
+        'Tú retienes la propiedad sobre el contenido que subes (CV, datos de perfil). Nos otorgas una licencia limitada para procesarlo con el único fin de operar el servicio.',
       ],
     },
     {
@@ -253,14 +253,14 @@ const TERMINOS: LegalDoc = {
       anchor: 'responsabilidad',
       body: [
         'En la máxima medida permitida por la ley aplicable, SkilTak no se hace responsable por daños indirectos, lucro cesante, pérdida de oportunidades laborales o cualquier perjuicio derivado del uso del servicio.',
-        'Nuestra responsabilidad total acumulada hacia vos por cualquier reclamo relacionado con el servicio no excederá el equivalente al monto que hayas pagado por el servicio en los 12 meses anteriores al hecho que da origen al reclamo. Si el servicio fue gratuito, esta responsabilidad se limita a USD 50.',
+        'Nuestra responsabilidad total acumulada hacia ti por cualquier reclamo relacionado con el servicio no excederá el equivalente al monto que hayas pagado por el servicio en los 12 meses anteriores al hecho que da origen al reclamo. Si el servicio fue gratuito, esta responsabilidad se limita a USD 50.',
       ],
     },
     {
       heading: '10. Suspensión y cancelación',
       anchor: 'cancelacion',
       body: [
-        'Podés cancelar tu cuenta en cualquier momento desde Configuración. La cancelación elimina tus datos personales según lo descrito en la Política de Privacidad.',
+        'Puedes cancelar tu cuenta en cualquier momento desde Configuración. La cancelación elimina tus datos personales según lo descrito en la Política de Privacidad.',
         'Podemos suspender o cancelar tu cuenta sin previo aviso si detectamos violaciones a estos términos, especialmente por abuso, fraude o uso comercial no autorizado.',
       ],
     },
@@ -269,14 +269,14 @@ const TERMINOS: LegalDoc = {
       anchor: 'jurisdiccion',
       body: [
         'Estos términos se rigen por las leyes de la República de Colombia. Cualquier disputa será resuelta en los tribunales competentes de Colombia.',
-        'Si vivís en la Unión Europea, mantenés los derechos no renunciables que te otorga la legislación de tu país de residencia.',
+        'Si vives en la Unión Europea, mantienes los derechos no renunciables que te otorga la legislación de tu país de residencia.',
       ],
     },
     {
       heading: '12. Contacto',
       anchor: 'contacto',
       body: [
-        'Para cualquier consulta sobre estos términos, escribinos a legal@skiltak.com.',
+        'Para cualquier consulta sobre estos términos, escríbenos a legal@skiltak.com.',
       ],
     },
   ],
@@ -304,7 +304,7 @@ const COOKIES: LegalDoc = {
         'SkilTak usa únicamente las cookies estrictamente necesarias para operar el servicio. No usamos cookies de publicidad ni de seguimiento entre sitios.',
       ],
       bullets: [
-        'Cookies de sesión y autenticación: para mantenerte logueado entre páginas. Si activás "Mantener sesión iniciada" se almacenan en localStorage; si no, se borran al cerrar la pestaña.',
+        'Cookies de sesión y autenticación: para mantenerte logueado entre páginas. Si activas "Mantener sesión iniciada" se almacenan en localStorage; si no, se borran al cerrar la pestaña.',
         'Cookies de preferencias: para recordar tu elección de "remember me" y configuraciones de la interfaz.',
         'Cookies de seguridad: tokens CSRF para prevenir ataques de falsificación de solicitudes.',
       ],
@@ -313,7 +313,7 @@ const COOKIES: LegalDoc = {
       heading: '3. Cookies de terceros',
       anchor: 'terceros',
       body: [
-        'Cuando usás "Iniciar sesión con LinkedIn", LinkedIn puede establecer cookies en su propio dominio durante el proceso de OAuth. Esas cookies se rigen por la política de LinkedIn.',
+        'Cuando usas "Iniciar sesión con LinkedIn", LinkedIn puede establecer cookies en su propio dominio durante el proceso de OAuth. Esas cookies se rigen por la política de LinkedIn.',
         'Actualmente no usamos servicios de analytics de terceros (Google Analytics, Hotjar, etc.). Si en el futuro los incorporamos, actualizaremos esta política y solicitaremos tu consentimiento explícito cuando corresponda.',
       ],
     },
@@ -321,15 +321,15 @@ const COOKIES: LegalDoc = {
       heading: '4. Cómo controlar las cookies',
       anchor: 'control',
       body: [
-        'Podés borrar las cookies desde la configuración de tu navegador. Tené en cuenta que si borrás las cookies de sesión, tendrás que volver a iniciar sesión.',
-        'Si bloqueás todas las cookies, algunas funciones del servicio (como mantenerte logueado) dejarán de funcionar.',
+        'Puedes borrar las cookies desde la configuración de tu navegador. Ten en cuenta que si borras las cookies de sesión, tendrás que volver a iniciar sesión.',
+        'Si bloqueas todas las cookies, algunas funciones del servicio (como mantenerte logueado) dejarán de funcionar.',
       ],
     },
     {
       heading: '5. Contacto',
       anchor: 'contacto',
       body: [
-        'Para preguntas sobre el uso de cookies, escribinos a privacy@skiltak.com.',
+        'Para preguntas sobre el uso de cookies, escríbenos a privacy@skiltak.com.',
       ],
     },
   ],

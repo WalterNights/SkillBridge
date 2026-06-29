@@ -114,14 +114,14 @@ export class LinkedinCompleteComponent {
 
   private friendlyError(code: string): string {
     const mapping: Record<string, string> = {
-      user_cancelled_login: 'Cancelaste el ingreso. Podés intentar de nuevo cuando quieras.',
-      invalid_state: 'La solicitud expiró. Intentá de nuevo.',
+      user_cancelled_login: 'Cancelaste el ingreso. Puedes intentar de nuevo cuando quieras.',
+      invalid_state: 'La solicitud expiró. Intenta de nuevo.',
       missing_params: 'LinkedIn no envió toda la información esperada.',
-      token_exchange_failed: 'LinkedIn rechazó la autorización. Intentá de nuevo.',
-      no_access_token: 'No recibimos el token de LinkedIn. Intentá de nuevo.',
+      token_exchange_failed: 'LinkedIn rechazó la autorización. Intenta de nuevo.',
+      no_access_token: 'No recibimos el token de LinkedIn. Intenta de nuevo.',
       userinfo_failed: 'No pudimos leer tu perfil de LinkedIn.',
-      incomplete_userinfo: 'LinkedIn no devolvió tu email. Asegurate de tenerlo verificado.',
-      linkedin_unreachable: 'LinkedIn no respondió. Intentá en unos minutos.',
+      incomplete_userinfo: 'LinkedIn no devolvió tu correo. Asegúrate de tenerlo verificado.',
+      linkedin_unreachable: 'LinkedIn no respondió. Intenta en unos minutos.',
       linkedin_oauth_not_configured: 'El login con LinkedIn no está disponible en este momento.',
     };
     return mapping[code] ?? 'Hubo un problema con el login de LinkedIn.';

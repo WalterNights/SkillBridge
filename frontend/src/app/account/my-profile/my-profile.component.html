@@ -165,7 +165,7 @@
         </p>
         <ng-template #emptyAbout>
           <p class="empty-hint">
-            Contá quién sos profesionalmente. Aparece como tu carta de presentación a los reclutadores.
+            Cuenta quién eres profesionalmente. Aparece como tu carta de presentación a los reclutadores.
           </p>
         </ng-template>
       </article>
@@ -182,7 +182,7 @@
           {{ profile()?.experience }}
         </div>
         <ng-template #emptyExp>
-          <p class="empty-hint">Sumá tu trayectoria laboral para mejorar la calidad de los matches.</p>
+          <p class="empty-hint">Suma tu trayectoria laboral para mejorar la calidad de los matches.</p>
         </ng-template>
       </article>
 
@@ -198,7 +198,7 @@
           {{ profile()?.education }}
         </div>
         <ng-template #emptyEdu>
-          <p class="empty-hint">Listá tu formación académica.</p>
+          <p class="empty-hint">Lista tu formación académica.</p>
         </ng-template>
       </article>
 
@@ -212,7 +212,7 @@
           <span *ngFor="let skill of skillsList()" class="skill-chip">{{ skill }}</span>
         </div>
         <ng-template #emptySkills>
-          <p class="empty-hint">Agregá las skills que dominás — separadas por coma.</p>
+          <p class="empty-hint">Agrega las skills que dominas — separadas por coma.</p>
         </ng-template>
       </article>
 
@@ -271,7 +271,7 @@
             <div class="min-w-0 flex-1">
               <p class="text-sm text-bone font-semibold">Reemplazar CV (opcional)</p>
               <p class="text-xs text-warm-grey mt-0.5 truncate">
-                {{ selectedFile?.name || 'Subí un nuevo PDF o DOCX si actualizaste tu hoja de vida.' }}
+                {{ selectedFile?.name || 'Sube un nuevo PDF o DOCX si actualizaste tu hoja de vida.' }}
               </p>
             </div>
             <span
@@ -308,7 +308,7 @@
           <div>
             <label class="field-label" for="me-phone-code">Código país</label>
             <select id="me-phone-code" formControlName="phone_code" class="field-input">
-              <option value="">Seleccioná un país</option>
+              <option value="">Selecciona un país</option>
               <option *ngFor="let country of countryCodes" [value]="country.code">
                 {{ country.name }} ({{ country.code }})
               </option>
@@ -330,14 +330,14 @@
               #countryRef
               class="field-input"
             >
-              <option value="">Seleccioná un país</option>
+              <option value="">Selecciona un país</option>
               <option *ngFor="let country of countries" [value]="country.isoCode">{{ country.name }}</option>
             </select>
           </div>
           <div>
             <label class="field-label" for="me-city">Ciudad *</label>
             <select id="me-city" formControlName="city" class="field-input">
-              <option value="">Seleccioná una ciudad</option>
+              <option value="">Selecciona una ciudad</option>
               <option *ngFor="let city of cities" [value]="city.name">{{ city.name }}</option>
             </select>
           </div>

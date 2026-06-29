@@ -73,7 +73,7 @@
           </ul>
           <div class="mt-5 pt-5 border-t border-white/[0.06]">
             <p class="text-xs text-dim leading-snug">
-              <span class="text-primary">Tip:</span> revisá la información generada y editá lo que necesites.
+              <span class="text-primary">Tip:</span> revisa la información generada y edita lo que necesites.
             </p>
           </div>
         </div>
@@ -83,7 +83,7 @@
       <div class="lg:col-span-9">
         <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="glass-strong rounded-2xl p-6 sm:p-8">
           <div class="mb-7">
-            <h1 class="text-3xl font-black text-bone tracking-tight mb-2">Completá tu perfil</h1>
+            <h1 class="text-3xl font-black text-bone tracking-tight mb-2">Completa tu perfil</h1>
             <p class="text-warm-grey">Tu información profesional para encontrar las mejores oportunidades.</p>
           </div>
 
@@ -100,7 +100,7 @@
                   >description</span
                 >
                 <div class="min-w-0 flex-1">
-                  <p class="text-sm text-bone font-semibold">Subí tu hoja de vida</p>
+                  <p class="text-sm text-bone font-semibold">Sube tu hoja de vida</p>
                   <p class="text-xs text-warm-grey mt-0.5 truncate">
                     {{ selectedFile?.name || 'PDF o DOCX — analizamos y autocompletamos los campos.' }}
                   </p>
@@ -155,7 +155,7 @@
               <div>
                 <label class="field-label" for="phone_code">Código país</label>
                 <select id="phone_code" formControlName="phone_code" class="field-input">
-                  <option value="">Seleccioná un país</option>
+                  <option value="">Selecciona un país</option>
                   <option *ngFor="let country of countryCodes" [value]="country.code">
                     {{ country.name }} ({{ country.code }})
                   </option>
@@ -184,7 +184,7 @@
                   #countryForm
                   class="field-input"
                 >
-                  <option value="">Seleccioná un país</option>
+                  <option value="">Selecciona un país</option>
                   <option *ngFor="let country of countries" [value]="country.isoCode">
                     {{ country.name }}
                   </option>
@@ -193,7 +193,7 @@
               <div>
                 <label class="field-label" for="city">Ciudad *</label>
                 <select id="city" formControlName="city" class="field-input">
-                  <option value="">Seleccioná una ciudad</option>
+                  <option value="">Selecciona una ciudad</option>
                   <option *ngFor="let city of cities" [value]="city.name">{{ city.name }}</option>
                 </select>
               </div>
@@ -219,7 +219,7 @@
                 formControlName="summary"
                 rows="3"
                 class="field-input resize-none"
-                placeholder="Describí brevemente tu perfil profesional."
+                placeholder="Describe brevemente tu perfil profesional."
               ></textarea>
             </div>
 
@@ -231,7 +231,7 @@
                 formControlName="education"
                 rows="3"
                 class="field-input resize-none"
-                placeholder="Describí tu formación académica."
+                placeholder="Describe tu formación académica."
               ></textarea>
             </div>
 
@@ -243,7 +243,7 @@
                 formControlName="skills"
                 rows="3"
                 class="field-input resize-none"
-                placeholder="Listá tus habilidades técnicas y blandas."
+                placeholder="Lista tus habilidades técnicas y blandas."
               ></textarea>
             </div>
 
@@ -255,7 +255,7 @@
                 formControlName="experience"
                 rows="3"
                 class="field-input resize-none"
-                placeholder="Describí tu experiencia laboral."
+                placeholder="Describe tu experiencia laboral."
               ></textarea>
             </div>
 
@@ -313,7 +313,7 @@
               >
                 <p class="text-xs text-warm-grey flex items-center gap-2">
                   <span class="material-symbols-outlined text-primary" style="font-size: 16px">error</span>
-                  Revisá que los campos obligatorios (*) estén completos.
+                  Revisa que los campos obligatorios (*) estén completos.
                 </p>
               </div>
             </div>
