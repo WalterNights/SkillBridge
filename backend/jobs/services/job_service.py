@@ -222,10 +222,23 @@ class JobService:
                 # crudos.
                 country = extract_country(data.location)
                 modality = extract_modality(data.location, data.summary)
-                # Category: clasificamos sobre title + summary porque hay
-                # ofertas donde el rol está claro en summary pero el
-                # title es genérico (ej. "Oferta urgente · Empresa X").
-                category = infer_profession_category(f"{data.title} {data.summary}")
+                # Category: clasificamos SOLO con el title. El summary
+                # introduce falsos positivos porque menciona contexto
+                # del SECTOR (no del rol del candidato).
+                #
+                # Caso real 2026-06-29: oferta "Tecnico auxiliar de cocina"
+                # quedaba como agro porque su summary mencionaba
+                # "zootecnia" y "animales" — el centro era veterinario
+                # pero el rol del candidato es trades, no agro. Para un
+                # Zootecnista esa oferta es ruido y rompe la promesa
+                # "cero ruido" del producto.
+                #
+                # Trade-off: ofertas con title vago ("Oferta urgente")
+                # quedan como 'general' (antes podian ser tageadas via
+                # summary). Eso significa que NO aparecen en el feed
+                # de users con vertical claro — preferible a contaminar
+                # con falsos positivos. Users 'general' las siguen viendo.
+                category = infer_profession_category(data.title)
                 obj, was_created = JobOffer.objects.get_or_create(
                     url=data.url,
                     defaults={
