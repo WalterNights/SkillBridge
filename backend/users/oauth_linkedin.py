@@ -73,7 +73,7 @@ def _config_missing_response() -> Response:
     return Response(
         {
             "error": "linkedin_oauth_not_configured",
-            "detail": "Login con LinkedIn no disponible. Volvé a intentar más tarde.",
+            "detail": "Login con LinkedIn no disponible. Vuelve a intentarlo más tarde.",
         },
         status=status.HTTP_503_SERVICE_UNAVAILABLE,
     )

@@ -136,6 +136,18 @@ if IS_PRODUCTION:
 
 
 # ----- DRF + JWT -----
+# El BrowsableAPIRenderer sirve HTML con CSS/JS cuando el request tiene
+# `Accept: text/html` — útil en desarrollo para explorar endpoints, pero
+# en prod es superficie de ataque extra (formularios interactivos,
+# assets bloqueados por la CSP estricta de la API, y el usuario final
+# nunca ve estas páginas). En prod servimos SOLO JSON.
+_DEFAULT_RENDERERS = ("rest_framework.renderers.JSONRenderer",)
+if not IS_PRODUCTION:
+    _DEFAULT_RENDERERS = (
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    )
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -143,6 +155,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    "DEFAULT_RENDERER_CLASSES": _DEFAULT_RENDERERS,
 }
 
 # SEGURIDAD: si el cache backend (Redis) está down, django-ratelimit
