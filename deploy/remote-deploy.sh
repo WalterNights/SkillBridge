@@ -49,13 +49,33 @@ echo "==> Syncing nginx configs"
 # Los .conf del repo son la fuente de verdad. Si difieren de los
 # instalados, copiar, validar con `nginx -t` y hacer reload (sin downtime).
 # Si `nginx -t` falla, abortamos el deploy antes de tumbar el servidor.
+#
+# Compatibilidad de nombres: el repo usa `<name>.conf` (convención
+# genérica de nginx en conf.d/), pero el VPS usa la convención Debian
+# `sites-available/<name>` + symlink desde `sites-enabled/<name>`,
+# SIN extensión. Detectamos cuál nombre existe en el server y copiamos
+# a ese. Si no existe ninguno (primera instalación), asumimos convención
+# Debian sin `.conf` y creamos + enlazamos.
 NGINX_CHANGED=0
 for conf in deploy/nginx/*.conf; do
-    name="$(basename "$conf")"
-    dest="/etc/nginx/sites-available/$name"
+    stem="$(basename "$conf" .conf)"  # api.skiltak.com.conf → api.skiltak.com
+    if [ -f "/etc/nginx/sites-available/$stem" ]; then
+        dest="/etc/nginx/sites-available/$stem"        # Debian sin .conf
+    elif [ -f "/etc/nginx/sites-available/$stem.conf" ]; then
+        dest="/etc/nginx/sites-available/$stem.conf"   # con .conf
+    else
+        # Primera vez: asumimos convención Debian sin .conf.
+        dest="/etc/nginx/sites-available/$stem"
+        echo "  [+] $stem: instalando por primera vez"
+    fi
     if ! sudo cmp -s "$conf" "$dest" 2>/dev/null; then
-        echo "  [+] $name cambio — copiando a $dest"
+        echo "  [+] $stem cambio — copiando a $dest"
         sudo cp "$conf" "$dest"
+        # Enable si aun no lo esta.
+        if [ ! -e "/etc/nginx/sites-enabled/$(basename "$dest")" ]; then
+            sudo ln -s "$dest" "/etc/nginx/sites-enabled/$(basename "$dest")"
+            echo "  [+] $stem enabled"
+        fi
         NGINX_CHANGED=1
     fi
 done
