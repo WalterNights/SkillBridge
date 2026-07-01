@@ -239,19 +239,17 @@ export class MyProfileComponent implements OnInit {
   }
 
   /** Migra a modo estructurado desde legacy: reemplaza el textarea viejo
-   *  por un FormArray vacío + una entrada en blanco lista para llenar.
-   *  El texto legacy queda en pantalla como referencia hasta que el user
-   *  guarde. */
+   *  (que en el form vive como FormControl string) por un FormArray
+   *  fresco + una entrada en blanco lista para llenar. El texto legacy
+   *  queda en pantalla como referencia hasta que el user guarde. */
   startStructuredExperience(): void {
     this.experienceMode.set('structured');
-    while (this.experienceArray.length > 0) this.experienceArray.removeAt(0);
-    this.addExperience();
+    this.profileForm.setControl('experience', this.fb.array<FormGroup>([this.createExperienceGroup()]));
   }
 
   startStructuredEducation(): void {
     this.educationMode.set('structured');
-    while (this.educationArray.length > 0) this.educationArray.removeAt(0);
-    this.addEducation();
+    this.profileForm.setControl('education', this.fb.array<FormGroup>([this.createEducationGroup()]));
   }
 
   /** Detecta si el valor guardado en el backend es un array estructurado
@@ -335,53 +333,60 @@ export class MyProfileComponent implements OnInit {
       portfolio_url: profile.portfolio_url || '',
     });
 
-    // Experience: detectar si es JSON structured o texto legacy
-    while (this.experienceArray.length > 0) this.experienceArray.removeAt(0);
+    // IMPORTANTE: en el submit reemplazamos el FormArray por un
+    // FormControl simple (para pasarle el JSON al profile-builder).
+    // Al recargar hay que RESTAURAR el FormArray via setControl — sino
+    // los helpers `experienceArray.push`/`.removeAt` fallan porque
+    // `experienceArray` sigue devolviendo el FormControl del submit
+    // anterior.
+
+    // Experience
+    const expArray = this.fb.array<FormGroup>([]);
     const expEntries = this.tryParseEntries<ExperienceEntry>(profile.experience);
     if (expEntries !== null) {
       this.experienceMode.set('structured');
       if (expEntries.length === 0) {
-        // Perfil nuevo o migrado sin entries — arrancamos con una en blanco
-        this.addExperience();
+        expArray.push(this.createExperienceGroup());
       } else {
-        expEntries.forEach((e) => this.experienceArray.push(this.createExperienceGroup(e)));
+        expEntries.forEach((e) => expArray.push(this.createExperienceGroup(e)));
       }
       this.legacyExperienceText.set('');
     } else {
       const text = typeof profile.experience === 'string' ? profile.experience : '';
       if (text.trim() === '') {
-        // Empty — arrancamos structured con una entry en blanco
         this.experienceMode.set('structured');
-        this.addExperience();
+        expArray.push(this.createExperienceGroup());
         this.legacyExperienceText.set('');
       } else {
         this.experienceMode.set('legacy');
         this.legacyExperienceText.set(text);
       }
     }
+    this.profileForm.setControl('experience', expArray);
 
-    // Education: misma lógica
-    while (this.educationArray.length > 0) this.educationArray.removeAt(0);
+    // Education (misma lógica)
+    const eduArray = this.fb.array<FormGroup>([]);
     const eduEntries = this.tryParseEntries<EducationEntry>(profile.education);
     if (eduEntries !== null) {
       this.educationMode.set('structured');
       if (eduEntries.length === 0) {
-        this.addEducation();
+        eduArray.push(this.createEducationGroup());
       } else {
-        eduEntries.forEach((e) => this.educationArray.push(this.createEducationGroup(e)));
+        eduEntries.forEach((e) => eduArray.push(this.createEducationGroup(e)));
       }
       this.legacyEducationText.set('');
     } else {
       const text = typeof profile.education === 'string' ? profile.education : '';
       if (text.trim() === '') {
         this.educationMode.set('structured');
-        this.addEducation();
+        eduArray.push(this.createEducationGroup());
         this.legacyEducationText.set('');
       } else {
         this.educationMode.set('legacy');
         this.legacyEducationText.set(text);
       }
     }
+    this.profileForm.setControl('education', eduArray);
   }
 
   onCountryChange(countryCode: string): void {
