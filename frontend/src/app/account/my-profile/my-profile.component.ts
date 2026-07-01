@@ -2,7 +2,7 @@ import { Country } from 'country-state-city';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ProfileBuilderComponent } from '../../shared/profile-builder/profile-builder.component';
@@ -14,6 +14,7 @@ import { environment } from '../../../environment/environment';
 import { STORAGE_KEYS } from '../../constants/app-stats';
 import { PhotoCropperDialogComponent } from '../../shared/photo-cropper/photo-cropper-dialog.component';
 import { TextFormatToolbarComponent } from '../../shared/text-format-toolbar/text-format-toolbar.component';
+import { EducationEntry, ExperienceEntry } from '../../models/profile.model';
 
 type Mode = 'view' | 'edit';
 type CropTarget = 'photo' | 'banner';
@@ -46,6 +47,7 @@ export class MyProfileComponent implements OnInit {
   private router = inject(Router);
   private titleService = inject(Title);
   private http = inject(HttpClient);
+  private fb = inject(FormBuilder);
 
   profileForm!: FormGroup;
   selectedFile: File | null = null;
@@ -59,6 +61,22 @@ export class MyProfileComponent implements OnInit {
 
   /** Snapshot del último perfil traído. Fuente del view-mode. */
   profile = signal<any | null>(null);
+
+  /**
+   * Formato de edición de experience/education:
+   *  - `structured`: FormArray con entries editables (empresa, cargo, fechas, etc.)
+   *  - `legacy`: TextField viejo (para perfiles que aún tienen texto libre en
+   *    lugar de JSON). El user puede migrar con `startStructuredMode()`.
+   *
+   * La decisión se hace al cargar el profile en `patchFormFromProfile`.
+   */
+  experienceMode = signal<'structured' | 'legacy'>('structured');
+  educationMode = signal<'structured' | 'legacy'>('structured');
+
+  /** Textos legacy (formato viejo texto libre) mostrados en modo readonly
+   *  cuando el user aún no migró a estructurado. */
+  legacyExperienceText = signal<string>('');
+  legacyEducationText = signal<string>('');
 
   // ---- Cropper state -------------------------------------------------
   /** Archivo seleccionado para recortar. null cierra el modal. */
@@ -89,16 +107,167 @@ export class MyProfileComponent implements OnInit {
       .filter(Boolean);
   });
 
+  /** Experience como array parseado si el backend guardó JSON, sino null.
+   *  Los templates de view mode lo usan para decidir entre render
+   *  estructurado (empresa/cargo/fechas) vs texto libre legacy. */
+  experienceEntries = computed<ExperienceEntry[] | null>(() => {
+    return this.tryParseEntriesFromRaw<ExperienceEntry>(this.profile()?.experience);
+  });
+
+  /** Idem para educación. */
+  educationEntries = computed<EducationEntry[] | null>(() => {
+    return this.tryParseEntriesFromRaw<EducationEntry>(this.profile()?.education);
+  });
+
+  private tryParseEntriesFromRaw<T>(raw: unknown): T[] | null {
+    if (Array.isArray(raw)) return raw as T[];
+    if (typeof raw === 'string' && raw.trim().startsWith('[')) {
+      try {
+        const parsed: unknown = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed as T[];
+      } catch {
+        /* fall through */
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Formatea una fecha `YYYY-MM` en español legible ("Septiembre 2025").
+   * Casos especiales:
+   *   - `"Actual"` (sentinel de "trabajando/cursando actualmente") → "Presente"
+   *   - vacío → "" (el template no muestra el separador)
+   *   - `YYYY` solo (año sin mes) → devuelve el año tal cual
+   */
+  formatEntryDate(value: string | undefined | null): string {
+    if (!value) return '';
+    if (value === 'Actual') return 'Presente';
+    const match = value.match(/^(\d{4})-(\d{2})$/);
+    if (!match) return value; // ya viene en otro formato — no lo tocamos
+    const months = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    ];
+    const year = match[1];
+    const monthIdx = parseInt(match[2], 10) - 1;
+    const monthName = months[monthIdx] ?? '';
+    return monthName ? `${monthName} ${year}` : year;
+  }
+
+  /** Construye el string de ubicación entre paréntesis: "(Bogotá, Colombia)".
+   *  Devuelve string vacío si no hay ni ciudad ni país. */
+  formatEntryLocation(entry: { location_city?: string; location_country?: string }): string {
+    const parts: string[] = [];
+    if (entry.location_city) parts.push(entry.location_city);
+    if (entry.location_country) parts.push(entry.location_country);
+    if (parts.length === 0) return '';
+    return `(${parts.join(', ')})`;
+  }
+
   constructor() {
     this.titleService.setTitle('SkilTak — Mi perfil');
   }
 
   ngOnInit(): void {
-    this.profileForm = this.profileBuilder.buildProfileForm();
+    // Empezamos con FormArray vacío en ambos — patchFormFromProfile decide
+    // después si populamos entries reales o pasamos a modo legacy.
+    this.profileForm = this.profileBuilder.buildProfileForm({
+      education: this.fb.array([]),
+      experience: this.fb.array([]),
+    });
     this.countryCodeService.getCountryCodes().subscribe((data) => {
       this.countryCodes = data;
     });
     this.loadCurrentProfile();
+  }
+
+  // ---- FormArray helpers para experience / education ----------------
+
+  get experienceArray(): FormArray {
+    return this.profileForm.get('experience') as FormArray;
+  }
+
+  get educationArray(): FormArray {
+    return this.profileForm.get('education') as FormArray;
+  }
+
+  /** Crea un FormGroup vacío para una entrada de experiencia. Los campos
+   *  requeridos matchean con la interfaz `ExperienceEntry`. Fechas son
+   *  `type=month` (YYYY-MM). `is_current` marca "trabajando actualmente":
+   *  cuando está true, la serialización guarda `end_date = "Actual"`. */
+  createExperienceGroup(entry?: Partial<ExperienceEntry> & { is_current?: boolean }): FormGroup {
+    return this.fb.group({
+      position: [entry?.position ?? '', Validators.required],
+      company: [entry?.company ?? '', Validators.required],
+      location_city: [entry?.location_city ?? ''],
+      location_country: [entry?.location_country ?? ''],
+      start_date: [entry?.start_date ?? '', Validators.required],
+      end_date: [entry?.end_date === 'Actual' ? '' : (entry?.end_date ?? '')],
+      is_current: [entry?.is_current ?? (entry?.end_date === 'Actual')],
+      description: [entry?.description ?? '', Validators.required],
+    });
+  }
+
+  /** Idem para educación. `is_current` = "cursando actualmente" — misma
+   *  semántica que en experiencia. */
+  createEducationGroup(entry?: Partial<EducationEntry> & { is_current?: boolean }): FormGroup {
+    return this.fb.group({
+      title: [entry?.title ?? '', Validators.required],
+      institution: [entry?.institution ?? '', Validators.required],
+      location_city: [entry?.location_city ?? ''],
+      location_country: [entry?.location_country ?? ''],
+      start_date: [entry?.start_date ?? '', Validators.required],
+      end_date: [entry?.end_date === 'Actual' ? '' : (entry?.end_date ?? '')],
+      is_current: [entry?.is_current ?? (entry?.end_date === 'Actual')],
+    });
+  }
+
+  addExperience(): void {
+    this.experienceArray.push(this.createExperienceGroup());
+  }
+
+  removeExperience(index: number): void {
+    this.experienceArray.removeAt(index);
+  }
+
+  addEducation(): void {
+    this.educationArray.push(this.createEducationGroup());
+  }
+
+  removeEducation(index: number): void {
+    this.educationArray.removeAt(index);
+  }
+
+  /** Migra a modo estructurado desde legacy: reemplaza el textarea viejo
+   *  por un FormArray vacío + una entrada en blanco lista para llenar.
+   *  El texto legacy queda en pantalla como referencia hasta que el user
+   *  guarde. */
+  startStructuredExperience(): void {
+    this.experienceMode.set('structured');
+    while (this.experienceArray.length > 0) this.experienceArray.removeAt(0);
+    this.addExperience();
+  }
+
+  startStructuredEducation(): void {
+    this.educationMode.set('structured');
+    while (this.educationArray.length > 0) this.educationArray.removeAt(0);
+    this.addEducation();
+  }
+
+  /** Detecta si el valor guardado en el backend es un array estructurado
+   *  (JSON stringified) o texto legacy libre. Devuelve el array parseado
+   *  o null si es legacy. */
+  private tryParseEntries<T>(raw: unknown): T[] | null {
+    if (Array.isArray(raw)) return raw as T[];
+    if (typeof raw === 'string' && raw.trim().startsWith('[')) {
+      try {
+        const parsed: unknown = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed as T[];
+      } catch {
+        /* fall through to legacy */
+      }
+    }
+    return null;
   }
 
   /** Convierte una URL relativa del backend a absoluta para que el
@@ -161,12 +330,58 @@ export class MyProfileComponent implements OnInit {
       city: profile.city || '',
       professional_title: profile.professional_title || '',
       summary: profile.summary || '',
-      education: profile.education || '',
       skills: profile.skills || '',
-      experience: profile.experience || '',
       linkedin_url: profile.linkedin_url || '',
       portfolio_url: profile.portfolio_url || '',
     });
+
+    // Experience: detectar si es JSON structured o texto legacy
+    while (this.experienceArray.length > 0) this.experienceArray.removeAt(0);
+    const expEntries = this.tryParseEntries<ExperienceEntry>(profile.experience);
+    if (expEntries !== null) {
+      this.experienceMode.set('structured');
+      if (expEntries.length === 0) {
+        // Perfil nuevo o migrado sin entries — arrancamos con una en blanco
+        this.addExperience();
+      } else {
+        expEntries.forEach((e) => this.experienceArray.push(this.createExperienceGroup(e)));
+      }
+      this.legacyExperienceText.set('');
+    } else {
+      const text = typeof profile.experience === 'string' ? profile.experience : '';
+      if (text.trim() === '') {
+        // Empty — arrancamos structured con una entry en blanco
+        this.experienceMode.set('structured');
+        this.addExperience();
+        this.legacyExperienceText.set('');
+      } else {
+        this.experienceMode.set('legacy');
+        this.legacyExperienceText.set(text);
+      }
+    }
+
+    // Education: misma lógica
+    while (this.educationArray.length > 0) this.educationArray.removeAt(0);
+    const eduEntries = this.tryParseEntries<EducationEntry>(profile.education);
+    if (eduEntries !== null) {
+      this.educationMode.set('structured');
+      if (eduEntries.length === 0) {
+        this.addEducation();
+      } else {
+        eduEntries.forEach((e) => this.educationArray.push(this.createEducationGroup(e)));
+      }
+      this.legacyEducationText.set('');
+    } else {
+      const text = typeof profile.education === 'string' ? profile.education : '';
+      if (text.trim() === '') {
+        this.educationMode.set('structured');
+        this.addEducation();
+        this.legacyEducationText.set('');
+      } else {
+        this.educationMode.set('legacy');
+        this.legacyEducationText.set(text);
+      }
+    }
   }
 
   onCountryChange(countryCode: string): void {
@@ -298,6 +513,13 @@ export class MyProfileComponent implements OnInit {
   }
 
   onSubmit() {
+    // Antes de enviar: aplicar el flag `is_current` a las entries y
+    // ajustar los controles de experience/education según el modo.
+    // El profile-builder es agnóstico al modo — detecta array vs string
+    // y actúa; nosotros nada más preparamos el form para que llegue en
+    // la forma correcta.
+    this.prepareEntriesBeforeSubmit();
+
     this.profileBuilder.submitProfileData(
       this.profileForm,
       this.selectedFile,
@@ -319,6 +541,55 @@ export class MyProfileComponent implements OnInit {
       },
       false,
     );
+  }
+
+  /**
+   * Prepara el form para el submit:
+   *  - Modo legacy: reemplaza el control por el string legacy tal cual
+   *    (para que profile-builder detecte que es texto libre).
+   *  - Modo estructurado: transforma cada entry aplicando el sentinel
+   *    `end_date = "Actual"` cuando `is_current: true`, y elimina el
+   *    campo `is_current` que no forma parte de la interfaz persistida.
+   */
+  private prepareEntriesBeforeSubmit(): void {
+    // Experience
+    if (this.experienceMode() === 'legacy') {
+      this.profileForm.setControl(
+        'experience',
+        this.fb.control(this.legacyExperienceText(), Validators.required),
+      );
+    } else {
+      const cleaned = this.experienceArray.value.map((e: any) => ({
+        position: e.position,
+        company: e.company,
+        location_city: e.location_city || '',
+        location_country: e.location_country || '',
+        start_date: e.start_date,
+        end_date: e.is_current ? 'Actual' : (e.end_date || ''),
+        description: e.description,
+      }));
+      // Reemplazamos el FormArray por un control simple con el array
+      // limpio — profile-builder lo detectará como array y hará el
+      // JSON.stringify.
+      this.profileForm.setControl('experience', this.fb.control(cleaned));
+    }
+    // Education
+    if (this.educationMode() === 'legacy') {
+      this.profileForm.setControl(
+        'education',
+        this.fb.control(this.legacyEducationText(), Validators.required),
+      );
+    } else {
+      const cleaned = this.educationArray.value.map((e: any) => ({
+        title: e.title,
+        institution: e.institution,
+        location_city: e.location_city || '',
+        location_country: e.location_country || '',
+        start_date: e.start_date,
+        end_date: e.is_current ? 'Actual' : (e.end_date || ''),
+      }));
+      this.profileForm.setControl('education', this.fb.control(cleaned));
+    }
   }
 
   toggleEdit(): void {

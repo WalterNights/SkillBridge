@@ -170,20 +170,36 @@
         </ng-template>
       </article>
 
-      <!-- Experience -->
+      <!-- Experience — estructurado si el backend devolvió JSON, sino texto legacy -->
       <article class="info-card glass-strong rounded-2xl p-6">
         <header class="card-header">
           <h2>Experiencia</h2>
         </header>
+        <!-- Modo estructurado: entries formateadas -->
+        <div *ngIf="experienceEntries() as entries" class="space-y-4">
+          <div *ngFor="let exp of entries" class="text-sm leading-relaxed">
+            <p class="text-bone font-semibold">
+              {{ exp.company }}<span *ngIf="formatEntryLocation(exp)" class="text-warm-grey font-normal">
+                {{ formatEntryLocation(exp) }}</span>
+            </p>
+            <p class="text-warm-grey">
+              {{ exp.position }}<span *ngIf="exp.start_date">
+                [{{ formatEntryDate(exp.start_date) }} - {{ formatEntryDate(exp.end_date) || 'Presente' }}]</span>
+            </p>
+            <p *ngIf="exp.description" class="text-warm-grey mt-1 whitespace-pre-line">{{ exp.description }}</p>
+          </div>
+        </div>
+        <!-- Modo legacy: string libre -->
         <div
-          *ngIf="profile()?.experience; else emptyExp"
+          *ngIf="!experienceEntries() && profile()?.experience"
           class="text-sm text-warm-grey leading-relaxed whitespace-pre-line"
         >
           {{ profile()?.experience }}
         </div>
-        <ng-template #emptyExp>
-          <p class="empty-hint">Suma tu trayectoria laboral para mejorar la calidad de los matches.</p>
-        </ng-template>
+        <!-- Vacío -->
+        <p *ngIf="!experienceEntries() && !profile()?.experience" class="empty-hint">
+          Suma tu trayectoria laboral para mejorar la calidad de los matches.
+        </p>
       </article>
 
       <!-- Education -->
@@ -191,15 +207,27 @@
         <header class="card-header">
           <h2>Educación</h2>
         </header>
+        <div *ngIf="educationEntries() as entries" class="space-y-4">
+          <div *ngFor="let edu of entries" class="text-sm leading-relaxed">
+            <p class="text-bone font-semibold">
+              {{ edu.institution }}<span *ngIf="formatEntryLocation(edu)" class="text-warm-grey font-normal">
+                {{ formatEntryLocation(edu) }}</span>
+            </p>
+            <p class="text-warm-grey">
+              {{ edu.title }}<span *ngIf="edu.start_date">
+                [{{ formatEntryDate(edu.start_date) }} - {{ formatEntryDate(edu.end_date) || 'Presente' }}]</span>
+            </p>
+          </div>
+        </div>
         <div
-          *ngIf="profile()?.education; else emptyEdu"
+          *ngIf="!educationEntries() && profile()?.education"
           class="text-sm text-warm-grey leading-relaxed whitespace-pre-line"
         >
           {{ profile()?.education }}
         </div>
-        <ng-template #emptyEdu>
-          <p class="empty-hint">Lista tu formación académica.</p>
-        </ng-template>
+        <p *ngIf="!educationEntries() && !profile()?.education" class="empty-hint">
+          Lista tu formación académica.
+        </p>
       </article>
 
       <!-- Skills -->
@@ -353,9 +381,92 @@
           <textarea id="me-summary" formControlName="summary" rows="3" class="field-input rich-textarea"></textarea>
         </div>
 
-        <div>
-          <label class="field-label" for="me-edu">Educación *</label>
-          <textarea id="me-edu" formControlName="education" rows="3" class="field-input rich-textarea"></textarea>
+        <!-- Educación: modo estructurado (entries) o legacy (textarea viejo) -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="field-label !mb-0">Educación *</label>
+            <button
+              *ngIf="educationMode() === 'legacy'"
+              type="button"
+              (click)="startStructuredEducation()"
+              class="text-xs text-primary hover:underline underline-offset-4"
+            >
+              Convertir a formato estructurado
+            </button>
+          </div>
+
+          <!-- Legacy: textarea readonly como referencia -->
+          <div *ngIf="educationMode() === 'legacy'" class="space-y-2">
+            <p class="text-xs text-warm-grey">
+              Tu educación está guardada en formato viejo (texto libre). Puedes migrar
+              a formato estructurado con el botón de arriba — vas a poder editar cada
+              estudio por separado con fechas, institución y título.
+            </p>
+            <textarea
+              [value]="legacyEducationText()"
+              readonly
+              rows="4"
+              class="field-input rich-textarea opacity-70"
+            ></textarea>
+          </div>
+
+          <!-- Estructurado: FormArray de entries -->
+          <div *ngIf="educationMode() === 'structured'" formArrayName="education" class="space-y-3">
+            <div
+              *ngFor="let edu of educationArray.controls; let i = index"
+              [formGroupName]="i"
+              class="rounded-xl p-4 bg-white/[0.02] border border-white/[0.06] space-y-3"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs uppercase tracking-wider text-warm-grey">Estudio {{ i + 1 }}</span>
+                <button
+                  *ngIf="educationArray.length > 1"
+                  type="button"
+                  (click)="removeEducation(i)"
+                  class="text-xs text-danger hover:underline underline-offset-4"
+                >
+                  Eliminar
+                </button>
+              </div>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="field-label">Título *</label>
+                  <input type="text" formControlName="title" class="field-input" placeholder="Ingeniería de Sistemas" />
+                </div>
+                <div>
+                  <label class="field-label">Institución *</label>
+                  <input type="text" formControlName="institution" class="field-input" placeholder="Universidad Nacional" />
+                </div>
+              </div>
+              <div class="grid sm:grid-cols-3 gap-3 items-end">
+                <div>
+                  <label class="field-label">Desde *</label>
+                  <input type="month" formControlName="start_date" class="field-input" />
+                </div>
+                <div>
+                  <label class="field-label">Hasta</label>
+                  <input
+                    type="month"
+                    formControlName="end_date"
+                    class="field-input"
+                    [attr.disabled]="edu.get('is_current')?.value ? true : null"
+                  />
+                </div>
+                <label class="flex items-center gap-2 pb-2 cursor-pointer select-none">
+                  <input type="checkbox" formControlName="is_current" class="accent-primary" />
+                  <span class="text-xs text-warm-grey">Cursando actualmente</span>
+                </label>
+              </div>
+            </div>
+            <button
+              type="button"
+              (click)="addEducation()"
+              class="w-full py-2.5 rounded-xl border border-dashed border-white/[0.15] text-sm text-warm-grey hover:border-primary/40 hover:text-bone transition-colors inline-flex items-center justify-center gap-2"
+            >
+              <span class="material-symbols-outlined" style="font-size: 18px">add</span>
+              Agregar educación
+            </button>
+          </div>
         </div>
 
         <div>
@@ -363,9 +474,101 @@
           <textarea id="me-skills" formControlName="skills" rows="3" class="field-input rich-textarea"></textarea>
         </div>
 
-        <div>
-          <label class="field-label" for="me-exp">Experiencia *</label>
-          <textarea id="me-exp" formControlName="experience" rows="3" class="field-input rich-textarea"></textarea>
+        <!-- Experiencia: modo estructurado (entries) o legacy (textarea viejo) -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="field-label !mb-0">Experiencia *</label>
+            <button
+              *ngIf="experienceMode() === 'legacy'"
+              type="button"
+              (click)="startStructuredExperience()"
+              class="text-xs text-primary hover:underline underline-offset-4"
+            >
+              Convertir a formato estructurado
+            </button>
+          </div>
+
+          <!-- Legacy -->
+          <div *ngIf="experienceMode() === 'legacy'" class="space-y-2">
+            <p class="text-xs text-warm-grey">
+              Tu experiencia está guardada en formato viejo (texto libre). Puedes migrar
+              a formato estructurado con el botón de arriba — vas a poder editar cada
+              trabajo por separado con fechas, empresa, cargo y descripción.
+            </p>
+            <textarea
+              [value]="legacyExperienceText()"
+              readonly
+              rows="4"
+              class="field-input rich-textarea opacity-70"
+            ></textarea>
+          </div>
+
+          <!-- Estructurado -->
+          <div *ngIf="experienceMode() === 'structured'" formArrayName="experience" class="space-y-3">
+            <div
+              *ngFor="let exp of experienceArray.controls; let i = index"
+              [formGroupName]="i"
+              class="rounded-xl p-4 bg-white/[0.02] border border-white/[0.06] space-y-3"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs uppercase tracking-wider text-warm-grey">Trabajo {{ i + 1 }}</span>
+                <button
+                  *ngIf="experienceArray.length > 1"
+                  type="button"
+                  (click)="removeExperience(i)"
+                  class="text-xs text-danger hover:underline underline-offset-4"
+                >
+                  Eliminar
+                </button>
+              </div>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="field-label">Puesto *</label>
+                  <input type="text" formControlName="position" class="field-input" placeholder="Backend Developer" />
+                </div>
+                <div>
+                  <label class="field-label">Empresa *</label>
+                  <input type="text" formControlName="company" class="field-input" placeholder="Acme S.A." />
+                </div>
+              </div>
+              <div class="grid sm:grid-cols-3 gap-3 items-end">
+                <div>
+                  <label class="field-label">Desde *</label>
+                  <input type="month" formControlName="start_date" class="field-input" />
+                </div>
+                <div>
+                  <label class="field-label">Hasta</label>
+                  <input
+                    type="month"
+                    formControlName="end_date"
+                    class="field-input"
+                    [attr.disabled]="exp.get('is_current')?.value ? true : null"
+                  />
+                </div>
+                <label class="flex items-center gap-2 pb-2 cursor-pointer select-none">
+                  <input type="checkbox" formControlName="is_current" class="accent-primary" />
+                  <span class="text-xs text-warm-grey">Trabajando actualmente</span>
+                </label>
+              </div>
+              <div>
+                <label class="field-label">Descripción *</label>
+                <textarea
+                  formControlName="description"
+                  rows="3"
+                  class="field-input rich-textarea"
+                  placeholder="Responsabilidades principales y logros medibles (ej. Reduje el tiempo de carga 40%)."
+                ></textarea>
+              </div>
+            </div>
+            <button
+              type="button"
+              (click)="addExperience()"
+              class="w-full py-2.5 rounded-xl border border-dashed border-white/[0.15] text-sm text-warm-grey hover:border-primary/40 hover:text-bone transition-colors inline-flex items-center justify-center gap-2"
+            >
+              <span class="material-symbols-outlined" style="font-size: 18px">add</span>
+              Agregar experiencia
+            </button>
+          </div>
         </div>
 
         <div class="grid sm:grid-cols-2 gap-4">

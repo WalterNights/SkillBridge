@@ -195,60 +195,60 @@ export class ProfileBuilderComponent {
     const hasExistingExperienceArray =
       Array.isArray(existingParsed?.experience) && existingParsed.experience.length > 0;
 
-    // Process education and experience arrays
-    if (Array.isArray(rawData.education) && Array.isArray(rawData.experience)) {
-      // Convert education array to formatted strings for backend
+    // Process education and experience — CADA campo se maneja de forma
+    // independiente porque en /me un user puede migrar SOLO uno de los
+    // dos (education a estructurado, experience seguir legacy o al revés).
+    // La lógica vieja pedía "AMBOS arrays" y perdía el campo que sí venía
+    // migrado cuando el otro era string.
+    //
+    // Nuevo formato de persistencia: JSON stringified — /cv ya sabe
+    // parsear ambos (ver `parseEntriesField` en ats-cv.component.ts).
+    const normalizeCountry = (isoOrName: string | undefined): string | undefined => {
+      if (!isoOrName) return isoOrName;
+      const found = this.countries.find((c) => c.isoCode === isoOrName);
+      return found?.name ?? isoOrName;
+    };
+
+    // Education
+    if (Array.isArray(rawData.education)) {
       if (rawData.education.length > 0) {
-        const educationText = rawData.education
-          .map((edu: EducationEntry) => {
-            const findCountry = this.countries.find((c) => c.isoCode === edu.location_country);
-            const countryName = findCountry?.name ?? edu.location_country;
-            // Update the location_country in the original object for localStorage
-            edu.location_country = countryName;
-            return `${edu.title} en ${edu.institution} - (${edu.location_city}, ${countryName}) - ${edu.start_date} a ${edu.end_date}`;
-          })
-          .join('\n\n');
-        formData.append('education', educationText);
+        const normalizedEdu = rawData.education.map((edu: EducationEntry) => ({
+          ...edu,
+          location_country: normalizeCountry(edu.location_country),
+        }));
+        formData.append('education', JSON.stringify(normalizedEdu));
+      } else {
+        // Array vacío — mandar string vacío para que backend lo limpie
+        formData.append('education', '');
       }
-
-      // Convert experience array to formatted strings for backend
-      if (rawData.experience.length > 0) {
-        const experiencesText = rawData.experience
-          .map((exp: ExperienceEntry) => {
-            const findCountry = this.countries.find((c) => c.isoCode === exp.location_country);
-            const countryName = findCountry?.name ?? exp.location_country;
-            // Update the location_country in the original object for localStorage
-            exp.location_country = countryName;
-            return `${exp.position} en ${exp.company} - (${exp.location_city}, ${countryName}) - ${exp.start_date} a ${exp.end_date}:\n ${exp.description}`;
-          })
-          .join('\n\n');
-        formData.append('experience', experiencesText);
-      }
-
-      // Save to localStorage with arrays intact and email included
-      localStorage.setItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT, JSON.stringify(rawData));
-    } else {
-      // Handle string format for education and experience
-      if (typeof rawData.education === 'string' && rawData.education.trim() !== '') {
-        formData.append('education', rawData.education);
-      }
-      if (typeof rawData.experience === 'string' && rawData.experience.trim() !== '') {
-        formData.append('experience', rawData.experience);
-      }
-
-      // Preserve arrays from existing localStorage if current data is strings
-      // This happens when user manually filled the form text but arrays exist from resume analysis
-      const dataToSave = { ...rawData };
-      if (hasExistingEducationArray && typeof rawData.education === 'string') {
-        dataToSave.education = existingParsed.education;
-      }
-      if (hasExistingExperienceArray && typeof rawData.experience === 'string') {
-        dataToSave.experience = existingParsed.experience;
-      }
-
-      // Save to localStorage preserving arrays if they existed
-      localStorage.setItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT, JSON.stringify(dataToSave));
+    } else if (typeof rawData.education === 'string' && rawData.education.trim() !== '') {
+      formData.append('education', rawData.education);
     }
+
+    // Experience
+    if (Array.isArray(rawData.experience)) {
+      if (rawData.experience.length > 0) {
+        const normalizedExp = rawData.experience.map((exp: ExperienceEntry) => ({
+          ...exp,
+          location_country: normalizeCountry(exp.location_country),
+        }));
+        formData.append('experience', JSON.stringify(normalizedExp));
+      } else {
+        formData.append('experience', '');
+      }
+    } else if (typeof rawData.experience === 'string' && rawData.experience.trim() !== '') {
+      formData.append('experience', rawData.experience);
+    }
+
+    // localStorage draft: preservar arrays si vienen, sino usar strings
+    const dataToSave: any = { ...rawData };
+    if (hasExistingEducationArray && typeof rawData.education === 'string') {
+      dataToSave.education = existingParsed.education;
+    }
+    if (hasExistingExperienceArray && typeof rawData.experience === 'string') {
+      dataToSave.experience = existingParsed.experience;
+    }
+    localStorage.setItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT, JSON.stringify(dataToSave));
 
     // Append all other form fields
     Object.entries(rawData).forEach(([key, value]) => {
