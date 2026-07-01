@@ -58,6 +58,11 @@ export const routes: Routes = [
           import('./public/articulo/articulo.component').then((m) => m.ArticuloComponent),
       },
       {
+        path: 'portales',
+        loadComponent: () =>
+          import('./public/portales/portales.component').then((m) => m.PortalesComponent),
+      },
+      {
         path: 'blog',
         loadComponent: () => import('./public/blog/blog.component').then((m) => m.BlogComponent),
       },
@@ -86,6 +91,11 @@ export const routes: Routes = [
     path: 'recursos/:slug',
     loadComponent: () =>
       import('./public/articulo/articulo.component').then((m) => m.ArticuloComponent),
+  },
+  {
+    path: 'portales',
+    loadComponent: () =>
+      import('./public/portales/portales.component').then((m) => m.PortalesComponent),
   },
   {
     path: 'blog',

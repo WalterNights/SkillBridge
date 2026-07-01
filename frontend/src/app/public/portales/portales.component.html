@@ -1,0 +1,74 @@
+<app-public-nav *ngIf="!insideShell" />
+
+<main [class.pt-32]="!insideShell" [class.pt-8]="insideShell" class="pb-24 px-gutter">
+  <div class="max-w-container-max mx-auto">
+    <!-- HEADER -->
+    <header class="mb-14 max-w-3xl">
+      <p class="text-label uppercase text-primary font-semibold mb-3 tracking-widest">
+        Transparencia
+      </p>
+      <h1 class="text-[40px] sm:text-[56px] leading-[1.05] tracking-[-0.03em] font-black text-bone mb-6">
+        De dónde vienen tus ofertas.
+      </h1>
+      <p class="text-body-lg text-warm-grey">
+        Cuando tocas <span class="text-bone font-semibold">"Obtener ofertas"</span>, SkilTak busca en
+        <span class="text-bone font-semibold">{{ totalPortals }} portales</span> al mismo tiempo. No revelamos ninguno —
+        acá tienes la lista completa para que sepas exactamente dónde estamos mirando por vos.
+      </p>
+      <p class="text-body text-warm-grey mt-4">
+        No enviamos tu perfil a ningún portal — solo leemos las ofertas públicas y las filtramos
+        contra tus skills y experiencia. Vos decides dónde postulas.
+      </p>
+    </header>
+
+    <!-- GRUPOS DE PORTALES -->
+    <div class="space-y-14">
+      <section *ngFor="let group of groups" class="space-y-6">
+        <h2 class="text-title-lg text-bone font-bold">{{ group.label }}</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <a
+            *ngFor="let portal of group.portals"
+            [href]="portal.homeUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="portal-card glass rounded-2xl p-6 flex flex-col"
+          >
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <h3 class="portal-name">{{ portal.name }}</h3>
+              <span
+                class="material-symbols-outlined text-warm-grey"
+                style="font-size: 16px"
+                aria-hidden="true"
+                >open_in_new</span
+              >
+            </div>
+            <p class="portal-summary">{{ portal.summary }}</p>
+
+            <div class="portal-meta mt-4">
+              <div class="meta-row">
+                <span class="meta-label">Países</span>
+                <span class="meta-value">{{ portal.countries.join(', ') }}</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Verticales</span>
+                <span class="meta-value">{{ portal.verticals.join(', ') }}</span>
+              </div>
+            </div>
+          </a>
+        </div>
+      </section>
+    </div>
+
+    <!-- CIERRE -->
+    <footer class="mt-16 max-w-3xl">
+      <p class="text-body text-warm-grey">
+        ¿Falta un portal que usas seguido? Escribinos desde
+        <a routerLink="/faq" class="text-primary hover:underline">soporte</a>
+        y lo evaluamos para la siguiente iteración.
+      </p>
+    </footer>
+  </div>
+</main>
+
+<app-public-footer *ngIf="!insideShell" />

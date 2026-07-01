@@ -9,6 +9,7 @@ docs/stich_conection.md/
 # === Claude Code ===
 .claude/settings.json
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
 
 # === Python / Django ===
 env/
@@ -21,6 +22,11 @@ __pycache__/
 output.html
 backend/staticfiles/
 backend/media/
+
+# === Dumps y DB locales ===
+# database/ contiene db.sqlite3 y offers_dump.json usados solo en local
+# para no perder datos de testing entre sesiones.
+database/
 
 # === Node / Angular ===
 frontend/node_modules/
