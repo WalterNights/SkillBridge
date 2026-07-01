@@ -319,6 +319,18 @@ GEMINI_API_KEY = config("GEMINI_API_KEY", default="")
 GEMINI_MODEL = config("GEMINI_MODEL", default="gemini-2.5-flash")
 
 
+# ----- Cupos de uso de AI (tier free) -----
+# Límites lifetime por cuenta para features que llaman al LLM. Al
+# alcanzar el cupo, el backend devuelve 402 (Payment Required) — señal
+# semántica para el frontend de que hay que ofrecer upgrade a plan pago.
+# Admins (is_staff) bypassean todos los cupos.
+#
+# Si a futuro se implementan planes de suscripción, estos números
+# pasan a leerse del plan del user en vez de settings.
+COVER_LETTER_FREE_LIMIT = config("COVER_LETTER_FREE_LIMIT", default=3, cast=int)
+CV_IMPROVE_FREE_LIMIT = config("CV_IMPROVE_FREE_LIMIT", default=1, cast=int)
+
+
 # ----- LinkedIn OAuth (Sign In with LinkedIn using OpenID Connect) -----
 # Producto se solicita en linkedin.com/developers/apps (instant-approve).
 # Después en el .env del VPS se setean los 3 valores. Si LINKEDIN_CLIENT_ID

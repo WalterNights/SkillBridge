@@ -228,3 +228,95 @@ class TestCoverLetterEdit:
         response = authed_client.delete(f"/api/cover-letters/{others_letter.id}/")
         assert response.status_code == 404
         assert CoverLetter.objects.filter(id=others_letter.id).exists()
+
+
+# --- Cupo lifetime de generación -------------------------------------------
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestCoverLetterQuota:
+    """El cupo lifetime está guardado en DB — el usuario no lo puede
+    saltar removiendo el `disabled` del botón desde devtools."""
+
+    def test_successful_generation_increments_count(
+        self, authed_client, user_profile, job_offer
+    ):
+        assert user_profile.cover_letters_generated_count == 0
+        with patch("applications.views.generate_cover_letter", return_value=_MOCK_LETTER):
+            authed_client.post(
+                "/api/cover-letters/",
+                {"job_offer_id": job_offer.id, "tone": "cercano", "language": "es"},
+            )
+        user_profile.refresh_from_db()
+        assert user_profile.cover_letters_generated_count == 1
+
+    def test_gemini_failure_does_not_consume_quota(
+        self, authed_client, user_profile, job_offer
+    ):
+        with patch(
+            "applications.views.generate_cover_letter",
+            side_effect=CoverLetterGenerationError("boom"),
+        ):
+            authed_client.post(
+                "/api/cover-letters/",
+                {"job_offer_id": job_offer.id, "tone": "cercano", "language": "es"},
+            )
+        user_profile.refresh_from_db()
+        assert user_profile.cover_letters_generated_count == 0
+
+    def test_at_quota_returns_402(
+        self, authed_client, user_profile, job_offer, settings
+    ):
+        settings.COVER_LETTER_FREE_LIMIT = 3
+        user_profile.cover_letters_generated_count = 3
+        user_profile.save(update_fields=["cover_letters_generated_count"])
+
+        with patch("applications.views.generate_cover_letter") as mock_gen:
+            response = authed_client.post(
+                "/api/cover-letters/",
+                {"job_offer_id": job_offer.id, "tone": "cercano", "language": "es"},
+            )
+
+        assert response.status_code == 402
+        body = response.json()
+        assert body["error"] == "quota_exceeded"
+        assert body["remaining"] == 0
+        # Gate corta antes de llamar a Gemini — no gastamos tokens
+        mock_gen.assert_not_called()
+
+    def test_staff_bypasses_quota(
+        self, authed_client, user_profile, user, job_offer, settings
+    ):
+        settings.COVER_LETTER_FREE_LIMIT = 3
+        user.is_staff = True
+        user.save(update_fields=["is_staff"])
+        user_profile.cover_letters_generated_count = 999
+        user_profile.save(update_fields=["cover_letters_generated_count"])
+
+        with patch("applications.views.generate_cover_letter", return_value=_MOCK_LETTER):
+            response = authed_client.post(
+                "/api/cover-letters/",
+                {"job_offer_id": job_offer.id, "tone": "cercano", "language": "es"},
+            )
+
+        assert response.status_code == 201
+        user_profile.refresh_from_db()
+        # Staff no consume su propio cupo (mantiene 999)
+        assert user_profile.cover_letters_generated_count == 999
+
+    def test_quota_endpoint_returns_current_state(
+        self, authed_client, user_profile, settings
+    ):
+        settings.COVER_LETTER_FREE_LIMIT = 3
+        settings.CV_IMPROVE_FREE_LIMIT = 1
+        user_profile.cover_letters_generated_count = 2
+        user_profile.save(update_fields=["cover_letters_generated_count"])
+
+        response = authed_client.get("/api/cover-letters/quota/")
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["cover_letter"] == {"used": 2, "limit": 3, "remaining": 1}
+        assert body["cv_improve"] == {"used": 0, "limit": 1, "remaining": 1}
+        assert body["is_staff"] is False

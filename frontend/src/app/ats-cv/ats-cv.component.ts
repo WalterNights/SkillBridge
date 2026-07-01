@@ -22,6 +22,7 @@ import { QuantifyModalComponent } from '../cv/quantify-modal.component';
 import { CvAuditModalComponent } from '../cv/cv-audit-modal.component';
 import { CvImproveModalComponent } from '../cv/cv-improve-modal.component';
 import { CvImproveResponse } from '../services/cv-improve.service';
+import { CoverLetterService, QuotaState } from '../services/cover-letter.service';
 import { RichTextComponent } from '../shared/rich-text/rich-text.component';
 import {
   CvProfileData,
@@ -208,7 +209,22 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
   /** Modal del improver — idem auditor, lazy mount. */
   showImprove = signal(false);
 
+  // Cupo de "Mejorar con AI" — fetched on init desde /cover-letters/quota/.
+  // Cuando se agota, el botón queda disabled con el mismo tooltip que la
+  // carta de presentación (hook comercial vago). Server-side el /cv/improve/
+  // igual devuelve 429 si se intenta pasar por encima.
+  cvImproveQuota = signal<QuotaState | null>(null);
+  cvImproveIsStaff = signal(false);
+  canImproveCv = computed(() => {
+    if (this.cvImproveIsStaff()) return true;
+    const q = this.cvImproveQuota();
+    if (!q) return true;
+    return q.remaining > 0;
+  });
+  quotaTooltip = 'el limite de usos se ampliará pronto';
+
   openImprove(): void {
+    if (!this.canImproveCv()) return;
     this.showImprove.set(true);
   }
 
@@ -279,6 +295,7 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     private router: Router,
     private profileService: ProfileService,
     private toast: ToastService,
+    private coverLetterService: CoverLetterService,
   ) {
     this.titleService.setTitle('SkilTak - CV ATS');
   }
@@ -286,6 +303,16 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
   ngOnInit(): void {
     registerLocaleData(localeEs, 'es');
     this.loadProfileData();
+    this.coverLetterService.getQuota().subscribe({
+      next: (summary) => {
+        this.cvImproveQuota.set(summary.cv_improve);
+        this.cvImproveIsStaff.set(summary.is_staff);
+      },
+      error: () => {
+        // Silencioso — el backend igual gatea el POST con 429 si el cupo
+        // se agotó. Fallback en tu contra es mejor que romper el UX.
+      },
+    });
   }
 
   /**

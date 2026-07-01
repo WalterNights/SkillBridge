@@ -276,6 +276,16 @@ class UserProfile(models.Model):
     # bypassean este check para QA / debugging del prompt.
     cv_improved_at = models.DateTimeField(null=True, blank=True)
 
+    # Cover Letter AI usage -------------------------------------------
+    # Contador lifetime de generaciones POST /api/cover-letters/. Cada
+    # user normal tiene un cupo total (ver settings.COVER_LETTER_FREE_LIMIT).
+    # Se incrementa DESPUÉS de que Gemini devuelve OK — si falla el LLM,
+    # no consumimos el turno. Admins (is_staff) bypassean el check.
+    # Regenerar (update_or_create sobre una oferta existente) SÍ cuenta:
+    # cada POST gasta tokens de Gemini. PATCH del content y DELETE no
+    # cuentan (no llaman al LLM).
+    cover_letters_generated_count = models.PositiveIntegerField(default=0)
+
     def __str__(self):
         return f"Perfil de {self.user.username}"
 

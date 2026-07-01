@@ -58,7 +58,9 @@
         type="button"
         (click)="openImprove()"
         class="cv-action-btn cv-action-btn--ai"
-        title="Mejorar el CV con AI (rewrite summary + cuantificar bullets)"
+        [disabled]="!canImproveCv()"
+        [attr.aria-disabled]="!canImproveCv()"
+        [title]="canImproveCv() ? 'Mejorar el CV con AI (rewrite summary + cuantificar bullets)' : quotaTooltip"
       >
         <span class="material-symbols-outlined cv-action-btn-icon" style="font-variation-settings: 'FILL' 1">
           auto_fix_high

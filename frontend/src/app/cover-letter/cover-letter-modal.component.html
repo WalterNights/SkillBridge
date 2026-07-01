@@ -48,7 +48,14 @@
 
       <div *ngIf="errorMsg" class="cl-error">{{ errorMsg }}</div>
 
-      <button type="button" class="btn-primary cl-generate-btn" (click)="generate()">
+      <button
+        type="button"
+        class="btn-primary cl-generate-btn"
+        (click)="generate()"
+        [disabled]="!canGenerate()"
+        [title]="!canGenerate() ? quotaTooltip : ''"
+        [attr.aria-disabled]="!canGenerate()"
+      >
         <span class="material-symbols-outlined" style="font-size: 18px; font-variation-settings: 'FILL' 1"
           >auto_awesome</span
         >
@@ -85,7 +92,9 @@
           type="button"
           class="cl-regenerate-btn"
           (click)="generate()"
-          [disabled]="isSaving"
+          [disabled]="isSaving || !canGenerate()"
+          [title]="!canGenerate() ? quotaTooltip : ''"
+          [attr.aria-disabled]="isSaving || !canGenerate()"
         >
           <span class="material-symbols-outlined" style="font-size: 16px">refresh</span>
           Regenerar

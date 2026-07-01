@@ -21,6 +21,22 @@ export interface CoverLetterDto {
   updated_at: string;
 }
 
+/** Estado de un cupo (feature de AI limitada por lifetime). */
+export interface QuotaState {
+  used: number;
+  limit: number;
+  remaining: number;
+}
+
+/** Respuesta de GET /cover-letters/quota/ — cubre cover_letter + cv_improve
+ * en un solo request. is_staff=true significa que el usuario bypassea todos
+ * los cupos. */
+export interface QuotaSummary {
+  cover_letter: QuotaState;
+  cv_improve: QuotaState;
+  is_staff: boolean;
+}
+
 /**
  * Service para CoverLetter del backend.
  *
@@ -72,5 +88,12 @@ export class CoverLetterService {
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}/`);
+  }
+
+  /** Estado actual de cupos AI del user. Se llama al montar las vistas
+   * que exponen generar-carta o mejorar-CV para decidir si el botón va
+   * disabled con tooltip. */
+  getQuota(): Observable<QuotaSummary> {
+    return this.http.get<QuotaSummary>(`${this.base}/quota/`);
   }
 }

@@ -5,6 +5,7 @@ import {
   Input,
   OnInit,
   Output,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -15,10 +16,16 @@ import {
   CoverLetterLanguage,
   CoverLetterService,
   CoverLetterTone,
+  QuotaState,
 } from '../services/cover-letter.service';
 import { ToastService } from '../services/toast.service';
 
 type ViewMode = 'loading' | 'empty' | 'ready' | 'generating' | 'error';
+
+/** Copy que se muestra en el tooltip del botón disabled cuando el user
+ * agotó su cupo. Deliberadamente vago — hook comercial sin revelar la
+ * política de precios que todavía no está definida. */
+const QUOTA_TOOLTIP = 'el limite de usos se ampliará pronto';
 
 /**
  * Modal para generar / ver / editar la carta de presentación de una oferta.
@@ -58,10 +65,36 @@ export class CoverLetterModalComponent implements OnInit {
   errorMsg = '';
   isSaving = false;
 
+  quota = signal<QuotaState | null>(null);
+  isStaff = signal(false);
+  // Gate del botón de generar/regenerar: si is_staff bypassea, sino
+  // depende de quota.remaining. `null` = todavía no llegó el fetch → OK
+  // permitir (no bloqueamos el UX por network lento; el backend rechaza
+  // igual si se pasó).
+  canGenerate = computed(() => {
+    if (this.isStaff()) return true;
+    const q = this.quota();
+    if (!q) return true;
+    return q.remaining > 0;
+  });
+  quotaTooltip = QUOTA_TOOLTIP;
+
   private coverLetterService = inject(CoverLetterService);
   private toast = inject(ToastService);
 
   ngOnInit(): void {
+    this.coverLetterService.getQuota().subscribe({
+      next: (summary) => {
+        this.quota.set(summary.cover_letter);
+        this.isStaff.set(summary.is_staff);
+      },
+      error: () => {
+        // Silencioso — si el fetch de cupo falla, dejamos pasar y el
+        // backend rechaza con 402 si corresponde. Peor UX que el gate
+        // proactivo pero no rompe el flow.
+      },
+    });
+
     this.coverLetterService.getForOffer(this.offerId).subscribe({
       next: (letter) => {
         if (letter) {
@@ -82,6 +115,13 @@ export class CoverLetterModalComponent implements OnInit {
   }
 
   generate(): void {
+    if (!this.canGenerate()) {
+      // El template ya deja el botón disabled con tooltip. Este guard
+      // cubre el caso de llamada programática (poco probable pero
+      // barato) — no arruinar la UX con un error si el user llegó acá
+      // de alguna forma inesperada.
+      return;
+    }
     if (this.letter()?.user_edited) {
       const ok = confirm(
         'Vas a perder los cambios que hiciste a la carta anterior. ¿Continuar?',
@@ -97,11 +137,28 @@ export class CoverLetterModalComponent implements OnInit {
         next: (letter) => {
           this.letter.set(letter);
           this.editorContent = letter.content;
+          // El backend devuelve el nuevo estado del cupo embebido en la
+          // response — usamos esa fuente en vez de refetchear.
+          const quotaFromResp = (letter as CoverLetterDto & { quota?: QuotaState }).quota;
+          if (quotaFromResp) {
+            this.quota.set(quotaFromResp);
+          }
           this.view.set('ready');
         },
         error: (err) => {
-          const detail = err?.error?.detail || 'No pudimos generar la carta. Intenta de nuevo.';
-          this.errorMsg = detail;
+          if (err?.status === 402 && err?.error?.error === 'quota_exceeded') {
+            // Race race: el user tenía remaining > 0 pero justo se le
+            // acabó (ej. abrió el modal en dos pestañas). Actualizamos
+            // el cupo local y mostramos el hook comercial.
+            this.quota.set({
+              used: err.error.used,
+              limit: err.error.limit,
+              remaining: 0,
+            });
+            this.errorMsg = QUOTA_TOOLTIP;
+          } else {
+            this.errorMsg = err?.error?.detail || 'No pudimos generar la carta. Intenta de nuevo.';
+          }
           this.view.set(this.letter() ? 'ready' : 'empty');
         },
       });

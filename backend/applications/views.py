@@ -1,6 +1,6 @@
+from django.conf import settings
+from django.db.models import F
 from django.utils import timezone
-from django.utils.decorators import method_decorator
-from django_ratelimit.decorators import ratelimit
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
@@ -178,10 +178,6 @@ def _profile_dict_for_prompt(user) -> dict:
     }
 
 
-@method_decorator(
-    ratelimit(key="user", rate="10/h", method="POST", block=True),
-    name="create",
-)
 class CoverLetterViewSet(viewsets.ModelViewSet):
     """ViewSet de cartas de presentación, scoped a request.user.
 
@@ -193,9 +189,13 @@ class CoverLetterViewSet(viewsets.ModelViewSet):
         Si ya existe para (user, offer) → la sobreescribe (regenerar).
       - PATCH  /api/cover-letters/{id}/                 → editar content
       - DELETE /api/cover-letters/{id}/                 → borrar
+      - GET    /api/cover-letters/quota/                → {used, limit, remaining}
 
-    Rate-limit: 10 generaciones POST por hora — Gemini cuesta tokens.
-    PATCH/GET/DELETE no rate-limitados.
+    Cupo: `settings.COVER_LETTER_FREE_LIMIT` generaciones lifetime por user.
+    Enforcement en DB (`UserProfile.cover_letters_generated_count`), no
+    en frontend — un user no puede quitar el `disabled` del botón desde
+    devtools y saltarse el límite. Admins (is_staff) bypassean.
+    PATCH/GET/DELETE no cuentan (no llaman al LLM).
 
     SEGURIDAD: get_queryset filtra por user.
     """
@@ -231,6 +231,24 @@ class CoverLetterViewSet(viewsets.ModelViewSet):
         if language not in dict(CoverLetter.LANGUAGE_CHOICES):
             raise ValidationError({"language": "Idioma inválido. Usá 'es' o 'en'."})
 
+        # Gate de cupo lifetime — chequeo ANTES de tocar Gemini. Admins
+        # bypassean para poder QA'ear el prompt sin comerse su propio cupo.
+        profile = getattr(request.user, "profile", None)
+        limit = settings.COVER_LETTER_FREE_LIMIT
+        if not request.user.is_staff and profile is not None:
+            used = profile.cover_letters_generated_count
+            if used >= limit:
+                return Response(
+                    {
+                        "error": "quota_exceeded",
+                        "detail": "el limite de usos se ampliará pronto",
+                        "used": used,
+                        "limit": limit,
+                        "remaining": 0,
+                    },
+                    status=status.HTTP_402_PAYMENT_REQUIRED,
+                )
+
         try:
             offer = JobOffer.objects.get(pk=offer_id)
         except JobOffer.DoesNotExist:
@@ -264,7 +282,25 @@ class CoverLetterViewSet(viewsets.ModelViewSet):
                 "offer_url_snapshot": offer.url or "",
             },
         )
+
+        # Incrementamos DESPUÉS de que Gemini + save salieron OK — si algo
+        # falla, no gastamos el turno del user. F() para no perder writes
+        # concurrentes (usuario clickeando el botón dos veces rapidísimo).
+        if not request.user.is_staff and profile is not None:
+            from users.models import UserProfile
+
+            UserProfile.objects.filter(pk=profile.pk).update(
+                cover_letters_generated_count=F("cover_letters_generated_count") + 1
+            )
+            profile.refresh_from_db(fields=["cover_letters_generated_count"])
+
         out = CoverLetterSerializer(letter).data
+        if not request.user.is_staff and profile is not None:
+            out["quota"] = {
+                "used": profile.cover_letters_generated_count,
+                "limit": limit,
+                "remaining": max(0, limit - profile.cover_letters_generated_count),
+            }
         return Response(
             out,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
@@ -281,3 +317,40 @@ class CoverLetterViewSet(viewsets.ModelViewSet):
         instance.user_edited = True
         instance.save(update_fields=["content", "user_edited", "updated_at"])
         return Response(CoverLetterSerializer(instance).data)
+
+    @action(detail=False, methods=["get"], url_path="quota")
+    def quota(self, request):
+        """GET /api/cover-letters/quota/ → estado del cupo del user.
+
+        Response:
+          {
+            "cover_letter": {"used": N, "limit": M, "remaining": M-N},
+            "cv_improve":  {"used": 0|1, "limit": M, "remaining": M-used},
+            "is_staff": bool  # admins ignoran los cupos
+          }
+
+        Frontend consume esto al montar la vista de cartas / CV para
+        decidir si mostrar el botón activo o disabled con tooltip.
+        """
+        cover_limit = settings.COVER_LETTER_FREE_LIMIT
+        cv_limit = settings.CV_IMPROVE_FREE_LIMIT
+
+        profile = getattr(request.user, "profile", None)
+        cover_used = profile.cover_letters_generated_count if profile is not None else 0
+        cv_used = 1 if (profile is not None and profile.cv_improved_at is not None) else 0
+
+        return Response(
+            {
+                "cover_letter": {
+                    "used": cover_used,
+                    "limit": cover_limit,
+                    "remaining": max(0, cover_limit - cover_used),
+                },
+                "cv_improve": {
+                    "used": cv_used,
+                    "limit": cv_limit,
+                    "remaining": max(0, cv_limit - cv_used),
+                },
+                "is_staff": request.user.is_staff,
+            }
+        )
