@@ -45,6 +45,31 @@ python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 cd ..
 
+echo "==> Syncing nginx configs"
+# Los .conf del repo son la fuente de verdad. Si difieren de los
+# instalados, copiar, validar con `nginx -t` y hacer reload (sin downtime).
+# Si `nginx -t` falla, abortamos el deploy antes de tumbar el servidor.
+NGINX_CHANGED=0
+for conf in deploy/nginx/*.conf; do
+    name="$(basename "$conf")"
+    dest="/etc/nginx/sites-available/$name"
+    if ! sudo cmp -s "$conf" "$dest" 2>/dev/null; then
+        echo "  [+] $name cambio — copiando a $dest"
+        sudo cp "$conf" "$dest"
+        NGINX_CHANGED=1
+    fi
+done
+if [ "$NGINX_CHANGED" = "1" ]; then
+    echo "==> Validando nginx config"
+    if sudo nginx -t; then
+        sudo systemctl reload nginx
+        echo "  [OK] nginx recargado"
+    else
+        echo "  [!] nginx -t fallo — abortando deploy sin recargar"
+        exit 1
+    fi
+fi
+
 echo "==> Restarting services"
 sudo systemctl restart skiltak-gunicorn
 sudo systemctl restart skiltak-celery
