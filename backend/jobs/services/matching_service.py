@@ -500,7 +500,9 @@ class JobMatchingService:
         filtered_jobs = JobMatchingService.filter_jobs_by_skills(
             all_jobs,
             user_profile,
-            min_match_percentage=20,  # Umbral más bajo para top matches
+            # Mismo threshold que el feed (40): con el matcher nuevo,
+            # matches < 40 son ruido no relevancia.
+            min_match_percentage=40,
         )
 
         result = filtered_jobs[:limit]

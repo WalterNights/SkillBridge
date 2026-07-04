@@ -175,19 +175,17 @@ class TestJobsListOrdering:
 @pytest.mark.integration
 @pytest.mark.django_db
 class TestJobsListMinMatch:
-    """Umbral de match% — semántica en dos partes desde 2026-06-29:
+    """Umbral de match% — semantica desde 2026-07-04 (rewrite matcher).
 
-      - Para users con vertical claro (tech, agro, legal, etc): el
-        filtro por categoría ya garantiza relevancia, así que en MODO
-        DEFAULT el umbral se afloja a 0 (todas las ofertas same-vertical
-        se ven). Si el user pide explícitamente `?min_match=N`, ese
-        valor se respeta. Reportado por cliente Fabio (zootecnista):
-        feed con default 50% mostraba 2 ofertas mientras la búsqueda
-        traía 9 same-vertical relevantes ranqueando 30-49%.
+    Threshold default = 40. Con la formula nueva `title_score -
+    skill_penalty`, ofertas de la misma categoria del user reciben
+    piso vertical (45+) que ya pasa el 40. Ofertas offtopic caen
+    naturalmente sin necesidad de override.
 
-      - Para users 'general' (sin perfil clasificable): se mantiene el
-        umbral default de 50% porque NO hay filtro de categoría que
-        guarde relevancia (ven todo el catálogo).
+    El "loosening a 0" que existia antes del rewrite queda REMOVIDO —
+    contradecia la regla del checkbox "Ver matches debiles" (user veia
+    ofertas a 0% aunque no lo pidiera). El checkbox sigue funcional:
+    baja min_match a 0 explicitamente cuando esta activo.
     """
 
     def _setup(self, user_profile):
@@ -213,20 +211,24 @@ class TestJobsListMinMatch:
             ),
         ]
 
-    def test_default_for_vertical_user_shows_all_same_category(self, authed_client, user_profile):
-        """User tech en MODO DEFAULT (sin `?min_match=`) ve TODAS las
-        ofertas tech — incluso las que matchean 0% por skills. El
-        filtro de categoría ya garantizó relevancia a alto nivel."""
+    def test_default_hides_offtopic_matches(self, authed_client, user_profile):
+        """User Backend Dev (tech) en MODO DEFAULT (threshold 40) ve
+        Python Developer pero NO 'Analista Control de Accesos' — este
+        ultimo esta tageado tech pero su titulo no matchea con Backend
+        Developer y sus keywords tampoco. Match honesto por debajo del
+        40 → no aparece. El checkbox "Ver matches debiles" es la unica
+        via para verlo."""
         self._setup(user_profile)
         response = authed_client.get("/api/jobs/jobs/")
         titles = [r["title"] for r in response.json()["results"]]
         assert "Senior Python Developer" in titles
-        # Antes (default 50%) esta quedaba afuera. Ahora aparece porque
-        # es de la categoría del user — el match% solo desempata orden.
-        assert "Analista Control de Accesos" in titles
+        # Antes existia un "loosening" que lo mostraba a 0%. Ahora se
+        # oculta — cumpliendo la regla "no mostrar 0% salvo pedirlo".
+        assert "Analista Control de Accesos" not in titles
 
     def test_min_match_0_includes_everything(self, authed_client, user_profile):
-        """min_match=0 = modo exploración, no filtra nada."""
+        """min_match=0 = modo exploracion (activado por el checkbox
+        "Ver matches debiles"), no filtra nada."""
         self._setup(user_profile)
         response = authed_client.get("/api/jobs/jobs/?min_match=0")
         titles = [r["title"] for r in response.json()["results"]]
@@ -234,23 +236,24 @@ class TestJobsListMinMatch:
         assert "Analista Control de Accesos" in titles
 
     def test_explicit_min_match_high_threshold_respected(self, authed_client, user_profile):
-        """Si el user PIDE explícitamente `?min_match=80`, respetamos —
-        el loosening del default no aplica."""
+        """Si el user PIDE explicitamente `?min_match=80` respetamos."""
         self._setup(user_profile)
         response = authed_client.get("/api/jobs/jobs/?min_match=80")
         # Nadie alcanza 80% en este setup
         assert response.json()["count"] == 0
 
     def test_min_match_invalid_falls_back_to_default(self, authed_client, user_profile):
-        """?min_match=foo no rompe — cae al default 50, y como user
-        tiene vertical claro, ese default se afloja a 0. Todas las
-        same-vertical aparecen."""
+        """?min_match=foo no rompe — cae al default 40."""
         self._setup(user_profile)
         response = authed_client.get("/api/jobs/jobs/?min_match=foo")
         assert response.status_code == 200
         titles = [r["title"] for r in response.json()["results"]]
+        # Con default 40, el Python Developer pasa (title 100 sin skills
+        # matcheadas → penalty 100 → match 0... espera, esto NO deberia
+        # pasar. Verifica manualmente que la logica sigue correcta.
+        # Actualizado: user_profile tiene skills python/django/postgresql
+        # → matcheadas contra "python, django, postgresql" del job → 100%.
         assert "Senior Python Developer" in titles
-        assert "Analista Control de Accesos" in titles
 
     def test_min_match_clamped_above_100(self, authed_client, user_profile):
         """min_match=999 se clampa a 100 — devuelve solo matches perfectos.

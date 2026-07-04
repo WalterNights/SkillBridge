@@ -89,7 +89,7 @@ def daily_scrape_for_active_users():
                 profile.professional_title, profile.city
             )
             filtered = JobMatchingService.filter_jobs_by_skills(
-                new_offers, profile, min_match_percentage=25
+                new_offers, profile, min_match_percentage=40
             )
             high_match = [
                 o for o in filtered if getattr(o, "match_percentage", 0) >= _NOTIF_MATCH_THRESHOLD

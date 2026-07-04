@@ -214,9 +214,13 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
     #         mediocre. Funcionó pero dejaba afuera mucha oferta válida
     #         (50-59%) que el usuario sí quería ver.
     #   50% — ajuste 2026-06-27. Coincide con el chip "Regular 50-69%"
-    #         visible en los filtros. El checkbox "Ver matches débiles"
-    #         (gated por feature flag) extiende a 30-49% cuando se activa.
-    _DEFAULT_MIN_MATCH = 50
+    #         visible en los filtros.
+    #   40% — 2026-07-04, rewrite honesto del matcher. La nueva formula
+    #         `title - skill_penalty` reserva 40+ para ofertas del
+    #         vertical del user (piso vertical = 45). El checkbox "Ver
+    #         matches debiles" (feature flag) sigue funcionando: baja a
+    #         0 y muestra las ofertas de otras categorias con match bajo.
+    _DEFAULT_MIN_MATCH = 40
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -250,25 +254,19 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
             serializer = self.get_serializer(offers, many=True)
             return Response(serializer.data)
 
-        # Threshold configurable — el frontend puede bajar a 0 para
-        # "modo exploración" o subir si quiere solo top matches.
+        # Threshold configurable — el frontend puede bajar a 0 (via el
+        # checkbox "Ver matches débiles") o subir si quiere solo top matches.
         min_match = self._parse_min_match(request)
 
-        # Loosening para users con vertical claro. El filtro por categoría
-        # (get_queryset) YA garantiza que la oferta es del área del user
-        # (agro, tech, legal, etc). El match% sirve para ordenar dentro
-        # de esa categoría, no para filtrar — si pasó el filtro de
-        # vertical, debe verse. Sin este loosening, perfiles con
-        # vocabulario corto (zootecnia, plomería, servicios generales)
-        # mostraban 2-3 ofertas en default mientras el scrape había
-        # traído 9+ relevantes — todas tageadas correctamente pero con
-        # match% bajo por falta de overlap explícito de skills.
-        # Solo aplica si el user no tocó el threshold (vino del default);
-        # si pidió `?min_match=80` u otro valor explícito, respetamos.
-        from users.services.profession_classifier import infer_profession_category
-        user_category = infer_profession_category(profile.professional_title)
-        if user_category != "general" and min_match == self._DEFAULT_MIN_MATCH:
-            min_match = 0
+        # NOTA (2026-07-04, rewrite matcher): antes había un "loosening"
+        # aquí que bajaba `min_match` a 0 cuando el user tenía vertical
+        # claro. Existía porque el matcher viejo no distinguía overlap
+        # de rol vs skills, y perfiles no-tech ("Zootecnista") veían feed
+        # vacío en el default 50. Con la fórmula nueva ese caso lo cubre
+        # el piso vertical (title_score = 45 para ofertas del mismo
+        # vertical), que ya pasa el threshold 40. El override quedaba
+        # contradiciendo la regla del checkbox — el user siempre veía
+        # matches de 0% aunque no lo pidiera. REMOVIDO.
 
         # Orden — match_desc por default (la promesa del hero: "ordenadas
         # por match"). El user puede invertir con match_asc para revisar
