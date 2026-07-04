@@ -129,3 +129,91 @@ def extract_modality(location: str | None, summary: str | None = None) -> str:
     if _MODALITY_ONSITE_PATTERN.search(haystack):
         return MODALITY_ONSITE
     return MODALITY_UNKNOWN
+
+
+# Salario — extractor heurístico. Regla de diseño: falsos NEGATIVOS son
+# preferibles a falsos POSITIVOS. Preferimos NO mostrar salario que
+# mostrar "3.5" tomado de "Django 3.5". Por eso todos los patrones
+# requieren señales fuertes:
+#   - Símbolo monetario ($, USD, COP, etc.) O
+#   - Palabra clave delante ("salario", "sueldo", "remuneración", "pago")
+# El número desnudo NUNCA se acepta como salario.
+_SALARY_CURRENCIES = r"(?:USD|US\$|EUR|€|COP|MXN|ARS|CLP|PEN|UYU|BRL|BOB|VES|GTQ|CRC|R\$)"
+
+# Bloque de monto: "$3.000.000" o "500" con opcional escalador (k/M/millones).
+_SALARY_AMOUNT = r"\$?\s*[\d][\d.,]{1,}(?:\s*(?:mil|k|m|mm|millones?))?"
+# Rango opcional: " - $4.000.000" / " a 500" / " hasta 2M".
+_SALARY_RANGE = r"(?:\s*(?:a|-|hasta|to)\s*" + _SALARY_AMOUNT + r")?"
+
+# 1) Palabra clave + monto — el más confiable: "Salario: $3.000.000",
+#    "Sueldo 500 USD", "Pago mensual $2000".
+_SALARY_KEYWORD_PATTERN = re.compile(
+    r"(?:salario|sueldo|remuneraci[oó]n|pago|honorarios|ingreso)"
+    r"[^\n]{0,30}?"
+    + _SALARY_AMOUNT
+    + _SALARY_RANGE
+    + r"(?:\s*"
+    + _SALARY_CURRENCIES
+    + r")?",
+    re.IGNORECASE,
+)
+
+# 2) Símbolo/currency + monto standalone. Debe llevar currency o símbolo
+#    $ EXPLÍCITO más rango o currency, para no matchear "$5 café".
+_SALARY_STANDALONE_PATTERN = re.compile(
+    # a) $ + número (min 3 dígitos) + rango opcional + currency obligatoria
+    r"(?:\$\s*[\d][\d.,]{2,}"
+    + _SALARY_RANGE
+    + r"\s*"
+    + _SALARY_CURRENCIES
+    + r"|"
+    # b) currency + número: "USD 2000", "COP 3.000.000"
+    + _SALARY_CURRENCIES
+    + r"\s*[\d][\d.,]{2,}"
+    + _SALARY_RANGE
+    + r"|"
+    # c) número (min 5 dígitos con separadores) + currency: "3.000.000 COP"
+    + r"[\d][\d.,]{4,}\s*"
+    + _SALARY_CURRENCIES
+    + r")",
+    re.IGNORECASE,
+)
+
+# 3) "$1.500.000 mensuales" — símbolo + número con separadores + unidad
+#    de tiempo. Sin currency porque el "mensuales" da el contexto.
+_SALARY_TIMEUNIT_PATTERN = re.compile(
+    r"\$\s*[\d][\d.,]{2,}"
+    + _SALARY_RANGE
+    + r"\s*(?:mensuales?|al\s+mes|por\s+mes|anuales?|al\s+a[nñ]o)",
+    re.IGNORECASE,
+)
+
+
+def extract_salary(summary: str | None) -> str:
+    """Detecta un rango/valor salarial en el summary.
+
+    Devuelve el string tal como apareció (normalizado en espacios) o
+    "" si no encuentra un patrón claro. NO parsea moneda/rango en
+    campos numéricos separados — mejor mostrar el original que arriesgar
+    parseos frágiles que confundan al usuario.
+
+    Orden de intento (más específico → más general):
+      1. Palabra clave + monto (más confiable)
+      2. Símbolo/currency + monto standalone
+      3. $número + unidad de tiempo (mensuales/anuales)
+    """
+    if not summary:
+        return ""
+
+    for pattern in (_SALARY_KEYWORD_PATTERN, _SALARY_STANDALONE_PATTERN, _SALARY_TIMEUNIT_PATTERN):
+        match = pattern.search(summary)
+        if match:
+            # Normalizamos whitespace del match (los portales meten \n,
+            # tabs, dobles espacios) — 1 espacio simple entre tokens.
+            raw = match.group(0).strip()
+            normalized = re.sub(r"\s+", " ", raw)
+            # Cap defensivo — no queremos strings inmanejables si el
+            # regex accidentalmente comió mucho texto.
+            return normalized[:120]
+
+    return ""

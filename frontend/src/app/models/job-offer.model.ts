@@ -13,10 +13,11 @@ export interface JobOffer {
   /** Modalidad detectada heurísticamente (location + summary). Usado
    *  por el filtro del dashboard. */
   modality?: 'remote' | 'hybrid' | 'onsite' | 'unknown';
-  /** Rango salarial parseado del summary. Opcional: muchas ofertas
-   *  no lo publican (sobre todo en LATAM). Cuando el backend lo
-   *  extrae, viene como string ya formateado ("$3M - $5M COP"). */
-  salary?: string;
+  /** Salario tal como aparece en la oferta ("$3.000.000 COP", "USD 2000",
+   *  "Entre 2M y 3M"). Extraído por el backend con
+   *  `jobs.utils.offer_attributes.extract_salary`. Vacío en la mayoría de
+   *  las ofertas LATAM porque los portales no publican salario. */
+  salary_text?: string;
   /** Fecha en que el scraper la guardó. Aproxima "cuándo se publicó",
    * usado para mostrar "hace N días" en el detalle. */
   created_at?: string;

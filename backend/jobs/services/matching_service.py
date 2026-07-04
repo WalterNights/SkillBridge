@@ -1,19 +1,53 @@
 """
 Servicio para matching de ofertas de trabajo con perfiles de usuario.
 
-Diseño del scoring (post-Junio 2026):
-- El cargo profesional pesa MÁS que la lista de skills extraídas, porque
-  muchos posts de empleo no enumeran un stack en el body ("Buscamos
-  desarrollador con experiencia") y antes esos quedaban en 0% y se
-  filtraban. Ahora un job sin keywords cuyo título matchea con el cargo
-  del usuario recibe un score basado en el título solo (capado a 70%
-  para reservar el 100% a coincidencias completas).
-- Cuando el job SÍ trae skills detectadas, el score combina:
-      match_percentage = 60% * title_score + 40% * skill_score
-  El peso favorece al título porque es el indicador más confiable: si
-  no coincide el rol, las skills compartidas suelen ser coincidencias
-  ruidosas (alguien que sabe Python pero el job es "Data Scientist"
-  no es un buen match para un Full Stack Developer).
+Diseño del scoring (Julio 2026 — rewrite honesto):
+El score anterior (60% titulo / 40% skills + boost de vertical) infla el
+match cuando el titulo calza pero faltan skills. Un user Fullstack
+Developer veia "Desarrollador FullStack (Middle)" al 90% con solo 4 de
+13 skills — sensacion de engano. El nuevo scoring es explicito:
+
+    match = max(0, title_score - skill_penalty)
+
+Componentes:
+
+1) title_score — cascada de casos, no un simple recall de tokens:
+
+   - Tokens iguales (post-normalizacion): 100
+   - user_tokens ⊆ job_tokens (user es subset del job): 90
+     Ejemplo: user "Fullstack Developer" vs job "Fullstack Developer .NET"
+   - job_tokens ⊆ user_tokens (job mas generico): 85
+     Ejemplo: user "Senior Backend Developer" vs job "Backend Developer"
+   - Overlap parcial de tokens: (overlap/user_tokens) * 80
+     Cap a 80 porque el rol no calza del todo.
+   - Sin overlap pero misma categoria macro (agro/tech/etc): 45
+     Piso vertical que rescata perfiles como Fabio (zootecnista) viendo
+     ofertas de "Medico Veterinario" — pero YA NO a 90%, ahora honesto.
+   - Sin overlap ni categoria compartida: 15
+     Ultimo recurso; el offer aparece bien al fondo del feed.
+
+2) skill_penalty — proporcional al tamano del stack pedido:
+
+   - Si el job no lista skills (job_keywords vacio): penalty = 0
+     No penalizamos por falta de datos del portal.
+   - Si el job lista skills: penalty = (missing / total) * 100
+     Cada skill faltante vale (100/N). Un job con 3 skills penaliza
+     33.3% por cada faltante; con 12 skills, 8.3% por cada faltante.
+
+3) Combinacion:  match = max(0, title_score - skill_penalty)
+
+Ejemplos verificados:
+  - Walter (Fullstack Developer · python, angular, node) vs...
+    - "Fullstack Developer" sin skills → title 100, penalty 0 → 100
+    - "Fullstack Developer .NET" · [.net, docker, mongo] → title 90,
+      penalty 100 → 0 (le faltan las 3)
+    - "Desarrollador FullStack (Middle)" · 13 skills, 4 matched →
+      title 90, penalty 69 → 21 (el famoso 90% ahora es honesto)
+  - Fabio zootecnista vs "Medico Veterinario" sin skills → title 45
+    (piso vertical), penalty 0 → 45 (pasa el threshold del feed).
+
+Threshold del feed subio de 25% a 40% para acompanar esta formula —
+matches por debajo de 40 son ruido, no relevancia.
 """
 
 from __future__ import annotations
@@ -159,22 +193,73 @@ def _tokenize_title(title: str) -> set[str]:
     return tokens
 
 
-def _calc_title_score(job_title: str, user_title: str) -> int:
-    """Mide qué tan bien el cargo del job calza con el cargo del usuario.
+# Piso vertical: cuando titulo del job y del user no comparten tokens
+# pero pertenecen a la misma categoria macro (tech, agro, etc.). Reemplaza
+# el "boost a 90%" del scoring anterior con un piso mas honesto — Fabio
+# (zootecnista) sigue viendo ofertas de "Medico Veterinario" pero al 45%,
+# no al 90%.
+_TITLE_SCORE_SAME_VERTICAL = 45
 
-    Recall sobre el cargo del usuario: ¿qué fracción de las palabras
-    significativas del cargo del usuario aparecen en el título del job?
-    Recall (no precisión) porque el título del job suele tener palabras
-    extra (seniority, modalidad) que no son ruido para el match —
-    "Senior Full Stack Developer Remote" sigue siendo un match para
-    "Full Stack Developer".
+# Piso ultimo: sin overlap ni vertical compartido. El offer aparece bien
+# al fondo del ranking, casi seguro se filtra por el threshold del feed.
+_TITLE_SCORE_NO_MATCH = 15
+
+
+def _calc_title_score(
+    job_title: str,
+    user_title: str,
+    job_category: str | None = None,
+    user_category: str | None = None,
+) -> int:
+    """Calcula el score de titulo por cascada de casos:
+
+    1. Tokens iguales → 100
+    2. user ⊆ job (rol especifico dentro de titulo mas largo) → 90
+    3. job ⊆ user (job mas generico que el rol del user) → 85
+    4. Overlap parcial → (overlap/user_tokens) * 80
+    5. Sin overlap pero misma categoria macro → 45 (piso vertical)
+    6. Sin overlap ni categoria → 15 (piso minimo)
+
+    La cascada refleja la logica que un humano usa para juzgar "que tan
+    bien calza este rol": exacto > subset > overlap > mismo area > nada.
     """
     user_tokens = _tokenize_title(user_title)
     if not user_tokens:
         return 0
     job_tokens = _tokenize_title(job_title)
+    if not job_tokens:
+        return 0
+
+    if user_tokens == job_tokens:
+        return 100
+
+    if user_tokens.issubset(job_tokens):
+        # Rol del user esta contenido tal cual en el titulo del job —
+        # el job es una variante mas especifica del mismo rol.
+        return 90
+
+    if job_tokens.issubset(user_tokens):
+        # Job es una version mas generica del rol del user (raro pero
+        # valido: user "Senior Backend Developer" vs job "Backend
+        # Developer"). Ligeramente menor que 90 porque el user perdio
+        # especificidad (seniority, etc.) al matchear.
+        return 85
+
     overlap = user_tokens & job_tokens
-    return round((len(overlap) / len(user_tokens)) * 100)
+    if overlap:
+        # Overlap parcial. Cap a 80 — nunca llega a 90 (reservado a
+        # coincidencias subset o exactas).
+        return round((len(overlap) / len(user_tokens)) * 80)
+
+    # Sin overlap directo. Piso vertical si comparten categoria macro.
+    same_vertical = (
+        user_category is not None
+        and user_category != "general"
+        and job_category == user_category
+    )
+    if same_vertical:
+        return _TITLE_SCORE_SAME_VERTICAL
+    return _TITLE_SCORE_NO_MATCH
 
 
 class JobMatchingService:
@@ -191,48 +276,34 @@ class JobMatchingService:
         user_category: str | None = None,
     ) -> dict[str, any]:
         """
-        Calcula el porcentaje de match entre keywords de job y skills de usuario.
+        Calcula el porcentaje de match entre un job y un user.
 
-        Las skills se normalizan vía `common.skills_taxonomy.normalize` antes
-        de comparar — así `React.js` y `react` cuentan como la misma skill.
+        Formula:  match = max(0, title_score - skill_penalty)
+        Detalles completos en el docstring del modulo.
 
         Args:
-            job_keywords: Lista de keywords del trabajo
-            user_skills: Lista de skills del usuario
-            use_semantic: Si True, usa similaridad semántica con NLP
-            job_title: Título del job (opcional, habilita scoring combinado)
-            user_title: Cargo profesional del usuario (opcional)
-            job_category: Categoria macro del job (`agro`, `tech`, etc.)
+            job_keywords: Lista de keywords del job
+            user_skills: Lista de skills del user
+            use_semantic: Si True, usa similaridad semantica NLP
+            job_title: Titulo del job (habilita cascada de titulo)
+            user_title: Cargo del user
+            job_category: Categoria macro del job (tech, agro, etc.)
             user_category: Categoria macro del user
 
         Returns:
             Dict con matched_skills, missing_skills, match_percentage.
-            Cuando se pasan `job_title` y `user_title` también incluye
-            `title_score` y `skill_score` para diagnóstico.
-
-        Same-vertical boost: cuando `job_category == user_category` y la
-        categoria no es 'general', el matcher reconoce que la oferta
-        pertenece al area del user (un Zootecnista y un Medico Veterinario
-        comparten el universo agro aunque sus titulos no compartan tokens).
-        En ese caso:
-          - title_score recibe un piso de 50 (la categoria es evidencia
-            de relevancia que el word overlap por si solo no captura)
-          - si skill_score < 50, los keywords del job se consideran
-            ruido generico dentro del vertical y se ignoran — el match
-            se basa solo en title_score, capado a 90 (reservamos 100
-            para evidencia completa de overlap + skills)
-          - si skill_score >= 50, se usa la formula combinada normal
-            (los skills aportan senal real)
+            Cuando hay job_title y user_title tambien incluye
+            title_score, skill_score y skill_penalty para diagnostico.
         """
-        # Normalizar (lowercase + strip + aliases del taxonomía)
+        # Normalizar (lowercase + strip + aliases del taxonomia)
         job_keywords_clean = [normalize(kw) for kw in job_keywords if kw.strip()]
         user_skills_clean = [normalize(skill) for skill in user_skills if skill.strip()]
 
-        # Calcular skills que coinciden (matching exacto)
+        # Skills matcheadas / faltantes (exact match sobre normalized).
         matched_skills = [kw for kw in job_keywords_clean if kw in user_skills_clean]
         missing_skills = [kw for kw in job_keywords_clean if kw not in user_skills_clean]
 
-        # Matching semántico opcional para las skills faltantes
+        # Matching semantico opcional para las skills faltantes.
         if use_semantic and missing_skills:
             semantic_matches = JobMatchingService._find_semantic_matches(
                 missing_skills, user_skills_clean
@@ -246,8 +317,8 @@ class JobMatchingService:
             else 0
         )
 
-        # Modo legacy: sin info de título → comportamiento original (solo skills).
-        # Preserva backward-compat con consumidores que todavía no pasan títulos.
+        # Modo legacy: sin info de titulo → comportamiento original (solo skills).
+        # Preserva backward-compat con consumidores que todavia no pasan titulos.
         if not job_title or not user_title:
             return {
                 "matched_skills": matched_skills,
@@ -255,48 +326,30 @@ class JobMatchingService:
                 "match_percentage": skill_score,
             }
 
-        # Normalizamos el title del usuario al rol PRINCIPAL antes de
-        # calcular el score. Sin esto, perfiles multi-rol ("UI/UX
-        # Designer/Industrial designer/expert in 3d") generan tantos
-        # user_tokens que ninguna oferta real llega al 60% (incluso una
-        # oferta perfecta de "Diseñador UI/UX" saca 33%). Ver el
-        # docstring de `_extract_primary_role` para el racional completo.
-        # El job_title NO se normaliza — los títulos de ofertas son por
-        # diseño un único rol, agregar más overhead no aporta.
+        # Normalizamos el user title al rol PRINCIPAL antes de calcular
+        # el title_score. Sin esto, perfiles multi-rol ("UI/UX Designer/
+        # Industrial designer/expert in 3d") generan tantos tokens que
+        # ninguna oferta real pasa el threshold. Ver docstring de
+        # `_extract_primary_role`.
         normalized_user_title = _extract_primary_role(user_title)
-        title_score = _calc_title_score(job_title, normalized_user_title)
-
-        same_category = (
-            user_category is not None
-            and user_category != "general"
-            and job_category == user_category
+        title_score = _calc_title_score(
+            job_title,
+            normalized_user_title,
+            job_category=job_category,
+            user_category=user_category,
         )
 
-        if same_category:
-            # La categoria ya garantiza relevancia a alto nivel — un
-            # Zootecnista y un Medico Veterinario son del mismo universo
-            # aun cuando sus titulos no compartan ningun token. Sin este
-            # piso, ofertas claramente del area del user (Veterinario,
-            # Avicultor, Agricola) salian con 0% en el feed de Fabio
-            # mientras solo "Medico Veterinario y/o Zootecnista" llegaba
-            # al 60% por contener literalmente la palabra "zootecnista".
-            effective_title = max(title_score, 50)
-            if skill_score >= 50:
-                combined = round(0.6 * effective_title + 0.4 * skill_score)
-            else:
-                # Skills del job suelen ser ruido generico dentro del
-                # vertical ("excel", "atencion al cliente") — el title
-                # con piso manda. Cap a 90 para reservar 100 al match
-                # completo (overlap real + skills).
-                combined = min(effective_title, 90)
-        elif not job_keywords_clean:
-            # Descripción vaga sin stack listado — confiamos en el título
-            # solo, capado a 70% para reservar 100% a evidencia completa.
-            combined = min(title_score, 70)
+        # Skill penalty proporcional al total de skills del job. Si el
+        # job no lista skills → no penalizamos (no castigar por falta de
+        # datos del portal). Con skills → cada faltante vale (100/N).
+        if job_keywords_clean:
+            missing_count = len(missing_skills)
+            total_count = len(job_keywords_clean)
+            skill_penalty = round((missing_count / total_count) * 100)
         else:
-            # Pesos: 60% título / 40% skills. El título es el indicador
-            # de rol; las skills sin contexto de rol ruidean fácil.
-            combined = round(0.6 * title_score + 0.4 * skill_score)
+            skill_penalty = 0
+
+        combined = max(0, title_score - skill_penalty)
 
         return {
             "matched_skills": matched_skills,
@@ -304,6 +357,7 @@ class JobMatchingService:
             "match_percentage": combined,
             "title_score": title_score,
             "skill_score": skill_score,
+            "skill_penalty": skill_penalty,
         }
 
     @staticmethod
@@ -339,19 +393,22 @@ class JobMatchingService:
 
     @staticmethod
     def filter_jobs_by_skills(
-        jobs: QuerySet[JobOffer], user_profile: UserProfile, min_match_percentage: int = 25
+        jobs: QuerySet[JobOffer], user_profile: UserProfile, min_match_percentage: int = 40
     ) -> list[JobOffer]:
         """
-        Filtra jobs por match combinado (cargo + skills) y porcentaje mínimo.
+        Filtra jobs por match combinado y porcentaje minimo.
 
-        El umbral default bajó a 25% (era 50%) para acompañar la nueva
-        fórmula combinada: un job vago con título matcheado puede caer
-        en ~30-42% y antes se filtraba.
+        El umbral default subio a 40% (era 25%) para acompanar la formula
+        nueva (title_score - skill_penalty). Con la formula anterior un
+        job vago sin skills salia en 30-42%; con la nueva, matches por
+        debajo de 40 son ruido, no relevancia. El piso vertical (45)
+        garantiza que perfiles como Fabio (zootecnista) sigan viendo
+        ofertas de "Medico Veterinario" — al 45, no al 90.
 
         Args:
             jobs: QuerySet de JobOffer
             user_profile: Perfil del usuario
-            min_match_percentage: Porcentaje mínimo de match (default: 25)
+            min_match_percentage: Porcentaje minimo de match (default: 40)
 
         Returns:
             Lista de JobOffer filtrados y enriquecidos con datos de match

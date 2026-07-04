@@ -59,6 +59,18 @@ class JobOffer(models.Model):
         db_index=True,
         help_text="Modalidad de trabajo detectada heurísticamente",
     )
+    # Salario tal como aparece en la oferta ("$3.000.000 COP", "USD 2000",
+    # "Entre 2M y 3M"). Extraído heurísticamente del summary por
+    # `jobs.utils.offer_attributes.extract_salary`. Vacío cuando el portal
+    # no lo publica — la mayoría de ofertas LATAM lo omiten. NO estructurado
+    # (min/max/currency separados) — mejor mostrar el string original que
+    # inventar parseos que fallen y confundan. Si a futuro necesitamos
+    # filtrar por rango, agregamos campos numéricos derivados.
+    salary_text = models.CharField(
+        max_length=120,
+        blank=True,
+        help_text="Salario tal como aparece en la oferta. Vacío si no se detectó",
+    )
     # Categoría profesional macro de la oferta, calculada al guardar via
     # `users.services.profession_classifier.infer_profession_category`
     # sobre `title + summary`. CRITICO para evitar mezclar ofertas entre

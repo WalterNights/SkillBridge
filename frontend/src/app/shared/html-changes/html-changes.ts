@@ -12,7 +12,8 @@ export class HTMLChangesComponent {
    * @returns Hex color string
    */
   getColor(match: number): string {
-    if (match === MATCH_THRESHOLDS.EXCELLENT) {
+    // Rango, no valor exacto — con el nuevo matcher el 100 es raro.
+    if (match >= MATCH_THRESHOLDS.EXCELLENT) {
       return MATCH_COLORS.EXCELLENT;
     }
     if (match >= MATCH_THRESHOLDS.GOOD_MIN && match <= MATCH_THRESHOLDS.GOOD_MAX) {

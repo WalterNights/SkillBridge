@@ -209,7 +209,11 @@ class JobService:
         la batch entera. Aprendido tras un `DataError` por una sola URL
         de Computrabajo > 200 chars que rompía todas las demás.
         """
-        from jobs.utils.offer_attributes import extract_country, extract_modality
+        from jobs.utils.offer_attributes import (
+            extract_country,
+            extract_modality,
+            extract_salary,
+        )
         from users.services.profession_classifier import infer_profession_category
 
         created: list[JobOffer] = []
@@ -222,6 +226,7 @@ class JobService:
                 # crudos.
                 country = extract_country(data.location)
                 modality = extract_modality(data.location, data.summary)
+                salary_text = extract_salary(data.summary)
                 # Category: clasificamos SOLO con el title. El summary
                 # introduce falsos positivos porque menciona contexto
                 # del SECTOR (no del rol del candidato).
@@ -251,6 +256,7 @@ class JobService:
                         "country": country,
                         "modality": modality,
                         "category": category,
+                        "salary_text": salary_text,
                     },
                 )
                 if was_created:

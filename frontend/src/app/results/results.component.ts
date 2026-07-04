@@ -288,7 +288,7 @@ export class ResultsComponent {
     switch (this.selectedFilter) {
       case 'good':
         return this.offers.filter(
-          (offer) => offer.match_percentage === this.MATCH_THRESHOLD.EXCELLENT,
+          (offer) => offer.match_percentage >= this.MATCH_THRESHOLD.EXCELLENT,
         );
       case 'regular':
         return this.offers.filter(
@@ -379,9 +379,26 @@ export class ResultsComponent {
     return portalMeta(offer);
   }
 
-  /** Tier de match — usado como atributo CSS para colorear borde + pill. */
+  /** Modalidad → label ES para el chip. 'unknown' / undefined → '' (chip
+   *  no se renderiza). Evita mostrar "Sin especificar" que agrega ruido. */
+  modalityLabel(modality: JobOffer['modality']): string {
+    switch (modality) {
+      case 'remote':
+        return 'Remoto';
+      case 'hybrid':
+        return 'Híbrido';
+      case 'onsite':
+        return 'Presencial';
+      default:
+        return '';
+    }
+  }
+
+  /** Tier de match — usado como atributo CSS para colorear borde + pill.
+   *  EXCELLENT es rango (80-100), no valor exacto — con la formula nueva
+   *  el 100 es raro y no queremos que solo esos ofertas tengan el tier alto. */
   matchTier(percentage: number): 'excellent' | 'good' | 'regular' {
-    if (percentage === this.MATCH_THRESHOLD.EXCELLENT) return 'excellent';
+    if (percentage >= this.MATCH_THRESHOLD.EXCELLENT) return 'excellent';
     if (percentage >= this.MATCH_THRESHOLD.GOOD_MIN) return 'good';
     return 'regular';
   }

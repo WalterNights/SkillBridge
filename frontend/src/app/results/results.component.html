@@ -223,10 +223,21 @@
           </span>
         </p>
 
-        <!-- Salario (solo si el backend pudo parsearlo del summary) -->
-        <div *ngIf="offer.salary" class="salary-row mb-4">
-          <span class="material-symbols-outlined salary-icon" style="font-size: 14px">payments</span>
-          <span class="text-sm font-medium text-bone">{{ offer.salary }}</span>
+        <!-- Modalidad + Salario — meta chips arriba de skills. Solo se
+             renderizan si el backend detectó el dato; 'unknown' de
+             modalidad se oculta para no mostrar chips vacíos. -->
+        <div
+          *ngIf="modalityLabel(offer.modality) || offer.salary_text"
+          class="meta-row mb-4 flex items-center gap-2 flex-wrap"
+        >
+          <span *ngIf="modalityLabel(offer.modality)" class="meta-chip">
+            <span class="material-symbols-outlined" style="font-size: 13px">work</span>
+            {{ modalityLabel(offer.modality) }}
+          </span>
+          <span *ngIf="offer.salary_text" class="meta-chip meta-chip--salary">
+            <span class="material-symbols-outlined" style="font-size: 13px">payments</span>
+            {{ offer.salary_text }}
+          </span>
         </div>
 
         <!-- Skills coincidentes: número + barra -->

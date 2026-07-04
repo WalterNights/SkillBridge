@@ -111,29 +111,72 @@ class TestTitleTokenization:
 
 @pytest.mark.unit
 class TestTitleScore:
-    """Recall sobre el cargo del usuario: qué fracción de sus palabras
-    significativas aparece en el título del job."""
+    """Cascada de casos del title_score:
+    1. tokens iguales → 100
+    2. user ⊆ job → 90
+    3. job ⊆ user → 85
+    4. overlap parcial → (overlap/user_tokens) * 80
+    5. sin overlap pero same vertical → 45
+    6. sin overlap sin vertical → 15
+    """
 
     def test_exact_match_returns_100(self):
         assert _calc_title_score("Full Stack Developer", "Full Stack Developer") == 100
 
     def test_es_en_synonym_match_returns_100(self):
-        # "Desarrollador" canoniza a "developer" → matchea con job en EN
+        # "Desarrollador" canoniza a "developer" → tokens iguales tras normalizar
         assert _calc_title_score("Full Stack Developer", "Desarrollador Full Stack") == 100
 
-    def test_job_with_extra_words_still_full_match(self):
-        # User: "Full Stack Developer" / Job: "Senior Full Stack Developer Remote"
-        # Las palabras del user están todas → 100%
+    def test_user_subset_of_job_returns_90(self):
+        # User: "Full Stack Developer" ⊆ Job: "Senior Full Stack Developer Remote"
+        # El rol esta en el job, este solo agrega seniority/modalidad.
         assert _calc_title_score(
             "Senior Full Stack Developer Remote", "Full Stack Developer"
-        ) == 100
+        ) == 90
 
-    def test_partial_overlap_returns_proportion(self):
-        # User tokens {"backend", "developer"} vs job {"frontend", "developer"} → 1/2 = 50%
-        assert _calc_title_score("Frontend Developer", "Backend Developer") == 50
+    def test_job_subset_of_user_returns_85(self):
+        # User: "Senior Backend Developer" ⊇ Job: "Backend Developer"
+        # Job es una version mas generica del rol; el user calza pero perdio
+        # especificidad (senior).
+        assert _calc_title_score("Backend Developer", "Senior Backend Developer") == 85
 
-    def test_zero_overlap_returns_zero(self):
-        assert _calc_title_score("Marketing Manager", "Backend Developer") == 0
+    def test_partial_overlap_returns_proportion_of_80(self):
+        # User {"backend", "developer"} vs job {"frontend", "developer"} → 1/2 * 80 = 40
+        assert _calc_title_score("Frontend Developer", "Backend Developer") == 40
+
+    def test_zero_overlap_no_vertical_returns_floor_15(self):
+        # Sin categoria compartida → piso minimo (aparece al fondo del feed).
+        assert _calc_title_score("Marketing Manager", "Backend Developer") == 15
+
+    def test_zero_overlap_same_vertical_returns_45(self):
+        # Titulos que no comparten tokens pero comparten vertical macro
+        # (agro). Rescata a Fabio (zootecnista) para ver "Medico Veterinario"
+        # al 45%, no al 90% que inflaba el sistema anterior.
+        assert _calc_title_score(
+            "Medico Veterinario",
+            "Zootecnista",
+            job_category="agro",
+            user_category="agro",
+        ) == 45
+
+    def test_zero_overlap_different_vertical_returns_floor_15(self):
+        # Aunque los rectores tengan tokens en comun no pertenecen — pero
+        # categorias distintas → piso 15, no 45.
+        assert _calc_title_score(
+            "Backend Developer",
+            "Zootecnista",
+            job_category="tech",
+            user_category="agro",
+        ) == 15
+
+    def test_general_user_category_no_vertical_floor(self):
+        # user_category = "general" no dispara piso vertical (comodin).
+        assert _calc_title_score(
+            "Backend Developer",
+            "Marketing Manager",
+            job_category="tech",
+            user_category="general",
+        ) == 15
 
     def test_empty_user_title_returns_zero(self):
         assert _calc_title_score("Backend Developer", "") == 0
@@ -141,8 +184,9 @@ class TestTitleScore:
 
 @pytest.mark.unit
 class TestCalculateMatchPercentageCombined:
-    """Modo combinado: 60% título + 40% skills, con fallback a título-solo
-    cuando el job no trae stack listado."""
+    """Formula: match = max(0, title_score - skill_penalty).
+    skill_penalty = (missing / total_job_skills) * 100 cuando el job lista
+    skills; 0 cuando no lista."""
 
     def test_title_and_skills_full_match_returns_100(self):
         result = JobMatchingService.calculate_match_percentage(
@@ -154,43 +198,83 @@ class TestCalculateMatchPercentageCombined:
         assert result["match_percentage"] == 100
         assert result["title_score"] == 100
         assert result["skill_score"] == 100
+        assert result["skill_penalty"] == 0
 
-    def test_vague_job_with_title_match_relies_on_title(self):
-        """Caso real: 'Buscamos desarrollador con experiencia' — sin keywords
-        detectadas pero el rol coincide. Antes daba 0%, ahora levanta."""
+    def test_vague_job_without_skills_uses_title_only(self):
+        """Job sin keywords listadas — no penalizamos por falta de datos
+        del portal. Match = title_score sin ajustes."""
         result = JobMatchingService.calculate_match_percentage(
-            job_keywords=[],  # descripción vaga, sin stack
+            job_keywords=[],  # descripcion vaga, sin stack
             user_skills=["python", "django"],
             job_title="Desarrollador Full Stack",
             user_title="Full Stack Developer",
         )
-        # Título 100% (canoniza ES↔EN), capado a 70% para no inventar 100%
-        assert result["match_percentage"] == 70
+        # Titulo 100% (canoniza ES↔EN), sin penalty → 100.
+        assert result["match_percentage"] == 100
         assert result["skill_score"] == 0
+        assert result["skill_penalty"] == 0
 
-    def test_title_match_with_no_skill_overlap_still_passes_threshold(self):
-        """Job de Backend Developer en Java cuando user es Backend Developer Python.
-        Antes: skills 0% → filtrado. Ahora: título 100%, combinado 60%."""
+    def test_title_perfect_but_all_skills_missing_goes_to_zero(self):
+        """Job Backend Developer que pide Java+Spring, user es Backend Developer
+        con Python+Django. Titulo 100% pero le faltan las 2/2 skills → penalty
+        100, match 0. Es honesto — no tenes ninguna de las skills que piden."""
         result = JobMatchingService.calculate_match_percentage(
             job_keywords=["java", "spring"],
             user_skills=["python", "django"],
             job_title="Backend Developer",
             user_title="Backend Developer",
         )
-        # 0.6 * 100 + 0.4 * 0 = 60
-        assert result["match_percentage"] == 60
+        assert result["match_percentage"] == 0
+        assert result["title_score"] == 100
+        assert result["skill_penalty"] == 100
+
+    def test_title_perfect_half_skills_missing(self):
+        """Titulo 100%, matcheas 1 de 2 skills → penalty 50, match 50."""
+        result = JobMatchingService.calculate_match_percentage(
+            job_keywords=["python", "docker"],
+            user_skills=["python"],
+            job_title="Backend Developer",
+            user_title="Backend Developer",
+        )
+        assert result["match_percentage"] == 50
+        assert result["skill_penalty"] == 50
+
+    def test_screenshot_case_reported_by_user(self):
+        """Caso concreto del screenshot que motivo el rewrite:
+        Walter (Fullstack Developer) vs "Desarrollador FullStack (Middle)"
+        con 13 skills pedidas, 4 matcheadas. Con la formula anterior daba
+        90% (percibido como deshonesto). Con la nueva debe rondar 21%."""
+        job_skills = [
+            "react", "nodejs", "postgresql", "docker",
+            "calidad", "comunicacion", "dotnet", "erp",
+            "mongodb", "proactividad", "rest", "sql", "git",
+        ]
+        user_skills = ["react", "nodejs", "postgresql", "docker"]
+        result = JobMatchingService.calculate_match_percentage(
+            job_keywords=job_skills,
+            user_skills=user_skills,
+            job_title="Desarrollador FullStack (Middle)",
+            user_title="Fullstack Developer",
+        )
+        # title: user "fullstack developer" ⊆ job "developer fullstack middle" → 90
+        # penalty: 9/13 * 100 = 69
+        # match: 90 - 69 = 21
+        assert result["title_score"] == 90
+        assert result["skill_penalty"] == 69
+        assert result["match_percentage"] == 21
 
     def test_skills_match_but_title_mismatch_gets_low_score(self):
-        """User es Backend Dev, job es Data Scientist que pide Python.
-        Skills 100% pero rol no es el nuestro → no es buen match."""
+        """User es Backend Developer, job es Data Scientist que pide Python.
+        Sin overlap de tokens ni misma categoria → title 15, sin skills
+        faltantes → penalty 0, match 15. Aparece en el fondo del feed."""
         result = JobMatchingService.calculate_match_percentage(
             job_keywords=["python"],
             user_skills=["python"],
             job_title="Data Scientist",
             user_title="Backend Developer",
         )
-        # 0.6 * 0 + 0.4 * 100 = 40 — pasa el umbral 25 pero está claramente abajo del 60+
-        assert result["match_percentage"] == 40
+        # title = 15 (piso sin overlap sin vertical), penalty = 0
+        assert result["match_percentage"] == 15
 
 
 @pytest.mark.unit
@@ -285,115 +369,109 @@ class TestExtractPrimaryRole:
 
 
 @pytest.mark.unit
-class TestSameVerticalBoost:
-    """Caso real cliente Fabio (zootecnista, 2026-06-29):
+class TestSameVerticalFloor:
+    """Piso vertical (reemplaza el "boost" del scoring anterior).
 
-    El matcher daba 0% a ofertas claramente del area del user porque
-    los titulos no compartian tokens:
+    Caso Fabio (zootecnista, 2026-06-29): ofertas del area del user con
+    titulos que no comparten tokens salian a 0%.
       - 'Zootecnista' (user) vs 'Medico Veterinario' (job) -> overlap 0
       - 'Zootecnista' vs 'Avicultura' -> overlap 0
-      - 'Zootecnista' vs 'Empresas agricolas' -> overlap 0
 
-    El classifier YA reconoce ambos titulos como `agro`. El boost
-    aprovecha esa info: cuando `job_category == user_category != 'general'`,
-    el title_score recibe piso de 50 y se ignoran skills del job que
-    suelen ser ruido generico dentro del vertical."""
+    El classifier reconoce ambos como `agro`. Antes: title 0 → boost a 50
+    → combined 90 (deshonesto). Ahora: title 45 (piso vertical) → penalty
+    proporcional a skills faltantes → match honesto entre 0 y 45.
+    """
 
     AGRO = dict(job_category="agro", user_category="agro")
 
-    def test_same_category_no_overlap_floors_at_50(self):
-        """Caso del bug original: titulos sin overlap pero same-vertical."""
+    def test_no_overlap_same_vertical_without_skills_returns_floor(self):
+        """Caso central: titulos sin overlap, job sin skills detectadas.
+        Fabio ve la oferta al 45% — pasa el threshold del feed (40)."""
         result = JobMatchingService.calculate_match_percentage(
-            job_keywords=["excel"],  # ruido generico tipico de Computrabajo
+            job_keywords=[],  # sin skills en el job
             user_skills=["ganado", "pasturas"],
             job_title="Medico Veterinario",
             user_title="Zootecnista",
             **self.AGRO,
         )
-        # title_score raw = 0, floored a 50; skill_score = 0; combined = min(50,90) = 50
-        assert result["match_percentage"] == 50
-        assert result["title_score"] == 0  # raw para diagnostico
+        assert result["match_percentage"] == 45
+        assert result["title_score"] == 45
+        assert result["skill_penalty"] == 0
 
-    def test_same_category_direct_title_overlap_caps_at_90(self):
-        """Direct title match same-vertical sin skills sale a 90 (capado)."""
+    def test_no_overlap_same_vertical_with_generic_job_skills(self):
+        """Job del mismo vertical con skills genericas que Fabio no tiene.
+        Antes: se ignoraban las skills → 90. Ahora: penalizan honestamente."""
         result = JobMatchingService.calculate_match_percentage(
             job_keywords=["excel"],
+            user_skills=["ganado", "pasturas"],
+            job_title="Medico Veterinario",
+            user_title="Zootecnista",
+            **self.AGRO,
+        )
+        # title = 45 (piso), penalty = 1/1 * 100 = 100 → match = max(0, 45-100) = 0.
+        # Realistico: el job pide 1 skill (excel) que el user no tiene,
+        # y el titulo no calza directamente. No pasa el threshold.
+        assert result["match_percentage"] == 0
+
+    def test_direct_title_overlap_same_vertical_uses_100_not_floor(self):
+        """Cuando el titulo SI matchea directamente, no aplica el piso —
+        usa el score real (100). El piso es para RESCATAR casos sin overlap."""
+        result = JobMatchingService.calculate_match_percentage(
+            job_keywords=[],
             user_skills=["ganado"],
             job_title="Medico Veterinario y/o Zootecnista",
             user_title="Zootecnista",
             **self.AGRO,
         )
-        # title_score = 100 (overlap completo), skill_score = 0
-        # same_cat + skill<50 -> combined = min(100, 90) = 90
+        # user tokens {zootecnista} ⊆ job tokens {medico, veterinario,
+        # zootecnista} → title = 90. Sin skills → penalty 0 → 90.
         assert result["match_percentage"] == 90
 
-    def test_same_category_with_strong_skills_uses_combined(self):
-        """Si skills aportan senal real (>=50%), usar formula combinada."""
+    def test_no_overlap_same_vertical_with_matched_skills_stays_at_floor(self):
+        """Job del vertical del user, sin overlap de titulo, pero user
+        tiene todas las skills → penalty 0 → match = 45 (piso vertical)."""
         result = JobMatchingService.calculate_match_percentage(
             job_keywords=["veterinaria", "ganado"],
-            user_skills=["veterinaria", "ganado"],  # 100% skill match
+            user_skills=["veterinaria", "ganado"],  # 2/2 matcheadas
             job_title="Veterinario Senior",
             user_title="Zootecnista",
             **self.AGRO,
         )
-        # title_score raw = 0, floored 50; skill_score = 100
-        # skill>=50 -> combined = 0.6*50 + 0.4*100 = 70
-        assert result["match_percentage"] == 70
+        assert result["match_percentage"] == 45  # piso, sin penalty
 
-    def test_same_category_low_skill_match_uses_title_only(self):
-        """Skill match marginal (<50) NO debe arrastrar el match abajo del piso."""
+    def test_different_category_uses_no_match_floor(self):
+        """Si categorias difieren, cae al piso minimo (15)."""
         result = JobMatchingService.calculate_match_percentage(
-            job_keywords=["excel", "ofimatica", "comunicacion"],
-            user_skills=["excel"],  # 1/3 = 33% -> < 50
-            job_title="Responsable de Produccion Avicola",
-            user_title="Zootecnista",
-            **self.AGRO,
-        )
-        # title_score raw = 0, floored 50; skill_score = 33 < 50
-        # -> path title-only: combined = min(50, 90) = 50
-        # Sin el guard "skill<50", seria 0.6*50 + 0.4*33 = 43 (peor)
-        assert result["match_percentage"] == 50
-
-    def test_different_category_no_boost(self):
-        """Si categorias difieren, el boost NO aplica — comportamiento legacy."""
-        result = JobMatchingService.calculate_match_percentage(
-            job_keywords=["python"],
+            job_keywords=[],
             user_skills=["ganado"],
             job_title="Backend Developer",
             user_title="Zootecnista",
             job_category="tech",
             user_category="agro",
         )
-        # title_score = 0, skill_score = 0 -> combined = 0
-        assert result["match_percentage"] == 0
+        assert result["match_percentage"] == 15
 
-    def test_general_user_category_no_boost(self):
-        """User con category='general' (titulo no clasificable) NO recibe boost,
-        incluso si el job es de alguna categoria. Sin esto users 'general'
-        verian todo a 50% sin discriminacion."""
+    def test_general_user_category_no_vertical_floor(self):
+        """user_category='general' NO dispara piso vertical (comodin)."""
         result = JobMatchingService.calculate_match_percentage(
-            job_keywords=["excel"],
+            job_keywords=[],
             user_skills=["ganado"],
             job_title="Medico Veterinario",
             user_title="Foo Bar Baz",  # no clasifica
             job_category="agro",
             user_category="general",
         )
-        # same_category=False -> formula legacy
-        # title 0, skill 0 -> combined 0
-        assert result["match_percentage"] == 0
+        assert result["match_percentage"] == 15  # piso minimo
 
     def test_backward_compat_without_categories(self):
-        """Sin pasar categories, comportamiento es el legacy (boost no aplica)."""
+        """Sin categorias no hay piso vertical — cae al piso minimo."""
         result = JobMatchingService.calculate_match_percentage(
-            job_keywords=["excel"],
+            job_keywords=[],
             user_skills=["ganado"],
             job_title="Medico Veterinario",
             user_title="Zootecnista",
         )
-        # Sin user_category/job_category -> same_category=False -> legacy
-        # title 0, skill 0 -> combined 0
-        assert result["match_percentage"] == 0
+        assert result["match_percentage"] == 15
 
 
 @pytest.mark.unit
@@ -407,21 +485,21 @@ class TestMatchingWithMultiRoleTitle:
         "augmented reality and animation"
     )
 
-    def test_perfect_ui_ux_offer_reaches_90_plus(self):
-        """Oferta de 'Diseñador UI/UX Senior' con skills 75% match
-        debe llegar >= 60% (era 50% antes del fix)."""
+    def test_perfect_ui_ux_offer_scores_well(self):
+        """Oferta de 'Diseñador UI/UX Senior' con 3/4 skills matcheadas.
+        Con la nueva formula: user_tokens {ui, ux, designer} ⊆ job_tokens
+        → title 90. Penalty = 1/4 * 100 = 25. Match = 65 (buen tier)."""
         result = JobMatchingService.calculate_match_percentage(
             job_keywords=["figma", "sketch", "photoshop", "illustrator"],
             user_skills=["figma", "sketch", "photoshop"],  # 3/4 = 75%
             job_title="Diseñador UI/UX Senior",
             user_title=self.JORGE_TITLE,
         )
-        # title_score: tokens user normalizado {ui, ux, designer} vs
-        # job tokens {diseñador→designer, ui, ux, senior} → overlap = 3,
-        # title_score = 3/3 = 100%. skill_score = 3/4 = 75%.
-        # combined = 0.6*100 + 0.4*75 = 90%.
-        assert result["match_percentage"] >= 60
-        assert result["match_percentage"] == 90
+        # title: user {ui, ux, designer} ⊆ job {ui, ux, designer, senior}
+        # → title = 90 (user es subset del job).
+        # skills: 3/4 matched, 1/4 missing → penalty = 25.
+        # match = 90 - 25 = 65 (buen tier: 60-79).
+        assert result["match_percentage"] == 65
 
     def test_motion_designer_offer_still_filtered(self):
         """Oferta tangente ('Motion Designer Sr.') NO debe alcanzar 60%
@@ -432,10 +510,11 @@ class TestMatchingWithMultiRoleTitle:
             job_title="Motion Designer Sr.",
             user_title=self.JORGE_TITLE,
         )
-        # title_score: {ui, ux, designer} vs {motion, designer, sr} →
-        # overlap = 1 (designer), title_score = 1/3 = 33%.
-        # skill_score = 0%. combined = 0.6*33 + 0.4*0 = 20%.
-        assert result["match_percentage"] < 60
+        # title: {ui, ux, designer} vs {motion, designer, sr} → overlap 1,
+        # ni subset ni superset → parcial = 1/3 * 80 = 27.
+        # skills: 2/2 missing → penalty = 100.
+        # match = max(0, 27 - 100) = 0.
+        assert result["match_percentage"] < 40
 
 
 @pytest.mark.django_db
@@ -470,8 +549,9 @@ class TestFilterJobsBySkills:
         assert results[0].id == high.id
 
     def test_vague_job_with_role_match_passes(self, user_profile):
-        """Verificación clave del refactor: un job sin keywords detectadas
-        pero cuyo título matchea el cargo del usuario YA NO se filtra."""
+        """Un job sin keywords detectadas pero cuyo titulo matchea el cargo
+        del usuario NO se penaliza — no castigamos por falta de datos
+        del portal."""
         from jobs.models import JobOffer
 
         vague = JobOffer.objects.create(
@@ -482,15 +562,15 @@ class TestFilterJobsBySkills:
         )
 
         results = JobMatchingService.filter_jobs_by_skills(
-            JobOffer.objects.all(), user_profile, min_match_percentage=25
+            JobOffer.objects.all(), user_profile, min_match_percentage=40
         )
 
-        # filter_jobs_by_skills enriquece los objetos que devuelve, no los
-        # originales. Buscamos el job vago dentro del resultado.
         result_ids = {j.id for j in results}
         assert vague.id in result_ids
         vague_result = next(j for j in results if j.id == vague.id)
-        assert vague_result.match_percentage == 70  # título capado
+        # user "Backend Developer" ⊆ job "Backend Developer Sr." → title 90.
+        # Sin skills → penalty 0 → match = 90.
+        assert vague_result.match_percentage == 90
 
     def test_no_skills_no_title_returns_empty(self, user, db):
         from users.models import UserProfile

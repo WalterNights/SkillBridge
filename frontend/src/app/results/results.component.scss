@@ -596,20 +596,34 @@
 }
 
 /* =========================
-   Salary row (opcional — solo aparece si offer.salary está poblado)
+   Meta chips (modalidad + salario, opcionales) — sustituyen el legacy
+   .salary-row de una sola fila. Se muestran arriba de la barra de skills.
    ========================= */
-.salary-row {
+.meta-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
+  gap: 5px;
+  padding: 4px 9px;
   border-radius: 8px;
-  background: rgba(249, 115, 22, 0.06);
-  border: 1px solid rgba(249, 115, 22, 0.18);
-}
+  font-size: 12px;
+  font-weight: 500;
+  color: #cfcfc8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 
-.salary-icon {
-  color: #f97316;
+  .material-symbols-outlined {
+    color: #8b8a85;
+  }
+
+  &--salary {
+    color: #f97316;
+    background: rgba(249, 115, 22, 0.06);
+    border-color: rgba(249, 115, 22, 0.18);
+
+    .material-symbols-outlined {
+      color: #f97316;
+    }
+  }
 }
 
 /* Line clamp helpers — fall back gracefully on older browsers. */

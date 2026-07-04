@@ -1,12 +1,24 @@
 /**
- * Match percentage thresholds for job offers
+ * Match percentage thresholds for job offers.
+ *
+ * Recalibrado junto con el rewrite del matcher (Julio 2026): la formula
+ * pasa a `title_score - skill_penalty`. Con esa formula el 100 es raro
+ * (exige title exacto + todas las skills) y matches por debajo de 40 son
+ * ruido — corresponden con el threshold del feed backend
+ * (`min_match_percentage=40`).
+ *
+ * Tiers:
+ *   EXCELLENT: 80-100  → borde/pill naranja fuerte
+ *   GOOD:      60-79   → tier medio-alto
+ *   REGULAR:   40-59   → tier bajo (pero sigue en feed)
+ *   <40                → filtrado por el backend, no aparece
  */
 export const MATCH_THRESHOLDS = {
-  EXCELLENT: 100,
-  GOOD_MIN: 70,
-  GOOD_MAX: 99,
-  REGULAR_MIN: 50,
-  REGULAR_MAX: 69,
+  EXCELLENT: 80,
+  GOOD_MIN: 60,
+  GOOD_MAX: 79,
+  REGULAR_MIN: 40,
+  REGULAR_MAX: 59,
 } as const;
 
 /**

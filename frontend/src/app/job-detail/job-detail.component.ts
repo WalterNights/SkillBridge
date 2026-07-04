@@ -191,20 +191,22 @@ export class JobDetailComponent implements OnInit {
     this.location.back();
   }
 
-  /** Tier visual del match — mismo mapeo que el feed para continuidad. */
+  /** Tier visual del match — mismo mapeo que el feed para continuidad.
+   *  Ver `constants/match-thresholds.ts` para los umbrales. */
   matchTier(): 'excellent' | 'good' | 'regular' | 'low' {
     const m = this.job?.match_percentage ?? 0;
-    if (m >= 100) return 'excellent';
-    if (m >= 70) return 'good';
-    if (m >= 50) return 'regular';
+    if (m >= 80) return 'excellent';
+    if (m >= 60) return 'good';
+    if (m >= 40) return 'regular';
     return 'low';
   }
 
-  /** Label del "header" sobre el título — solo aparece en matches altos. */
+  /** Label del "header" sobre el título — solo aparece en matches altos.
+   *  Umbrales recalibrados con el nuevo matcher: 80+ excelente, 60+ bueno. */
   topLabel(): string | null {
     const m = this.job?.match_percentage ?? 0;
-    if (m >= 90) return 'Top match · Tu mejor coincidencia';
-    if (m >= 70) return 'Match alto · Vale la pena postular';
+    if (m >= 80) return 'Top match · Tu mejor coincidencia';
+    if (m >= 60) return 'Match alto · Vale la pena postular';
     return null;
   }
 
@@ -225,13 +227,20 @@ export class JobDetailComponent implements OnInit {
     return m + x;
   }
 
-  /** Modalidad heurística — detecta "remoto" en la location string. */
+  /** Modalidad → label ES desde el campo `modality` del backend
+   *  (ya calculado por `jobs.utils.offer_attributes.extract_modality`).
+   *  'unknown' / undefined → null → la fila no se renderiza. */
   modality(): string | null {
-    const loc = (this.job?.location || '').toLowerCase();
-    if (/\bremot/.test(loc)) return 'Remoto';
-    if (/\bhibrid|\bh[ií]brid/.test(loc)) return 'Híbrido';
-    if (/\bpresencial|\bon[\s-]?site/.test(loc)) return 'Presencial';
-    return null;
+    switch (this.job?.modality) {
+      case 'remote':
+        return 'Remoto';
+      case 'hybrid':
+        return 'Híbrido';
+      case 'onsite':
+        return 'Presencial';
+      default:
+        return null;
+    }
   }
 
   /** Fecha relativa de publicación (aprox = fecha de scrape). */
