@@ -241,6 +241,15 @@ CELERY_BEAT_SCHEDULE = {
         "task": "tips.generate_weekly_tips",
         "schedule": crontab(hour=6, minute=0, day_of_week=1),
     },
+    # 03:00 UTC diario, ANTES del scrape de 04:00. Chequea la URL de
+    # cada oferta activa contra el portal de origen y marca is_active=
+    # False cuando devuelve 404/410 o contiene "no disponible". Así el
+    # feed queda limpio antes del scrape nuevo. ~8 min para 5k ofertas
+    # con paralelismo de 5 workers.
+    "verify-active-offers": {
+        "task": "jobs.verify_active_offers",
+        "schedule": crontab(hour=3, minute=0),
+    },
     # 04:00 UTC todos los días (01:00 ART, 23:00 COT del día anterior).
     # Antes del horario en que los usuarios chequean ofertas. La tarea
     # serializa los users — con ~100 usuarios y ~30s por scrape, cabe en
