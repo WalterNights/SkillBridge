@@ -114,7 +114,16 @@
   </div>
 
   <div class="notif-list">
-    <article *ngFor="let n of visibleNotifications()" class="notif-item" [class.unread]="!n.read">
+    <article
+      *ngFor="let n of visibleNotifications()"
+      class="notif-item"
+      [class.unread]="!n.read"
+      [class.clickable]="n.offerIds"
+      [attr.role]="n.offerIds ? 'button' : null"
+      [attr.tabindex]="n.offerIds ? 0 : null"
+      (click)="openNotification(n, $event)"
+      (keydown.enter)="openNotification(n, $event)"
+    >
       <span class="notif-icon material-symbols-outlined">{{ iconForKind(n.kind) }}</span>
       <div class="notif-body">
         <p class="notif-item-title">{{ n.title }}</p>

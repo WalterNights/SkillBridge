@@ -35,6 +35,20 @@
       />
     </div>
 
+    <!-- Banner de filtro por notificación — visible cuando el user llegó
+         desde una notif "kind=match" del cron diario. Muestra cuántas
+         ofertas están filtradas y da un CTA para volver al feed completo. -->
+    <div *ngIf="notifFilterActive()" class="notif-filter-banner mt-4">
+      <span class="material-symbols-outlined" style="font-size: 18px">notifications</span>
+      <span class="text-sm">
+        Mostrando <strong class="text-bone">{{ notifFilterCount() }}</strong>
+        {{ notifFilterCount() === 1 ? 'oferta' : 'ofertas' }} de tu notificación.
+      </span>
+      <button type="button" class="ml-auto notif-filter-clear" (click)="clearNotifFilter()">
+        Ver todas
+      </button>
+    </div>
+
     <!-- Layout responsive de filtros:
          - Mobile (<sm): filtros wrappean naturalmente; sort + counter
            caen abajo en una fila propia (mt-3) con space-between.
@@ -47,15 +61,15 @@
       </button>
       <button class="filter-pill" [class.active]="selectedFilter === 'good'" (click)="setFilter('good')">
         <span class="dot dot-excellent"></span>
-        Excelente <span class="text-dim ml-1">100%</span>
+        Excelente <span class="text-dim ml-1">80–100%</span>
       </button>
       <button class="filter-pill" [class.active]="selectedFilter === 'regular'" (click)="setFilter('regular')">
         <span class="dot dot-good"></span>
-        Bueno <span class="text-dim ml-1">70–99%</span>
+        Bueno <span class="text-dim ml-1">60–79%</span>
       </button>
       <button class="filter-pill" [class.active]="selectedFilter === 'bad'" (click)="setFilter('bad')">
         <span class="dot dot-regular"></span>
-        Regular <span class="text-dim ml-1">50–69%</span>
+        Regular <span class="text-dim ml-1">40–59%</span>
       </button>
 
       <!-- Checkbox "Ver matches débiles" — modo DIAGNÓSTICO. Sin activar,

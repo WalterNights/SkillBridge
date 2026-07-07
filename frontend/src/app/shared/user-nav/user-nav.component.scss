@@ -378,6 +378,20 @@
     background: rgba(249, 115, 22, 0.05);
     border-color: rgba(249, 115, 22, 0.18);
   }
+
+  &.clickable {
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(249, 115, 22, 0.08);
+      border-color: rgba(249, 115, 22, 0.25);
+    }
+
+    &:focus-visible {
+      outline: 2px solid rgba(249, 115, 22, 0.5);
+      outline-offset: 2px;
+    }
+  }
 }
 
 .notif-icon {

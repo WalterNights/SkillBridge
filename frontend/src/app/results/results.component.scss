@@ -626,6 +626,47 @@
   }
 }
 
+/* =========================
+   Banner de filtro por notificacion — visible cuando llegas al feed
+   desde una notif "kind=match" (?offer_ids=1,2,3). Da contexto de por
+   que el feed muestra solo un subset y como volver al feed completo.
+   ========================= */
+.notif-filter-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(249, 115, 22, 0.06);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  color: #cfcfc8;
+
+  .material-symbols-outlined {
+    color: #f97316;
+    font-variation-settings: "FILL" 1;
+  }
+}
+
+.notif-filter-clear {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: #cfcfc8;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(249, 115, 22, 0.35);
+    color: #f97316;
+  }
+}
+
 /* Line clamp helpers — fall back gracefully on older browsers. */
 .line-clamp-1 {
   display: -webkit-box;

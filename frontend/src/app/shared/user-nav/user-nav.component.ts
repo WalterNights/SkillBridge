@@ -50,9 +50,20 @@ interface UiNotification {
   createdAt: string; // string ya formateado para el template
   read: boolean;
   saved: boolean;
+  /** IDs de ofertas asociadas (notif kind=match del cron). Cuando existe
+   *  y no está vacío, la card se vuelve clickable — lleva al feed
+   *  filtrado por esas ofertas específicas. */
+  offerIds?: number[];
 }
 
 function toUi(dto: NotificationDto): UiNotification {
+  // metadata.offer_ids viene del cron `daily_scrape_for_active_users` en
+  // el backend (jobs/tasks.py). Extraemos defensivamente por si el shape
+  // cambia — solo aceptamos array de numbers, sino queda undefined.
+  const rawIds = (dto.metadata as { offer_ids?: unknown }).offer_ids;
+  const offerIds = Array.isArray(rawIds)
+    ? rawIds.filter((x): x is number => typeof x === 'number' && Number.isFinite(x))
+    : undefined;
   return {
     id: dto.id,
     kind: dto.kind,
@@ -61,6 +72,7 @@ function toUi(dto: NotificationDto): UiNotification {
     createdAt: formatRelative(dto.created_at),
     read: dto.is_read,
     saved: dto.is_saved,
+    offerIds: offerIds && offerIds.length > 0 ? offerIds : undefined,
   };
 }
 
@@ -196,6 +208,30 @@ export class UserNavComponent {
       case 'system':
         return 'info';
     }
+  }
+
+  /** Handler al clickear la card de notificación. Si tiene offerIds
+   *  (kind=match del cron diario), navega al feed filtrado por esas
+   *  ofertas específicas y marca la notif como leída de una. Sin
+   *  offerIds no hace nada (evita cambios visuales sin propósito). */
+  openNotification(n: UiNotification, event: MouseEvent): void {
+    // Ignorar clicks en botones internos ("Marcar como leída", "Guardar")
+    // que ya paran propagación — este handler solo actúa cuando el usuario
+    // clickea el body de la card.
+    const target = event.target as HTMLElement;
+    if (target.closest('button')) return;
+    if (!n.offerIds || n.offerIds.length === 0) return;
+
+    // Marcar como leída de forma optimista y cerrar el drawer antes de
+    // navegar — evita el flicker del drawer cerrándose después del
+    // routing.
+    if (!n.read) {
+      this.markAsRead(n.id);
+    }
+    this.notificationsOpen.set(false);
+    this.router.navigate(['/dashboard'], {
+      queryParams: { offer_ids: n.offerIds.join(',') },
+    });
   }
 
   @HostListener('document:click')

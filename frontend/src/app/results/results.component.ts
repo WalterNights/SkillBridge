@@ -1,7 +1,10 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { HttpErrorResponse } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+
 import { JobOffer } from '../models/job-offer.model';
 import {
   FilterOptionsResponse,
@@ -12,7 +15,6 @@ import {
 import { FeatureFlagsService } from '../services/feature-flags.service';
 import { ScrapeProgressService } from '../services/scrape-progress.service';
 import { ToastService } from '../services/toast.service';
-import { Router, RouterModule } from '@angular/router';
 import { HTMLChangesComponent } from '../shared/html-changes/html-changes';
 import { MATCH_THRESHOLDS } from '../constants/match-thresholds';
 import { portalMeta } from '../shared/portal';
@@ -138,6 +140,16 @@ export class ResultsComponent {
 
   private readonly MATCH_THRESHOLD = MATCH_THRESHOLDS;
 
+  /** Filtro activo por notificación del cron (`?offer_ids=1,2,3`).
+   *  Cuando está seteado, el feed se restringe a esas ofertas y muestra
+   *  un banner en el header con la opción de "Ver todas". */
+  notifOfferIds = signal<Set<number> | null>(null);
+  notifFilterActive = computed(() => this.notifOfferIds() !== null);
+  notifFilterCount = computed(() => this.notifOfferIds()?.size ?? 0);
+
+  private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
+
   constructor(
     private router: Router,
     private jobService: JobService,
@@ -149,6 +161,33 @@ export class ResultsComponent {
     public featureFlags: FeatureFlagsService,
   ) {
     this.titleService.setTitle('SkilTak - Resultados de Búsqueda');
+    // Reactivo al query param — si el user cambia de `?offer_ids=1,2` a
+    // sin filtro (via link "Ver todas"), el feed se re-renderiza sin
+    // navegar de nuevo.
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        const raw = params.get('offer_ids');
+        if (!raw) {
+          this.notifOfferIds.set(null);
+          return;
+        }
+        const ids = raw
+          .split(',')
+          .map((s) => Number(s.trim()))
+          .filter((n) => Number.isFinite(n) && n > 0);
+        this.notifOfferIds.set(ids.length > 0 ? new Set(ids) : null);
+      });
+  }
+
+  /** Limpia el filtro por notificación — el banner desaparece y vuelve
+   *  el feed completo. Usado por el link "Ver todas". */
+  clearNotifFilter(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { offer_ids: null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   /** Toggle del checkbox "Ver matches bajos". Persiste en sessionStorage
@@ -283,27 +322,36 @@ export class ResultsComponent {
    * página visible. El ORDEN viene del backend (server-side por match),
    * no lo tocamos acá; sino el sort solo aplicaría a la página actual y
    * no a las 100+ restantes del "Cargar más".
+   *
+   * Si hay filtro por notificación activo (`?offer_ids=`), se aplica
+   * PRIMERO — el chip Excellent/Good/Regular actúa sobre el subset ya
+   * filtrado.
    */
   get filteredOffer(): JobOffer[] {
+    let base = this.offers;
+    const notifIds = this.notifOfferIds();
+    if (notifIds) {
+      base = base.filter((o) => notifIds.has(o.id));
+    }
     switch (this.selectedFilter) {
       case 'good':
-        return this.offers.filter(
+        return base.filter(
           (offer) => offer.match_percentage >= this.MATCH_THRESHOLD.EXCELLENT,
         );
       case 'regular':
-        return this.offers.filter(
+        return base.filter(
           (offer) =>
             offer.match_percentage >= this.MATCH_THRESHOLD.GOOD_MIN &&
             offer.match_percentage <= this.MATCH_THRESHOLD.GOOD_MAX,
         );
       case 'bad':
-        return this.offers.filter(
+        return base.filter(
           (offer) =>
             offer.match_percentage >= this.MATCH_THRESHOLD.REGULAR_MIN &&
             offer.match_percentage <= this.MATCH_THRESHOLD.REGULAR_MAX,
         );
       default:
-        return this.offers;
+        return base;
     }
   }
 
