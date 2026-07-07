@@ -213,6 +213,7 @@ class JobService:
             extract_country,
             extract_modality,
             extract_salary,
+            normalize_url,
         )
         from users.services.profession_classifier import infer_profession_category
 
@@ -244,8 +245,14 @@ class JobService:
                 # de users con vertical claro — preferible a contaminar
                 # con falsos positivos. Users 'general' las siguen viendo.
                 category = infer_profession_category(data.title)
+                # URL canónica — misma job = misma URL, aunque Computrabajo
+                # cambie el fragmento `#lc=Score...` según posición en el
+                # listing o el portal agregue tracking params en un scrape
+                # pero no en otro. Sin esto se creaba una fila nueva por
+                # cada scrape del mismo cargo.
+                canonical_url = normalize_url(data.url)
                 obj, was_created = JobOffer.objects.get_or_create(
-                    url=data.url,
+                    url=canonical_url,
                     defaults={
                         "title": data.title,
                         "company": data.company,

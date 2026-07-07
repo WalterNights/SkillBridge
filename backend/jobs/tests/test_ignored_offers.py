@@ -28,7 +28,11 @@ class TestIgnoreOffer:
         a, _ = offers_pair
         response = authed_client.post(f"/api/jobs/jobs/{a.id}/ignore/")
         assert response.status_code == 201
-        assert response.json() == {"ignored": True, "offer_id": a.id}
+        body = response.json()
+        assert body["ignored"] is True
+        assert body["offer_id"] == a.id
+        # Sin duplicados (title+company+portal unicos), cascaded_count = 1
+        assert body["cascaded_count"] == 1
         assert IgnoredOffer.objects.filter(user=user, offer=a).exists()
 
     def test_post_is_idempotent(self, authed_client, user, offers_pair):
@@ -60,6 +64,97 @@ class TestIgnoreOffer:
     def test_ignore_nonexistent_offer_returns_404(self, authed_client):
         response = authed_client.post("/api/jobs/jobs/999999/ignore/")
         assert response.status_code == 404
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestIgnoreCascadeToDuplicates:
+    """Bug reportado 2026-07-04: Computrabajo cambia el fragmento `#lc=...`
+    entre scrapes → misma oferta se guarda como filas distintas. Cuando
+    el user ignora una, las otras siguen apareciendo con match idéntico.
+    Fix: al ignorar, cascadeamos a todo (title, company, portal) igual."""
+
+    def _make_dup(self, url_suffix: str, *, title="Fullstack Bilingue 52172", portal="computrabajo"):
+        return JobOffer.objects.create(
+            title=title, company="PeakU",
+            url=f"https://co.computrabajo.com/o/93AF7{url_suffix}",
+            summary="", keywords="", portal=portal,
+            country="CO", modality="remote",
+        )
+
+    def test_post_cascades_to_all_siblings(self, authed_client, user):
+        """3 duplicados en DB (mismo title+company+portal, URL distinta).
+        POST ignore de UNA marca las 3."""
+        a = self._make_dup("#lc=Score0-16")
+        b = self._make_dup("#lc=Score0-9")
+        c = self._make_dup("#lc=Score0-1")
+
+        response = authed_client.post(f"/api/jobs/jobs/{a.id}/ignore/")
+        assert response.status_code == 201
+        assert response.json()["cascaded_count"] == 3
+
+        assert IgnoredOffer.objects.filter(user=user, offer=a).exists()
+        assert IgnoredOffer.objects.filter(user=user, offer=b).exists()
+        assert IgnoredOffer.objects.filter(user=user, offer=c).exists()
+
+    def test_delete_cascades_to_all_siblings(self, authed_client, user):
+        """DELETE tambien cascadea — designorar UNA libera a todas las
+        duplicadas."""
+        a = self._make_dup("#lc=Score0-16")
+        b = self._make_dup("#lc=Score0-9")
+        IgnoredOffer.objects.create(user=user, offer=a)
+        IgnoredOffer.objects.create(user=user, offer=b)
+
+        response = authed_client.delete(f"/api/jobs/jobs/{a.id}/ignore/")
+        assert response.status_code == 204
+        assert not IgnoredOffer.objects.filter(user=user, offer=a).exists()
+        assert not IgnoredOffer.objects.filter(user=user, offer=b).exists()
+
+    def test_cascade_does_not_touch_different_company(self, authed_client, user):
+        """Mismo title + portal pero company distinta = OFERTAS DISTINTAS
+        (dos empresas del mismo portal buscando el mismo cargo). NO
+        cascadeamos."""
+        peaku = self._make_dup("-1", title="Backend Developer")
+        empresa_x = JobOffer.objects.create(
+            title="Backend Developer", company="Empresa X",
+            url="https://co.computrabajo.com/o/EMPX",
+            summary="", keywords="", portal="computrabajo",
+            country="CO", modality="remote",
+        )
+
+        authed_client.post(f"/api/jobs/jobs/{peaku.id}/ignore/")
+
+        assert IgnoredOffer.objects.filter(user=user, offer=peaku).exists()
+        assert not IgnoredOffer.objects.filter(user=user, offer=empresa_x).exists()
+
+    def test_cascade_does_not_touch_different_portal(self, authed_client, user):
+        """Mismo title + company pero portal distinto = ofertas cross-post.
+        Las dejamos separadas — el user puede querer ver la que tiene
+        proceso de aplicacion mas simple en un portal."""
+        ct = self._make_dup("-1")
+        linkedin = JobOffer.objects.create(
+            title="Fullstack Bilingue 52172", company="PeakU",
+            url="https://linkedin.com/jobs/1",
+            summary="", keywords="", portal="linkedin",
+            country="CO", modality="remote",
+        )
+
+        authed_client.post(f"/api/jobs/jobs/{ct.id}/ignore/")
+
+        assert IgnoredOffer.objects.filter(user=user, offer=ct).exists()
+        assert not IgnoredOffer.objects.filter(user=user, offer=linkedin).exists()
+
+    def test_feed_excludes_all_cascaded_after_ignore(self, authed_client, user):
+        """Integration: ignorar UNA duplicada saca a TODAS del feed."""
+        a = self._make_dup("#lc=Score0-16")
+        b = self._make_dup("#lc=Score0-9")
+
+        authed_client.post(f"/api/jobs/jobs/{a.id}/ignore/")
+
+        response = authed_client.get("/api/jobs/jobs/?min_match=0")
+        titles = [r["title"] for r in response.json()["results"]]
+        # Ninguna de las duplicadas debe aparecer.
+        assert "Fullstack Bilingue 52172" not in titles
 
 
 @pytest.mark.integration

@@ -321,6 +321,16 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
         POST   /jobs/jobs/{id}/ignore/   → 201 si crea, 200 si ya existía
         DELETE /jobs/jobs/{id}/ignore/   → 204 siempre (idempotente)
 
+        Cascade a duplicados: cuando el user marca una oferta como
+        ignorada, también ignoramos todas las que compartan
+        (title, company, portal) — son el mismo cargo con URL
+        distinta (Computrabajo cambia el fragmento `#lc=...` según
+        posición en el listing, algunos portales agregan tracking
+        params entre scrapes). Sin el cascade, el user ignora una
+        y ve la copia con match idéntico al día siguiente.
+        En DELETE aplicamos el mismo cascade — designorar la
+        "canónica" también libera las duplicadas.
+
         Nota: NO usamos `get_object()` porque ese pasa por get_queryset()
         que no excluye nada en retrieve, pero igual resolvemos directo
         con get_object_or_404 para que sea explícito y barato.
@@ -329,17 +339,47 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
 
         offer = get_object_or_404(JobOffer, pk=pk)
 
+        # Todas las ofertas "iguales" al cargo elegido — incluye a la
+        # propia. Filtramos por los 3 campos porque un mismo título +
+        # portal puede pertenecer a empresas distintas y son cargos
+        # distintos (ej. "Backend Developer" en 5 empresas del mismo
+        # portal). Case-sensitive intencional — los portales
+        # normalizan casing por sí solos.
+        sibling_ids = list(
+            JobOffer.objects.filter(
+                title=offer.title,
+                company=offer.company,
+                portal=offer.portal,
+            ).values_list("id", flat=True)
+        )
+
         if request.method == "POST":
-            _, created = IgnoredOffer.objects.get_or_create(
-                user=request.user, offer=offer
-            )
+            # get_or_create con bulk sería más eficiente pero
+            # IgnoredOffer.get_or_create no soporta bulk. Con volúmenes
+            # típicos (2-6 duplicados por oferta) N queries es aceptable.
+            newly_created = 0
+            for offer_id in sibling_ids:
+                _, was_created = IgnoredOffer.objects.get_or_create(
+                    user=request.user, offer_id=offer_id
+                )
+                if was_created:
+                    newly_created += 1
             return Response(
-                {"ignored": True, "offer_id": offer.id},
-                status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+                {
+                    "ignored": True,
+                    "offer_id": offer.id,
+                    "cascaded_count": len(sibling_ids),
+                },
+                # 201 si al menos una fila nueva se creó, 200 si todas
+                # ya estaban ignoradas — respeta el contrato del test
+                # de idempotencia y le da al frontend info util.
+                status=status.HTTP_201_CREATED if newly_created > 0 else status.HTTP_200_OK,
             )
 
-        # DELETE — idempotente: si no existe no es error.
-        IgnoredOffer.objects.filter(user=request.user, offer=offer).delete()
+        # DELETE — idempotente: cascade a todos los siblings.
+        IgnoredOffer.objects.filter(
+            user=request.user, offer_id__in=sibling_ids
+        ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=["get"], url_path="ignored")

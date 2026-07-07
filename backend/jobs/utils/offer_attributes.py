@@ -12,6 +12,7 @@ heurística de modalidad, un solo punto de modificación.
 from __future__ import annotations
 
 import re
+from urllib.parse import urlsplit, urlunsplit
 from unidecode import unidecode
 
 
@@ -217,3 +218,68 @@ def extract_salary(summary: str | None) -> str:
             return normalized[:120]
 
     return ""
+
+
+# Query params que son ruido de tracking y no cambian la oferta. Se
+# eliminan al normalizar la URL para que scrapes sucesivos del mismo
+# job no generen registros duplicados.
+_TRACKING_QUERY_PREFIXES: tuple[str, ...] = (
+    "utm_",
+    "fbclid",
+    "gclid",
+    "mc_",
+    "_ga",
+    "_gl",
+)
+_TRACKING_QUERY_EXACT: frozenset[str] = frozenset({
+    "src", "source", "ref", "referrer", "campaign", "medium",
+})
+
+
+def normalize_url(url: str) -> str:
+    """Devuelve la URL canónica — misma job = mismo string.
+
+    Reglas (empíricamente basadas en portales LATAM):
+      - Cortar el fragmento (`#...`). Computrabajo agrega
+        `#lc=ListOffers-Score0-N` que cambia según la posición en el
+        listing — misma URL HTTP, distinta string. Sin esto un scrape
+        duplica cada oferta cada vez.
+      - Quitar query params de tracking (`utm_*`, `fbclid`, `src`,
+        `ref`, etc). No cambian el destino real.
+      - Colapsar trailing slash del path (`.../oferta/` → `.../oferta`).
+        Algunos portales lo agregan/quitan según el día.
+      - Preservar el resto (scheme, host, path, params legítimos como
+        `?id=123`) que sí cambian la identidad de la oferta.
+
+    Devuelve el string original si no es parseable.
+    """
+    if not url or not url.strip():
+        return url
+
+    try:
+        parts = urlsplit(url.strip())
+    except ValueError:
+        return url
+
+    # Query: filtrar tracking, mantener el resto en orden original.
+    query = ""
+    if parts.query:
+        kept: list[str] = []
+        for pair in parts.query.split("&"):
+            if not pair:
+                continue
+            key = pair.split("=", 1)[0].lower()
+            if key in _TRACKING_QUERY_EXACT:
+                continue
+            if any(key.startswith(prefix) for prefix in _TRACKING_QUERY_PREFIXES):
+                continue
+            kept.append(pair)
+        query = "&".join(kept)
+
+    # Path: colapsar trailing slash SIEMPRE — excepto root ("/").
+    path = parts.path or ""
+    if len(path) > 1 and path.endswith("/"):
+        path = path.rstrip("/")
+
+    # Fragmento: descartar entero.
+    return urlunsplit((parts.scheme, parts.netloc, path, query, ""))

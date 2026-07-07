@@ -1,4 +1,4 @@
-"""Tests de los extractores heurísticos country + modality + salary."""
+"""Tests de los extractores heurísticos country + modality + salary + url."""
 
 import pytest
 
@@ -11,6 +11,7 @@ from jobs.utils.offer_attributes import (
     extract_country,
     extract_modality,
     extract_salary,
+    normalize_url,
 )
 
 
@@ -154,3 +155,74 @@ class TestExtractSalary:
         huge = "Salario: $3.000.000 " + ("mas beneficios " * 20)
         result = extract_salary(huge)
         assert len(result) <= 120
+
+
+@pytest.mark.unit
+class TestNormalizeUrl:
+    """Reglas: misma job = misma url canonica. Sin esto, cada scrape
+    del mismo portal duplica ofertas por variaciones cosmeticas en la URL."""
+
+    def test_strips_fragment_hash(self):
+        """Caso real Computrabajo: `#lc=ListOffers-Score0-N` cambia
+        segun la posicion en el listing. Dos URLs con distinto sufijo
+        son la MISMA oferta."""
+        u1 = "https://co.computrabajo.com/ofertas/x-93AF7#lc=ListOffers-Score0-16"
+        u2 = "https://co.computrabajo.com/ofertas/x-93AF7#lc=ListOffers-Score0-9"
+        assert normalize_url(u1) == normalize_url(u2)
+        assert "#" not in normalize_url(u1)
+
+    def test_strips_utm_tracking(self):
+        u1 = "https://portal.com/oferta/123?utm_source=email&utm_campaign=weekly"
+        u2 = "https://portal.com/oferta/123"
+        assert normalize_url(u1) == u2
+
+    def test_strips_fbclid_gclid(self):
+        u = "https://portal.com/o/1?fbclid=abc&gclid=xyz"
+        assert normalize_url(u) == "https://portal.com/o/1"
+
+    def test_strips_src_ref_source(self):
+        u = "https://portal.com/o/1?src=email&ref=twitter&source=newsletter"
+        assert normalize_url(u) == "https://portal.com/o/1"
+
+    def test_preserves_legitimate_query_params(self):
+        """`id`, `job`, y otros params que SI cambian la identidad de la
+        oferta deben preservarse."""
+        u = "https://portal.com/o?id=123&job=456"
+        assert normalize_url(u) == u
+
+    def test_mixes_tracking_and_legitimate_params(self):
+        u = "https://portal.com/o?id=123&utm_source=email&job=456"
+        result = normalize_url(u)
+        assert "id=123" in result
+        assert "job=456" in result
+        assert "utm_source" not in result
+
+    def test_strips_trailing_slash(self):
+        u1 = "https://portal.com/oferta/123/"
+        u2 = "https://portal.com/oferta/123"
+        assert normalize_url(u1) == u2
+
+    def test_preserves_root_slash(self):
+        """El root del host no se toca — `https://portal.com/` sigue
+        siendo `/`, no `""`."""
+        u = "https://portal.com/"
+        assert normalize_url(u) == u
+
+    def test_combined_fragment_utm_trailing(self):
+        """Ataque combinado: los 3 tipos de ruido en la misma URL."""
+        u = "https://portal.com/o/123/?utm_source=email#lc=Score0-5"
+        assert normalize_url(u) == "https://portal.com/o/123"
+
+    def test_empty_returns_empty(self):
+        assert normalize_url("") == ""
+        assert normalize_url(None) is None  # type: ignore[arg-type]
+
+    def test_invalid_url_returns_original(self):
+        """No parseable → devolvemos el original sin explotar."""
+        weird = "not a url"
+        assert normalize_url(weird) == weird
+
+    def test_preserves_case_in_path_and_query(self):
+        """Case matters en muchos portales; NO normalizamos a lowercase."""
+        u = "https://portal.com/Oferta/ABC123?ID=xyz"
+        assert normalize_url(u) == u
