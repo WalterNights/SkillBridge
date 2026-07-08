@@ -213,13 +213,15 @@ export class UserNavComponent {
   /** Handler al clickear la card de notificación. Si tiene offerIds
    *  (kind=match del cron diario), navega al feed filtrado por esas
    *  ofertas específicas y marca la notif como leída de una. Sin
-   *  offerIds no hace nada (evita cambios visuales sin propósito). */
-  openNotification(n: UiNotification, event: MouseEvent): void {
+   *  offerIds no hace nada (evita cambios visuales sin propósito).
+   *  Acepta `Event` genérico porque se dispara tanto desde click
+   *  (MouseEvent) como desde `(keydown.enter)` (KeyboardEvent). */
+  openNotification(n: UiNotification, event: Event): void {
     // Ignorar clicks en botones internos ("Marcar como leída", "Guardar")
     // que ya paran propagación — este handler solo actúa cuando el usuario
     // clickea el body de la card.
-    const target = event.target as HTMLElement;
-    if (target.closest('button')) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('button')) return;
     if (!n.offerIds || n.offerIds.length === 0) return;
 
     // Marcar como leída de forma optimista y cerrar el drawer antes de
