@@ -15,6 +15,10 @@ import { STORAGE_KEYS } from '../../constants/app-stats';
 import { PhotoCropperDialogComponent } from '../../shared/photo-cropper/photo-cropper-dialog.component';
 import { TextFormatToolbarComponent } from '../../shared/text-format-toolbar/text-format-toolbar.component';
 import { EducationEntry, ExperienceEntry } from '../../models/profile.model';
+import {
+  parseLegacyEducation,
+  parseLegacyExperience,
+} from './legacy-parser';
 
 type Mode = 'view' | 'edit';
 type CropTarget = 'photo' | 'banner';
@@ -268,18 +272,31 @@ export class MyProfileComponent implements OnInit {
     this.educationArray.removeAt(index);
   }
 
-  /** Migra a modo estructurado desde legacy: reemplaza el textarea viejo
-   *  (que en el form vive como FormControl string) por un FormArray
-   *  fresco + una entrada en blanco lista para llenar. El texto legacy
-   *  queda en pantalla como referencia hasta que el user guarde. */
+  /** Migra a modo estructurado desde legacy: intenta auto-parsear el
+   *  texto legacy en entries (empresa, cargo, fechas, descripción). Si
+   *  el parseo detecta al menos 1 entry, populamos el FormArray con lo
+   *  extraído — el user solo revisa/completa lo que quedó vacío. Si el
+   *  parseo NO detecta nada (formato muy libre), fallback a una entry
+   *  vacía como antes.
+   *  El texto legacy sigue visible como referencia en el textarea
+   *  readonly de arriba, así el user puede copiar-pegar detalles
+   *  puntuales si el parseo se equivocó. */
   startStructuredExperience(): void {
     this.experienceMode.set('structured');
-    this.profileForm.setControl('experience', this.fb.array<FormGroup>([this.createExperienceGroup()]));
+    const parsed = parseLegacyExperience(this.legacyExperienceText());
+    const groups = parsed.length > 0
+      ? parsed.map((e) => this.createExperienceGroup(e))
+      : [this.createExperienceGroup()];
+    this.profileForm.setControl('experience', this.fb.array<FormGroup>(groups));
   }
 
   startStructuredEducation(): void {
     this.educationMode.set('structured');
-    this.profileForm.setControl('education', this.fb.array<FormGroup>([this.createEducationGroup()]));
+    const parsed = parseLegacyEducation(this.legacyEducationText());
+    const groups = parsed.length > 0
+      ? parsed.map((e) => this.createEducationGroup(e))
+      : [this.createEducationGroup()];
+    this.profileForm.setControl('education', this.fb.array<FormGroup>(groups));
   }
 
   /** Detecta si el valor guardado en el backend es un array estructurado
