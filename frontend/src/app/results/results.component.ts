@@ -54,7 +54,7 @@ const COUNTRY_LABELS: Record<string, string> = {
 export class ResultsComponent {
   offers: JobOffer[] = [];
   hoverState: { [offerId: number]: boolean } = {};
-  selectedFilter: 'all' | 'good' | 'regular' | 'bad' = 'all';
+  selectedFilter: 'all' | 'good' | 'regular' | 'bad' | 'new' = 'all';
 
   /** Estado de paginación. El backend pagina con DRF (PAGE_SIZE=20).
    * `offers` acumula página a página — clicker "Cargar más" appendea,
@@ -350,13 +350,23 @@ export class ResultsComponent {
             offer.match_percentage >= this.MATCH_THRESHOLD.REGULAR_MIN &&
             offer.match_percentage <= this.MATCH_THRESHOLD.REGULAR_MAX,
         );
+      case 'new':
+        return base.filter((offer) => this.isNewOffer(offer));
       default:
         return base;
     }
   }
 
-  setFilter(filter: 'all' | 'good' | 'regular' | 'bad') {
+  setFilter(filter: 'all' | 'good' | 'regular' | 'bad' | 'new') {
     this.selectedFilter = filter;
+  }
+
+  /** Cuenta de ofertas scrapeadas hoy en el feed cargado. Usado por el
+   *  chip "Nuevas · N" para hacer visible el volumen sin obligar al user
+   *  a scrollear. Se recalcula en cada change detection — barato con
+   *  ~20-100 ofertas por página. */
+  get newOffersCount(): number {
+    return this.offers.filter((o) => this.isNewOffer(o)).length;
   }
 
   /** Toggle entre orden asc/desc por % match. Refetcha la página 1 porque

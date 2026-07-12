@@ -72,6 +72,22 @@
         Regular <span class="text-dim ml-1">40–59%</span>
       </button>
 
+      <!-- Chip "Nuevas · N" — solo visible cuando hay al menos 1 oferta
+           scrapeada hoy. Filtra el feed a solo esas ofertas. El count
+           refleja las ofertas del feed cargado (this.offers) — cuando el
+           user carga más páginas, el número aumenta si aparecen más
+           nuevas. Verde para diferenciarlo visualmente de los tiers. -->
+      <button
+        *ngIf="newOffersCount > 0"
+        class="filter-pill filter-pill--new"
+        [class.active]="selectedFilter === 'new'"
+        (click)="setFilter('new')"
+        title="Ofertas agregadas hoy — el badge y el chip desaparecen a medianoche"
+      >
+        <span class="dot dot-new"></span>
+        Nuevas <span class="text-dim ml-1">· {{ newOffersCount }}</span>
+      </button>
+
       <!-- Checkbox "Ver matches débiles" — modo DIAGNÓSTICO. Sin activar,
            el feed muestra matches 50%+ (default del backend). Activado,
            muestra TODO lo que el scraper trajo (incluyendo 0% match).

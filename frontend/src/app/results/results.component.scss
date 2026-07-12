@@ -271,6 +271,24 @@
   box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.15);
 }
 
+.dot-new {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+/* Variante verde del filter-pill para el chip "Nuevas" — usa el mismo
+   verde del badge en las cards, así el user asocia visualmente ambos
+   sin ambigüedad ("las que tienen badge son las que filtra este chip"). */
+.filter-pill--new {
+  &.active {
+    background: rgba(34, 197, 94, 0.10);
+    border-color: rgba(34, 197, 94, 0.40);
+  }
+  &:hover:not(.active) {
+    border-color: rgba(34, 197, 94, 0.25);
+  }
+}
+
 /* Checkbox-pill "Ver matches bajos" — visualmente similar a .filter-pill
    pero con un cuadrito a la izquierda en vez del dot, para que se lea
    como toggle, no como categoría. Solo aparece si el flag
