@@ -353,6 +353,22 @@ COVER_LETTER_FREE_LIMIT = config("COVER_LETTER_FREE_LIMIT", default=3, cast=int)
 CV_IMPROVE_FREE_LIMIT = config("CV_IMPROVE_FREE_LIMIT", default=1, cast=int)
 
 
+# ----- Query expansion pre-scrape -----
+# Al buscar ofertas para un user, en vez de mandar SOLO el rol principal
+# del profile a cada portal, expandimos a queries relacionados (roles
+# hermanos del vertical, sinónimo ES↔EN, etc). Ver
+# `jobs.services.role_expander`.
+#
+# ROLE_EXPANSION_ENABLED False → rollback rápido (usa solo el rol
+# principal, comportamiento previo al feature).
+# ROLE_EXPANSION_MAX_QUERIES cap de queries por portal por user. Trade-off:
+#   3 = conservador (3× volumen, poco rate-limit riesgo)
+#   4 = balance recomendado
+#   5+ = riesgo de rate-limit especialmente en LinkedIn
+ROLE_EXPANSION_ENABLED = config("ROLE_EXPANSION_ENABLED", default=True, cast=bool)
+ROLE_EXPANSION_MAX_QUERIES = config("ROLE_EXPANSION_MAX_QUERIES", default=4, cast=int)
+
+
 # ----- LinkedIn OAuth (Sign In with LinkedIn using OpenID Connect) -----
 # Producto se solicita en linkedin.com/developers/apps (instant-approve).
 # Después en el .env del VPS se setean los 3 valores. Si LINKEDIN_CLIENT_ID
