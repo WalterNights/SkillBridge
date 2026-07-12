@@ -104,10 +104,18 @@ class TestSuggestPortals:
         portals = {p.portal for p in plans}
         assert "hireline" in portals  # tech matchea
         assert "computrabajo" in portals  # all matchea
-        # query es el rol principal extraído del título — para títulos
-        # simples como este, coincide con el título completo.
+        # El rol principal ("Backend Developer") DEBE estar entre las
+        # queries de cada portal. Otras queries expandidas (hermanos del
+        # dict, sinónimos ES) también aparecen — validadas en tests
+        # dedicados de expansion abajo.
+        queries_per_portal: dict[str, set[str]] = {}
         for p in plans:
-            assert p.query == "Backend Developer"
+            queries_per_portal.setdefault(p.portal, set()).add(p.query)
+        for portal, queries in queries_per_portal.items():
+            assert "Backend Developer" in queries, (
+                f"portal={portal}: esperaba 'Backend Developer' entre las queries; "
+                f"obtuve {queries}"
+            )
 
     def test_designer_profile_excludes_tech_only(self, designer_profile):
         """Diseñador NO debe disparar Hireline (tech-only). Sí debe
@@ -137,9 +145,10 @@ class TestSuggestPortals:
     def test_long_multirole_title_refined_to_primary_role(self, django_user_model):
         """Garantía crítica para escalabilidad: títulos largos / multi-rol
         ('UI/UX Designer/Industrial designer/expert in 3d',
-        'Zootecnista - Peluquero canino') deben ir al scraper con SOLO
-        el rol principal — sino LinkedIn/Indeed devuelven 0 por query
-        demasiado específica."""
+        'Zootecnista - Peluquero canino') deben expandir SOLO al rol
+        principal (Zootecnista) — no al secundario (Peluquero canino).
+        Sin esto LinkedIn/Indeed devuelven 0 por query demasiado
+        específica y el volumen explota."""
         from users.models import UserProfile
 
         user = django_user_model.objects.create_user(
@@ -155,13 +164,113 @@ class TestSuggestPortals:
             skills="",
         )
         plans = PortalRouterService.suggest_portals(profile)
-        # El rol principal es "Zootecnista" — todos los planes deben
-        # usar ese query, no el título completo.
-        for p in plans:
-            assert p.query == "Zootecnista", (
-                f"Esperaba query='Zootecnista', obtuve {p.query!r}. El "
-                f"refinement via _extract_primary_role no se está aplicando."
+        all_queries = {p.query for p in plans}
+        # El rol principal SIEMPRE está presente (siempre primer query
+        # de la expansion).
+        assert "Zootecnista" in all_queries
+        # El secundario NO debe estar — refinement via
+        # _extract_primary_role dentro de expand_role_queries lo descartó.
+        for q in all_queries:
+            assert "peluquero" not in q.lower(), (
+                f"Query {q!r} contiene 'Peluquero' — el rol secundario "
+                f"se coló en la expansión. Chequear _extract_primary_role."
             )
+
+
+@pytest.mark.django_db
+class TestRoleExpansionIntegration:
+    """Verifica que la expansion del rol se integra correctamente en
+    PortalRouter. Los detalles de la expansion en sí (dict curado,
+    sinónimos ES↔EN) se testean en test_role_expander.py."""
+
+    def test_expansion_generates_multiple_queries_per_portal(self, user_profile):
+        """user_profile es 'Backend Developer' (tech). Esperamos que cada
+        portal reciba más de 1 query — el rol principal + hermanos del
+        dict + sinónimo ES."""
+        plans = PortalRouterService.suggest_portals(user_profile)
+        queries_per_portal: dict[str, set[str]] = {}
+        for p in plans:
+            queries_per_portal.setdefault(p.portal, set()).add(p.query)
+        # Cada portal recibe MÁS DE 1 query — sino no habría expansion.
+        for portal, queries in queries_per_portal.items():
+            assert len(queries) > 1, (
+                f"portal={portal}: solo {len(queries)} query(s) — expansion no aplicó"
+            )
+
+    def test_expansion_disabled_flag_reverts_to_single_query(
+        self, user_profile, settings
+    ):
+        """Con `ROLE_EXPANSION_ENABLED=False` el router vuelve al
+        comportamiento previo — 1 plan por portal. Este es el kill-switch
+        de rollback rápido."""
+        settings.ROLE_EXPANSION_ENABLED = False
+        plans = PortalRouterService.suggest_portals(user_profile)
+        queries_per_portal: dict[str, set[str]] = {}
+        for p in plans:
+            queries_per_portal.setdefault(p.portal, set()).add(p.query)
+        for portal, queries in queries_per_portal.items():
+            assert queries == {"Backend Developer"}, (
+                f"portal={portal}: con flag OFF esperaba solo el rol principal; "
+                f"obtuve {queries}"
+            )
+
+    def test_expansion_cap_respected(self, user_profile, settings):
+        """El cap por portal viene de ROLE_EXPANSION_MAX_QUERIES."""
+        settings.ROLE_EXPANSION_MAX_QUERIES = 2
+        plans = PortalRouterService.suggest_portals(user_profile)
+        queries_per_portal: dict[str, set[str]] = {}
+        for p in plans:
+            queries_per_portal.setdefault(p.portal, set()).add(p.query)
+        for portal, queries in queries_per_portal.items():
+            assert len(queries) <= 2, (
+                f"portal={portal}: cap 2 excedido con {len(queries)} queries"
+            )
+
+    def test_empty_title_returns_no_plans(self, django_user_model):
+        """Sin título profesional no hay queries expandidas → 0 planes.
+        Antes se generaba 1 plan por portal con query vacío; los scrapers
+        rebotaban con ScraperError. Ahora fallamos temprano."""
+        from users.models import UserProfile
+
+        user = django_user_model.objects.create_user(
+            username="empty", email="empty@example.com", password="x"
+        )
+        profile = UserProfile.objects.create(
+            user=user,
+            first_name="No",
+            last_name="Title",
+            phone="+57",
+            city="Bogotá",
+            professional_title="",  # sin título
+            skills="",
+        )
+        plans = PortalRouterService.suggest_portals(profile)
+        assert plans == []
+
+    def test_fabio_case_agro(self, django_user_model):
+        """Caso real cliente Fabio (zootecnista): la expansión activa
+        búsquedas de 'Médico Veterinario', 'Ingeniero Agrónomo',
+        'Avicultor' en cada portal — no solo espera que otro user las
+        traiga vía piso vertical del matcher."""
+        from users.models import UserProfile
+
+        user = django_user_model.objects.create_user(
+            username="fabio", email="fabio@example.com", password="x"
+        )
+        profile = UserProfile.objects.create(
+            user=user,
+            first_name="Fabio",
+            last_name="Zoo",
+            phone="+57",
+            city="Bogotá",
+            professional_title="Zootecnista",
+            skills="ganado, pasturas",
+        )
+        plans = PortalRouterService.suggest_portals(profile)
+        all_queries = {p.query.lower() for p in plans}
+        assert "zootecnista" in all_queries
+        assert "medico veterinario" in all_queries
+        assert "ingeniero agronomo" in all_queries
 
     def test_does_not_call_gemini(self, user_profile):
         """Regresión hard: el path crítico NUNCA debe tocar la API de

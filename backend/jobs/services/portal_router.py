@@ -66,54 +66,87 @@ class PortalRouterService:
         """Devuelve la lista de planes de scrape para `profile`.
 
         Path determinístico: `infer_profession_category` + las
-        `categories` de cada scraper. <1ms, sin AI, sin red.
+        `categories` de cada scraper + expansión de queries via
+        `role_expander`. <1ms, sin AI, sin red.
 
-        El `query` que se pasa a cada scraper es el ROL PRINCIPAL del
-        título (extraído via `_extract_primary_role`), no el título
-        crudo. Esto es esencial para escalabilidad: títulos largos como
-        "UI/UX Designer/Industrial designer/expert in 3d, augmented
-        reality and animation" o "Zootecnista - Peluquero canino"
-        devolvían 0 ofertas en LinkedIn/Indeed porque el query era muy
-        específico. Con solo el rol principal ("UI/UX Designer",
-        "Zootecnista") el recall sube dramáticamente — los generalistas
-        LATAM (Computrabajo, LinkedIn, Indeed, Trabajando, Magneto,
-        Trabajos_co) cubren prácticamente cualquier oficio si reciben
-        un query razonable.
+        El `query` de cada plan es una variante del rol principal
+        expandida por `expand_role_queries`. Ejemplo: un user
+        "FullStack Developer" genera queries para "FullStack Developer",
+        "desarrollador full stack", "backend developer", "frontend
+        developer" — así el scrape trae también ofertas hermanas del
+        mismo vertical, no solo las que matchean tokens del título
+        crudo. Cap por `settings.ROLE_EXPANSION_MAX_QUERIES`. Feature
+        flag `ROLE_EXPANSION_ENABLED=False` desactiva la expansión y
+        vuelve al comportamiento previo (1 query por portal).
+
+        Titulos largos multi-rol se manejan por `_extract_primary_role`
+        (dentro de `expand_role_queries`) — normaliza al primer rol
+        antes de expandir, evitando explotar el volumen.
 
         NUNCA devuelve [] si el perfil tiene título — si no hay match
         por categoría (caso muy raro), cae a "todos los portales".
         """
+        # Import local para evitar ciclos y facilitar el override del
+        # feature flag en tests (`settings.ROLE_EXPANSION_ENABLED = ...`).
+        from jobs.services.role_expander import expand_role_queries
+
         category = infer_profession_category(profile.professional_title)
-        # Rol principal — corto, claro, optimizado para los buscadores
-        # de los portales. Para profiles sin título, query vacío (el
-        # scraper decide si igual scrapear o levantar error).
-        query = _extract_primary_role(profile.professional_title or "")
         location = profile.city or ""
+
+        # Skills tipeadas como lista para expand_role_queries. Split simple
+        # por coma — igual estrategia que `matching_service.enrich_with_match`.
+        skills = [
+            s.strip()
+            for s in (profile.skills or "").split(",")
+            if s.strip()
+        ]
+
+        queries = expand_role_queries(
+            profile.professional_title or "",
+            category=category,
+            skills=skills,
+        )
+        if not queries:
+            # Sin título → sin queries → sin planes. Antes devolvía 1 plan
+            # con query vacío por portal; los scrapers que exigen query
+            # rebotaban con ScraperError. Ahora explicitamos el vacío para
+            # que el caller (JobService) sepa que no hay nada que hacer.
+            logger.info(
+                "PortalRouter: sin queries expandidas para user=%s (título vacío)",
+                profile.user_id,
+            )
+            return []
 
         plans: list[PortalPlan] = []
         for portal_name, scraper_cls in _REGISTRY.items():
             cats = scraper_cls.categories
             if "all" in cats or category in cats:
-                plans.append(PortalPlan(portal=portal_name, query=query, location=location))
+                for query in queries:
+                    plans.append(
+                        PortalPlan(portal=portal_name, query=query, location=location)
+                    )
 
         if not plans:
             # Fallback de último recurso: ningún scraper declaró categoría
             # 'all' ni la categoría inferida. No debería pasar pero igual
-            # devolvemos algo para no tirar el scrape entero.
+            # devolvemos algo para no tirar el scrape entero. Un plan por
+            # portal por query.
             logger.warning(
                 "PortalRouter: ningún scraper matchea categoría %r — usando todos",
                 category,
             )
             plans = [
-                PortalPlan(portal=p, query=query, location=location)
+                PortalPlan(portal=p, query=q, location=location)
                 for p in available_portals()
+                for q in queries
             ]
 
         logger.info(
-            "PortalRouter: %d portales para user=%s (categoría=%s)",
+            "PortalRouter: %d planes para user=%s (categoría=%s, queries=%d)",
             len(plans),
             profile.user_id,
             category,
+            len(queries),
         )
         return plans
 
