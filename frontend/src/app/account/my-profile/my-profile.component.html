@@ -189,13 +189,14 @@
             <p *ngIf="exp.description" class="text-warm-grey mt-1 whitespace-pre-line">{{ exp.description }}</p>
           </div>
         </div>
-        <!-- Modo legacy: string libre -->
+        <!-- Modo legacy: string libre. `renderLegacyText` transforma
+             `**bold**` → <strong> y `\n` → <br>, con escaping HTML de
+             lo que trae el user para evitar XSS. -->
         <div
           *ngIf="!experienceEntries() && profile()?.experience"
-          class="text-sm text-warm-grey leading-relaxed whitespace-pre-line"
-        >
-          {{ profile()?.experience }}
-        </div>
+          class="text-sm text-warm-grey leading-relaxed"
+          [innerHTML]="renderLegacyText(profile()?.experience)"
+        ></div>
         <!-- Vacío -->
         <p *ngIf="!experienceEntries() && !profile()?.experience" class="empty-hint">
           Suma tu trayectoria laboral para mejorar la calidad de los matches.
@@ -221,10 +222,9 @@
         </div>
         <div
           *ngIf="!educationEntries() && profile()?.education"
-          class="text-sm text-warm-grey leading-relaxed whitespace-pre-line"
-        >
-          {{ profile()?.education }}
-        </div>
+          class="text-sm text-warm-grey leading-relaxed"
+          [innerHTML]="renderLegacyText(profile()?.education)"
+        ></div>
         <p *ngIf="!educationEntries() && !profile()?.education" class="empty-hint">
           Lista tu formación académica.
         </p>
@@ -391,16 +391,16 @@
               (click)="startStructuredEducation()"
               class="text-xs text-primary hover:underline underline-offset-4"
             >
-              Convertir a formato estructurado
+              Editar como bloques
             </button>
           </div>
 
           <!-- Legacy: textarea readonly como referencia -->
           <div *ngIf="educationMode() === 'legacy'" class="space-y-2">
             <p class="text-xs text-warm-grey">
-              Tu educación está guardada en formato viejo (texto libre). Puedes migrar
-              a formato estructurado con el botón de arriba — vas a poder editar cada
-              estudio por separado con fechas, institución y título.
+              Tu educación está guardada como texto libre. Puedes editar como bloques con el
+              botón de arriba — vas a poder editar cada estudio por separado con fechas,
+              institución y título.
             </p>
             <textarea
               [value]="legacyEducationText()"
@@ -484,16 +484,16 @@
               (click)="startStructuredExperience()"
               class="text-xs text-primary hover:underline underline-offset-4"
             >
-              Convertir a formato estructurado
+              Editar como bloques
             </button>
           </div>
 
           <!-- Legacy -->
           <div *ngIf="experienceMode() === 'legacy'" class="space-y-2">
             <p class="text-xs text-warm-grey">
-              Tu experiencia está guardada en formato viejo (texto libre). Puedes migrar
-              a formato estructurado con el botón de arriba — vas a poder editar cada
-              trabajo por separado con fechas, empresa, cargo y descripción.
+              Tu experiencia está guardada como texto libre. Puedes editar como bloques con el
+              botón de arriba — vas a poder editar cada trabajo por separado con fechas,
+              empresa, cargo y descripción.
             </p>
             <textarea
               [value]="legacyExperienceText()"

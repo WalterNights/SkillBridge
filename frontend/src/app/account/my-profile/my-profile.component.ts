@@ -1,7 +1,7 @@
 import { Country } from 'country-state-city';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { Title } from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml, Title } from '@angular/platform-browser';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -48,6 +48,7 @@ export class MyProfileComponent implements OnInit {
   private titleService = inject(Title);
   private http = inject(HttpClient);
   private fb = inject(FormBuilder);
+  private sanitizer = inject(DomSanitizer);
 
   profileForm!: FormGroup;
   selectedFile: File | null = null;
@@ -162,6 +163,35 @@ export class MyProfileComponent implements OnInit {
     if (entry.location_country) parts.push(entry.location_country);
     if (parts.length === 0) return '';
     return `(${parts.join(', ')})`;
+  }
+
+  /** Renderiza texto libre legacy en HTML seguro. Aplicaciones:
+   *   - Users que guardaron su experiencia/educación como texto plano
+   *     (pre-editor estructurado) suelen tener `**Empresa**` que sin
+   *     este helper se ve crudo con los asteriscos.
+   *   - Saltos de línea del textarea legacy se convierten a `<br>` para
+   *     preservar el formato del user.
+   *
+   *  Seguridad: escapamos HTML primero — cualquier `<`, `>`, `&` o
+   *  comilla en el texto del user queda inocuo. DESPUÉS aplicamos las
+   *  transformaciones markdown-like sobre el texto ya escapado. El
+   *  `bypassSecurityTrustHtml` es seguro porque el output es control
+   *  nuestro, no del user. */
+  renderLegacyText(raw: string | undefined | null): SafeHtml {
+    if (!raw) return '';
+    const escaped = raw
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+    // Bold — non-greedy para no capturar entre asteriscos separados en
+    // lineas distintas ("**a** ... **b**" NO debe volverse "<strong>a
+    // ... b</strong>").
+    const withBold = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Saltos de línea (Windows CRLF y Unix LF).
+    const withBreaks = withBold.replace(/\r?\n/g, '<br>');
+    return this.sanitizer.bypassSecurityTrustHtml(withBreaks);
   }
 
   constructor() {
