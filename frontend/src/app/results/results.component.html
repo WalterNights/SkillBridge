@@ -197,17 +197,25 @@
         class="job-card glass-strong rounded-2xl p-5 cursor-pointer transition-all flex flex-col"
         [attr.data-match]="matchTier(offer.match_percentage)"
       >
-        <!-- Rank badge — top 3 by orden actual del feed -->
-        <div class="flex items-center justify-between mb-3">
-          <span *ngIf="i < 3; else portalSlot" class="rank-badge">
-            <span class="rank-dot"></span>
-            Tu match #{{ i + 1 }} hoy
-          </span>
-          <ng-template #portalSlot>
-            <span class="text-[10px] uppercase tracking-[0.15em] text-dim font-semibold">
-              {{ portalMeta(offer).label }}
+        <!-- Rank badge — top 3 by orden actual del feed. NUEVA se muestra
+             a la derecha del rank/portal cuando la oferta se scrapeó hoy;
+             desaparece a medianoche local para no contaminar el batch
+             del día siguiente. -->
+        <div class="flex items-center justify-between mb-3 gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <span *ngIf="i < 3; else portalSlot" class="rank-badge">
+              <span class="rank-dot"></span>
+              Tu match #{{ i + 1 }} hoy
             </span>
-          </ng-template>
+            <ng-template #portalSlot>
+              <span class="text-[10px] uppercase tracking-[0.15em] text-dim font-semibold">
+                {{ portalMeta(offer).label }}
+              </span>
+            </ng-template>
+            <span *ngIf="isNewOffer(offer)" class="new-badge" title="Agregada hoy">
+              Nueva
+            </span>
+          </div>
           <span class="match-pill">{{ offer.match_percentage }}%</span>
         </div>
 

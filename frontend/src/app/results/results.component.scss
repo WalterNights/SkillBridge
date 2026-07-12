@@ -479,6 +479,24 @@
   flex-shrink: 0;
 }
 
+/* Badge "Nueva" — se muestra cuando la oferta fue scrapeada hoy.
+   Verde intencional para diferenciar del acento naranja del match — no
+   compite visualmente con el rank/match% que es la señal primaria. */
+.new-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.10);
+  border: 1px solid rgba(34, 197, 94, 0.30);
+  flex-shrink: 0;
+}
+
 /* =========================
    Skills bar + chips
    ========================= */

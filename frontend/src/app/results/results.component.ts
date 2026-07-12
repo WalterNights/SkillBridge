@@ -451,6 +451,22 @@ export class ResultsComponent {
     return 'regular';
   }
 
+  /** True si la oferta fue creada HOY (según timezone local del browser).
+   *  Muestra el badge "Nueva" en la card. El badge desaparece
+   *  naturalmente a medianoche local, así el feed del día siguiente
+   *  arranca limpio y las ofertas del batch nocturno son las nuevas
+   *  reales del día. */
+  isNewOffer(offer: JobOffer): boolean {
+    if (!offer.created_at) return false;
+    const created = new Date(offer.created_at);
+    const today = new Date();
+    return (
+      created.getFullYear() === today.getFullYear() &&
+      created.getMonth() === today.getMonth() &&
+      created.getDate() === today.getDate()
+    );
+  }
+
   /** Skills que matchearon contra el perfil. */
   skillsMatched(offer: JobOffer): number {
     return offer.matched_skills?.length ?? 0;
