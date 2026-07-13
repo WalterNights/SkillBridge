@@ -351,7 +351,18 @@ export class ResultsComponent {
             offer.match_percentage <= this.MATCH_THRESHOLD.REGULAR_MAX,
         );
       case 'new':
-        return base.filter((offer) => this.isNewOffer(offer));
+        // Además de filtrar, ordenamos por created_at DESC — los otros
+        // filtros usan el orden del backend (por match%), pero cuando
+        // el user pide "Nuevas" lo natural es ver primero las más
+        // frescas del último scrape. Fallback a 0 si created_at falta
+        // (defensive — el DTO lo trae siempre pero por si el shape cambia).
+        return base
+          .filter((offer) => this.isNewOffer(offer))
+          .sort((a, b) => {
+            const at = a.created_at ? new Date(a.created_at).getTime() : 0;
+            const bt = b.created_at ? new Date(b.created_at).getTime() : 0;
+            return bt - at;
+          });
       default:
         return base;
     }
