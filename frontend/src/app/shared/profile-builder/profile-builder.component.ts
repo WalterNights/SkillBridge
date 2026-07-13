@@ -209,7 +209,14 @@ export class ProfileBuilderComponent {
       return found?.name ?? isoOrName;
     };
 
-    // Education
+    // Education. Prioridad:
+    //   1) `rawData.education` es array (el /me estructurado lo pasa asi).
+    //   2) Fallback: si el analyzer del wizard guardo un array en
+    //      localStorage pero el form tiene texto, usar el array del
+    //      analyzer. Sin esto, users nuevos que suben CV caian en modo
+    //      legacy en /me despues del registro (el `profile.component.ts`
+    //      aplasta el array a texto antes de patchValue el form).
+    //   3) Texto libre del form (formato legacy manual).
     if (Array.isArray(rawData.education)) {
       if (rawData.education.length > 0) {
         const normalizedEdu = rawData.education.map((edu: EducationEntry) => ({
@@ -221,11 +228,17 @@ export class ProfileBuilderComponent {
         // Array vacío — mandar string vacío para que backend lo limpie
         formData.append('education', '');
       }
+    } else if (hasExistingEducationArray) {
+      const normalizedEdu = (existingParsed.education as EducationEntry[]).map((edu) => ({
+        ...edu,
+        location_country: normalizeCountry(edu.location_country),
+      }));
+      formData.append('education', JSON.stringify(normalizedEdu));
     } else if (typeof rawData.education === 'string' && rawData.education.trim() !== '') {
       formData.append('education', rawData.education);
     }
 
-    // Experience
+    // Experience — misma prioridad.
     if (Array.isArray(rawData.experience)) {
       if (rawData.experience.length > 0) {
         const normalizedExp = rawData.experience.map((exp: ExperienceEntry) => ({
@@ -236,6 +249,12 @@ export class ProfileBuilderComponent {
       } else {
         formData.append('experience', '');
       }
+    } else if (hasExistingExperienceArray) {
+      const normalizedExp = (existingParsed.experience as ExperienceEntry[]).map((exp) => ({
+        ...exp,
+        location_country: normalizeCountry(exp.location_country),
+      }));
+      formData.append('experience', JSON.stringify(normalizedExp));
     } else if (typeof rawData.experience === 'string' && rawData.experience.trim() !== '') {
       formData.append('experience', rawData.experience);
     }
