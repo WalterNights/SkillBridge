@@ -299,6 +299,21 @@ export class MyProfileComponent implements OnInit {
     this.profileForm.setControl('education', this.fb.array<FormGroup>(groups));
   }
 
+  /** Handlers del banner promocional en modo VIEW. Combinan "entrar a
+   *  edit" + "activar structured con auto-parseo" en un solo click —
+   *  evitan que el user tenga que descubrir el botón "Editar como bloques"
+   *  dentro del form. `queueMicrotask` da un tick al mode.set para que
+   *  el rendering se actualice antes de tocar el FormArray. */
+  promoteToStructuredExperience(): void {
+    this.mode.set('edit');
+    queueMicrotask(() => this.startStructuredExperience());
+  }
+
+  promoteToStructuredEducation(): void {
+    this.mode.set('edit');
+    queueMicrotask(() => this.startStructuredEducation());
+  }
+
   /** Detecta si el valor guardado en el backend es un array estructurado
    *  (JSON stringified) o texto legacy libre. Devuelve el array parseado
    *  o null si es legacy. */

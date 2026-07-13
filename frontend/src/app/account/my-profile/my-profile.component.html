@@ -189,6 +189,30 @@
             <p *ngIf="exp.description" class="text-warm-grey mt-1 whitespace-pre-line">{{ exp.description }}</p>
           </div>
         </div>
+        <!-- Banner promocional: si hay contenido legacy, invita a migrar
+             a bloques editables en un solo click (entra en edit + activa
+             structured con auto-parseo). Solo aparece en modo VIEW. -->
+        <div
+          *ngIf="!experienceEntries() && profile()?.experience"
+          class="legacy-promo-banner mb-4"
+        >
+          <span class="material-symbols-outlined promo-icon">tips_and_updates</span>
+          <div class="promo-copy">
+            <p class="promo-title">Edita tu experiencia como bloques</p>
+            <p class="promo-text">
+              Detectamos tus trabajos automáticamente. Solo revisas y guardas.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="promo-cta"
+            (click)="promoteToStructuredExperience()"
+          >
+            Migrar ahora
+            <span class="material-symbols-outlined" style="font-size: 14px">arrow_forward</span>
+          </button>
+        </div>
+
         <!-- Modo legacy: string libre. `renderLegacyText` transforma
              `**bold**` → <strong> y `\n` → <br>, con escaping HTML de
              lo que trae el user para evitar XSS. -->
@@ -220,6 +244,27 @@
             </p>
           </div>
         </div>
+        <div
+          *ngIf="!educationEntries() && profile()?.education"
+          class="legacy-promo-banner mb-4"
+        >
+          <span class="material-symbols-outlined promo-icon">tips_and_updates</span>
+          <div class="promo-copy">
+            <p class="promo-title">Edita tu educación como bloques</p>
+            <p class="promo-text">
+              Detectamos tus estudios automáticamente. Solo revisas y guardas.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="promo-cta"
+            (click)="promoteToStructuredEducation()"
+          >
+            Migrar ahora
+            <span class="material-symbols-outlined" style="font-size: 14px">arrow_forward</span>
+          </button>
+        </div>
+
         <div
           *ngIf="!educationEntries() && profile()?.education"
           class="text-sm text-warm-grey leading-relaxed"

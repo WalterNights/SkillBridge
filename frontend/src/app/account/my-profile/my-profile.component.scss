@@ -427,3 +427,82 @@ textarea.field-input:-webkit-autofill {
     justify-content: center;
   }
 }
+
+/* =========================
+   Banner promocional en modo VIEW cuando hay contenido legacy — invita
+   al user a migrar a bloques editables en un click. Naranja tenue del
+   brand, no compite visualmente con el contenido debajo.
+   ========================= */
+.legacy-promo-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(249, 115, 22, 0.06);
+  border: 1px solid rgba(249, 115, 22, 0.20);
+}
+
+.promo-icon {
+  color: #f97316;
+  font-size: 22px;
+  font-variation-settings: "FILL" 1;
+  flex-shrink: 0;
+}
+
+.promo-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.promo-title {
+  color: #e8e5dd;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.promo-text {
+  color: #8b8a85;
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 2px 0 0 0;
+}
+
+.promo-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: rgba(249, 115, 22, 0.20);
+  border: 1px solid rgba(249, 115, 22, 0.45);
+  color: #f97316;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+
+  &:hover {
+    background: rgba(249, 115, 22, 0.30);
+    border-color: rgba(249, 115, 22, 0.65);
+  }
+}
+
+/* Colapsa en mobile — banner en columna, botón full-width abajo. */
+@media (max-width: 480px) {
+  .legacy-promo-banner {
+    flex-wrap: wrap;
+  }
+
+  .promo-cta {
+    width: 100%;
+    justify-content: center;
+    margin-top: 4px;
+  }
+}
