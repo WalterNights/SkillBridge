@@ -121,6 +121,16 @@ export const JOB_PORTALS: readonly JobPortal[] = [
     kind: 'tech',
   },
   {
+    key: 'infojobs',
+    name: 'InfoJobs',
+    homeUrl: 'https://www.infojobs.net',
+    summary:
+      'Bolsa generalista líder en España. Útil si buscas trabajo remoto internacional o quieres mudarte a España — cubre todos los sectores.',
+    countries: ['España'],
+    verticals: ['Todos los sectores'],
+    kind: 'generalista',
+  },
+  {
     key: 'weworkremotely',
     name: 'We Work Remotely',
     homeUrl: 'https://weworkremotely.com',

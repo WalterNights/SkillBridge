@@ -30,12 +30,14 @@ class TestRegistry:
         # ya no es ruido garantizado porque el router decide por perfil
         # cuándo invocarlo (no se dispara para no-tech).
         # Meli (Mercado Libre / Eightfold PCS-X) se agregó 2026-07-01.
+        # InfoJobs (España, generalista) se agregó 2026-07-13.
         assert set(available_portals()) == {
             "computrabajo",
             "hireline",
+            "indeed",
+            "infojobs",
             "linkedin",
             "magneto",
-            "indeed",
             "meli",
             "torre",
             "trabajando",

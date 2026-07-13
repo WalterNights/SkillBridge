@@ -21,6 +21,7 @@ from jobs.adapters.scrapers.base import JobScraper, ScraperError
 from jobs.adapters.scrapers.computrabajo import ComputrabajoScraper
 from jobs.adapters.scrapers.hireline import HirelineScraper
 from jobs.adapters.scrapers.indeed import IndeedScraper
+from jobs.adapters.scrapers.infojobs import InfoJobsScraper
 from jobs.adapters.scrapers.linkedin import LinkedInGuestScraper
 from jobs.adapters.scrapers.magneto import MagnetoScraper
 from jobs.adapters.scrapers.meli import MeliScraper
@@ -44,9 +45,10 @@ from jobs.adapters.scrapers.weworkremotely import WeWorkRemotelyScraper
 _REGISTRY: dict[str, type[JobScraper]] = {
     ComputrabajoScraper.portal_name: ComputrabajoScraper,
     HirelineScraper.portal_name: HirelineScraper,
+    IndeedScraper.portal_name: IndeedScraper,
+    InfoJobsScraper.portal_name: InfoJobsScraper,
     LinkedInGuestScraper.portal_name: LinkedInGuestScraper,
     MagnetoScraper.portal_name: MagnetoScraper,
-    IndeedScraper.portal_name: IndeedScraper,
     MeliScraper.portal_name: MeliScraper,
     TorreScraper.portal_name: TorreScraper,
     TrabajandoScraper.portal_name: TrabajandoScraper,
