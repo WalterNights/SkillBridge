@@ -96,10 +96,35 @@ class TestTitleTokenization:
         assert _tokenize_title("desarrollador de software") == {"developer", "software"}
 
     def test_normalizes_es_en_role_synonyms(self):
-        # ES "desarrollador" → canon "developer"
-        assert _tokenize_title("Desarrollador Full Stack") == {"developer", "full", "stack"}
+        # ES "desarrollador" → canon "developer". "Full Stack" se
+        # canonicaliza a "fullstack" (compound word) para matchear con
+        # users que escriben "FullStack" como una palabra.
+        assert _tokenize_title("Desarrollador Full Stack") == {"developer", "fullstack"}
         # EN "developer" se queda en "developer"
-        assert _tokenize_title("Full Stack Developer") == {"developer", "full", "stack"}
+        assert _tokenize_title("Full Stack Developer") == {"developer", "fullstack"}
+
+    def test_canonicalizes_compound_tech_words(self):
+        """Bug reportado 2026-07-13: users que escriben `FullStack` como
+        una palabra no matcheaban con ofertas que ponen `Full Stack` o
+        `Full-Stack` (dos palabras). El title_score caia de 100 a 40 y
+        las ofertas quedaban al fondo del feed o por debajo del threshold.
+        Canonicalizamos las variantes concatenada/separada/hifenada de
+        compound words tech comunes."""
+        # fullstack / full stack / full-stack son la misma cosa
+        assert "fullstack" in _tokenize_title("FullStack Developer")
+        assert "fullstack" in _tokenize_title("Full Stack Developer")
+        assert "fullstack" in _tokenize_title("Full-Stack Developer")
+        # frontend / front end / front-end
+        assert "frontend" in _tokenize_title("Frontend Developer")
+        assert "frontend" in _tokenize_title("Front End Developer")
+        assert "frontend" in _tokenize_title("Front-End Developer")
+        # backend / back end / back-end
+        assert "backend" in _tokenize_title("Backend Developer")
+        assert "backend" in _tokenize_title("Back End Developer")
+        assert "backend" in _tokenize_title("Back-End Developer")
+        # devops
+        assert "devops" in _tokenize_title("DevOps Engineer")
+        assert "devops" in _tokenize_title("Dev Ops Engineer")
 
     def test_handles_punctuation_and_accents(self):
         assert _tokenize_title("Diseñador/a UX, Senior") == {"designer", "ux", "senior"}

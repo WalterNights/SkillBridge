@@ -178,12 +178,61 @@ _TITLE_SYNONYMS: dict[str, str] = {
 }
 
 
+# Compound words tech con dos formas comunes en la industria: concatenada
+# ("fullstack") y separada/hifenada ("full stack" / "full-stack"). Los
+# portales las mezclan sin criterio — algunos anuncios usan una, otros
+# la otra, y a veces la misma empresa varía entre listings. Sin este
+# mapeo, un user "FullStack Developer" no matcheaba con "Full Stack
+# Developer" del mismo listing → title_score cae de 100 a 40, la oferta
+# ranquea en el fondo o queda por debajo del threshold del feed.
+# Reportado por el user 2026-07-13 con capturas del email de LinkedIn:
+# ofertas de Wompi/Fracttal/GFT/etc no aparecian porque el matcher las
+# calificaba al 40% cuando eran perfect fit.
+_COMPOUND_WORD_CANON: dict[str, str] = {
+    # `full stack` / `full-stack` → `fullstack`
+    "full stack": "fullstack",
+    "full-stack": "fullstack",
+    # `front end` / `front-end` → `frontend`
+    "front end": "frontend",
+    "front-end": "frontend",
+    # `back end` / `back-end` → `backend`
+    "back end": "backend",
+    "back-end": "backend",
+    # DevOps y variantes
+    "dev ops": "devops",
+    "dev-ops": "devops",
+    # Java Script como palabra separada (raro pero pasa)
+    "java script": "javascript",
+    # UI/UX ya se maneja en `_PROTECTED_SLASH_TERMS` — no necesita
+    # canonicalizar acá.
+}
+
+
+def _canonicalize_compounds(text: str) -> str:
+    """Reemplaza compound words separadas por su forma concatenada.
+
+    Aplicado SOBRE el título en lowercase antes del split de tokens.
+    Case-insensitive porque el input ya viene en lowercase. Ordenado
+    por longitud desc para que `front-end` matchee antes que `end`
+    solo.
+    """
+    for variant, canonical in sorted(
+        _COMPOUND_WORD_CANON.items(), key=lambda kv: -len(kv[0])
+    ):
+        text = text.replace(variant, canonical)
+    return text
+
+
 def _tokenize_title(title: str) -> set[str]:
     """Saca stopwords, normaliza sinónimos rol/función y devuelve un set."""
     if not title:
         return set()
+    # Canonicalizar compound words ANTES del split — sin esto,
+    # "full stack" se rompe en {"full", "stack"} y pierde match con
+    # "fullstack" que Walter escribió como una palabra.
+    canonicalized = _canonicalize_compounds(title.lower())
     # Reemplazar todo lo que no sea alfanumérico/espacio/acento por espacio
-    cleaned = re.sub(r"[^\w\sáéíóúñ]+", " ", title.lower(), flags=re.UNICODE)
+    cleaned = re.sub(r"[^\w\sáéíóúñ]+", " ", canonicalized, flags=re.UNICODE)
     tokens = set()
     for raw in cleaned.split():
         raw = raw.strip()
