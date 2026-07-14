@@ -133,6 +133,141 @@ class TestTitleTokenization:
         assert _tokenize_title("") == set()
         assert _tokenize_title("   ") == set()
 
+    def test_canonicalizes_multi_vertical_compound_words(self):
+        """Bugs analogos al de fullstack (2026-07-13) descubiertos por
+        vertical al auditar el matcher — no queremos que la misma clase
+        de bug afecte otros perfiles. Cada linea cubre un caso real
+        donde antes user y job no matcheaban por ser palabras separadas
+        vs concatenadas."""
+        # Tech: tech lead / technical lead
+        assert "techlead" in _tokenize_title("Tech Lead")
+        assert "techlead" in _tokenize_title("Technical Lead")
+        # Tech: machine learning
+        assert "machinelearning" in _tokenize_title("Machine Learning Engineer")
+        # Tech: product owner / product manager
+        assert "productowner" in _tokenize_title("Product Owner")
+        assert "productmanager" in _tokenize_title("Product Manager")
+        # Tech: sysadmin variantes
+        assert "sysadmin" in _tokenize_title("SysAdmin")
+        assert "sysadmin" in _tokenize_title("Sys Admin")
+        assert "sysadmin" in _tokenize_title("System Administrator")
+        # HR: RRHH / Recursos Humanos / Human Resources
+        assert "rrhh" in _tokenize_title("Analista RRHH")
+        assert "rrhh" in _tokenize_title("Analista de Recursos Humanos")
+        assert "rrhh" in _tokenize_title("Human Resources Analyst")
+        # Ventas: customer success / customer service
+        assert "customersuccess" in _tokenize_title("Customer Success Manager")
+        assert "customerservice" in _tokenize_title("Atención al Cliente")
+        assert "customerservice" in _tokenize_title("Customer Service Rep")
+        # Ventas: business development
+        assert "businessdevelopment" in _tokenize_title("Business Development Rep")
+        assert "businessdevelopment" in _tokenize_title("Desarrollo de Negocios")
+        # Ops: supply chain / cadena de suministro
+        assert "supplychain" in _tokenize_title("Supply Chain Analyst")
+        assert "supplychain" in _tokenize_title("Cadena de Suministro")
+
+
+@pytest.mark.unit
+class TestCrossVerticalMatch:
+    """Sanity check por vertical: casos reales donde antes del fix el
+    matcher penalizaba injustamente. Cada test replica el pattern del
+    caso Walter/LinkedIn (2026-07-13) para su vertical.
+
+    Positivo = user y job son el mismo rol escrito distinto → debe
+    matchear alto (>= 85). Negativo = user y job son roles distintos
+    → NO debe matchear alto."""
+
+    def _score(self, job: str, user: str) -> int:
+        """Helper: title_score puro, sin category."""
+        return _calc_title_score(job, user)
+
+    # ---- Tech ----
+    def test_tech_lead_variants_match(self):
+        assert self._score("Technical Lead", "Tech Lead") >= 85
+        assert self._score("Tech Lead Backend", "Tech Lead") >= 85
+
+    def test_ml_engineer_variants_match(self):
+        assert self._score("Machine Learning Engineer", "Machine Learning Engineer") == 100
+
+    def test_product_owner_variants_match(self):
+        assert self._score("Product Owner", "Product Owner Senior") >= 85
+        assert self._score("Senior Product Owner", "Product Owner") >= 85
+
+    # ---- HR ----
+    def test_rrhh_variants_match(self):
+        """Bug descubierto: user 'RRHH Analyst' no matcheaba con jobs
+        que ponian 'Analista de Recursos Humanos' escrito completo."""
+        assert self._score("Analista de Recursos Humanos", "RRHH Analyst") >= 85
+        assert self._score("Human Resources Analyst", "Analista RRHH") >= 85
+
+    # ---- Ventas / customer facing ----
+    def test_customer_success_matches_variants(self):
+        assert (
+            self._score(
+                "Gerente de Customer Success", "Customer Success Manager"
+            )
+            >= 85
+        )
+
+    def test_business_development_matches_variants(self):
+        assert (
+            self._score("Business Development Rep", "Desarrollo de Negocios")
+            >= 85
+        )
+
+    # ---- Ops ----
+    def test_supply_chain_matches_variants(self):
+        assert (
+            self._score("Analista Cadena de Suministro", "Supply Chain Analyst")
+            >= 85
+        )
+
+    # ---- Educación (via _TITLE_SYNONYMS nuevos) ----
+    def test_teacher_es_en_synonym_matches(self):
+        """docente / profesor / maestro / teacher canonicalizan al mismo
+        token. El contexto ("de Matemáticas" vs "Math") NO se traduce
+        automaticamente — no queremos expandir el mapa a vocabulario
+        general. Igual, con el sinonimo del rol la oferta pasa de score
+        15 (piso minimo) a 40 (overlap parcial), suficiente para
+        acompañar el piso vertical (`education`) y salir en el feed."""
+        assert self._score("Math Teacher", "Docente de Matemáticas") >= 40
+
+    def test_teacher_exact_role_reaches_full_match(self):
+        """Cuando el titulo del user y del job son el mismo rol (mismo
+        idioma/sin adornos), el score es 100."""
+        assert self._score("Docente", "Profesor") == 100
+        assert self._score("Maestra", "Teacher") == 100
+
+    # ---- Oficios ----
+    def test_mechanic_es_en_synonym_matches(self):
+        """`Mecánico` y `Mechanic` son sinónimos → sin el mapeo daba 0/piso;
+        con el mapeo, jobs con contexto adicional (Automotive vs
+        Automotriz) llegan a overlap parcial."""
+        assert self._score("Automotive Mechanic", "Mecánico Automotriz") >= 40
+
+    def test_mechanic_exact_role_reaches_full_match(self):
+        assert self._score("Mechanic", "Mecánico") == 100
+
+    def test_driver_es_en_synonym_matches(self):
+        assert self._score("Delivery Driver", "Conductor de Entregas") >= 40
+
+    def test_driver_exact_role_reaches_full_match(self):
+        assert self._score("Driver", "Chofer") == 100
+
+    # ---- Negatives — sanity check que NO estamos rompiendo la
+    # separación entre roles distintos ----
+    def test_backend_developer_does_not_match_frontend(self):
+        """Aunque ahora frontend y backend son compound words, siguen
+        siendo roles distintos — NO deben matchear al 100%. Overlap solo
+        en `developer` → parcial."""
+        score = self._score("Backend Developer", "Frontend Developer")
+        assert score < 60  # overlap parcial, no debería llegar a "bueno"
+
+    def test_tech_role_does_not_match_health_role(self):
+        """Full Stack Developer vs Enfermero → tokens disjuntos, NO
+        debe rescatarse via canonicalización espuria."""
+        assert self._score("Enfermero de UCI", "Full Stack Developer") < 40
+
 
 @pytest.mark.unit
 class TestTitleScore:

@@ -150,6 +150,7 @@ def _extract_primary_role(title: str) -> str:
 # "Desarrollador Full Stack" no matchearía con jobs titulados "Full
 # Stack Developer" (palabras compartidas: full, stack — pierde el rol).
 _TITLE_SYNONYMS: dict[str, str] = {
+    # ---- Roles tech / ingeniería ----
     "desarrollador": "developer",
     "desarrolladora": "developer",
     "developer": "developer",
@@ -167,9 +168,78 @@ _TITLE_SYNONYMS: dict[str, str] = {
     "arquitecto": "architect",
     "arquitecta": "architect",
     "architect": "architect",
+    # ---- Roles de gestión / mando ----
     "lider": "lead",
     "líder": "lead",
     "lead": "lead",
+    "coordinador": "coordinator",
+    "coordinadora": "coordinator",
+    "coordinator": "coordinator",
+    "gerente": "manager",
+    "manager": "manager",
+    "supervisor": "supervisor",
+    "supervisora": "supervisor",
+    "director": "director",
+    "directora": "director",
+    "jefe": "chief",
+    "jefa": "chief",
+    "chief": "chief",
+    # ---- Roles asistencia / soporte ----
+    "asistente": "assistant",
+    "assistant": "assistant",
+    "auxiliar": "assistant",
+    # ---- Roles expertos / consultores ----
+    "especialista": "specialist",
+    "specialist": "specialist",
+    "consultor": "consultant",
+    "consultora": "consultant",
+    "consultant": "consultant",
+    "asesor": "advisor",
+    "asesora": "advisor",
+    "advisor": "advisor",
+    "advisora": "advisor",
+    # ---- Roles técnicos / operativos ----
+    "técnico": "technician",
+    "tecnico": "technician",
+    "técnica": "technician",
+    "tecnica": "technician",
+    "technician": "technician",
+    "operador": "operator",
+    "operadora": "operator",
+    "operator": "operator",
+    "operario": "operator",
+    "operaria": "operator",
+    # ---- Educación ----
+    "profesor": "teacher",
+    "profesora": "teacher",
+    "docente": "teacher",
+    "maestro": "teacher",
+    "maestra": "teacher",
+    "teacher": "teacher",
+    "educador": "teacher",
+    "educadora": "teacher",
+    # ---- Oficios comunes ----
+    "mecánico": "mechanic",
+    "mecanico": "mechanic",
+    "mecánica": "mechanic",
+    "mecanica": "mechanic",
+    "mechanic": "mechanic",
+    "conductor": "driver",
+    "conductora": "driver",
+    "chofer": "driver",
+    "driver": "driver",
+    # ---- Salud (traducciones más comunes) ----
+    "médico": "doctor",
+    "medico": "doctor",
+    "doctor": "doctor",
+    "enfermero": "nurse",
+    "enfermera": "nurse",
+    "nurse": "nurse",
+    # ---- Ventas ----
+    "vendedor": "salesperson",
+    "vendedora": "salesperson",
+    "salesperson": "salesperson",
+    # ---- Seniority (no traducir, alias) ----
     "senior": "senior",
     "sr": "senior",
     "junior": "junior",
@@ -189,6 +259,7 @@ _TITLE_SYNONYMS: dict[str, str] = {
 # ofertas de Wompi/Fracttal/GFT/etc no aparecian porque el matcher las
 # calificaba al 40% cuando eran perfect fit.
 _COMPOUND_WORD_CANON: dict[str, str] = {
+    # ---- Tech ----
     # `full stack` / `full-stack` → `fullstack`
     "full stack": "fullstack",
     "full-stack": "fullstack",
@@ -201,8 +272,70 @@ _COMPOUND_WORD_CANON: dict[str, str] = {
     # DevOps y variantes
     "dev ops": "devops",
     "dev-ops": "devops",
+    # `sys admin` / `sys-admin` / `system administrator` → `sysadmin`
+    "sys admin": "sysadmin",
+    "sys-admin": "sysadmin",
+    "system administrator": "sysadmin",
+    "systems administrator": "sysadmin",
+    # `tech lead` / `technical lead` → `techlead`
+    "tech lead": "techlead",
+    "technical lead": "techlead",
+    # `machine learning` → `machinelearning`. NOTA: dejamos `ml` por
+    # separado — es abreviatura común pero también significa mililitros
+    # y aparece en títulos no-ML. Si el user pone "ML Engineer" queda
+    # como {ml, engineer} y el matcher usa piso vertical de tech.
+    "machine learning": "machinelearning",
+    "deep learning": "deeplearning",
+    # `data science` / `data scientist` — la palabra "data" sola es muy
+    # genérica; canonicalizamos el par para que funcione como rol.
+    "data science": "datascience",
     # Java Script como palabra separada (raro pero pasa)
     "java script": "javascript",
+    # Product Owner / Product Manager — dos palabras muy comunes
+    "product owner": "productowner",
+    "product manager": "productmanager",
+    "project manager": "projectmanager",
+
+    # ---- HR ----
+    # RRHH / Recursos Humanos / HR / Human Resources → `rrhh`
+    "recursos humanos": "rrhh",
+    "human resources": "rrhh",
+    "talent acquisition": "talentacquisition",
+    "adquisicion de talento": "talentacquisition",
+    "adquisición de talento": "talentacquisition",
+
+    # ---- Ventas ----
+    "customer success": "customersuccess",
+    "customer service": "customerservice",
+    "atencion al cliente": "customerservice",
+    "atención al cliente": "customerservice",
+    "servicio al cliente": "customerservice",
+    "business development": "businessdevelopment",
+    "desarrollo de negocios": "businessdevelopment",
+    "account manager": "accountmanager",
+    "key account": "keyaccount",
+    "cuenta clave": "keyaccount",
+
+    # ---- Operations / Logistica ----
+    "supply chain": "supplychain",
+    "cadena de suministro": "supplychain",
+    "cadena de abastecimiento": "supplychain",
+    "cadena de valor": "supplychain",
+
+    # ---- Marketing ----
+    "community manager": "communitymanager",
+    "social media": "socialmedia",
+    "digital marketing": "digitalmarketing",
+    "marketing digital": "digitalmarketing",
+    "growth marketing": "growthmarketing",
+    "growth hacker": "growthmarketing",
+
+    # ---- Salud ----
+    "medico general": "medico",
+    "médico general": "medico",
+    "medico veterinario": "veterinario",
+    "médico veterinario": "veterinario",
+
     # UI/UX ya se maneja en `_PROTECTED_SLASH_TERMS` — no necesita
     # canonicalizar acá.
 }
