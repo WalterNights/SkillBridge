@@ -15,6 +15,13 @@ _ALLOWED_IMAGE_EXTENSIONS = ("jpg", "jpeg", "png", "webp")
 _ALLOWED_IMAGE_FORMATS = ("JPEG", "PNG", "WEBP")
 _MAX_IMAGE_BYTES = 5 * 1024 * 1024  # 5 MB
 
+# SEGURIDAD: extensiones permitidas para CVs. Solo PDF/DOCX — nada
+# ejecutable (`.html`, `.svg`, `.exe`) ni formatos con macros peligrosos
+# no gestionados (legacy `.doc` binary). Complementa el header
+# `Content-Disposition: attachment` que nginx pone en `/media/`.
+_ALLOWED_RESUME_EXTENSIONS = ("pdf", "docx")
+_MAX_RESUME_BYTES = 10 * 1024 * 1024  # 10 MB
+
 
 def validate_uploaded_image(value):
     """Valida imágenes subidas (photo, banner) contra spoofing y bombs.
@@ -55,6 +62,60 @@ def validate_uploaded_image(value):
         raise ValidationError(
             "El contenido del archivo no coincide con un formato de imagen permitido."
         )
+
+
+def validate_uploaded_resume(value):
+    """Valida CVs subidos contra spoofing y bombs.
+
+    Tres capas — mismo patrón que `validate_uploaded_image`:
+      1. Extensión en allow-list (`pdf` / `docx`).
+      2. Tamaño máximo 10MB.
+      3. Magic bytes — `%PDF-` para PDF, `PK\\x03\\x04` para DOCX (zip).
+         Renombrar `evil.html` → `evil.pdf` no engaña.
+    """
+    name = (getattr(value, "name", "") or "").lower()
+    ext = name.rsplit(".", 1)[-1] if "." in name else ""
+    if ext not in _ALLOWED_RESUME_EXTENSIONS:
+        raise ValidationError(
+            f"Formato no permitido. Usá: {', '.join(_ALLOWED_RESUME_EXTENSIONS)}."
+        )
+
+    size = getattr(value, "size", 0)
+    if size > _MAX_RESUME_BYTES:
+        raise ValidationError(f"El CV excede {_MAX_RESUME_BYTES // (1024 * 1024)} MB.")
+
+    try:
+        value.seek(0)
+        head = value.read(8)
+    except Exception as exc:
+        raise ValidationError("No se pudo leer el archivo.") from exc
+    finally:
+        try:
+            value.seek(0)
+        except Exception:
+            pass
+
+    if ext == "pdf" and not head.startswith(b"%PDF-"):
+        raise ValidationError("El archivo no es un PDF válido.")
+    if ext == "docx" and not head.startswith(b"PK\x03\x04"):
+        raise ValidationError("El archivo no es un DOCX válido.")
+
+
+def _resume_upload_path(instance, filename):
+    """Genera un path aleatorio para el CV — evita enumeración pública.
+
+    Los CVs se sirven desde `/media/resumes/` (nginx, con
+    `Content-Disposition: attachment`). Un filename predecible tipo
+    `resume.pdf` deja enumerar CVs de otros users por fuerza bruta.
+    Usamos un UUID hex (128 bits) + extensión original, imposible de
+    adivinar. La extensión se preserva porque los clientes de correo /
+    OS la usan para abrir el archivo correctamente.
+    """
+    import os
+    import uuid
+
+    ext = os.path.splitext(filename)[1].lower() or ".pdf"
+    return f"resumes/{uuid.uuid4().hex}{ext}"
 
 
 def strip_image_metadata(uploaded_file):
@@ -225,7 +286,12 @@ class UserProfile(models.Model):
     education = models.TextField(blank=True)
     skills = models.TextField(help_text="Lista de habilidades separadas por coma")
     experience = models.TextField(help_text="Descripción libre de experiencia")
-    resume = models.FileField(upload_to="resumes/", null=True, blank=True)
+    resume = models.FileField(
+        upload_to=_resume_upload_path,
+        null=True,
+        blank=True,
+        validators=[validate_uploaded_resume],
+    )
     photo = models.ImageField(
         upload_to="profile_photos/",
         null=True,

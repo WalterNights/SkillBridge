@@ -10,8 +10,32 @@ class JobOfferSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JobOffer
-        fields = "__all__"
-        extra_fields = ["matched_skills", "missing_skills", "match_percentage"]
+        # SEGURIDAD: fields explícitos, no `__all__`. Blinda mass-assignment
+        # si mañana el viewset pasa de ReadOnly a ModelViewSet — sin esto,
+        # un POST podría setear `is_active`, `keywords`, `country`, `url`
+        # y contaminar el feed. Todos los campos derivados (category,
+        # modality, country, is_active) los calcula el pipeline de scrape,
+        # jamás el cliente.
+        fields = [
+            "id",
+            "title",
+            "company",
+            "location",
+            "summary",
+            "url",
+            "keywords",
+            "portal",
+            "country",
+            "modality",
+            "salary_text",
+            "category",
+            "is_active",
+            "last_checked_at",
+            "created_at",
+            "matched_skills",
+            "missing_skills",
+            "match_percentage",
+        ]
 
     def get_match_percentage(self, job):
         return getattr(job, "match_percentage", None)
