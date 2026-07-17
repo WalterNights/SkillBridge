@@ -37,6 +37,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.shortcuts import redirect
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
@@ -79,8 +81,16 @@ def _config_missing_response() -> Response:
     )
 
 
+@method_decorator(
+    ratelimit(key="ip", rate="20/m", method="GET", block=True), name="get"
+)
 class LinkedInStartView(APIView):
-    """GET /api/auth/linkedin/start/ → redirige al authorize URL."""
+    """GET /api/auth/linkedin/start/ → redirige al authorize URL.
+
+    Rate-limit 20/min/IP: cada `start` guarda un state token en Redis
+    (10 min TTL). Sin límite un atacante puede inflar el cache o
+    generar redirects masivos con el logo del sitio (phishing).
+    """
 
     permission_classes = [AllowAny]
 
@@ -103,11 +113,19 @@ class LinkedInStartView(APIView):
         return redirect(f"{_AUTHORIZE_URL}?{urlencode(params)}")
 
 
+@method_decorator(
+    ratelimit(key="ip", rate="30/m", method="GET", block=True), name="get"
+)
 class LinkedInCallbackView(APIView):
     """GET /api/auth/linkedin/callback/?code=...&state=...
 
     Termina el flow OAuth, crea/recupera al user, emite JWT pair y
     redirige al frontend con los tokens en query string.
+
+    Rate-limit 30/min/IP: cada callback dispara 2 requests HTTP a
+    LinkedIn (token + userinfo). Sin límite, un atacante puede quemar
+    cuota outbound o generar errores 4xx repetidos contra LinkedIn que
+    terminen bloqueando nuestro client_id.
     """
 
     permission_classes = [AllowAny]
@@ -249,6 +267,33 @@ class LinkedInCallbackView(APIView):
         user.linkedin_user_id = linkedin_sub
         user.set_unusable_password()
         user.save(update_fields=["linkedin_user_id", "password"])
+
+        # Crear UserProfile "stub" con los datos que LinkedIn nos dio.
+        # Sin esto, un user que cierra el navegador antes de completar el
+        # wizard queda registrado con `User` pero sin `UserProfile` — el
+        # admin ve el email solitario y el matcher lo ignora. Los campos
+        # required a nivel de form quedan como string vacio; el frontend
+        # detecta perfil incompleto (endpoint /profiles/check) y fuerza
+        # completar el wizard antes de dar acceso al dashboard.
+        #
+        # `first_name` y `last_name` del UserProfile vienen de LinkedIn
+        # (`given_name` / `family_name`) que ya validamos requeridos en
+        # el callback. Los demas campos (phone, city, professional_title,
+        # skills, experience) los llena el user en el wizard.
+        from users.models import UserProfile
+
+        UserProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                "first_name": (given_name or "")[:50],
+                "last_name": (family_name or "")[:50],
+                "phone": "",
+                "city": "",
+                "professional_title": "",
+                "skills": "",
+                "experience": "",
+            },
+        )
         return user
 
     @staticmethod

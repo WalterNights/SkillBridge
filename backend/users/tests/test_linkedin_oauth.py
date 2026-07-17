@@ -114,6 +114,30 @@ class TestLinkedInCallback:
         assert user.first_name == "Walter"
         assert not user.has_usable_password()
 
+    def test_creates_userprofile_stub_on_first_login(self, api_client):
+        """Regresión: sin este stub, un user que cierra el navegador antes
+        de completar el wizard queda con `User` pero sin `UserProfile` —
+        aparece huérfano en el admin y el matcher lo ignora."""
+        from users.models import UserProfile
+
+        state = self._start_and_get_state(api_client)
+        with patch("users.oauth_linkedin.requests.post") as mock_post, patch(
+            "users.oauth_linkedin.requests.get"
+        ) as mock_get:
+            mock_post.return_value = _mock_token_response()
+            mock_get.return_value = _mock_userinfo_response()
+            api_client.get(f"/api/auth/linkedin/callback/?code=test-code&state={state}")
+
+        user = User.objects.get(linkedin_user_id="linkedin-user-123")
+        profile = UserProfile.objects.get(user=user)
+        # LinkedIn nos dio first/last name — los propagamos al perfil.
+        assert profile.first_name == "Walter"
+        assert profile.last_name == "Hernández"
+        # Los demás campos requeridos quedan vacíos — el wizard los llena.
+        assert profile.phone == ""
+        assert profile.city == ""
+        assert profile.professional_title == ""
+
     def test_idempotent_existing_linkedin_user(self, api_client, django_user_model):
         existing = django_user_model.objects.create_user(
             username="existing",
