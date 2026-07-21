@@ -22,6 +22,21 @@ import { portalMeta } from '../shared/portal';
 /** Etiqueta legible de un código ISO 3166-1 alpha-2 para el dropdown.
  * Cubrimos los países activos en LATAM + ES/US. Si falta uno, se muestra
  * el código tal cual (fallback aceptable). */
+/** Key de sessionStorage donde guardamos el estado de filtros del feed.
+ * Persiste durante la sesión de la pestaña — así al entrar a una oferta
+ * y volver con back/Router link, los filtros no se resetean. Se limpia
+ * naturalmente al cerrar la pestaña, que es la semántica correcta para
+ * estado transitorio de UI (no una preferencia de usuario). */
+const FILTERS_STORAGE_KEY = 'results_filters_v1';
+
+type PersistedFilters = {
+  selectedFilter?: 'all' | 'good' | 'regular' | 'bad' | 'new';
+  countries?: string[];
+  modalities?: string[];
+  sortOrder?: 'desc' | 'asc';
+  filtersOpen?: boolean;
+};
+
 const COUNTRY_LABELS: Record<string, string> = {
   MX: 'México',
   CO: 'Colombia',
@@ -200,8 +215,44 @@ export class ResultsComponent {
   }
 
   ngOnInit(): void {
+    this.restoreFilters();
     this.loadOffers();
     this.loadFilterOptions();
+  }
+
+  /** Hidrata los signals de filtro desde sessionStorage. Se llama antes
+   * de `loadOffers()` para que la primera request ya use los filtros
+   * restaurados y no dispare dos fetches. Falla silenciosa si el payload
+   * está corrupto — quedan los defaults. */
+  private restoreFilters(): void {
+    const raw = sessionStorage.getItem(FILTERS_STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const data = JSON.parse(raw) as PersistedFilters;
+      if (data.selectedFilter) this.selectedFilter = data.selectedFilter;
+      if (Array.isArray(data.countries)) this.selectedCountries.set(new Set(data.countries));
+      if (Array.isArray(data.modalities)) this.selectedModalities.set(new Set(data.modalities));
+      if (data.sortOrder === 'asc' || data.sortOrder === 'desc') {
+        this.sortOrder.set(data.sortOrder);
+      }
+      if (typeof data.filtersOpen === 'boolean') this.filtersOpen.set(data.filtersOpen);
+    } catch {
+      /* payload corrupto — ignoramos y arrancamos con defaults. */
+    }
+  }
+
+  /** Serializa el estado actual de filtros a sessionStorage. Llamado en
+   * cada mutación (chip, país, modalidad, sort, clear, toggle panel)
+   * para que la vuelta desde el detalle vea siempre el estado más reciente. */
+  private persistFilters(): void {
+    const data: PersistedFilters = {
+      selectedFilter: this.selectedFilter,
+      countries: Array.from(this.selectedCountries()),
+      modalities: Array.from(this.selectedModalities()),
+      sortOrder: this.sortOrder(),
+      filtersOpen: this.filtersOpen(),
+    };
+    sessionStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(data));
   }
 
   private loadFilterOptions(): void {
@@ -216,6 +267,7 @@ export class ResultsComponent {
 
   toggleFiltersPanel(): void {
     this.filtersOpen.update((open) => !open);
+    this.persistFilters();
   }
 
   toggleCountry(code: string): void {
@@ -224,6 +276,7 @@ export class ResultsComponent {
       next.has(code) ? next.delete(code) : next.add(code);
       return next;
     });
+    this.persistFilters();
     this.loadOffers();
   }
 
@@ -233,12 +286,14 @@ export class ResultsComponent {
       next.has(value) ? next.delete(value) : next.add(value);
       return next;
     });
+    this.persistFilters();
     this.loadOffers();
   }
 
   clearFilters(): void {
     this.selectedCountries.set(new Set());
     this.selectedModalities.set(new Set());
+    this.persistFilters();
     this.loadOffers();
   }
 
@@ -370,6 +425,7 @@ export class ResultsComponent {
 
   setFilter(filter: 'all' | 'good' | 'regular' | 'bad' | 'new') {
     this.selectedFilter = filter;
+    this.persistFilters();
   }
 
   /** Cuenta de ofertas scrapeadas hoy en el feed cargado. Usado por el
@@ -385,6 +441,7 @@ export class ResultsComponent {
    * con criterios distintos. */
   toggleSortOrder(): void {
     this.sortOrder.update((order) => (order === 'desc' ? 'asc' : 'desc'));
+    this.persistFilters();
     this.loadOffers();
   }
 
