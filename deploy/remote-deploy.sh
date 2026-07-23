@@ -1,12 +1,40 @@
 #!/usr/bin/env bash
 # Se ejecuta DENTRO del VPS via SSH desde GitHub Actions.
 # Asume que `VPS_PATH` viene exportada (default: /var/www/skiltak).
-# El repo ya debe estar clonado en $VPS_PATH y el .env presente en $VPS_PATH/.env
+# El repo ya debe estar clonado en $VPS_PATH.
+#
+# `.env` se materializa desde el GitHub Secret `ENV_FILE` en cada deploy (ver
+# el step "Run remote deploy script" en .github/workflows/deploy.yml). El
+# archivo del VPS deja de ser fuente de verdad — la única fuente ahora es el
+# secret. Si `ENV_FILE` no está seteado, respetamos el `.env` que ya viva en
+# el VPS (fallback para primer bootstrap o deploys manuales).
 
 set -euo pipefail
 
 VPS_PATH="${VPS_PATH:-/var/www/skiltak}"
 cd "$VPS_PATH"
+
+# ────────────────────────────────────────────────────────────────────────────
+# 0. Materializar .env desde ENV_FILE_B64 (source-of-truth es el GitHub Secret).
+#    Llega base64-encoded desde el workflow para sobrevivir el shell escape
+#    del SSH inline (el contenido literal tiene newlines/quotes/`=`/`$`).
+# ────────────────────────────────────────────────────────────────────────────
+if [ -n "${ENV_FILE_B64:-}" ]; then
+  echo "==> Syncing .env from GitHub Secret ENV_FILE"
+  # Backup del .env anterior antes de sobreescribir, por si hay que auditar
+  # qué cambió entre deploys o hacer rollback manual.
+  if [ -f .env ]; then
+    cp .env ".env.bak.$(date +%Y%m%d_%H%M%S)"
+    # Retener solo los últimos 5 backups para no llenar el disco.
+    ls -t .env.bak.* 2>/dev/null | tail -n +6 | xargs -r rm -f
+  fi
+  printf '%s' "$ENV_FILE_B64" | base64 -d > .env
+  chmod 600 .env
+  echo "  [OK] .env actualizado ($(wc -l < .env) líneas)"
+else
+  echo "==> ENV_FILE_B64 no seteado; conservando .env existente en el VPS"
+  [ -f .env ] || { echo "  [!] Falta $VPS_PATH/.env y ENV_FILE_B64 no vino en el secret. Abortando."; exit 1; }
+fi
 
 # El repo es propiedad del usuario `skiltak` (creado por provision.sh) pero el
 # deploy corre como root via SSH. Git rechaza operar si el dueño difiere.
@@ -103,5 +131,54 @@ echo "==> Health check"
 sleep 2
 sudo systemctl is-active skiltak-gunicorn
 sudo systemctl is-active skiltak-celery
+
+# ────────────────────────────────────────────────────────────────────────────
+# End-to-end CORS smoke test.
+#
+# Nace del incidente de julio 2026: se agregó `https://skiltak.com` al
+# CORS_ALLOWED_ORIGINS del .env.prod local pero nadie hizo el scp manual al
+# VPS, y prod quedó rechazando los requests con "No 'Access-Control-Allow-
+# Origin' header" — que el navegador reporta como error de URL pero es
+# CORS. Automatizamos la detección: si el backend no devuelve el header CORS
+# esperado para el origin del frontend, fallamos el deploy antes de que el
+# usuario lo note.
+#
+# El check usa un preflight OPTIONS (no requiere auth y siempre debería
+# devolver headers CORS si el origin está permitido). Testear cada origin
+# permitido asegura que si mañana se agrega un dominio y alguien se olvida
+# de propagarlo, el deploy también falla.
+# ────────────────────────────────────────────────────────────────────────────
+echo "==> CORS smoke test"
+API_HOST="${API_HOST:-https://api.skiltak.com}"
+CORS_TEST_PATH="${CORS_TEST_PATH:-/api/jobs/jobs/}"
+# Lee CORS_ALLOWED_ORIGINS del .env recién sincronizado y prueba cada uno.
+CORS_LIST="$(grep -E '^CORS_ALLOWED_ORIGINS=' .env | cut -d= -f2- | tr -d '"')"
+if [ -z "$CORS_LIST" ]; then
+  echo "  [!] CORS_ALLOWED_ORIGINS vacío en .env — smoke test skip (pero deberías setearlo)"
+else
+  FAILED_ORIGINS=""
+  IFS=',' read -ra ORIGINS <<< "$CORS_LIST"
+  for origin in "${ORIGINS[@]}"; do
+    origin="$(echo "$origin" | xargs)"  # trim whitespace
+    [ -z "$origin" ] && continue
+    # curl -o /dev/null tira el body, -D - imprime headers a stdout para grep.
+    headers="$(curl -fsS -o /dev/null -D - -X OPTIONS \
+      -H "Origin: $origin" \
+      -H "Access-Control-Request-Method: GET" \
+      "$API_HOST$CORS_TEST_PATH" 2>&1 || true)"
+    if echo "$headers" | grep -qiE "^access-control-allow-origin:\s*$origin"; then
+      echo "  [OK] $origin"
+    else
+      echo "  [FAIL] $origin — respuesta sin header CORS esperado"
+      FAILED_ORIGINS="$FAILED_ORIGINS $origin"
+    fi
+  done
+  if [ -n "$FAILED_ORIGINS" ]; then
+    echo "  [!] Los siguientes origins están declarados en .env pero prod los rechaza:"
+    echo "     $FAILED_ORIGINS"
+    echo "     Revisá CORS_ALLOWED_ORIGINS y CSRF_TRUSTED_ORIGINS. Abortando el deploy."
+    exit 1
+  fi
+fi
 
 echo "==> Deploy OK"

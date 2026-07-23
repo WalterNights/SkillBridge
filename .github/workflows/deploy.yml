@@ -61,13 +61,26 @@ jobs:
       # hacía rsync runner→VPS de la dist, pero Hostinger filtra IPs de
       # runners intermitentemente con TCP timeout sin patrón claro. Build
       # en VPS es 100% confiable; tradeoff: ~2 min más por deploy.
+      #
+      # `ENV_FILE` es un secret con el contenido literal de `.env.prod`;
+      # remote-deploy.sh lo escribe a $VPS_PATH/.env al inicio. Eso hace
+      # que el secret sea la única fuente de verdad para variables de
+      # entorno de prod y elimina el `scp` manual que en Jul 2026 dejó
+      # el CORS desincronizado y bloqueó el frontend.
       - name: Run remote deploy script
         uses: nick-fields/retry@v3
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
         with:
           timeout_minutes: 10
           max_attempts: 3
           retry_wait_seconds: 60
           command: |
+            # ENV_FILE viaja base64-encoded para no romper el shell escape
+            # remoto — el contenido literal tiene newlines, `=`, comillas y
+            # posibles `$` que romperían un inline plano. remote-deploy.sh
+            # lo decodifica al recibir ENV_FILE_B64 y lo escribe a .env.
+            ENV_FILE_B64="$(printf '%s' "$ENV_FILE" | base64 -w0)"
             ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30 -o ServerAliveInterval=15 \
               "$VPS_USER@$VPS_HOST" \
-              "VPS_PATH=$VPS_PATH bash -s" < deploy/remote-deploy.sh
+              "VPS_PATH=$VPS_PATH ENV_FILE_B64=$ENV_FILE_B64 bash -s" < deploy/remote-deploy.sh

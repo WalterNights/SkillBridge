@@ -41,21 +41,31 @@ git clone https://github.com/WalterNights/SkillBridge.git /var/www/skiltak
 
 ### 3. Crear el `.env` de producción
 
-En tu máquina local tenés [`.env.prod`](../.env.prod) (gitignored) con los valores de producción ya listos.
-Copialo al VPS:
+**Fuente de verdad: GitHub Secret `ENV_FILE`.** Desde Jul 2026, cada deploy
+lee ese secret y lo escribe a `/var/www/skiltak/.env` automáticamente (ver
+[`deploy/remote-deploy.sh`](remote-deploy.sh) sección "0. Materializar
+.env"). El file local `.env.prod` sirve como plantilla y draft, pero **no
+es el que corre en prod** — lo que cuenta es lo que hay en el secret.
+
+Cuando cambies una variable:
+
+1. Actualizala en `.env.prod` local (para tener el track en tu máquina).
+2. Copiala al secret en GitHub: **Repo → Settings → Secrets and variables
+   → Actions → `ENV_FILE`** — pegá el contenido completo del `.env.prod`.
+3. El próximo deploy la propaga sola. Sin `scp` manual.
+
+**Primera vez (bootstrap):** todavía necesitás un `.env` en el VPS antes
+del primer deploy del CI porque `provision.sh` lo lee para crear el user
+de Postgres:
 
 ```bash
 # Desde tu máquina local (PowerShell):
 scp -i $env:USERPROFILE\.ssh\id_ed25519_skiltak .env.prod root@72.61.75.116:/var/www/skiltak/.env
 ```
 
-O alternativamente, editá directo en el VPS:
+Después del primer deploy CI-driven, no volvés a tocar ese file a mano.
 
-```bash
-nano /var/www/skiltak/.env
-```
-
-Valores mínimos a setear:
+Valores mínimos a setear en `.env.prod` (y por lo tanto en `ENV_FILE`):
 
 ```bash
 ENVIRONMENT=production
