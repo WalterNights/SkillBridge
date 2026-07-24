@@ -12,10 +12,17 @@ EnvironmentFile=/var/www/skiltak/.env
 ExecStart=/var/www/skiltak/venv/bin/gunicorn \
     --workers 3 \
     --threads 2 \
+    --timeout 180 \
     --bind unix:/run/skiltak-gunicorn.sock \
     --access-logfile - \
     --error-logfile - \
     core.wsgi:application
+# --timeout 180: el default de gunicorn (30s) mata al worker antes de que
+# /api/jobs/jobs/scrape/ termine — el scrape corre síncrono contra varios
+# portales con Playwright y tarda 45–120s. Al morir el worker, nginx
+# devuelve 502 sin pasar por django-cors-headers y el browser reporta
+# "CORS blocked / net::ERR_FAILED", que parece un error de URL malformada
+# pero es timeout del worker. Alinear con proxy_read_timeout de nginx.
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=10

@@ -118,6 +118,28 @@ if [ "$NGINX_CHANGED" = "1" ]; then
     fi
 fi
 
+echo "==> Syncing systemd units"
+# provision.sh instala los units en el primer bootstrap, pero después
+# ningún cambio del repo (por ejemplo `--timeout` de gunicorn) llegaba
+# al VPS sin correr provision.sh a mano. Igual que con nginx, dejamos
+# que el repo sea la fuente de verdad: si difiere, copiar y daemon-reload
+# antes del restart de más abajo — así el restart ya toma el unit nuevo.
+SYSTEMD_CHANGED=0
+for unit in deploy/systemd/*.service deploy/systemd/*.socket; do
+    [ -f "$unit" ] || continue
+    name="$(basename "$unit")"
+    dest="/etc/systemd/system/$name"
+    if ! sudo cmp -s "$unit" "$dest" 2>/dev/null; then
+        echo "  [+] $name cambio — copiando a $dest"
+        sudo install -m 644 "$unit" "$dest"
+        SYSTEMD_CHANGED=1
+    fi
+done
+if [ "$SYSTEMD_CHANGED" = "1" ]; then
+    sudo systemctl daemon-reload
+    echo "  [OK] systemd daemon-reload"
+fi
+
 echo "==> Restarting services"
 sudo systemctl restart skiltak-gunicorn
 sudo systemctl restart skiltak-celery
