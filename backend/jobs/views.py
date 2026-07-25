@@ -2,6 +2,7 @@ import logging
 
 from django.core.cache import cache
 from django.db.models import Count
+from django.db.models.functions import Lower, Trim
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
 from rest_framework import status, viewsets
@@ -343,14 +344,25 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
         # propia. Filtramos por los 3 campos porque un mismo título +
         # portal puede pertenecer a empresas distintas y son cargos
         # distintos (ej. "Backend Developer" en 5 empresas del mismo
-        # portal). Case-sensitive intencional — los portales
-        # normalizan casing por sí solos.
+        # portal). Case-insensitive + trim porque scrapes distintos
+        # devuelven casing/whitespace inconsistente para el mismo cargo
+        # ("Developer" vs "developer " vs "Developer  "). El bug del
+        # "Sprocket ×2" en /ignored era este: dos filas iguales-menos-
+        # casing quedaban fuera del cascade. `portal` va exact porque
+        # es un `choices` fijo y no varía.
+        _target_title = (offer.title or "").strip().lower()
+        _target_company = (offer.company or "").strip().lower()
         sibling_ids = list(
-            JobOffer.objects.filter(
-                title=offer.title,
-                company=offer.company,
+            JobOffer.objects.annotate(
+                _norm_title=Lower(Trim("title")),
+                _norm_company=Lower(Trim("company")),
+            )
+            .filter(
+                _norm_title=_target_title,
+                _norm_company=_target_company,
                 portal=offer.portal,
-            ).values_list("id", flat=True)
+            )
+            .values_list("id", flat=True)
         )
 
         if request.method == "POST":

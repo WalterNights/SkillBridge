@@ -156,6 +156,53 @@ class TestIgnoreCascadeToDuplicates:
         # Ninguna de las duplicadas debe aparecer.
         assert "Fullstack Bilingue 52172" not in titles
 
+    def test_cascade_matches_case_insensitive(self, authed_client, user):
+        """Bug reportado en captura de Jul 2026: "Developer" de Sprocket
+        aparecia 2 veces en /ignored porque el scraper de LinkedIn traía
+        casing distinto entre pasadas ("Developer" vs "developer"). El
+        cascade case-sensitive las trataba como cargos distintos."""
+        canonical = JobOffer.objects.create(
+            title="Developer", company="Sprocket International Group",
+            url="https://linkedin.com/jobs/1",
+            summary="", keywords="", portal="linkedin",
+            country="CO", modality="remote",
+        )
+        lowercased = JobOffer.objects.create(
+            title="developer", company="sprocket international group",
+            url="https://linkedin.com/jobs/2",
+            summary="", keywords="", portal="linkedin",
+            country="CO", modality="remote",
+        )
+
+        response = authed_client.post(f"/api/jobs/jobs/{canonical.id}/ignore/")
+
+        assert response.status_code == 201
+        assert response.json()["cascaded_count"] == 2
+        assert IgnoredOffer.objects.filter(user=user, offer=canonical).exists()
+        assert IgnoredOffer.objects.filter(user=user, offer=lowercased).exists()
+
+    def test_cascade_matches_trims_whitespace(self, authed_client, user):
+        """Mismo bug con trailing/leading spaces — algunos scrapers no
+        hacen strip del texto extraido del HTML."""
+        clean = JobOffer.objects.create(
+            title="Full Stack Developer", company="Acme",
+            url="https://linkedin.com/jobs/10",
+            summary="", keywords="", portal="linkedin",
+            country="ES", modality="remote",
+        )
+        padded = JobOffer.objects.create(
+            title="  Full Stack Developer  ", company=" Acme ",
+            url="https://linkedin.com/jobs/11",
+            summary="", keywords="", portal="linkedin",
+            country="ES", modality="remote",
+        )
+
+        response = authed_client.post(f"/api/jobs/jobs/{clean.id}/ignore/")
+
+        assert response.status_code == 201
+        assert response.json()["cascaded_count"] == 2
+        assert IgnoredOffer.objects.filter(user=user, offer=padded).exists()
+
 
 @pytest.mark.integration
 @pytest.mark.django_db
