@@ -1,0 +1,218 @@
+<section class="px-4 lg:px-8 py-8 lg:py-10">
+  <div class="max-w-6xl mx-auto">
+    <!-- Page header -->
+    <header class="mb-7 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-2">Administración</p>
+        <h1 class="text-3xl lg:text-4xl font-black text-bone tracking-tight leading-tight">Tendencias</h1>
+        <p class="text-sm text-warm-grey mt-2">
+          Por qué se ignora y cómo convierte cada portal — data para ajustar el matching.
+        </p>
+      </div>
+      <div class="flex gap-2">
+        <button
+          *ngFor="let opt of [7, 30, 90]"
+          type="button"
+          class="analytics-pill"
+          [class.analytics-pill--active]="windowDays() === opt"
+          (click)="setWindow(opt)"
+        >
+          {{ opt }}d
+        </button>
+      </div>
+    </header>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading()" class="glass-strong rounded-2xl p-8 text-center">
+      <p class="text-sm text-warm-grey">Cargando tendencias…</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="!isLoading() && errorMessage()" class="glass-strong rounded-2xl p-8 text-center">
+      <span
+        class="inline-flex w-12 h-12 rounded-full bg-danger/15 items-center justify-center mb-3 material-symbols-outlined text-danger"
+        style="font-size: 22px"
+      >error</span>
+      <p class="text-sm text-warm-grey">{{ errorMessage() }}</p>
+    </div>
+
+    <ng-container *ngIf="!isLoading() && !errorMessage() && trends() as t">
+      <!-- KPI cards de la ventana -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <article class="kpi-card">
+          <div class="kpi-icon kpi-icon-grey"><span class="material-symbols-outlined">visibility_off</span></div>
+          <p class="kpi-label">Ignores en la ventana</p>
+          <p class="kpi-value">{{ t.ignore_breakdown.total }}</p>
+          <p class="kpi-sub">Últimos {{ t.window_days }} días</p>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-icon kpi-icon-primary"><span class="material-symbols-outlined">trending_up</span></div>
+          <p class="kpi-label">Portales con actividad</p>
+          <p class="kpi-value">{{ t.portal_funnel.length }}</p>
+          <p class="kpi-sub">con al menos 1 postulación</p>
+        </article>
+      </div>
+
+      <!-- ─────────────────────────────────────────────────────────────
+           Módulo 1: Motivos de ignore (global + por vertical)
+           ───────────────────────────────────────────────────────────── -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+        <!-- Motivos globales -->
+        <article class="glass-strong rounded-2xl p-6">
+          <header class="flex items-center justify-between mb-5">
+            <div>
+              <h2 class="text-base font-semibold text-bone">Motivos de ignore</h2>
+              <p class="text-xs text-warm-grey mt-0.5">
+                Distribución global. "Sin motivo" = el user tocó "Saltar" o son ignores retroactivos.
+              </p>
+            </div>
+            <span
+              class="material-symbols-outlined text-primary"
+              style="font-size: 22px; font-variation-settings: 'FILL' 1"
+            >flag</span>
+          </header>
+          <p *ngIf="t.ignore_breakdown.by_reason.length === 0" class="text-sm text-warm-grey">
+            Ningún ignore en esta ventana.
+          </p>
+          <ul class="flex flex-col gap-3">
+            <li *ngFor="let row of t.ignore_breakdown.by_reason" class="bar-row">
+              <div class="bar-meta">
+                <span class="bar-label">{{ reasonLabel(row.reason) }}</span>
+                <span class="bar-value">{{ row.count }}</span>
+              </div>
+              <div class="bar-track">
+                <span class="bar-fill" [style.width.%]="pct(row.count, maxReasonCount())"></span>
+              </div>
+            </li>
+          </ul>
+        </article>
+
+        <!-- Motivos por vertical -->
+        <article class="glass-strong rounded-2xl p-6">
+          <header class="flex items-center justify-between mb-5">
+            <div>
+              <h2 class="text-base font-semibold text-bone">Motivos por stack profesional</h2>
+              <p class="text-xs text-warm-grey mt-0.5">
+                Excluye ofertas sin vertical detectada.
+              </p>
+            </div>
+            <span
+              class="material-symbols-outlined text-primary"
+              style="font-size: 22px; font-variation-settings: 'FILL' 1"
+            >category</span>
+          </header>
+          <p *ngIf="categoryBreakdown().length === 0" class="text-sm text-warm-grey">
+            Sin ignores con vertical detectada en esta ventana.
+          </p>
+          <div class="flex flex-col gap-4">
+            <div *ngFor="let group of categoryBreakdown()">
+              <p class="text-xs uppercase tracking-wider text-warm-grey font-semibold mb-2">
+                {{ categoryLabel(group.category) }}
+              </p>
+              <ul class="flex flex-col gap-1.5 pl-1">
+                <li
+                  *ngFor="let row of group.rows"
+                  class="flex items-center justify-between text-sm"
+                >
+                  <span class="text-bone/80">{{ reasonLabel(row.reason) }}</span>
+                  <span class="text-warm-grey font-mono">{{ row.count }}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <!-- ─────────────────────────────────────────────────────────────
+           Módulo 2: Funnel por portal
+           ───────────────────────────────────────────────────────────── -->
+      <article class="glass-strong rounded-2xl p-6">
+        <header class="flex items-center justify-between mb-5">
+          <div>
+            <h2 class="text-base font-semibold text-bone">Conversión por portal</h2>
+            <p class="text-xs text-warm-grey mt-0.5">
+              Clicks → offer. La tasa responde qué portal vale la pena potenciar.
+            </p>
+          </div>
+          <span
+            class="material-symbols-outlined text-primary"
+            style="font-size: 22px; font-variation-settings: 'FILL' 1"
+          >filter_alt</span>
+        </header>
+
+        <p *ngIf="t.portal_funnel.length === 0" class="text-sm text-warm-grey">
+          Sin postulaciones en esta ventana.
+        </p>
+
+        <div class="flex flex-col gap-5">
+          <div *ngFor="let row of t.portal_funnel" class="portal-funnel-row">
+            <!-- Header: portal + conversion badge -->
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-3">
+                <span class="text-sm font-semibold text-bone">{{ portalLabel(row.portal) }}</span>
+                <span class="text-xs text-warm-grey">{{ row.clicks }} clicks</span>
+              </div>
+              <span
+                class="status-pill"
+                [attr.data-status]="conversionColor(row.conversion_pct)"
+                title="Offer recibidas / clicks totales"
+              >
+                {{ row.conversion_pct }}% conversión
+              </span>
+            </div>
+
+            <!-- Barra segmentada del funnel: applied / in_review / interview / offer / rejected -->
+            <div class="funnel-track">
+              <span
+                *ngIf="row.applied > 0"
+                class="funnel-seg"
+                data-status="applied"
+                [style.width.%]="portalPct(row, 'applied')"
+                [title]="'Aplicadas: ' + row.applied"
+              ></span>
+              <span
+                *ngIf="row.in_review > 0"
+                class="funnel-seg"
+                data-status="in_review"
+                [style.width.%]="portalPct(row, 'in_review')"
+                [title]="'En revisión: ' + row.in_review"
+              ></span>
+              <span
+                *ngIf="row.interview > 0"
+                class="funnel-seg"
+                data-status="interview"
+                [style.width.%]="portalPct(row, 'interview')"
+                [title]="'Entrevista: ' + row.interview"
+              ></span>
+              <span
+                *ngIf="row.offer > 0"
+                class="funnel-seg"
+                data-status="offer"
+                [style.width.%]="portalPct(row, 'offer')"
+                [title]="'Oferta: ' + row.offer"
+              ></span>
+              <span
+                *ngIf="row.rejected > 0"
+                class="funnel-seg"
+                data-status="rejected"
+                [style.width.%]="portalPct(row, 'rejected')"
+                [title]="'Rechazadas: ' + row.rejected"
+              ></span>
+            </div>
+
+            <!-- Numeros: solo mostramos los status con al menos 1 -->
+            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-warm-grey">
+              <span *ngIf="row.applied > 0">Aplicadas <strong class="text-bone">{{ row.applied }}</strong></span>
+              <span *ngIf="row.in_review > 0">En revisión <strong class="text-bone">{{ row.in_review }}</strong></span>
+              <span *ngIf="row.interview > 0">Entrevista <strong class="text-bone">{{ row.interview }}</strong></span>
+              <span *ngIf="row.offer > 0">Oferta <strong class="text-bone">{{ row.offer }}</strong></span>
+              <span *ngIf="row.rejected > 0">Rechazadas <strong class="text-bone">{{ row.rejected }}</strong></span>
+              <span *ngIf="row.withdrawn > 0">Retiradas <strong class="text-bone">{{ row.withdrawn }}</strong></span>
+            </div>
+          </div>
+        </div>
+      </article>
+    </ng-container>
+  </div>
+</section>

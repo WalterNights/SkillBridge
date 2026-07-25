@@ -164,6 +164,16 @@
       </a>
       <a
         class="nav-item"
+        routerLink="/admin/trends"
+        routerLinkActive="active"
+        (click)="toggleDrawer(false)"
+        title="Tendencias y patrones"
+      >
+        <span class="material-symbols-outlined">trending_up</span>
+        <span class="nav-label">Tendencias</span>
+      </a>
+      <a
+        class="nav-item"
         routerLink="/admin/faqs"
         routerLinkActive="active"
         (click)="toggleDrawer(false)"

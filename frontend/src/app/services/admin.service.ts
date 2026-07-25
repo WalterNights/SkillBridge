@@ -52,6 +52,45 @@ export interface ProfileLanguage {
   level: string;
 }
 
+/** Fila de motivos globales para /admin/trends. `reason` es "" para las
+ *  ignoradas que el user marcó con "Saltar" (retroactivas o skipped). */
+export interface TrendsIgnoreReasonRow {
+  reason: string;
+  count: number;
+}
+
+/** Cruce vertical × motivo — alimenta el heatmap/tabla por categoria. */
+export interface TrendsIgnoreCategoryRow {
+  offer__category: string;
+  reason: string;
+  count: number;
+}
+
+/** Funnel por portal — clicks incluye TODOS los status (pending inclusive).
+ *  `conversion_pct` = offer / clicks * 100 redondeado a 1 decimal. */
+export interface TrendsPortalFunnelRow {
+  portal: string;
+  clicks: number;
+  applied: number;
+  in_review: number;
+  interview: number;
+  offer: number;
+  rejected: number;
+  withdrawn: number;
+  conversion_pct: number;
+}
+
+/** Respuesta completa de /api/dashboard/trends/?days=7|30|90. */
+export interface TrendsResponse {
+  window_days: number;
+  ignore_breakdown: {
+    total: number;
+    by_reason: TrendsIgnoreReasonRow[];
+    by_category_reason: TrendsIgnoreCategoryRow[];
+  };
+  portal_funnel: TrendsPortalFunnelRow[];
+}
+
 /** Detalle profesional ligero de un user — alimenta el modal "Detalles"
  *  en /admin/users. NO incluye experience/education/summary. */
 export interface AdminUserProfileDetail {
@@ -81,6 +120,15 @@ export class AdminService {
 
   getStats(): Observable<AdminStats> {
     return this.http.get<AdminStats>(`${environment.apiUrl}/dashboard/stats/`);
+  }
+
+  /** Tendencias de comportamiento (motivos de ignore + funnel por portal)
+   *  para /admin/trends. `days` acepta 7 | 30 | 90; el backend clampea
+   *  otros valores a 30. */
+  getTrends(days: number = 30): Observable<TrendsResponse> {
+    return this.http.get<TrendsResponse>(
+      `${environment.apiUrl}/dashboard/trends/?days=${days}`,
+    );
   }
 
   /** Promueve o degrada a un user. `userId` es el id del modelo User

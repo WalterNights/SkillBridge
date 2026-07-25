@@ -192,6 +192,11 @@ export const routes: Routes = [
               import('./admin/admin-stats.component').then((m) => m.AdminStatsComponent),
           },
           {
+            path: 'trends',
+            loadComponent: () =>
+              import('./admin/admin-trends.component').then((m) => m.AdminTrendsComponent),
+          },
+          {
             path: 'faqs',
             loadComponent: () =>
               import('./admin/admin-faqs.component').then((m) => m.AdminFaqsComponent),
