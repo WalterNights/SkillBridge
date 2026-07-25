@@ -12,8 +12,9 @@ propio funnel.
 
 Tradeoffs:
   - LinkedIn rate-limitea agresivo (status 429 o 999). Mitigamos con
-    delay de 1.5s entre páginas + máximo 4 páginas por scrape (~100
-    jobs es suficiente para un user en un día).
+    delay de 1.5s entre páginas + máximo 8 páginas por scrape (~200
+    jobs — el email de "empleos similares" de LinkedIn suele sugerir
+    ofertas que quedaban después de la 4ta página del scrape anterior).
   - El HTML puede mutar — defensive selectors via `parse_linkedin_card`.
     Si todos fallan, devuelve [] y los logs lo dicen.
   - No fetcheamos el detalle de cada oferta (sería 100× requests más).
@@ -61,7 +62,7 @@ class LinkedInGuestScraper(JobScraper):
 
     _BASE_URL = "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
     _PAGE_SIZE = 25
-    _DEFAULT_MAX_PAGES = 4
+    _DEFAULT_MAX_PAGES = 8
     _PAGE_DELAY_SECONDS = 1.5
 
     def search(self, query: str, location: str, pages: int = 1) -> list[JobOfferData]:

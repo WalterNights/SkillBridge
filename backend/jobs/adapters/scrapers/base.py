@@ -133,8 +133,11 @@ def extract_keywords(text: str) -> str:
 
 
 # Compartido entre scrapers para filtrar ofertas viejas al parse time.
-# Ofertas con >7 días tienen mucha menos probabilidad de respuesta del HR.
-MAX_OFFER_AGE_DAYS = 7
+# 14 días: los emails de "empleos similares" de LinkedIn suelen sugerir
+# ofertas de 1–3 semanas de antigüedad y el user espera verlas en el feed.
+# El umbral anterior de 7 días descartaba muchas legítimas. Ofertas mucho
+# más viejas ya suelen estar cerradas — el probe diario las apaga.
+MAX_OFFER_AGE_DAYS = 14
 
 _AGE_PATTERN = re.compile(
     r"\b(?:hace|posted|publicado(?:\s+hace)?)\s+"

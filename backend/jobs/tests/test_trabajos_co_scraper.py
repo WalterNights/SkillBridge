@@ -148,7 +148,7 @@ class TestTrabajosColombiaSearch:
 
     def test_old_offer_is_filtered(self, mocker):
         """`Hace 30 días` en el texto del card → se filtra por
-        MAX_OFFER_AGE_DAYS (7 días)."""
+        MAX_OFFER_AGE_DAYS (14 días)."""
         mocker.patch(
             "jobs.adapters.scrapers.trabajos_co.requests.get",
             return_value=_mock_response(LISTING_HTML_OLD_OFFER),
