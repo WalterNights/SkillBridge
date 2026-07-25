@@ -3,10 +3,11 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { JobService } from '../services/job.service';
 import { ApplicationService, JobApplicationDto } from '../services/application.service';
-import { JobOffer } from '../models/job-offer.model';
+import { IgnoreReason, JobOffer } from '../models/job-offer.model';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { portalMeta } from '../shared/portal';
 import { CoverLetterModalComponent } from '../cover-letter/cover-letter-modal.component';
+import { IgnoreReasonModalComponent } from '../shared/ignore-reason-modal/ignore-reason-modal.component';
 import { ToastService } from '../services/toast.service';
 
 const _RELATIVE_FMT = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
@@ -37,7 +38,7 @@ function _formatRelative(iso: string | undefined): string {
  */
 @Component({
   selector: 'app-job-detail',
-  imports: [CommonModule, RouterModule, CoverLetterModalComponent],
+  imports: [CommonModule, RouterModule, CoverLetterModalComponent, IgnoreReasonModalComponent],
   standalone: true,
   templateUrl: './job-detail.component.html',
   styleUrls: ['./job-detail.component.scss'],
@@ -271,13 +272,26 @@ export class JobDetailComponent implements OnInit {
     this.isBookmarked = !this.isBookmarked;
   }
 
-  /** Ignora la oferta actual y vuelve al feed. La oferta desaparece del
-   * dashboard (el queryset del backend excluye las ignoradas del user) y
-   * queda visible en /ignored para restaurarla si se arrepiente. */
+  /** Visibilidad del modal de motivo al ignorar. Mismo patron que
+   * results.component: abrimos el modal antes de POST al backend. */
+  showIgnoreReasonModal = signal(false);
+
+  /** Handler del boton "Ocultar" en el detalle: abre el modal en vez de
+   * ignorar de una. */
   toggleHide(): void {
     if (!this.job || this.isIgnoring) return;
+    this.showIgnoreReasonModal.set(true);
+  }
+
+  /** Ejecuta el ignore con el motivo elegido (o '' si el user tocó "Saltar").
+   * La oferta desaparece del dashboard (el queryset del backend excluye las
+   * ignoradas del user) y queda visible en /ignored para restaurarla si se
+   * arrepiente. */
+  onIgnoreReasonSelected(reason: IgnoreReason | ''): void {
+    this.showIgnoreReasonModal.set(false);
+    if (!this.job || this.isIgnoring) return;
     this.isIgnoring = true;
-    this.jobService.ignoreOffer(this.job.id).subscribe({
+    this.jobService.ignoreOffer(this.job.id, reason).subscribe({
       next: () => {
         this.isHidden = true;
         this.toast.success('Oferta ignorada — la encontrás en "Ofertas ignoradas".');

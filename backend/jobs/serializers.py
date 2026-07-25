@@ -7,6 +7,9 @@ class JobOfferSerializer(serializers.ModelSerializer):
     matched_skills = serializers.SerializerMethodField()
     missing_skills = serializers.SerializerMethodField()
     match_percentage = serializers.SerializerMethodField()
+    # Solo lo rellena el endpoint /ignored/ via `offer._ignore_reason`.
+    # En el feed regular es "" — la UI lo ignora si esta vacio.
+    ignore_reason = serializers.SerializerMethodField()
 
     class Meta:
         model = JobOffer
@@ -35,6 +38,7 @@ class JobOfferSerializer(serializers.ModelSerializer):
             "matched_skills",
             "missing_skills",
             "match_percentage",
+            "ignore_reason",
         ]
 
     def get_match_percentage(self, job):
@@ -45,3 +49,6 @@ class JobOfferSerializer(serializers.ModelSerializer):
 
     def get_missing_skills(self, job):
         return getattr(job, "missing_skills", [])
+
+    def get_ignore_reason(self, job):
+        return getattr(job, "_ignore_reason", "")

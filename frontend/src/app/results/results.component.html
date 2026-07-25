@@ -311,7 +311,7 @@
             type="button"
             class="ignore-btn"
             title="Ignorar — no mostrarla más en el feed"
-            (click)="ignoreOffer(offer); $event.stopPropagation()"
+            (click)="openIgnoreModal(offer); $event.stopPropagation()"
           >
             <span class="material-symbols-outlined" style="font-size: 16px">visibility_off</span>
           </button>
@@ -422,3 +422,8 @@
     </div>
   </div>
 </section>
+
+<app-ignore-reason-modal
+  [open]="!!pendingIgnore()"
+  (select)="onIgnoreReasonSelected($event)"
+></app-ignore-reason-modal>

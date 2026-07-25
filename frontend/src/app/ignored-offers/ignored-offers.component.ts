@@ -4,7 +4,7 @@ import { Component, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 
-import { JobOffer } from '../models/job-offer.model';
+import { IGNORE_REASON_LABELS, IgnoreReason, JobOffer } from '../models/job-offer.model';
 import { JobService } from '../services/job.service';
 import { ToastService } from '../services/toast.service';
 import { portalMeta } from '../shared/portal';
@@ -79,6 +79,15 @@ export class IgnoredOffersComponent {
 
   portalMeta(offer: JobOffer) {
     return portalMeta(offer);
+  }
+
+  /** Devuelve la etiqueta user-facing del motivo de ignore, o '' si el
+   *  user tocó "Saltar" al ignorar. La UI solo renderiza el chip cuando
+   *  hay label — no queremos ruido para las ignoradas retroactivas. */
+  reasonLabel(offer: JobOffer): string {
+    const code = offer.ignore_reason as IgnoreReason | '' | undefined;
+    if (!code) return '';
+    return IGNORE_REASON_LABELS[code] ?? '';
   }
 
   trackOffer(_index: number, offer: JobOffer): number {

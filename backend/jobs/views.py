@@ -354,21 +354,38 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
         if request.method == "POST":
+            # Motivo opcional (chip elegido en el modal). Validamos contra
+            # las choices para no aceptar valores arbitrarios — un client
+            # que mande "spam"/etc contaminaria las agregaciones.
+            valid_reasons = {choice[0] for choice in IgnoredOffer.REASON_CHOICES}
+            reason = (request.data or {}).get("reason", "") or ""
+            if reason and reason not in valid_reasons:
+                reason = ""
+
             # get_or_create con bulk sería más eficiente pero
             # IgnoredOffer.get_or_create no soporta bulk. Con volúmenes
             # típicos (2-6 duplicados por oferta) N queries es aceptable.
+            # El reason se aplica a la fila nueva Y se actualiza si el
+            # user "re-ignora" con motivo distinto (edge case: cambio de
+            # opinion). No pisamos con "" para no borrar motivos previos.
             newly_created = 0
             for offer_id in sibling_ids:
-                _, was_created = IgnoredOffer.objects.get_or_create(
-                    user=request.user, offer_id=offer_id
+                obj, was_created = IgnoredOffer.objects.get_or_create(
+                    user=request.user,
+                    offer_id=offer_id,
+                    defaults={"reason": reason},
                 )
                 if was_created:
                     newly_created += 1
+                elif reason and obj.reason != reason:
+                    obj.reason = reason
+                    obj.save(update_fields=["reason"])
             return Response(
                 {
                     "ignored": True,
                     "offer_id": offer.id,
                     "cascaded_count": len(sibling_ids),
+                    "reason": reason,
                 },
                 # 201 si al menos una fila nueva se creó, 200 si todas
                 # ya estaban ignoradas — respeta el contrato del test
@@ -396,7 +413,14 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
             .select_related("offer")
             .order_by("-created_at")
         )
-        offers = [io.offer for io in ignored_qs]
+        # Attach del motivo al offer con un attribute dinámico — el
+        # serializer lo lee via getattr con default "" en su method
+        # field. Mismo patron que match_percentage / matched_skills:
+        # evita crear un serializer paralelo solo para agregar 1 campo.
+        offers = []
+        for io in ignored_qs:
+            io.offer._ignore_reason = io.reason
+            offers.append(io.offer)
         self._enrich_with_user_match(offers)
         serializer = self.get_serializer(offers, many=True)
         return Response(serializer.data)

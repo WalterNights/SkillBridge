@@ -70,6 +70,9 @@
                 </span>
                 Ignorada
               </span>
+              <span *ngIf="reasonLabel(offer)" class="reason-badge" title="Motivo del ignore">
+                {{ reasonLabel(offer) }}
+              </span>
             </div>
             <h3 class="text-base font-semibold text-bone leading-snug">
               {{ offer.title }}

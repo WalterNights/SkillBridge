@@ -5,7 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
-import { JobOffer } from '../models/job-offer.model';
+import { IgnoreReason, JobOffer } from '../models/job-offer.model';
 import {
   FilterOptionsResponse,
   JobFilters,
@@ -16,6 +16,7 @@ import { FeatureFlagsService } from '../services/feature-flags.service';
 import { ScrapeProgressService } from '../services/scrape-progress.service';
 import { ToastService } from '../services/toast.service';
 import { HTMLChangesComponent } from '../shared/html-changes/html-changes';
+import { IgnoreReasonModalComponent } from '../shared/ignore-reason-modal/ignore-reason-modal.component';
 import { MATCH_THRESHOLDS } from '../constants/match-thresholds';
 import { portalMeta } from '../shared/portal';
 
@@ -61,7 +62,7 @@ const COUNTRY_LABELS: Record<string, string> = {
  */
 @Component({
   selector: 'app-results',
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, IgnoreReasonModalComponent],
   standalone: true,
   templateUrl: './results.component.html',
   styleUrls: ['./results.component.scss'],
@@ -568,13 +569,30 @@ export class ResultsComponent {
     return offer.id;
   }
 
-  /** Oculta la oferta del feed (optimista) y persiste en backend.
-   * Si falla, rollback + toast. El `$event.stopPropagation()` lo hace el template. */
-  ignoreOffer(offer: JobOffer): void {
+  /** Oferta en proceso de ser ignorada — abre el modal de motivo.
+   * Null cuando el modal esta cerrado. */
+  pendingIgnore = signal<JobOffer | null>(null);
+
+  /** Handler del boton de ignorar en la card: abre el modal en vez de
+   * ejecutar de una. La UI mantiene la card visible hasta que el user
+   * elige un motivo o "Saltar" — asi el modal no queda huerfano si el
+   * user duda y cierra sin decidir. */
+  openIgnoreModal(offer: JobOffer): void {
+    this.pendingIgnore.set(offer);
+  }
+
+  /** Ejecuta el ignore optimista + POST al backend con el motivo elegido
+   * (string vacio si el user tocó "Saltar" o cerró el modal). Rollback
+   * en error. */
+  onIgnoreReasonSelected(reason: IgnoreReason | ''): void {
+    const offer = this.pendingIgnore();
+    this.pendingIgnore.set(null);
+    if (!offer) return;
+
     const original = this.offers;
     this.offers = original.filter((o) => o.id !== offer.id);
     this.totalCount.update((n) => Math.max(0, n - 1));
-    this.jobService.ignoreOffer(offer.id).subscribe({
+    this.jobService.ignoreOffer(offer.id, reason).subscribe({
       next: () => this.toast.success('Oferta ignorada — no la verás más en el feed.'),
       error: () => {
         this.offers = original;

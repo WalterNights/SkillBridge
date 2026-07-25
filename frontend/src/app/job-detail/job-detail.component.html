@@ -287,3 +287,8 @@
   [offerCompany]="job.company || ''"
   (closed)="closeCoverLetter()"
 />
+
+<app-ignore-reason-modal
+  [open]="showIgnoreReasonModal()"
+  (select)="onIgnoreReasonSelected($event)"
+></app-ignore-reason-modal>

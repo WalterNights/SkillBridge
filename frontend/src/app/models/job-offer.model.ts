@@ -25,4 +25,28 @@ export interface JobOffer {
   matched_skills: string[];
   missing_skills: string[];
   match_percentage: number;
+  /** Motivo con el que el user marco esta oferta como ignorada.
+   *  Solo lo devuelve GET /jobs/jobs/ignored/ — en el feed regular es
+   *  "" o undefined. Valores validos: salary | location | stack |
+   *  company | already_applied | other | "" (skipped). */
+  ignore_reason?: IgnoreReason | '';
 }
+
+/** Codigos de motivo alineados con IgnoredOffer.REASON_CHOICES del backend. */
+export type IgnoreReason =
+  | 'salary'
+  | 'location'
+  | 'stack'
+  | 'company'
+  | 'already_applied'
+  | 'other';
+
+/** Etiquetas user-facing para los motivos. Fuente de verdad para la UI. */
+export const IGNORE_REASON_LABELS: Record<IgnoreReason, string> = {
+  salary: 'Sueldo bajo',
+  location: 'Ubicación',
+  stack: 'Stack',
+  company: 'Empresa',
+  already_applied: 'Ya apliqué',
+  other: 'Otro motivo',
+};

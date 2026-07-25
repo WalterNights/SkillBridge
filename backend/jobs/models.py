@@ -112,6 +112,20 @@ class IgnoredOffer(models.Model):
     mantener un cleanup paralelo. Mismo razonamiento para `user`.
     """
 
+    # Motivos discretos (no free-text) para que las agregaciones sean
+    # utiles: "el 40% de los ignores son por sueldo bajo" alimenta el
+    # ranker personalizado y las metricas de funnel. Blank permitido
+    # para preservar filas retroactivas y para el caso "prefiero no
+    # decir" (chip "Saltar" en la UI).
+    REASON_CHOICES = [
+        ("salary", "Sueldo bajo"),
+        ("location", "Ubicación"),
+        ("stack", "Stack"),
+        ("company", "Empresa"),
+        ("already_applied", "Ya apliqué"),
+        ("other", "Otro"),
+    ]
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -121,6 +135,9 @@ class IgnoredOffer(models.Model):
         JobOffer,
         on_delete=models.CASCADE,
         related_name="ignored_by",
+    )
+    reason = models.CharField(
+        max_length=32, choices=REASON_CHOICES, blank=True, default=""
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

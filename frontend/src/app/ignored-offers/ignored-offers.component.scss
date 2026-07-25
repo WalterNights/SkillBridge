@@ -45,6 +45,21 @@
   border: 1px solid rgba(139, 138, 133, 0.25);
 }
 
+/* Chip "motivo" — variante ambar sutil. Solo aparece cuando el user
+ * eligió un chip al ignorar (no forzamos el estilo si es retroactiva). */
+.reason-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+}
+
 /* Botón "Restaurar" — verde en hover para señalar "trae de vuelta". */
 .restore-btn {
   display: inline-flex;

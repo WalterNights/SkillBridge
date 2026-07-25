@@ -104,11 +104,16 @@ export class JobService {
   }
 
   /** Marca una oferta como "Ignorar" para el usuario actual. POST es
-   * idempotente — el backend devuelve 201 si crea o 200 si ya existía. */
-  ignoreOffer(id: number): Observable<{ ignored: boolean; offer_id: number }> {
-    return this.http.post<{ ignored: boolean; offer_id: number }>(
+   * idempotente — el backend devuelve 201 si crea o 200 si ya existía.
+   * `reason` es opcional; alimenta las agregaciones y el ranker personalizado.
+   * "" o undefined = user prefirio no decir (equivale a "Saltar" en la UI). */
+  ignoreOffer(
+    id: number,
+    reason: string = '',
+  ): Observable<{ ignored: boolean; offer_id: number; reason?: string }> {
+    return this.http.post<{ ignored: boolean; offer_id: number; reason?: string }>(
       `${environment.apiUrl}/jobs/jobs/${id}/ignore/`,
-      {},
+      { reason },
     );
   }
 
