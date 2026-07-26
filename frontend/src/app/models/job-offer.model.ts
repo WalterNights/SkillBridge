@@ -39,6 +39,7 @@ export type IgnoreReason =
   | 'stack'
   | 'company'
   | 'already_applied'
+  | 'unavailable'
   | 'other';
 
 /** Etiquetas user-facing para los motivos. Fuente de verdad para la UI. */
@@ -48,5 +49,6 @@ export const IGNORE_REASON_LABELS: Record<IgnoreReason, string> = {
   stack: 'Stack',
   company: 'Empresa',
   already_applied: 'Ya apliqué',
+  unavailable: 'Oferta no disponible',
   other: 'Otro motivo',
 };

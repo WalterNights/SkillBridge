@@ -123,6 +123,11 @@ class IgnoredOffer(models.Model):
         ("stack", "Stack"),
         ("company", "Empresa"),
         ("already_applied", "Ya apliqué"),
+        # Señal cruzada: el user reporta que el portal externo ya bajo la
+        # oferta. Nos alerta que verify_active_offers no la detecto —
+        # con volumen podemos priorizar el probe individual o marcar
+        # is_active=False directamente cuando 2+ users la reportan.
+        ("unavailable", "Oferta no disponible"),
         ("other", "Otro"),
     ]
 
