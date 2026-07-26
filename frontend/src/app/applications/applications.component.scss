@@ -101,6 +101,18 @@
     border-color: rgba(255, 255, 255, 0.12);
     transform: translateY(-1px);
   }
+
+  /* Cuando el dropdown "Marcar como…" esta abierto en esta card, la
+   * subimos a su propio stacking context por encima de las siguientes.
+   * Sin esto, el backdrop-filter de .glass-strong genera un stacking
+   * context en cada card, y el z-index del menu queda atrapado dentro
+   * del stacking de SU card → la card de abajo lo tapa (bug visible
+   * en la captura de /applications). :has() es soportado por todos
+   * los browsers modernos (2022+) → cero JS. */
+  &:has(.status-menu) {
+    position: relative;
+    z-index: 40;
+  }
 }
 
 /* ===== STATUS BADGE ===== */
