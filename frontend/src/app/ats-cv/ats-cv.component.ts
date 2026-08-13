@@ -330,7 +330,7 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     if (!profile) return [];
     const blocks: CvBlock[] = [];
     blocks.push({ kind: 'header' });
-    if (profile.summary) blocks.push({ kind: 'summary' });
+    if (this.activeSummary()) blocks.push({ kind: 'summary' });
 
     const exps = this.experienceArray();
     if (exps) {
@@ -338,7 +338,7 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
       for (let i = 0; i < exps.length; i++) {
         blocks.push({ kind: 'exp-entry', index: i });
       }
-    } else if (profile.experience) {
+    } else if (this.activeExperienceString()) {
       blocks.push({ kind: 'exp-text' });
     }
 
@@ -348,11 +348,11 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
       for (let i = 0; i < edus.length; i++) {
         blocks.push({ kind: 'edu-entry', index: i });
       }
-    } else if (profile.education) {
+    } else if (this.activeEducationString()) {
       blocks.push({ kind: 'edu-text' });
     }
 
-    if (profile.skills) blocks.push({ kind: 'skills' });
+    if (this.activeSkills()) blocks.push({ kind: 'skills' });
     if (this.softSkillsList().length > 0) blocks.push({ kind: 'soft-skills' });
     if (this.hasLanguages()) blocks.push({ kind: 'languages' });
     if (profile.portfolio_url) blocks.push({ kind: 'portfolio' });
@@ -365,14 +365,101 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
    *  Array.isArray + length > 0 que de otro modo se repetiría en cada
    *  caller. */
   experienceArray(): ExperienceEntry[] | null {
-    const exp = this.profileData?.experience;
+    const p = this.profileData;
+    if (!p) return null;
+    const exp = p.cv_active_language === 'en' ? p.experience_en : p.experience;
     return Array.isArray(exp) && exp.length > 0 ? exp : null;
   }
 
   /** Idem para educación. */
   educationArray(): EducationEntry[] | null {
-    const edu = this.profileData?.education;
+    const p = this.profileData;
+    if (!p) return null;
+    const edu = p.cv_active_language === 'en' ? p.education_en : p.education;
     return Array.isArray(edu) && edu.length > 0 ? edu : null;
+  }
+
+  /** Helpers "activos" — devuelven el campo del idioma actual. Reemplazan
+   *  las referencias directas a `profile.summary`, `profile.skills`, etc.
+   *  en el template para que respondan al toggle ES/EN. Fallback al ES
+   *  si el EN esta vacio — mejor mostrar algo que un CV en blanco cuando
+   *  el user aun no llenó la versión inglesa. */
+  activeSummary(): string {
+    const p = this.profileData;
+    if (!p) return '';
+    return p.cv_active_language === 'en' ? p.summary_en || p.summary || '' : p.summary || '';
+  }
+
+  activeSkills(): string {
+    const p = this.profileData;
+    if (!p) return '';
+    return p.cv_active_language === 'en' ? p.skills_en || p.skills || '' : p.skills || '';
+  }
+
+  activeSoftSkills(): string {
+    const p = this.profileData;
+    if (!p) return '';
+    return p.cv_active_language === 'en'
+      ? p.soft_skills_en || p.soft_skills || ''
+      : p.soft_skills || '';
+  }
+
+  /** Version string del campo experience/education para el fallback
+   *  legacy (cuando no es un array estructurado). Respeta el idioma
+   *  activo con fallback al ES. */
+  activeExperienceString(): string {
+    const p = this.profileData;
+    if (!p) return '';
+    const primary =
+      p.cv_active_language === 'en' ? p.experience_en : p.experience;
+    if (typeof primary === 'string' && primary.trim() !== '') return primary;
+    // Fallback a ES si estamos en EN sin contenido.
+    if (p.cv_active_language === 'en' && typeof p.experience === 'string') return p.experience;
+    return '';
+  }
+
+  activeEducationString(): string {
+    const p = this.profileData;
+    if (!p) return '';
+    const primary =
+      p.cv_active_language === 'en' ? p.education_en : p.education;
+    if (typeof primary === 'string' && primary.trim() !== '') return primary;
+    if (p.cv_active_language === 'en' && typeof p.education === 'string') return p.education;
+    return '';
+  }
+
+  /** Diccionario de labels fijos traducidos según cv_active_language.
+   *  Fuente de verdad para todos los textos ceremoniales del CV
+   *  ("Experiencia profesional" → "Professional Experience", etc). */
+  labels(): {
+    experience: string;
+    education: string;
+    technicalSkills: string;
+    softSkills: string;
+    languages: string;
+    portfolio: string;
+    continued: string;
+  } {
+    const isEn = this.profileData?.cv_active_language === 'en';
+    return isEn
+      ? {
+          experience: 'Professional Experience',
+          education: 'Education',
+          technicalSkills: 'Technical Skills',
+          softSkills: 'Soft Skills',
+          languages: 'Languages',
+          portfolio: 'Portfolio',
+          continued: 'cont.',
+        }
+      : {
+          experience: 'Experiencia profesional',
+          education: 'Educación',
+          technicalSkills: 'Habilidades técnicas',
+          softSkills: 'Habilidades blandas',
+          languages: 'Idiomas',
+          portfolio: 'Portafolio',
+          continued: 'cont.',
+        };
   }
 
   /** Lookup tipado de una experiencia por índice — para usar en templates
@@ -393,14 +480,12 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
    *  estructurada como array. Usado por el template expTextTpl que solo
    *  se invoca para bloques exp-text. */
   expText(): string {
-    const v = this.profileData?.experience;
-    return typeof v === 'string' ? v : '';
+    return this.activeExperienceString();
   }
 
   /** Idem para education. */
   eduText(): string {
-    const v = this.profileData?.education;
-    return typeof v === 'string' ? v : '';
+    return this.activeEducationString();
   }
 
   /**
@@ -653,6 +738,20 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
       languages: this.parseLanguages(profile.languages),
       experience: this.parseEntriesField<ExperienceEntry>(profile.experience),
       education: this.parseEntriesField<EducationEntry>(profile.education),
+      // Contenido paralelo en inglés — vacío para perfiles pre-migración.
+      summary_en: profile.summary_en ?? '',
+      skills_en: profile.skills_en ?? '',
+      soft_skills_en: profile.soft_skills_en ?? '',
+      experience_en: this.parseEntriesField<ExperienceEntry>(profile.experience_en),
+      education_en: this.parseEntriesField<EducationEntry>(profile.education_en),
+      // Preferencias de display — defaults conservadores para users que
+      // aun no eligieron nada (ES, alineado a la izquierda, tamaño medio).
+      cv_active_language: profile.cv_active_language === 'en' ? 'en' : 'es',
+      cv_text_align: profile.cv_text_align === 'justify' ? 'justify' : 'left',
+      cv_font_size:
+        profile.cv_font_size === 'sm' || profile.cv_font_size === 'lg'
+          ? profile.cv_font_size
+          : 'md',
     };
   }
 
@@ -688,7 +787,7 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
   }
 
   softSkillsList(): string[] {
-    return (this.profileData?.soft_skills ?? '')
+    return this.activeSoftSkills()
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);

@@ -1,3 +1,75 @@
+/* ===========================================
+   CV Preferences bar — barra de controles arriba del editor:
+   toggle de idioma (ES/EN), alineación de texto y tamaño.
+   Aparece solo en modo EDIT, arriba del form.
+   =========================================== */
+.cv-prefs-label {
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: #8b8a85;
+  font-weight: 700;
+}
+
+.cv-prefs-toggle {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.cv-prefs-toggle-btn {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #cfcfc8;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &.active {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+  }
+
+  &--icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    padding: 6px 8px;
+  }
+}
+
+.cv-prefs-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(249, 115, 22, 0.10);
+  border: 1px solid rgba(249, 115, 22, 0.30);
+  color: #f97316;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 150ms ease;
+
+  &:hover {
+    background: rgba(249, 115, 22, 0.18);
+  }
+}
+
 /* Loader spinner reuso del mismo patrón que login/register/profile. */
 .loader-ring {
   display: inline-block;

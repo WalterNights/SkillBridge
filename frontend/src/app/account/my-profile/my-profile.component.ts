@@ -14,7 +14,13 @@ import { environment } from '../../../environment/environment';
 import { STORAGE_KEYS } from '../../constants/app-stats';
 import { PhotoCropperDialogComponent } from '../../shared/photo-cropper/photo-cropper-dialog.component';
 import { TextFormatToolbarComponent } from '../../shared/text-format-toolbar/text-format-toolbar.component';
-import { EducationEntry, ExperienceEntry } from '../../models/profile.model';
+import {
+  CvFontSize,
+  CvLanguage,
+  CvTextAlign,
+  EducationEntry,
+  ExperienceEntry,
+} from '../../models/profile.model';
 import {
   parseLegacyEducation,
   parseLegacyExperience,
@@ -22,6 +28,19 @@ import {
 
 type Mode = 'view' | 'edit';
 type CropTarget = 'photo' | 'banner';
+
+/** Snapshot per-idioma de los campos que el user edita en su CV. Cuando
+ * el user cambia el toggle de idioma en el editor, hacemos snapshot del
+ * form actual acá y populate del snapshot del otro idioma al form. Los
+ * campos "personales" (nombre, phone, city, links) NO estan acá: se
+ * comparten entre idiomas. */
+interface CvLangSnapshot {
+  summary: string;
+  skills: string;
+  soft_skills: string;
+  experience: ExperienceEntry[] | string;
+  education: EducationEntry[] | string;
+}
 
 /**
  * Mi perfil — vista LinkedIn-style con hero (banner + avatar + nombre)
@@ -82,6 +101,67 @@ export class MyProfileComponent implements OnInit {
    *  cuando el user aún no migró a estructurado. */
   legacyExperienceText = signal<string>('');
   legacyEducationText = signal<string>('');
+
+  // ---- CV multi-idioma + preferencias de display -------------------
+  /** Idioma que el user esta editando en este momento en el form.
+   *  Distinto de `cv_active_language` del profile (que decide en que
+   *  idioma se ve el CV renderizado). Al hacer swap del toggle,
+   *  hacemos snapshot del form → snapshotFor[langActual] y populate
+   *  del snapshot del nuevo lang al form. */
+  cvEditingLang = signal<CvLanguage>('es');
+
+  /** Preferencias de display del CV — se persisten al submit del
+   *  profile. Aplican al render en /me VIEW y al PDF export. */
+  cvTextAlign = signal<CvTextAlign>('left');
+  cvFontSize = signal<CvFontSize>('md');
+
+  /** Snapshots del contenido editable en cada idioma. El form siempre
+   *  muestra los valores del `cvEditingLang` actual; el otro vive acá
+   *  hasta que el user cambia el toggle o hace submit. Se inicializan
+   *  desde el profile en `patchFormFromProfile`. */
+  private _snapshotEs: CvLangSnapshot = this.emptySnapshot();
+  private _snapshotEn: CvLangSnapshot = this.emptySnapshot();
+
+  /** Modo actual del OTRO idioma (structured/legacy). Necesario para
+   *  restaurar el modo correcto al hacer swap y no forzar structured
+   *  cuando el user tiene contenido legacy en el otro idioma. */
+  private _experienceModeByLang: Record<CvLanguage, 'structured' | 'legacy'> = {
+    es: 'structured',
+    en: 'structured',
+  };
+  private _educationModeByLang: Record<CvLanguage, 'structured' | 'legacy'> = {
+    es: 'structured',
+    en: 'structured',
+  };
+  private _legacyTextByLang: Record<CvLanguage, { exp: string; edu: string }> = {
+    es: { exp: '', edu: '' },
+    en: { exp: '', edu: '' },
+  };
+
+  /** True cuando el idioma EN aun no tiene contenido — habilita el
+   *  boton "Copiar del español" en el header. */
+  hasEnContent = computed(() => {
+    const s = this._snapshotEn;
+    const hasArrayContent = (v: ExperienceEntry[] | EducationEntry[] | string) =>
+      (Array.isArray(v) && v.length > 0) || (typeof v === 'string' && v.trim() !== '');
+    return (
+      s.summary.trim() !== '' ||
+      s.skills.trim() !== '' ||
+      s.soft_skills.trim() !== '' ||
+      hasArrayContent(s.experience) ||
+      hasArrayContent(s.education)
+    );
+  });
+
+  private emptySnapshot(): CvLangSnapshot {
+    return {
+      summary: '',
+      skills: '',
+      soft_skills: '',
+      experience: [],
+      education: [],
+    };
+  }
 
   // ---- Cropper state -------------------------------------------------
   /** Archivo seleccionado para recortar. null cierra el modal. */
@@ -379,6 +459,21 @@ export class MyProfileComponent implements OnInit {
       this.cities = this.profileBuilder.getCitiesByCountryCode(isoCode);
     }
 
+    // Preferencias de display + idioma activo del CV. Se leen ANTES del
+    // patch de campos editables para que el resto de la logica sepa
+    // cual idioma pupular en el form.
+    const activeLang: CvLanguage = profile.cv_active_language === 'en' ? 'en' : 'es';
+    this.cvEditingLang.set(activeLang);
+    this.cvTextAlign.set(profile.cv_text_align === 'justify' ? 'justify' : 'left');
+    const validSizes: CvFontSize[] = ['sm', 'md', 'lg'];
+    this.cvFontSize.set(validSizes.includes(profile.cv_font_size) ? profile.cv_font_size : 'md');
+
+    // Snapshots iniciales: leemos los campos ES (los actuales) al
+    // _snapshotEs y los campos _en al _snapshotEn. Luego populamos el
+    // form con el snapshot del idioma activo.
+    this._snapshotEs = this.buildSnapshotFromProfile(profile, 'es');
+    this._snapshotEn = this.buildSnapshotFromProfile(profile, 'en');
+
     this.profileForm.patchValue({
       first_name: profile.first_name || '',
       last_name: profile.last_name || '',
@@ -389,8 +484,6 @@ export class MyProfileComponent implements OnInit {
       country: isoCode,
       city: profile.city || '',
       professional_title: profile.professional_title || '',
-      summary: profile.summary || '',
-      skills: profile.skills || '',
       linkedin_url: profile.linkedin_url || '',
       portfolio_url: profile.portfolio_url || '',
     });
@@ -401,54 +494,54 @@ export class MyProfileComponent implements OnInit {
     // los helpers `experienceArray.push`/`.removeAt` fallan porque
     // `experienceArray` sigue devolviendo el FormControl del submit
     // anterior.
+    //
+    // El "modo por idioma" (structured/legacy) y el legacy text tambien
+    // se detectan aca por-idioma. Populamos el FORM con el snapshot
+    // del idioma ACTIVO — el otro queda en su almacenamiento hasta que
+    // el user cambie el toggle o haga submit.
+    this._experienceModeByLang.es = this.detectMode(profile.experience);
+    this._experienceModeByLang.en = this.detectMode(profile.experience_en);
+    this._educationModeByLang.es = this.detectMode(profile.education);
+    this._educationModeByLang.en = this.detectMode(profile.education_en);
+    this._legacyTextByLang.es = {
+      exp: this._experienceModeByLang.es === 'legacy' ? String(profile.experience || '') : '',
+      edu: this._educationModeByLang.es === 'legacy' ? String(profile.education || '') : '',
+    };
+    this._legacyTextByLang.en = {
+      exp: this._experienceModeByLang.en === 'legacy' ? String(profile.experience_en || '') : '',
+      edu: this._educationModeByLang.en === 'legacy' ? String(profile.education_en || '') : '',
+    };
 
-    // Experience
-    const expArray = this.fb.array<FormGroup>([]);
-    const expEntries = this.tryParseEntries<ExperienceEntry>(profile.experience);
-    if (expEntries !== null) {
-      this.experienceMode.set('structured');
-      if (expEntries.length === 0) {
-        expArray.push(this.createExperienceGroup());
-      } else {
-        expEntries.forEach((e) => expArray.push(this.createExperienceGroup(e)));
-      }
-      this.legacyExperienceText.set('');
-    } else {
-      const text = typeof profile.experience === 'string' ? profile.experience : '';
-      if (text.trim() === '') {
-        this.experienceMode.set('structured');
-        expArray.push(this.createExperienceGroup());
-        this.legacyExperienceText.set('');
-      } else {
-        this.experienceMode.set('legacy');
-        this.legacyExperienceText.set(text);
-      }
-    }
-    this.profileForm.setControl('experience', expArray);
+    this.applySnapshotToForm(activeLang);
+  }
 
-    // Education (misma lógica)
-    const eduArray = this.fb.array<FormGroup>([]);
-    const eduEntries = this.tryParseEntries<EducationEntry>(profile.education);
-    if (eduEntries !== null) {
-      this.educationMode.set('structured');
-      if (eduEntries.length === 0) {
-        eduArray.push(this.createEducationGroup());
-      } else {
-        eduEntries.forEach((e) => eduArray.push(this.createEducationGroup(e)));
-      }
-      this.legacyEducationText.set('');
-    } else {
-      const text = typeof profile.education === 'string' ? profile.education : '';
-      if (text.trim() === '') {
-        this.educationMode.set('structured');
-        eduArray.push(this.createEducationGroup());
-        this.legacyEducationText.set('');
-      } else {
-        this.educationMode.set('legacy');
-        this.legacyEducationText.set(text);
-      }
-    }
-    this.profileForm.setControl('education', eduArray);
+  /** Detecta el modo (structured / legacy) de un campo experience o
+   *  education. Structured = array o JSON-string de array. Legacy =
+   *  string vacio (arranca structured) o texto libre. */
+  private detectMode(raw: unknown): 'structured' | 'legacy' {
+    const entries = this.tryParseEntries<any>(raw);
+    if (entries !== null) return 'structured';
+    if (typeof raw === 'string' && raw.trim() !== '') return 'legacy';
+    return 'structured';
+  }
+
+  /** Extrae un CvLangSnapshot desde el profile crudo del backend para
+   *  el idioma pedido. `es` lee summary/skills/etc; `en` lee summary_en/
+   *  skills_en/etc. Los arrays se parsean; el texto legacy se preserva
+   *  como string. */
+  private buildSnapshotFromProfile(profile: any, lang: CvLanguage): CvLangSnapshot {
+    const key = (base: string) => (lang === 'es' ? base : `${base}_en`);
+    const rawExp = profile[key('experience')];
+    const rawEdu = profile[key('education')];
+    const expEntries = this.tryParseEntries<ExperienceEntry>(rawExp);
+    const eduEntries = this.tryParseEntries<EducationEntry>(rawEdu);
+    return {
+      summary: profile[key('summary')] || '',
+      skills: profile[key('skills')] || '',
+      soft_skills: profile[key('soft_skills')] || '',
+      experience: expEntries !== null ? expEntries : (typeof rawExp === 'string' ? rawExp : ''),
+      education: eduEntries !== null ? eduEntries : (typeof rawEdu === 'string' ? rawEdu : ''),
+    };
   }
 
   onCountryChange(countryCode: string): void {
@@ -612,57 +705,269 @@ export class MyProfileComponent implements OnInit {
 
   /**
    * Prepara el form para el submit:
-   *  - Modo legacy: reemplaza el control por el string legacy tal cual
-   *    (para que profile-builder detecte que es texto libre).
-   *  - Modo estructurado: transforma cada entry aplicando el sentinel
-   *    `end_date = "Actual"` cuando `is_current: true`, y elimina el
-   *    campo `is_current` que no forma parte de la interfaz persistida.
+   *  - Snapshot del form actual → snapshot del idioma activo (asi
+   *    tenemos AMBOS snapshots (ES y EN) al dia antes de mandar).
+   *  - Agrega al FormGroup los campos del OTRO idioma como controles
+   *    con sufijo `_en` (o `_en` vacio si estamos editando ES y el
+   *    snapshot EN no cambio) — profile-builder los envia todos en el
+   *    loop generico.
+   *  - Agrega las 3 preferencias de display (cv_active_language,
+   *    cv_text_align, cv_font_size).
+   *  - Reemplaza el FormArray de experience/education del IDIOMA ACTIVO
+   *    por un control simple con array/string listo para persistir.
    */
   private prepareEntriesBeforeSubmit(): void {
-    // Experience
-    if (this.experienceMode() === 'legacy') {
-      this.profileForm.setControl(
-        'experience',
-        this.fb.control(this.legacyExperienceText(), Validators.required),
-      );
+    // 1) Snapshot del form → snapshot del idioma activo.
+    const currentLang = this.cvEditingLang();
+    this.captureFormToSnapshot(currentLang);
+
+    // 2) Consolidamos ambos snapshots en controles del form. Los
+    //    campos ES se llaman igual que hoy (summary, skills, etc); los
+    //    EN llevan sufijo _en. profile-builder itera todo el rawData
+    //    del form y hace formData.append(key, value) para los que no
+    //    son experience/education.
+    const es = this._snapshotEs;
+    const en = this._snapshotEn;
+
+    this.profileForm.setControl('summary', this.fb.control(es.summary, Validators.required));
+    this.profileForm.setControl('skills', this.fb.control(es.skills, Validators.required));
+    this.setOrAddControl('soft_skills', es.soft_skills);
+    this.setOrAddControl('summary_en', en.summary);
+    this.setOrAddControl('skills_en', en.skills);
+    this.setOrAddControl('soft_skills_en', en.soft_skills);
+
+    // 3) Experience/education del idioma ACTIVO — mismo patron que
+    //    antes: array o string legacy segun el modo.
+    this.profileForm.setControl(
+      'experience',
+      this.fb.control(this.serializeEntriesForSubmit(es.experience)),
+    );
+    this.profileForm.setControl(
+      'education',
+      this.fb.control(this.serializeEntriesForSubmit(es.education)),
+    );
+
+    // 4) Experience/education del OTRO idioma como campos _en. Los
+    //    mandamos SIEMPRE (aunque el user no los haya editado) para no
+    //    perder contenido previamente guardado — el snapshot EN se
+    //    inicializa desde el profile en el load.
+    this.setOrAddControl(
+      'experience_en',
+      this.serializeEntriesForSubmitAsString(en.experience),
+    );
+    this.setOrAddControl(
+      'education_en',
+      this.serializeEntriesForSubmitAsString(en.education),
+    );
+
+    // 5) Preferencias de display del CV.
+    this.setOrAddControl('cv_active_language', this.cvEditingLang());
+    this.setOrAddControl('cv_text_align', this.cvTextAlign());
+    this.setOrAddControl('cv_font_size', this.cvFontSize());
+  }
+
+  private setOrAddControl(name: string, value: unknown): void {
+    if (this.profileForm.contains(name)) {
+      this.profileForm.setControl(name, this.fb.control(value));
     } else {
-      const cleaned = this.experienceArray.value.map((e: any) => ({
-        position: e.position,
-        company: e.company,
-        location_city: e.location_city || '',
-        location_country: e.location_country || '',
-        start_date: e.start_date,
-        end_date: e.is_current ? 'Actual' : (e.end_date || ''),
-        description: e.description,
-      }));
-      // Reemplazamos el FormArray por un control simple con el array
-      // limpio — profile-builder lo detectará como array y hará el
-      // JSON.stringify.
-      this.profileForm.setControl('experience', this.fb.control(cleaned));
+      this.profileForm.addControl(name, this.fb.control(value));
     }
-    // Education
-    if (this.educationMode() === 'legacy') {
-      this.profileForm.setControl(
-        'education',
-        this.fb.control(this.legacyEducationText(), Validators.required),
-      );
-    } else {
-      const cleaned = this.educationArray.value.map((e: any) => ({
-        title: e.title,
-        institution: e.institution,
-        location_city: e.location_city || '',
-        location_country: e.location_country || '',
-        start_date: e.start_date,
-        end_date: e.is_current ? 'Actual' : (e.end_date || ''),
-      }));
-      this.profileForm.setControl('education', this.fb.control(cleaned));
+  }
+
+  /** Devuelve el array o el string legacy tal cual para que
+   *  profile-builder decida el shape del formData (JSON.stringify si es
+   *  array, string plano si es legacy). */
+  private serializeEntriesForSubmit(entries: ExperienceEntry[] | EducationEntry[] | string): unknown {
+    if (Array.isArray(entries)) return entries;
+    return entries || '';
+  }
+
+  /** Version que SIEMPRE serializa a string — necesario para los campos
+   *  _en que van por el loop generico de profile-builder (que hace
+   *  String(value)). Los arrays se convierten a JSON. */
+  private serializeEntriesForSubmitAsString(
+    entries: ExperienceEntry[] | EducationEntry[] | string,
+  ): string {
+    if (Array.isArray(entries)) {
+      return entries.length === 0 ? '' : JSON.stringify(entries);
     }
+    return entries || '';
   }
 
   toggleEdit(): void {
     this.mode.update((m) => (m === 'view' ? 'edit' : 'view'));
     this.successMessage = '';
     this.errorMessage = '';
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // CV multi-idioma — swap del form, copy ES→EN, y setters de display
+  // ═══════════════════════════════════════════════════════════════════
+
+  /** Cambia el idioma activo del editor. Guarda snapshot del form
+   *  actual al lang saliente y populate del snapshot del lang entrante
+   *  al form. Sin esto, cambiar idioma perdía el trabajo del user en
+   *  el idioma anterior si no había pasado por submit. */
+  switchEditingLang(next: CvLanguage): void {
+    const current = this.cvEditingLang();
+    if (current === next) return;
+
+    // 1) Snapshot del form actual → snapshot del lang saliente.
+    this.captureFormToSnapshot(current);
+
+    // 2) Populate del form desde el snapshot del lang entrante.
+    this.cvEditingLang.set(next);
+    this.applySnapshotToForm(next);
+  }
+
+  /** Copia el contenido del snapshot ES al snapshot EN (y al form si
+   *  el user esta editando EN). Uso tipico: user acaba de activar EN
+   *  por primera vez, quiere arrancar con el contenido ES y traducirlo
+   *  manualmente en vez de escribir de cero. Sobrescribe cualquier
+   *  contenido EN previo — no es reversible. */
+  copyEsContentToEn(): void {
+    // Aseguramos que el snapshotEs este al dia si el user esta en ES.
+    if (this.cvEditingLang() === 'es') {
+      this.captureFormToSnapshot('es');
+    }
+    // Clonamos structuredClone para arrays (evita alias entre snapshots).
+    this._snapshotEn = {
+      summary: this._snapshotEs.summary,
+      skills: this._snapshotEs.skills,
+      soft_skills: this._snapshotEs.soft_skills,
+      experience: Array.isArray(this._snapshotEs.experience)
+        ? this._snapshotEs.experience.map((e) => ({ ...e }))
+        : this._snapshotEs.experience,
+      education: Array.isArray(this._snapshotEs.education)
+        ? this._snapshotEs.education.map((e) => ({ ...e }))
+        : this._snapshotEs.education,
+    };
+    this._experienceModeByLang.en = this._experienceModeByLang.es;
+    this._educationModeByLang.en = this._educationModeByLang.es;
+    this._legacyTextByLang.en = { ...this._legacyTextByLang.es };
+    // Si el user esta editando EN, refrescamos el form para que vea el
+    // copy inmediatamente.
+    if (this.cvEditingLang() === 'en') {
+      this.applySnapshotToForm('en');
+    }
+  }
+
+  setCvTextAlign(align: CvTextAlign): void {
+    this.cvTextAlign.set(align);
+  }
+
+  setCvFontSize(size: CvFontSize): void {
+    this.cvFontSize.set(size);
+  }
+
+  /** Snapshot del estado actual del form → almacen del idioma indicado.
+   *  Cubre los 5 campos que el user edita: summary, skills, soft_skills,
+   *  experience (array/legacy), education (array/legacy). El resto de
+   *  campos (nombre, phone, city, links) son shared. */
+  private captureFormToSnapshot(lang: CvLanguage): void {
+    const snapshot: CvLangSnapshot = {
+      summary: this.profileForm.get('summary')?.value ?? '',
+      skills: this.profileForm.get('skills')?.value ?? '',
+      soft_skills: this.profileForm.get('soft_skills')?.value ?? '',
+      experience: this.snapshotExperienceFromForm(),
+      education: this.snapshotEducationFromForm(),
+    };
+    if (lang === 'es') {
+      this._snapshotEs = snapshot;
+    } else {
+      this._snapshotEn = snapshot;
+    }
+    // Guardar el modo tambien (structured vs legacy) para restaurar
+    // correctamente al hacer swap.
+    this._experienceModeByLang[lang] = this.experienceMode();
+    this._educationModeByLang[lang] = this.educationMode();
+    this._legacyTextByLang[lang] = {
+      exp: this.legacyExperienceText(),
+      edu: this.legacyEducationText(),
+    };
+  }
+
+  private snapshotExperienceFromForm(): ExperienceEntry[] | string {
+    if (this.experienceMode() === 'legacy') {
+      return this.legacyExperienceText();
+    }
+    // Structured: leer FormArray y limpiar `is_current` sentinel.
+    return this.experienceArray.value.map((e: any) => ({
+      position: e.position,
+      company: e.company,
+      location_city: e.location_city || '',
+      location_country: e.location_country || '',
+      start_date: e.start_date,
+      end_date: e.is_current ? 'Actual' : (e.end_date || ''),
+      description: e.description,
+    })) as ExperienceEntry[];
+  }
+
+  private snapshotEducationFromForm(): EducationEntry[] | string {
+    if (this.educationMode() === 'legacy') {
+      return this.legacyEducationText();
+    }
+    return this.educationArray.value.map((e: any) => ({
+      title: e.title,
+      institution: e.institution,
+      location_city: e.location_city || '',
+      location_country: e.location_country || '',
+      start_date: e.start_date,
+      end_date: e.is_current ? 'Actual' : (e.end_date || ''),
+    })) as EducationEntry[];
+  }
+
+  /** Populate del form desde el snapshot del idioma indicado. Restaura
+   *  tambien el modo (structured/legacy) y el legacy text. */
+  private applySnapshotToForm(lang: CvLanguage): void {
+    const snap = lang === 'es' ? this._snapshotEs : this._snapshotEn;
+    this.profileForm.patchValue({
+      summary: snap.summary,
+      skills: snap.skills,
+      soft_skills: snap.soft_skills,
+    });
+
+    // Experience mode + content
+    const expMode = this._experienceModeByLang[lang];
+    this.experienceMode.set(expMode);
+    if (expMode === 'legacy') {
+      this.legacyExperienceText.set(this._legacyTextByLang[lang].exp);
+      this.profileForm.setControl(
+        'experience',
+        this.fb.control(this._legacyTextByLang[lang].exp, Validators.required),
+      );
+    } else {
+      const entries = Array.isArray(snap.experience) ? snap.experience : [];
+      const array = this.fb.array<FormGroup>([]);
+      if (entries.length === 0) {
+        array.push(this.createExperienceGroup());
+      } else {
+        entries.forEach((e) => array.push(this.createExperienceGroup(e)));
+      }
+      this.profileForm.setControl('experience', array);
+      this.legacyExperienceText.set('');
+    }
+
+    // Education mode + content
+    const eduMode = this._educationModeByLang[lang];
+    this.educationMode.set(eduMode);
+    if (eduMode === 'legacy') {
+      this.legacyEducationText.set(this._legacyTextByLang[lang].edu);
+      this.profileForm.setControl(
+        'education',
+        this.fb.control(this._legacyTextByLang[lang].edu, Validators.required),
+      );
+    } else {
+      const entries = Array.isArray(snap.education) ? snap.education : [];
+      const array = this.fb.array<FormGroup>([]);
+      if (entries.length === 0) {
+        array.push(this.createEducationGroup());
+      } else {
+        entries.forEach((e) => array.push(this.createEducationGroup(e)));
+      }
+      this.profileForm.setControl('education', array);
+      this.legacyEducationText.set('');
+    }
   }
 
   goToDashboard(): void {

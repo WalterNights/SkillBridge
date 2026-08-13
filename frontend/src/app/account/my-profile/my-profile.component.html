@@ -324,6 +324,109 @@
            izquierda del form centrado en pantallas anchas. En mobile
            cae inline arriba del form. -->
       <app-text-format-toolbar />
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CV Multi-idioma + Preferencias de display
+         Los 3 controles se persisten al submit del perfil y se
+         reflejan en el /me VIEW y en el PDF exportado.
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="cv-prefs-bar glass-strong rounded-2xl p-4 sm:p-5 mb-4">
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <!-- Idioma activo del editor -->
+        <div class="flex items-center gap-2">
+          <span class="cv-prefs-label">Idioma</span>
+          <div class="cv-prefs-toggle" role="group" aria-label="Idioma del CV">
+            <button
+              type="button"
+              class="cv-prefs-toggle-btn"
+              [class.active]="cvEditingLang() === 'es'"
+              (click)="switchEditingLang('es')"
+              title="Editar la versión en español"
+            >Español</button>
+            <button
+              type="button"
+              class="cv-prefs-toggle-btn"
+              [class.active]="cvEditingLang() === 'en'"
+              (click)="switchEditingLang('en')"
+              title="Editar la versión en inglés"
+            >English</button>
+          </div>
+        </div>
+
+        <!-- Alineación de texto (aplica al render del CV, no al editor) -->
+        <div class="flex items-center gap-2">
+          <span class="cv-prefs-label">Alineación</span>
+          <div class="cv-prefs-toggle" role="group" aria-label="Alineación del texto">
+            <button
+              type="button"
+              class="cv-prefs-toggle-btn cv-prefs-toggle-btn--icon"
+              [class.active]="cvTextAlign() === 'left'"
+              (click)="setCvTextAlign('left')"
+              title="Alineado a la izquierda"
+              aria-label="Alineado a la izquierda"
+            >
+              <span class="material-symbols-outlined" style="font-size: 16px">format_align_left</span>
+            </button>
+            <button
+              type="button"
+              class="cv-prefs-toggle-btn cv-prefs-toggle-btn--icon"
+              [class.active]="cvTextAlign() === 'justify'"
+              (click)="setCvTextAlign('justify')"
+              title="Justificado"
+              aria-label="Justificado"
+            >
+              <span class="material-symbols-outlined" style="font-size: 16px">format_align_justify</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tamaño de fuente del CV renderizado -->
+        <div class="flex items-center gap-2">
+          <span class="cv-prefs-label">Tamaño</span>
+          <div class="cv-prefs-toggle" role="group" aria-label="Tamaño de fuente del CV">
+            <button
+              type="button"
+              class="cv-prefs-toggle-btn"
+              [class.active]="cvFontSize() === 'sm'"
+              (click)="setCvFontSize('sm')"
+              title="Pequeño"
+            >S</button>
+            <button
+              type="button"
+              class="cv-prefs-toggle-btn"
+              [class.active]="cvFontSize() === 'md'"
+              (click)="setCvFontSize('md')"
+              title="Mediano"
+            >M</button>
+            <button
+              type="button"
+              class="cv-prefs-toggle-btn"
+              [class.active]="cvFontSize() === 'lg'"
+              (click)="setCvFontSize('lg')"
+              title="Grande"
+            >L</button>
+          </div>
+        </div>
+
+        <!-- Copiar contenido ES → EN. Solo aparece cuando el user esta
+             editando EN y aun no cargo contenido. UX: no forzar a re-
+             escribir todo desde cero cuando ya existe un CV en ES. -->
+        <button
+          *ngIf="cvEditingLang() === 'en' && !hasEnContent()"
+          type="button"
+          class="cv-prefs-copy-btn"
+          (click)="copyEsContentToEn()"
+          title="Copia el contenido de la versión en español para que lo traduzcas manualmente"
+        >
+          <span class="material-symbols-outlined" style="font-size: 16px">content_copy</span>
+          Copiar del español
+        </button>
+      </div>
+      <p *ngIf="cvEditingLang() === 'en'" class="text-xs text-warm-grey mt-3">
+        Estás editando la versión en inglés. Los datos personales (nombre, contacto, ciudad) se comparten entre idiomas.
+      </p>
+    </div>
+
     <form
       [formGroup]="profileForm"
       (ngSubmit)="onSubmit()"

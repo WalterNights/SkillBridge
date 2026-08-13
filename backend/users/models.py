@@ -286,6 +286,25 @@ class UserProfile(models.Model):
     education = models.TextField(blank=True)
     skills = models.TextField(help_text="Lista de habilidades separadas por coma")
     experience = models.TextField(help_text="Descripción libre de experiencia")
+
+    # ─── CV multi-idioma ─────────────────────────────────────────────
+    # Versiones en ingles de los campos que el user escribe en su hoja
+    # de vida. Los campos originales (sin sufijo) quedan como el "primary"
+    # idioma — implicitamente ES para users existentes, cero rompimiento
+    # de backwards compat. Cuando el user activa EN en el editor, edita
+    # y guarda estos campos por separado; los "personales" (nombre,
+    # phone, city) y los "factuales" (languages que habla) NO se
+    # duplican — no son traducibles.
+    #
+    # Los campos ES existentes se dejan como estan (sin renombrar) para
+    # no romper la API, el serializer, ni las miles de queries del
+    # codebase. Si en el futuro agregamos PT o FR, se agregan mas
+    # sufijos siguiendo el mismo patron.
+    summary_en = models.TextField(blank=True, default="")
+    education_en = models.TextField(blank=True, default="")
+    skills_en = models.TextField(blank=True, default="")
+    experience_en = models.TextField(blank=True, default="")
+    soft_skills_en = models.TextField(blank=True, default="")
     resume = models.FileField(
         upload_to=_resume_upload_path,
         null=True,
@@ -341,6 +360,30 @@ class UserProfile(models.Model):
     # iterativa no aporta valor — el CV original ya lo tiene). Admins
     # bypassean este check para QA / debugging del prompt.
     cv_improved_at = models.DateTimeField(null=True, blank=True)
+
+    # ─── CV display preferences ──────────────────────────────────────
+    # Idioma activo del editor del CV y del PDF exportado. El backend
+    # NO decide qué mostrar — solo persiste la elección del user y el
+    # frontend usa este flag para elegir campo ES vs EN. Default ES
+    # porque la mayoría de nuestros users escriben en español.
+    CV_LANGUAGE_CHOICES = [("es", "Español"), ("en", "English")]
+    cv_active_language = models.CharField(
+        max_length=4, choices=CV_LANGUAGE_CHOICES, default="es"
+    )
+    # Alineación del texto de descripciones en el CV renderizado (PDF
+    # + preview). "justify" para el look mas formal, "left" para
+    # legibilidad. Setting global, no por bloque — mantener simple.
+    CV_ALIGN_CHOICES = [("left", "Alineado a la izquierda"), ("justify", "Justificado")]
+    cv_text_align = models.CharField(
+        max_length=8, choices=CV_ALIGN_CHOICES, default="left"
+    )
+    # Escala global de tamaño de fuente del CV. 3 opciones fijas para
+    # no permitir tamaños raros que rompan la paginacion greedy del
+    # ATS. Cada opcion multiplica el rem base del render.
+    CV_FONT_SIZE_CHOICES = [("sm", "Pequeño"), ("md", "Mediano"), ("lg", "Grande")]
+    cv_font_size = models.CharField(
+        max_length=2, choices=CV_FONT_SIZE_CHOICES, default="md"
+    )
 
     # Cover Letter AI usage -------------------------------------------
     # Contador lifetime de generaciones POST /api/cover-letters/. Cada

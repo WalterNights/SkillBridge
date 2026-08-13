@@ -57,6 +57,34 @@
   border-radius: 4px;
   position: relative;
   overflow: hidden;
+
+  /* ─── Preferencias de display del user ───────────────────────────
+   * cv_text_align: aplica text-align a las descripciones (summary,
+   *   experience, education). NO a headers, titles, ni fechas —
+   *   esos siempre quedan left para no romper el layout ATS.
+   * cv_font_size: escala TODO el CV con font-size en el root; los
+   *   nested rem/pt heredan proporcionalmente. sm ≈ 0.92, md = 1,
+   *   lg ≈ 1.08 — cambios chicos para no romper la paginación
+   *   greedy de las hojas Oficio. */
+  &.cv-align-justify {
+    .cv-summary,
+    .cv-text-content,
+    .cv-entry-description,
+    .cv-entry-description-rt,
+    .cv-entry-desc-wrap {
+      text-align: justify;
+      text-justify: inter-word;
+      hyphens: auto;
+    }
+  }
+
+  &.cv-size-sm {
+    font-size: 92%;
+  }
+
+  &.cv-size-lg {
+    font-size: 108%;
+  }
 }
 
 /* Hint informativo arriba del CV cuando ocupa más de una hoja Oficio. */

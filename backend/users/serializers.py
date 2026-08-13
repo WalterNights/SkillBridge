@@ -75,6 +75,17 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "portfolio_url",
             "soft_skills",
             "languages",
+            # CV multi-idioma — contenido en EN paralelo al ES existente.
+            "summary_en",
+            "education_en",
+            "skills_en",
+            "experience_en",
+            "soft_skills_en",
+            # Preferencias de display del CV (idioma activo del editor +
+            # export, alineación y tamaño de fuente).
+            "cv_active_language",
+            "cv_text_align",
+            "cv_font_size",
             "email_alerts_enabled",
             "visible_to_companies",
         ]

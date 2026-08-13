@@ -58,6 +58,18 @@ export interface LanguageEntry {
   level: string;
 }
 
+/** Idioma activo del CV — determina qué campo (`summary` vs `summary_en`)
+ *  edita el user y qué contenido se renderiza en el preview y el PDF. */
+export type CvLanguage = 'es' | 'en';
+
+/** Alineación de las descripciones en el CV renderizado. Global,
+ *  no por bloque — mantener simple. */
+export type CvTextAlign = 'left' | 'justify';
+
+/** Escala del CV renderizado. Cada opción multiplica el rem base del
+ *  render (ver ats-cv.component.scss). */
+export type CvFontSize = 'sm' | 'md' | 'lg';
+
 /**
  * Forma del profile tal como vive en el componente del CV ATS — post
  * normalización (`formatProfileData`). Es lo que consumen los templates
@@ -67,6 +79,9 @@ export interface LanguageEntry {
  *   data nueva), string markdown si es texto libre (perfiles legacy o
  *   manual). El renderer cubre ambos casos.
  * - `languages`: SIEMPRE array tras la normalización (vacío si no hay).
+ * - `*_en`: versión inglesa paralela. Si el user nunca activó EN, vienen
+ *   vacíos y el editor los muestra vacíos con la opción de "copiar del
+ *   español" para arrancar.
  */
 export interface CvProfileData {
   id: number | null;
@@ -87,6 +102,16 @@ export interface CvProfileData {
   languages: LanguageEntry[];
   experience: ExperienceEntry[] | string;
   education: EducationEntry[] | string;
+  // Versiones en inglés — paralelas al ES existente.
+  summary_en: string;
+  skills_en: string;
+  soft_skills_en: string;
+  experience_en: ExperienceEntry[] | string;
+  education_en: EducationEntry[] | string;
+  // Preferencias de display del CV.
+  cv_active_language: CvLanguage;
+  cv_text_align: CvTextAlign;
+  cv_font_size: CvFontSize;
 }
 
 /**
@@ -120,6 +145,16 @@ export interface ProfileApiResponse {
   languages?: LanguageEntry[] | string | null;
   experience?: ExperienceEntry[] | string | null;
   education?: EducationEntry[] | string | null;
+  // Versiones en inglés — todas opcionales para no romper con perfiles
+  // pre-migración que no tienen estos campos en la respuesta.
+  summary_en?: string | null;
+  skills_en?: string | null;
+  soft_skills_en?: string | null;
+  experience_en?: ExperienceEntry[] | string | null;
+  education_en?: EducationEntry[] | string | null;
+  cv_active_language?: CvLanguage | null;
+  cv_text_align?: CvTextAlign | null;
+  cv_font_size?: CvFontSize | null;
 }
 
 /**
