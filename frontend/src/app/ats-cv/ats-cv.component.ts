@@ -886,21 +886,36 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     // Legal/Oficio en puntos (1 inch = 72 pt): 8.5" × 14" = 612 × 1008 pt.
     const pageWidth = 612;
     try {
-      const doc = new jsPDF('p', 'pt', 'legal');
+      // 4º arg `compress: true` habilita la compresion Deflate del PDF —
+      // sin esto los objetos van uncompressed y el binary infla ~20%.
+      const doc = new jsPDF('p', 'pt', 'legal', true);
       for (let i = 0; i < pageEls.length; i++) {
         const canvas = await html2canvas(pageEls[i], {
+          // scale 2 = retina (2x DPI): texto se ve nitido en pantallas
+          // hi-DPI y al hacer zoom en el PDF. Con JPEG comprimido el
+          // costo en peso es aceptable (~500KB/hoja vs ~5MB con PNG).
           scale: 2,
           useCORS: true,
           logging: false,
           backgroundColor: '#ffffff',
         });
-        const imgData = canvas.toDataURL('image/png');
+        // JPEG en vez de PNG: PNG es lossless y para hojas Oficio a 2x
+        // termina en 4-6 MB POR HOJA. LinkedIn limita a 5MB total el
+        // upload de CVs; con PNG un CV de 6 hojas era 33MB y no se podia
+        // subir. JPEG con calidad 0.85 baja a ~0.5MB/hoja sin perdida
+        // visible en texto ni backgrounds solidos. Si mañana necesitamos
+        // fidelidad extrema (fotos, logos con transparencia), pasamos
+        // a un pipeline server-side con Puppeteer que emite PDF vectorial.
+        const imgData = canvas.toDataURL('image/jpeg', 0.85);
         // Mantenemos proporción ancho-alto del canvas dentro del ancho
         // fijo del PDF. Si la hoja DOM es exactamente Oficio, imgHeight
         // sale ~1008pt y llena la página completa.
         const imgHeight = (canvas.height * pageWidth) / canvas.width;
         if (i > 0) doc.addPage();
-        doc.addImage(imgData, 'PNG', 0, 0, pageWidth, imgHeight);
+        // 7º arg 'FAST' = compresion de imagen JPEG mas rapida (default
+        // 'MEDIUM' recomprime); ya viene comprimida desde toDataURL, no
+        // hace falta re-comprimir en el add.
+        doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, imgHeight, undefined, 'FAST');
       }
       doc.save('skiltak-ats-cv.pdf');
     } catch (err) {
