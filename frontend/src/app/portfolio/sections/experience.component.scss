@@ -1,0 +1,100 @@
+:host {
+  display: block;
+  scroll-margin-top: 64px;
+  padding: 64px 0;
+}
+
+.pf-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+
+  /* Línea vertical del timeline (sutil). */
+  &::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 8px;
+    bottom: 8px;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--pf-line-strong), transparent);
+  }
+
+  &__item {
+    position: relative;
+    padding-left: 40px;
+    padding-bottom: 48px;
+
+    &:last-child { padding-bottom: 0; }
+  }
+
+  &__marker {
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--pf-bg);
+    border: 1px solid var(--pf-accent);
+    box-shadow: 0 0 0 4px var(--pf-bg), 0 0 12px var(--pf-accent-glow);
+  }
+
+  &__period {
+    margin: 0 0 8px;
+    font-family: var(--pf-font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--pf-text-mute);
+  }
+
+  &__role {
+    margin: 0 0 10px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--pf-text);
+    letter-spacing: -0.01em;
+  }
+
+  &__company {
+    color: var(--pf-accent);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  }
+
+  &__description {
+    margin: 0 0 16px;
+    max-width: 640px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--pf-text-dim);
+  }
+}
+
+/* ---------- Chips reusables ---------- */
+.pf-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pf-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--pf-accent-soft);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  font-family: var(--pf-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: #fbab74;
+}

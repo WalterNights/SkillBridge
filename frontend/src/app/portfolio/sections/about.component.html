@@ -1,0 +1,9 @@
+<section class="pf-about">
+  <app-pf-section-header [eyebrow]="i18n.t('about.eyebrow')" [title]="i18n.t('about.title')" />
+
+  <div class="pf-about__body">
+    @for (p of paragraphs; track $index) {
+      <p [innerHTML]="p"></p>
+    }
+  </div>
+</section>

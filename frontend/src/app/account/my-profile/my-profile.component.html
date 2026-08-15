@@ -150,6 +150,54 @@
       {{ errorMessage }}
     </p>
 
+    <!-- ===== Portafolio interno (solo admins) — atajo a la vista
+         pública `/portafolio/walternightsdev` y al editor. Se muestra en
+         VIEW y en EDIT mode: el acceso al portafolio es ortogonal a la
+         edición del CV, así que no se esconde al cambiar de modo. ===== -->
+    <article *ngIf="isAdmin()" class="info-card glass-strong rounded-2xl p-6">
+      <header class="card-header flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-3">
+          <span
+            class="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary shrink-0"
+            style="font-size: 20px"
+          >
+            grid_view
+          </span>
+          <div>
+            <h2 class="!m-0">Portafolio personal</h2>
+            <p class="text-xs text-warm-grey mt-1">Público en <code class="text-primary/80">/portafolio/walternightsdev</code></p>
+          </div>
+        </div>
+        <span
+          class="text-[10px] uppercase tracking-widest px-2 py-1 rounded-full bg-primary/15 text-primary border border-primary/30"
+          title="Visible solo para admins"
+        >Admin</span>
+      </header>
+
+      <p class="text-body text-warm-grey leading-relaxed mt-4">
+        Sitio de vitrina para reclutadores. La ruta es pública — no requiere sesión — y coexiste con el SPA reutilizando el bundle de Angular.
+      </p>
+
+      <div class="flex flex-wrap gap-3 mt-5">
+        <a
+          routerLink="/portafolio/walternightsdev"
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-canvas font-semibold text-sm hover:bg-primary-400 transition-colors"
+        >
+          <span class="material-symbols-outlined" style="font-size: 18px">open_in_new</span>
+          Ver portafolio
+        </a>
+        <a
+          routerLink="/portafolio/walternightsdev/editar"
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/[0.12] text-bone text-sm hover:border-primary/40 hover:text-primary transition-colors"
+        >
+          <span class="material-symbols-outlined" style="font-size: 18px">edit_note</span>
+          Editar portafolio
+        </a>
+      </div>
+    </article>
+
     <!-- ===== VIEW MODE — read-only cards ===== -->
     <ng-container *ngIf="mode() === 'view'">
       <!-- About -->

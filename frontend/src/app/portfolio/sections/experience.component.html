@@ -1,0 +1,28 @@
+<section class="pf-experience">
+  <app-pf-section-header [eyebrow]="i18n.t('experience.eyebrow')" [title]="i18n.t('experience.title')" />
+
+  <ol class="pf-timeline">
+    @for (item of items(); track item.company + item.period) {
+      <li class="pf-timeline__item">
+        <div class="pf-timeline__marker" aria-hidden="true"></div>
+        <p class="pf-timeline__period">{{ item.period }}</p>
+        <div class="pf-timeline__body">
+          <h3 class="pf-timeline__role">
+            {{ item.role }}
+            @if (item.url) {
+              · <a [href]="item.url" target="_blank" rel="noopener noreferrer" class="pf-timeline__company">{{ item.company }}<span aria-hidden="true"> ↗</span></a>
+            } @else {
+              · <span class="pf-timeline__company">{{ item.company }}</span>
+            }
+          </h3>
+          <p class="pf-timeline__description">{{ item.description }}</p>
+          <ul class="pf-chips">
+            @for (tech of item.stack; track tech) {
+              <li class="pf-chip">{{ tech }}</li>
+            }
+          </ul>
+        </div>
+      </li>
+    }
+  </ol>
+</section>

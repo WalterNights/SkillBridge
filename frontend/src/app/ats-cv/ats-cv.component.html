@@ -100,9 +100,9 @@
     <div
       *ngFor="let page of pages(); let pageIdx = index; trackBy: trackPage"
       class="cv-page"
-      [class.cv-align-justify]="profileData?.cv_text_align === 'justify'"
-      [class.cv-size-sm]="profileData?.cv_font_size === 'sm'"
-      [class.cv-size-lg]="profileData?.cv_font_size === 'lg'"
+      [class.cv-align-justify]="profileData.cv_text_align === 'justify'"
+      [class.cv-size-sm]="profileData.cv_font_size === 'sm'"
+      [class.cv-size-lg]="profileData.cv_font_size === 'lg'"
       [attr.data-page-index]="pageIdx"
     >
       <ng-container *ngFor="let block of page" [ngSwitch]="block.kind">

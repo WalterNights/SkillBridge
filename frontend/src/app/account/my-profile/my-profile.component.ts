@@ -77,6 +77,10 @@ export class MyProfileComponent implements OnInit {
   selectedFile: File | null = null;
   isLoading = false;
   mode = signal<Mode>('view');
+
+  /** Gate para la card del portafolio personal. Solo admins acceden al
+   *  editor. Se lee del AuthService (source of truth: JWT `is_staff`). */
+  readonly isAdmin = (): boolean => this.authService.isAdmin();
   successMessage = '';
   errorMessage = '';
   countryCodes: CountryCode[] = [];

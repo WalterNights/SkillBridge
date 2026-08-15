@@ -1,0 +1,586 @@
+<div class="pfe">
+  <!-- ===== Toolbar (sticky top) ===== -->
+  <header class="pfe-toolbar">
+    <div class="pfe-toolbar__left">
+      <button type="button" class="pfe-icon-btn" (click)="goBack()" title="Volver a mi perfil">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <div class="pfe-toolbar__title">
+        <p class="pfe-toolbar__eyebrow">Editor · /portafolio/walternightsdev</p>
+        <h1>Portafolio</h1>
+      </div>
+    </div>
+    <div class="pfe-toolbar__right">
+      <button type="button" class="pfe-btn pfe-btn--ghost" (click)="openPublic()">
+        <span class="material-symbols-outlined" style="font-size: 18px">open_in_new</span>
+        Ver público
+      </button>
+      <button
+        type="button"
+        class="pfe-btn pfe-btn--primary"
+        (click)="save()"
+        [disabled]="saving() || loading()"
+      >
+        @if (saving()) {
+          <span class="pfe-spinner" aria-hidden="true"></span>
+          Guardando…
+        } @else {
+          <span class="material-symbols-outlined" style="font-size: 18px">save</span>
+          Guardar
+        }
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== Feedback ===== -->
+  @if (successMsg()) {
+    <p class="pfe-flash pfe-flash--ok">{{ successMsg() }}</p>
+  }
+  @if (errorMsg()) {
+    <p class="pfe-flash pfe-flash--err">{{ errorMsg() }}</p>
+  }
+
+  <!-- ===== Loading ===== -->
+  @if (loading()) {
+    <div class="pfe-loading">Cargando contenido del portafolio…</div>
+  } @else {
+    <!-- ===== Tabs ===== -->
+    <nav class="pfe-tabs" role="tablist">
+      @for (tab of tabs; track tab.id) {
+        <button
+          type="button"
+          class="pfe-tab"
+          [class.pfe-tab--active]="activeTab() === tab.id"
+          role="tab"
+          [attr.aria-selected]="activeTab() === tab.id"
+          (click)="setTab(tab.id)"
+        >{{ tab.label }}</button>
+      }
+    </nav>
+
+    <!-- ═════════════ HERO ═════════════ -->
+    @if (activeTab() === 'hero') {
+      <section class="pfe-section" [formGroup]="formEs">
+        <ng-container formGroupName="hero">
+          <ng-container [formGroup]="formEn">
+            <ng-container formGroupName="hero">
+              <div class="pfe-bilingual">
+                <label class="pfe-field">
+                  <span class="pfe-label">Eyebrow (ES)</span>
+                  <input [formControl]="$any(formEs.get('hero.eyebrow'))" />
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">Eyebrow (EN)</span>
+                  <input [formControl]="$any(formEn.get('hero.eyebrow'))" />
+                </label>
+              </div>
+              <div class="pfe-bilingual">
+                <label class="pfe-field">
+                  <span class="pfe-label">Título — línea 1 (ES)</span>
+                  <input [formControl]="$any(formEs.get('hero.titleTop'))" />
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">Título — línea 1 (EN)</span>
+                  <input [formControl]="$any(formEn.get('hero.titleTop'))" />
+                </label>
+              </div>
+              <div class="pfe-bilingual">
+                <label class="pfe-field">
+                  <span class="pfe-label">Título — línea 2 (ES)</span>
+                  <input [formControl]="$any(formEs.get('hero.titleBottom'))" />
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">Título — línea 2 (EN)</span>
+                  <input [formControl]="$any(formEn.get('hero.titleBottom'))" />
+                </label>
+              </div>
+              <div class="pfe-bilingual">
+                <label class="pfe-field">
+                  <span class="pfe-label">Subtítulo (ES)</span>
+                  <textarea rows="3" [formControl]="$any(formEs.get('hero.subtitle'))"></textarea>
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">Subtítulo (EN)</span>
+                  <textarea rows="3" [formControl]="$any(formEn.get('hero.subtitle'))"></textarea>
+                </label>
+              </div>
+              <div class="pfe-bilingual">
+                <label class="pfe-field">
+                  <span class="pfe-label">CTA — Proyectos (ES)</span>
+                  <input [formControl]="$any(formEs.get('hero.cta.projects'))" />
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">CTA — Proyectos (EN)</span>
+                  <input [formControl]="$any(formEn.get('hero.cta.projects'))" />
+                </label>
+              </div>
+              <div class="pfe-bilingual">
+                <label class="pfe-field">
+                  <span class="pfe-label">CTA — Contacto (ES)</span>
+                  <input [formControl]="$any(formEs.get('hero.cta.contact'))" />
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">CTA — Contacto (EN)</span>
+                  <input [formControl]="$any(formEn.get('hero.cta.contact'))" />
+                </label>
+              </div>
+            </ng-container>
+          </ng-container>
+        </ng-container>
+      </section>
+    }
+
+    <!-- ═════════════ ABOUT ═════════════ -->
+    @if (activeTab() === 'about') {
+      <section class="pfe-section">
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Eyebrow (ES)</span>
+            <input [formControl]="$any(formEs.get('about.eyebrow'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Eyebrow (EN)</span>
+            <input [formControl]="$any(formEn.get('about.eyebrow'))" />
+          </label>
+        </div>
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Título (ES)</span>
+            <input [formControl]="$any(formEs.get('about.title'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Título (EN)</span>
+            <input [formControl]="$any(formEn.get('about.title'))" />
+          </label>
+        </div>
+
+        <div class="pfe-array">
+          <div class="pfe-array__header">
+            <h3>Párrafos</h3>
+            <button type="button" class="pfe-btn pfe-btn--ghost pfe-btn--sm" (click)="addParagraph()">
+              <span class="material-symbols-outlined" style="font-size: 16px">add</span>
+              Agregar párrafo
+            </button>
+          </div>
+          @for (ctrl of paragraphsEs.controls; track $index; let i = $index) {
+            <div class="pfe-array__item">
+              <div class="pfe-array__item-head">
+                <span class="pfe-array__num">#{{ i + 1 }}</span>
+                <button type="button" class="pfe-icon-btn pfe-icon-btn--danger" (click)="removeParagraph(i)" title="Borrar">
+                  <span class="material-symbols-outlined" style="font-size: 18px">delete</span>
+                </button>
+              </div>
+              <div class="pfe-bilingual">
+                <label class="pfe-field">
+                  <span class="pfe-label">Párrafo (ES) — acepta &lt;strong&gt;</span>
+                  <textarea rows="3" [formControl]="paragraphEsCtrl(i)"></textarea>
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">Párrafo (EN)</span>
+                  <textarea rows="3" [formControl]="paragraphEnCtrl(i)"></textarea>
+                </label>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ═════════════ EXPERIENCE ═════════════ -->
+    @if (activeTab() === 'experience') {
+      <section class="pfe-section">
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Eyebrow (ES)</span>
+            <input [formControl]="$any(formEs.get('experience.eyebrow'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Eyebrow (EN)</span>
+            <input [formControl]="$any(formEn.get('experience.eyebrow'))" />
+          </label>
+        </div>
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Título (ES)</span>
+            <input [formControl]="$any(formEs.get('experience.title'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Título (EN)</span>
+            <input [formControl]="$any(formEn.get('experience.title'))" />
+          </label>
+        </div>
+
+        <div class="pfe-array">
+          <div class="pfe-array__header">
+            <h3>Puestos</h3>
+            <button type="button" class="pfe-btn pfe-btn--ghost pfe-btn--sm" (click)="addExperience()">
+              <span class="material-symbols-outlined" style="font-size: 16px">add</span>
+              Agregar puesto
+            </button>
+          </div>
+          @for (item of experienceItemsEs.controls; track $index; let i = $index) {
+            <div class="pfe-array__item" [formGroup]="expItemEs(i)">
+              <div class="pfe-array__item-head">
+                <span class="pfe-array__num">{{ expItemEs(i).get('company')?.value || 'Puesto sin empresa' }}</span>
+                <button type="button" class="pfe-icon-btn pfe-icon-btn--danger" (click)="removeExperience(i)" title="Borrar">
+                  <span class="material-symbols-outlined" style="font-size: 18px">delete</span>
+                </button>
+              </div>
+              <!-- No traducibles -->
+              <div class="pfe-row">
+                <label class="pfe-field">
+                  <span class="pfe-label">Período</span>
+                  <input formControlName="period" placeholder="2023 — PRESENTE" />
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">Empresa</span>
+                  <input formControlName="company" placeholder="Geeks5G" />
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">URL</span>
+                  <input formControlName="url" placeholder="https://…" />
+                </label>
+              </div>
+              <label class="pfe-field">
+                <span class="pfe-label">Stack (separado por coma)</span>
+                <input formControlName="stack" placeholder="Python, Django, PostgreSQL" />
+              </label>
+              <!-- Traducibles -->
+              <div class="pfe-bilingual">
+                <label class="pfe-field">
+                  <span class="pfe-label">Cargo / Rol (ES)</span>
+                  <input [formControl]="$any(expItemEs(i).get('role'))" />
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">Cargo / Rol (EN)</span>
+                  <input [formControl]="$any(expItemEn(i).get('role'))" />
+                </label>
+              </div>
+              <div class="pfe-bilingual">
+                <label class="pfe-field">
+                  <span class="pfe-label">Descripción (ES)</span>
+                  <textarea rows="4" [formControl]="$any(expItemEs(i).get('description'))"></textarea>
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">Descripción (EN)</span>
+                  <textarea rows="4" [formControl]="$any(expItemEn(i).get('description'))"></textarea>
+                </label>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ═════════════ PROJECTS ═════════════ -->
+    @if (activeTab() === 'projects') {
+      <section class="pfe-section">
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Eyebrow (ES)</span>
+            <input [formControl]="$any(formEs.get('projects.eyebrow'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Eyebrow (EN)</span>
+            <input [formControl]="$any(formEn.get('projects.eyebrow'))" />
+          </label>
+        </div>
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Título (ES)</span>
+            <input [formControl]="$any(formEs.get('projects.title'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Título (EN)</span>
+            <input [formControl]="$any(formEn.get('projects.title'))" />
+          </label>
+        </div>
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Nota (ES)</span>
+            <textarea rows="2" [formControl]="$any(formEs.get('projects.note'))"></textarea>
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Nota (EN)</span>
+            <textarea rows="2" [formControl]="$any(formEn.get('projects.note'))"></textarea>
+          </label>
+        </div>
+
+        <div class="pfe-array">
+          <div class="pfe-array__header">
+            <h3>Proyectos</h3>
+            <button type="button" class="pfe-btn pfe-btn--ghost pfe-btn--sm" (click)="addProject()">
+              <span class="material-symbols-outlined" style="font-size: 16px">add</span>
+              Agregar proyecto
+            </button>
+          </div>
+          @for (item of projectItemsEs.controls; track $index; let i = $index) {
+            <div class="pfe-array__item" [formGroup]="projItemEs(i)">
+              <div class="pfe-array__item-head">
+                <span class="pfe-array__num">{{ projItemEs(i).get('name')?.value || projItemEs(i).get('id')?.value || 'Proyecto nuevo' }}</span>
+                <button type="button" class="pfe-icon-btn pfe-icon-btn--danger" (click)="removeProject(i)" title="Borrar">
+                  <span class="material-symbols-outlined" style="font-size: 18px">delete</span>
+                </button>
+              </div>
+
+              <!-- Cover -->
+              <div class="pfe-cover">
+                <div class="pfe-cover__preview">
+                  @if (imageForProject(projItemEs(i).get('id')?.value); as img) {
+                    <img [src]="img.url" [alt]="projItemEs(i).get('name')?.value" />
+                  } @else {
+                    <div class="pfe-cover__empty">Sin captura</div>
+                  }
+                </div>
+                <div class="pfe-cover__actions">
+                  <label class="pfe-btn pfe-btn--ghost pfe-btn--sm">
+                    <span class="material-symbols-outlined" style="font-size: 16px">photo_camera</span>
+                    @if (uploading() === projItemEs(i).get('id')?.value) {
+                      Subiendo…
+                    } @else {
+                      Subir/cambiar captura
+                    }
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      hidden
+                      (change)="onCoverSelected($event, projItemEs(i).get('id')?.value)"
+                    />
+                  </label>
+                  @if (imageForProject(projItemEs(i).get('id')?.value)) {
+                    <button type="button" class="pfe-btn pfe-btn--ghost pfe-btn--sm pfe-btn--danger" (click)="deleteCover(projItemEs(i).get('id')?.value)">
+                      <span class="material-symbols-outlined" style="font-size: 16px">delete</span>
+                      Borrar
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- No traducibles -->
+              <div class="pfe-row">
+                <label class="pfe-field">
+                  <span class="pfe-label">ID (slug)</span>
+                  <input formControlName="id" placeholder="mi-proyecto" />
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">Nombre</span>
+                  <input formControlName="name" placeholder="Mi Proyecto" />
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">Tipo</span>
+                  <select formControlName="kind">
+                    <option value="personal">Personal</option>
+                    <option value="enterprise">Empresarial</option>
+                  </select>
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">Estado</span>
+                  <select formControlName="status">
+                    <option value="live">En producción</option>
+                    <option value="wip">En desarrollo</option>
+                    <option value="private">Privado</option>
+                  </select>
+                </label>
+              </div>
+              <div class="pfe-row">
+                <label class="pfe-field">
+                  <span class="pfe-label">URL pública</span>
+                  <input formControlName="href" placeholder="https://…" />
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">Repo</span>
+                  <input formControlName="repo" placeholder="https://github.com/…" />
+                </label>
+              </div>
+              <label class="pfe-field">
+                <span class="pfe-label">Stack (separado por coma)</span>
+                <input formControlName="stack" placeholder="Python, FastAPI, React" />
+              </label>
+
+              <!-- Descripción bilingüe -->
+              <div class="pfe-bilingual">
+                <label class="pfe-field">
+                  <span class="pfe-label">Descripción (ES)</span>
+                  <textarea rows="3" [formControl]="$any(projItemEs(i).get('description'))"></textarea>
+                </label>
+                <label class="pfe-field">
+                  <span class="pfe-label">Descripción (EN)</span>
+                  <textarea rows="3" [formControl]="$any(projItemEn(i).get('description'))"></textarea>
+                </label>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ═════════════ CONTACT ═════════════ -->
+    @if (activeTab() === 'contact') {
+      <section class="pfe-section">
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Eyebrow (ES)</span>
+            <input [formControl]="$any(formEs.get('contact.eyebrow'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Eyebrow (EN)</span>
+            <input [formControl]="$any(formEn.get('contact.eyebrow'))" />
+          </label>
+        </div>
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Título (ES)</span>
+            <input [formControl]="$any(formEs.get('contact.title'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Título (EN)</span>
+            <input [formControl]="$any(formEn.get('contact.title'))" />
+          </label>
+        </div>
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Body (ES)</span>
+            <textarea rows="3" [formControl]="$any(formEs.get('contact.body'))"></textarea>
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Body (EN)</span>
+            <textarea rows="3" [formControl]="$any(formEn.get('contact.body'))"></textarea>
+          </label>
+        </div>
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">CTA label (ES)</span>
+            <input [formControl]="$any(formEs.get('contact.cta'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">CTA label (EN)</span>
+            <input [formControl]="$any(formEn.get('contact.cta'))" />
+          </label>
+        </div>
+        <label class="pfe-field">
+          <span class="pfe-label">Email (no traducible)</span>
+          <input [formControl]="$any(formEs.get('contact.email'))" placeholder="walter@geeks5g.com" />
+        </label>
+      </section>
+    }
+
+    <!-- ═════════════ SIDEBAR ═════════════ -->
+    @if (activeTab() === 'sidebar') {
+      <section class="pfe-section">
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Rol (ES)</span>
+            <input [formControl]="$any(formEs.get('sidebar.role'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Rol (EN)</span>
+            <input [formControl]="$any(formEn.get('sidebar.role'))" />
+          </label>
+        </div>
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Tagline (ES)</span>
+            <input [formControl]="$any(formEs.get('sidebar.tagline'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Tagline (EN)</span>
+            <input [formControl]="$any(formEn.get('sidebar.tagline'))" />
+          </label>
+        </div>
+        <h3 class="pfe-subhead">Nav labels</h3>
+        <div class="pfe-row">
+          <label class="pfe-field">
+            <span class="pfe-label">About (ES)</span>
+            <input [formControl]="$any(formEs.get('sidebar.nav.about'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">About (EN)</span>
+            <input [formControl]="$any(formEn.get('sidebar.nav.about'))" />
+          </label>
+        </div>
+        <div class="pfe-row">
+          <label class="pfe-field">
+            <span class="pfe-label">Experience (ES)</span>
+            <input [formControl]="$any(formEs.get('sidebar.nav.experience'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Experience (EN)</span>
+            <input [formControl]="$any(formEn.get('sidebar.nav.experience'))" />
+          </label>
+        </div>
+        <div class="pfe-row">
+          <label class="pfe-field">
+            <span class="pfe-label">Projects (ES)</span>
+            <input [formControl]="$any(formEs.get('sidebar.nav.projects'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Projects (EN)</span>
+            <input [formControl]="$any(formEn.get('sidebar.nav.projects'))" />
+          </label>
+        </div>
+        <div class="pfe-row">
+          <label class="pfe-field">
+            <span class="pfe-label">Contact (ES)</span>
+            <input [formControl]="$any(formEs.get('sidebar.nav.contact'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Contact (EN)</span>
+            <input [formControl]="$any(formEn.get('sidebar.nav.contact'))" />
+          </label>
+        </div>
+      </section>
+    }
+
+    <!-- ═════════════ META ═════════════ -->
+    @if (activeTab() === 'meta') {
+      <section class="pfe-section">
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">&lt;title&gt; (ES)</span>
+            <input [formControl]="$any(formEs.get('meta.title'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">&lt;title&gt; (EN)</span>
+            <input [formControl]="$any(formEn.get('meta.title'))" />
+          </label>
+        </div>
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Meta description (ES)</span>
+            <textarea rows="3" [formControl]="$any(formEs.get('meta.description'))"></textarea>
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Meta description (EN)</span>
+            <textarea rows="3" [formControl]="$any(formEn.get('meta.description'))"></textarea>
+          </label>
+        </div>
+      </section>
+    }
+
+    <!-- ═════════════ FOOTER ═════════════ -->
+    @if (activeTab() === 'footer') {
+      <section class="pfe-section">
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Built (ES)</span>
+            <input [formControl]="$any(formEs.get('footer.built'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Built (EN)</span>
+            <input [formControl]="$any(formEn.get('footer.built'))" />
+          </label>
+        </div>
+        <div class="pfe-bilingual">
+          <label class="pfe-field">
+            <span class="pfe-label">Stack line (ES)</span>
+            <input [formControl]="$any(formEs.get('footer.stack'))" />
+          </label>
+          <label class="pfe-field">
+            <span class="pfe-label">Stack line (EN)</span>
+            <input [formControl]="$any(formEn.get('footer.stack'))" />
+          </label>
+        </div>
+      </section>
+    }
+  }
+</div>

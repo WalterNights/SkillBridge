@@ -1,0 +1,375 @@
+/* Editor admin del portafolio.
+ * Reusa la paleta canvas + primary del SPA (no importa Fraunces —
+ * queremos que el editor luzca como el resto de SkilTak, no como el
+ * portafolio público). */
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #0b0e14;
+  color: #e8e5dd;
+  padding: 0 0 96px;
+}
+
+.pfe {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ---------- Toolbar sticky ---------- */
+.pfe-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 0;
+  background: rgba(11, 14, 20, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(232, 229, 221, 0.08);
+  margin-bottom: 32px;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  &__title {
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+  }
+
+  &__eyebrow {
+    margin: 0 0 2px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: #8b8a85;
+    text-transform: uppercase;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+/* ---------- Botones ---------- */
+.pfe-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease,
+              border-color 160ms ease, opacity 160ms ease;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  &--primary {
+    background: #f97316;
+    color: #0a0a0a;
+    &:hover:not(:disabled) { background: #fa822e; transform: translateY(-1px); }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: #e8e5dd;
+    border-color: rgba(232, 229, 221, 0.12);
+    &:hover:not(:disabled) { border-color: #f97316; color: #f97316; }
+  }
+
+  &--sm {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  &--danger {
+    color: #ef6f6f;
+    &:hover:not(:disabled) { border-color: #ef6f6f; color: #ef6f6f; }
+  }
+}
+
+.pfe-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid rgba(232, 229, 221, 0.12);
+  color: #e8e5dd;
+  cursor: pointer;
+  transition: all 160ms ease;
+
+  &:hover { border-color: #f97316; color: #f97316; }
+
+  &--danger:hover { border-color: #ef6f6f; color: #ef6f6f; }
+}
+
+.pfe-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(10, 10, 10, 0.25);
+  border-top-color: #0a0a0a;
+  border-radius: 50%;
+  animation: pfe-spin 700ms linear infinite;
+}
+
+@keyframes pfe-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Flash ---------- */
+.pfe-flash {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+
+  &--ok {
+    background: rgba(249, 115, 22, 0.08);
+    border: 1px solid rgba(249, 115, 22, 0.35);
+    color: #fbab74;
+  }
+
+  &--err {
+    background: rgba(239, 111, 111, 0.1);
+    border: 1px solid rgba(239, 111, 111, 0.35);
+    color: #ef6f6f;
+  }
+}
+
+.pfe-loading {
+  padding: 96px 0;
+  text-align: center;
+  color: #8b8a85;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+}
+
+/* ---------- Tabs ---------- */
+.pfe-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 32px;
+  padding: 4px;
+  background: #11151d;
+  border: 1px solid rgba(232, 229, 221, 0.08);
+  border-radius: 12px;
+}
+
+.pfe-tab {
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #8b8a85;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+
+  &:hover { color: #e8e5dd; }
+
+  &--active {
+    background: #f97316;
+    color: #0a0a0a;
+    &:hover { color: #0a0a0a; }
+  }
+}
+
+/* ---------- Section ---------- */
+.pfe-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 32px;
+  background: #11151d;
+  border: 1px solid rgba(232, 229, 221, 0.08);
+  border-radius: 16px;
+}
+
+.pfe-subhead {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #f97316;
+  text-transform: uppercase;
+  font-family: "JetBrains Mono", monospace;
+}
+
+/* ---------- Field ---------- */
+.pfe-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+
+  input,
+  textarea,
+  select {
+    background: #0b0e14;
+    border: 1px solid rgba(232, 229, 221, 0.12);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #e8e5dd;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    transition: border-color 160ms ease;
+
+    &:focus {
+      outline: none;
+      border-color: #f97316;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+}
+
+.pfe-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8b8a85;
+}
+
+/* ---------- Layouts ---------- */
+.pfe-bilingual {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+
+  @media (min-width: 720px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.pfe-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+/* ---------- Array items ---------- */
+.pfe-array {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 8px;
+
+    h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: #e8e5dd;
+      letter-spacing: 0.02em;
+    }
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    background: #161a24;
+    border: 1px solid rgba(232, 229, 221, 0.08);
+    border-radius: 12px;
+  }
+
+  &__item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(232, 229, 221, 0.06);
+  }
+
+  &__num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: #fbab74;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+  }
+}
+
+/* ---------- Cover ---------- */
+.pfe-cover {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 16px;
+  align-items: start;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+
+  &__preview {
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    border: 1px dashed rgba(232, 229, 221, 0.15);
+    overflow: hidden;
+    background: #0b0e14;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: #55534f;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+}

@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "faq",
     "analytics",
     "system_settings",
+    "portfolio",
     "corsheaders",
     "rest_framework",
     # Necesario para invalidar refresh tokens al rotar (SEGURIDAD).

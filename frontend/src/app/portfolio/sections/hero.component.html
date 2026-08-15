@@ -1,0 +1,27 @@
+<section class="pf-hero">
+  <p class="pf-hero__eyebrow">
+    <span class="pf-hero__dot" aria-hidden="true"></span>
+    {{ i18n.dict().hero.eyebrow }}
+  </p>
+
+  <h2 class="pf-hero__title">
+    <span class="pf-hero__title-line">{{ i18n.dict().hero.titleTop }}</span>
+    <span class="pf-hero__title-line pf-hero__title-line--accent">
+      {{ i18n.dict().hero.titleBottom }}<span class="pf-hero__caret" aria-hidden="true"></span>
+    </span>
+  </h2>
+
+  <p class="pf-hero__subtitle">{{ i18n.dict().hero.subtitle }}</p>
+
+  <div class="pf-hero__cta">
+    <a href="#projects" class="pf-cta pf-cta--primary" (click)="scrollTo('projects', $event)">
+      <span>{{ i18n.dict().hero.cta.projects }}</span>
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/>
+      </svg>
+    </a>
+    <a href="#contact" class="pf-cta pf-cta--ghost" (click)="scrollTo('contact', $event)">
+      {{ i18n.dict().hero.cta.contact }}
+    </a>
+  </div>
+</section>

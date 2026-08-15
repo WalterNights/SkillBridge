@@ -1,0 +1,25 @@
+<div class="portfolio-root">
+  <!-- Grid técnico decorativo (fondo). Puramente visual, aria-hidden. -->
+  <div class="portfolio-grid-bg" aria-hidden="true"></div>
+  <div class="portfolio-vignette" aria-hidden="true"></div>
+  <!-- Cursor glow: sigue al mouse via CSS vars --pf-mx / --pf-my. Se
+       desactiva en touch devices con @media (hover: hover). -->
+  <div #cursorGlow class="portfolio-cursor-glow" aria-hidden="true"></div>
+
+  <div class="portfolio-layout">
+    <app-portfolio-sidebar />
+
+    <main class="portfolio-main">
+      <app-hero-section id="hero" />
+      <app-about-section id="about" />
+      <app-experience-section id="experience" />
+      <app-projects-section id="projects" />
+      <app-contact-section id="contact" />
+
+      <footer class="portfolio-footer">
+        <p class="footer-line">{{ i18n.dict().footer.built }}</p>
+        <p class="footer-line footer-line--muted">{{ i18n.dict().footer.stack }}</p>
+      </footer>
+    </main>
+  </div>
+</div>

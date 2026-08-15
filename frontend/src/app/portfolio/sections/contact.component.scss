@@ -1,0 +1,57 @@
+:host {
+  display: block;
+  scroll-margin-top: 64px;
+  padding: 96px 0 64px;
+}
+
+.pf-contact {
+  &__body {
+    margin: 0 0 40px;
+    max-width: 560px;
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--pf-text-dim);
+  }
+
+  &__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 28px;
+    border: 1px solid var(--pf-line-strong);
+    border-radius: var(--pf-radius-md);
+    text-decoration: none;
+    color: var(--pf-text);
+    transition: border-color 220ms ease, background-color 220ms ease, transform 220ms ease;
+
+    &:hover {
+      border-color: var(--pf-accent);
+      background: var(--pf-accent-soft);
+      transform: translateY(-3px);
+
+      svg { transform: translateX(4px); color: var(--pf-accent); }
+      .pf-contact__cta-label { color: var(--pf-accent); }
+    }
+
+    &-label {
+      font-family: var(--pf-font-mono);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--pf-text-dim);
+      transition: color 200ms ease;
+    }
+
+    &-email {
+      font-family: var(--pf-font-display);
+      font-weight: 600;
+      font-size: 22px;
+      letter-spacing: -0.01em;
+    }
+
+    svg {
+      color: var(--pf-text-dim);
+      transition: transform 200ms ease, color 200ms ease;
+    }
+  }
+}

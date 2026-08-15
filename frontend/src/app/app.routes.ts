@@ -244,6 +244,26 @@ export const routes: Routes = [
     ],
   },
 
+  // ===== Portafolio público (Walter Nights) =====
+  // Ruta standalone (no wrappea en AppShell): identidad visual propia,
+  // fuera del header/sidebar del SPA. Diseñada para compartir con
+  // reclutadores — no requiere auth. Lazy para no pesar bundle inicial.
+  {
+    path: 'portafolio/walternightsdev',
+    loadComponent: () =>
+      import('./portfolio/portfolio-shell.component').then((m) => m.PortfolioShellComponent),
+  },
+  // Editor admin del portafolio — AutoGuard + AdminGuard, standalone
+  // (fuera del AppShell) para tener espacio libre. Solo is_staff.
+  {
+    path: 'portafolio/walternightsdev/editar',
+    canActivate: [AutoGuard, AdminGuard],
+    loadComponent: () =>
+      import('./portfolio/editor/portfolio-editor.component').then(
+        (m) => m.PortfolioEditorComponent,
+      ),
+  },
+
   // ===== 404 → landing. AutoGuard handles redirecting to login when needed. =====
   { path: '**', redirectTo: '' },
 ];

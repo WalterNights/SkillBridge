@@ -1,0 +1,202 @@
+/* =========================================================================
+ * Sidebar sticky del portafolio.
+ * Los tokens (--pf-*) vienen del :host de portfolio-shell — este archivo
+ * solo los consume, no los define.
+ * ========================================================================= */
+
+:host {
+  display: block;
+}
+
+.pf-sidebar {
+  padding: 96px 0;
+
+  @media (min-width: 900px) {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    padding: 120px 0 96px;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.pf-sidebar__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  height: 100%;
+}
+
+/* ---------- Identidad ---------- */
+.pf-identity {
+  &__eyebrow {
+    margin: 0 0 16px;
+    font-family: var(--pf-font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--pf-text-mute);
+  }
+
+  &__name {
+    margin: 0;
+    font-family: var(--pf-font-display);
+    font-weight: 900;
+    font-size: clamp(48px, 6vw, 64px);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    color: var(--pf-text);
+
+    /* Efecto sutil: la última letra en itálica del serif Fraunces. */
+    &::after {
+      content: ".";
+      color: var(--pf-accent);
+    }
+  }
+
+  &__role {
+    margin: 20px 0 0;
+    font-family: var(--pf-font-mono);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--pf-accent);
+  }
+
+  &__tagline {
+    margin: 16px 0 0;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--pf-text-dim);
+    max-width: 320px;
+  }
+}
+
+/* ---------- Nav (línea que crece, estilo Brittany) ---------- */
+.pf-nav {
+  display: none;
+
+  @media (min-width: 900px) {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 0;
+    text-decoration: none;
+    color: var(--pf-text-mute);
+    font-family: var(--pf-font-mono);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    transition: color 200ms ease;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--pf-text);
+
+      .pf-nav__line {
+        width: 48px;
+        background: var(--pf-text);
+      }
+    }
+
+    &--active {
+      color: var(--pf-accent);
+
+      .pf-nav__line {
+        width: 64px;
+        background: var(--pf-accent);
+      }
+    }
+  }
+
+  &__line {
+    display: block;
+    width: 32px;
+    height: 1px;
+    background: var(--pf-text-mute);
+    transition: width 250ms cubic-bezier(0.16, 1, 0.3, 1),
+                background-color 200ms ease;
+  }
+
+  &__label {
+    line-height: 1;
+  }
+}
+
+/* ---------- Footer del sidebar ---------- */
+.pf-sidebar__footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Socials */
+.pf-socials {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 20px;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--pf-radius-sm);
+    color: var(--pf-text-dim);
+    transition: color 180ms ease, transform 180ms ease;
+
+    &:hover {
+      color: var(--pf-accent);
+      transform: translateY(-2px);
+    }
+
+    &:focus-visible {
+      outline: 1px solid var(--pf-accent);
+      outline-offset: 3px;
+    }
+  }
+}
+
+/* Toggle idioma */
+.pf-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--pf-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+
+  &__btn {
+    background: transparent;
+    border: none;
+    padding: 4px 6px;
+    color: var(--pf-text-mute);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    letter-spacing: inherit;
+    transition: color 180ms ease;
+
+    &:hover {
+      color: var(--pf-text);
+    }
+
+    &--active {
+      color: var(--pf-accent);
+    }
+  }
+
+  &__sep {
+    color: var(--pf-text-mute);
+  }
+}

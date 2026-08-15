@@ -1,0 +1,25 @@
+:host {
+  display: block;
+  scroll-margin-top: 64px;
+  padding: 64px 0;
+}
+
+.pf-about {
+  &__body {
+    max-width: 620px;
+
+    p {
+      margin: 0 0 20px;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--pf-text-dim);
+
+      &:last-child { margin-bottom: 0; }
+
+      ::ng-deep strong {
+        color: var(--pf-text);
+        font-weight: 600;
+      }
+    }
+  }
+}

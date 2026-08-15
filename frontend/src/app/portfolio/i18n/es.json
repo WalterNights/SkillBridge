@@ -1,0 +1,162 @@
+{
+  "meta": {
+    "title": "Walter Nights — Fullstack Engineer",
+    "description": "Fullstack Engineer construyendo plataformas SaaS con IA aplicada. Portafolio de proyectos personales y empresariales."
+  },
+  "sidebar": {
+    "role": "Fullstack Engineer",
+    "tagline": "Construyo plataformas SaaS con IA aplicada.",
+    "nav": {
+      "about": "Sobre mí",
+      "experience": "Experiencia",
+      "projects": "Proyectos",
+      "contact": "Contacto"
+    },
+    "socials": {
+      "github": "GitHub",
+      "linkedin": "LinkedIn",
+      "email": "Email"
+    }
+  },
+  "hero": {
+    "eyebrow": "WALTER NIGHTS ─ FULLSTACK ENGINEER",
+    "titleTop": "Ideas que",
+    "titleBottom": "corren en producción.",
+    "subtitle": "Diseño y construyo sistemas SaaS end-to-end — desde el modelo de datos hasta la interfaz — con foco en IA aplicada, integraciones y velocidad de entrega.",
+    "cta": {
+      "projects": "Ver proyectos",
+      "contact": "Contactarme"
+    }
+  },
+  "about": {
+    "eyebrow": "SOBRE MÍ",
+    "title": "Un ingeniero que piensa en el negocio antes que en el código.",
+    "paragraphs": [
+      "Trabajo como Fullstack Engineer en <strong>Geeks5G</strong>, donde lidero y construyo plataformas SaaS que combinan automatización, IA y operaciones diarias reales — desde marketing digital hasta contabilidad y educación.",
+      "Me interesa la intersección donde el producto se cruza con la ingeniería: entender por qué el negocio necesita una feature antes de decidir cómo implementarla. Cuando algo se puede simplificar en tres líneas, prefiero eso a inventar una abstracción para seis casos hipotéticos.",
+      "Fuera del trabajo mantengo proyectos personales que me obligan a probar stacks nuevos — así es como llego a los repos con criterio y no solo con curiosidad."
+    ]
+  },
+  "experience": {
+    "eyebrow": "EXPERIENCIA",
+    "title": "Trayectoria",
+    "items": [
+      {
+        "period": "2023 — PRESENTE",
+        "role": "Fullstack Engineer",
+        "company": "Geeks5G",
+        "url": "https://geeks5g.com",
+        "description": "Construyo y mantengo las plataformas internas de la agencia — RankTitan, OptimAds, Google Services API — cubriendo backend, frontend, infra y decisiones de producto. Integro APIs de Google (Ads, GMB, Analytics), automatizo procesos de local SEO y trabajo con LLMs para generación de contenido y análisis.",
+        "stack": ["Python", "Django", "FastAPI", "Angular", "React", "Next.js", "PostgreSQL", "OpenAI", "Google APIs"]
+      }
+    ]
+  },
+  "projects": {
+    "eyebrow": "PROYECTOS",
+    "title": "Cosas que construí",
+    "note": "Mezcla de proyectos personales y trabajo empresarial. Algunos son cerrados por NDA — muestro capturas y descripción, sin código público.",
+    "filters": {
+      "all": "Todos",
+      "personal": "Personales",
+      "enterprise": "Empresariales"
+    },
+    "labels": {
+      "personal": "Personal",
+      "enterprise": "Empresarial",
+      "live": "En producción",
+      "private": "Privado",
+      "wip": "En desarrollo",
+      "viewSite": "Ver sitio",
+      "viewRepo": "Ver repo",
+      "screenshot": "Captura pendiente"
+    },
+    "items": [
+      {
+        "id": "ranktitan",
+        "name": "RankTitan",
+        "kind": "enterprise",
+        "status": "live",
+        "description": "Sistema de posicionamiento para Google My Business, Google Ads y Local SEO. Automatiza auditorías de fichas GMB, gestiona campañas y genera reportes de ranking por keyword.",
+        "stack": ["Python", "FastAPI", "Angular", "PostgreSQL", "Google APIs", "OpenAI"],
+        "href": "",
+        "repo": ""
+      },
+      {
+        "id": "tax-bookkeeping",
+        "name": "Tax Bookkeeping",
+        "kind": "enterprise",
+        "status": "live",
+        "description": "Sistema de manejo de pagos y cuentas bancarias para pymes. Concilia transacciones, genera plan de cuentas y produce reportes fiscales listos para el contador.",
+        "stack": ["Node.js", "NestJS", "Next.js", "PostgreSQL", "Prisma", "Stripe"],
+        "href": "",
+        "repo": ""
+      },
+      {
+        "id": "google-services",
+        "name": "Google Services API",
+        "kind": "enterprise",
+        "status": "live",
+        "description": "API central que orquesta automatizaciones sobre Google Ads, GMB, Local SEO y Analytics. Es la base sobre la que corren RankTitan y OptimAds.",
+        "stack": ["Python", "FastAPI", "Google Ads API", "GMB API", "Analytics"],
+        "href": "",
+        "repo": ""
+      },
+      {
+        "id": "skiltak",
+        "name": "SkilTak",
+        "kind": "personal",
+        "status": "live",
+        "description": "Plataforma personal para centralizar la búsqueda de empleo: agrega ofertas de múltiples portales, matchea con el perfil vía IA y genera CVs y cover letters a medida.",
+        "stack": ["Python", "Django", "Angular", "PostgreSQL", "OpenAI"],
+        "href": "https://skiltak.com",
+        "repo": ""
+      },
+      {
+        "id": "optimads",
+        "name": "OptimAds",
+        "kind": "enterprise",
+        "status": "live",
+        "description": "Sistema de monitoreo de campañas de ads y CRM de análisis de local SEO. Detecta anomalías de gasto y sugiere ajustes de estrategia con IA.",
+        "stack": ["Python", "FastAPI", "Next.js", "React", "PostgreSQL"],
+        "href": "",
+        "repo": ""
+      },
+      {
+        "id": "estudiant",
+        "name": "Estudiant",
+        "kind": "enterprise",
+        "status": "wip",
+        "description": "Plataforma de gestión académica y campus virtual para entidades educativas. Cubre matrícula, oferta académica, calendario, evaluaciones y comunicación docente-alumno.",
+        "stack": ["Node.js", "NestJS", "Angular", "PostgreSQL"],
+        "href": "",
+        "repo": ""
+      },
+      {
+        "id": "archtomatic",
+        "name": "Archtomatic",
+        "kind": "enterprise",
+        "status": "wip",
+        "description": "Plataforma para arquitectos: inventario, cotizaciones, presupuestos y generación de renders y planos a partir de descripciones en lenguaje natural.",
+        "stack": ["Python", "FastAPI", "Next.js", "OpenAI", "Blender"],
+        "href": "",
+        "repo": ""
+      }
+    ]
+  },
+  "contact": {
+    "eyebrow": "CONTACTO",
+    "title": "¿Trabajamos juntos?",
+    "body": "Estoy abierto a colaboraciones, proyectos freelance y conversaciones sobre producto. La forma más rápida de llegarme es por email.",
+    "cta": "Escribirme",
+    "email": "walter@geeks5g.com"
+  },
+  "footer": {
+    "built": "Diseñado y construido por Walter Nights.",
+    "stack": "Angular · Tailwind · sin frameworks de más."
+  },
+  "langToggle": {
+    "label": "Idioma",
+    "es": "ES",
+    "en": "EN"
+  }
+}
