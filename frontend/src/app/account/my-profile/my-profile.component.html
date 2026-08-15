@@ -155,17 +155,17 @@
       <!-- About -->
       <article class="info-card glass-strong rounded-2xl p-6">
         <header class="card-header">
-          <h2>Sobre mí</h2>
+          <h2>{{ labels().about }}</h2>
         </header>
         <p
-          *ngIf="profile()?.summary; else emptyAbout"
+          *ngIf="viewSummary(); else emptyAbout"
           class="text-body text-warm-grey leading-relaxed whitespace-pre-line"
         >
-          {{ profile()?.summary }}
+          {{ viewSummary() }}
         </p>
         <ng-template #emptyAbout>
           <p class="empty-hint">
-            Cuenta quién eres profesionalmente. Aparece como tu carta de presentación a los reclutadores.
+            {{ labels().aboutEmpty }}
           </p>
         </ng-template>
       </article>
@@ -173,7 +173,7 @@
       <!-- Experience — estructurado si el backend devolvió JSON, sino texto legacy -->
       <article class="info-card glass-strong rounded-2xl p-6">
         <header class="card-header">
-          <h2>Experiencia</h2>
+          <h2>{{ labels().experience }}</h2>
         </header>
         <!-- Modo estructurado: entries formateadas -->
         <div *ngIf="experienceEntries() as entries" class="space-y-4">
@@ -184,7 +184,7 @@
             </p>
             <p class="text-warm-grey">
               {{ exp.position }}<span *ngIf="exp.start_date">
-                [{{ formatEntryDate(exp.start_date) }} - {{ formatEntryDate(exp.end_date) || 'Presente' }}]</span>
+                [{{ formatEntryDate(exp.start_date) }} - {{ formatEntryDate(exp.end_date) || labels().present }}]</span>
             </p>
             <p *ngIf="exp.description" class="text-warm-grey mt-1 whitespace-pre-line">{{ exp.description }}</p>
           </div>
@@ -193,12 +193,12 @@
              a bloques editables en un solo click (entra en edit + activa
              structured con auto-parseo). Solo aparece en modo VIEW. -->
         <div
-          *ngIf="!experienceEntries() && profile()?.experience"
+          *ngIf="!experienceEntries() && viewExperienceLegacy()"
           class="legacy-promo-banner mb-4"
         >
           <span class="material-symbols-outlined promo-icon">tips_and_updates</span>
           <div class="promo-copy">
-            <p class="promo-title">Edita tu experiencia como bloques</p>
+            <p class="promo-title">{{ labels().migrateExp }}</p>
             <p class="promo-text">
               Detectamos tus trabajos automáticamente. Solo revisas y guardas.
             </p>
@@ -217,20 +217,20 @@
              `**bold**` → <strong> y `\n` → <br>, con escaping HTML de
              lo que trae el user para evitar XSS. -->
         <div
-          *ngIf="!experienceEntries() && profile()?.experience"
+          *ngIf="!experienceEntries() && viewExperienceLegacy()"
           class="text-sm text-warm-grey leading-relaxed"
-          [innerHTML]="renderLegacyText(profile()?.experience)"
+          [innerHTML]="renderLegacyText(viewExperienceLegacy())"
         ></div>
         <!-- Vacío -->
-        <p *ngIf="!experienceEntries() && !profile()?.experience" class="empty-hint">
-          Suma tu trayectoria laboral para mejorar la calidad de los matches.
+        <p *ngIf="!experienceEntries() && !viewExperienceLegacy()" class="empty-hint">
+          {{ labels().expEmpty }}
         </p>
       </article>
 
       <!-- Education -->
       <article class="info-card glass-strong rounded-2xl p-6">
         <header class="card-header">
-          <h2>Educación</h2>
+          <h2>{{ labels().education }}</h2>
         </header>
         <div *ngIf="educationEntries() as entries" class="space-y-4">
           <div *ngFor="let edu of entries" class="text-sm leading-relaxed">
@@ -240,17 +240,17 @@
             </p>
             <p class="text-warm-grey">
               {{ edu.title }}<span *ngIf="edu.start_date">
-                [{{ formatEntryDate(edu.start_date) }} - {{ formatEntryDate(edu.end_date) || 'Presente' }}]</span>
+                [{{ formatEntryDate(edu.start_date) }} - {{ formatEntryDate(edu.end_date) || labels().present }}]</span>
             </p>
           </div>
         </div>
         <div
-          *ngIf="!educationEntries() && profile()?.education"
+          *ngIf="!educationEntries() && viewEducationLegacy()"
           class="legacy-promo-banner mb-4"
         >
           <span class="material-symbols-outlined promo-icon">tips_and_updates</span>
           <div class="promo-copy">
-            <p class="promo-title">Edita tu educación como bloques</p>
+            <p class="promo-title">{{ labels().migrateEdu }}</p>
             <p class="promo-text">
               Detectamos tus estudios automáticamente. Solo revisas y guardas.
             </p>
@@ -266,33 +266,33 @@
         </div>
 
         <div
-          *ngIf="!educationEntries() && profile()?.education"
+          *ngIf="!educationEntries() && viewEducationLegacy()"
           class="text-sm text-warm-grey leading-relaxed"
-          [innerHTML]="renderLegacyText(profile()?.education)"
+          [innerHTML]="renderLegacyText(viewEducationLegacy())"
         ></div>
-        <p *ngIf="!educationEntries() && !profile()?.education" class="empty-hint">
-          Lista tu formación académica.
+        <p *ngIf="!educationEntries() && !viewEducationLegacy()" class="empty-hint">
+          {{ labels().eduEmpty }}
         </p>
       </article>
 
       <!-- Skills -->
       <article class="info-card glass-strong rounded-2xl p-6">
         <header class="card-header">
-          <h2>Habilidades</h2>
+          <h2>{{ labels().skills }}</h2>
           <span class="card-count" *ngIf="skillsList().length > 0">{{ skillsList().length }}</span>
         </header>
         <div *ngIf="skillsList().length > 0; else emptySkills" class="flex flex-wrap gap-2">
           <span *ngFor="let skill of skillsList()" class="skill-chip">{{ skill }}</span>
         </div>
         <ng-template #emptySkills>
-          <p class="empty-hint">Agrega las skills que dominas — separadas por coma.</p>
+          <p class="empty-hint">{{ labels().skillsEmpty }}</p>
         </ng-template>
       </article>
 
       <!-- Contact -->
       <article class="info-card glass-strong rounded-2xl p-6">
         <header class="card-header">
-          <h2>Información de contacto</h2>
+          <h2>{{ labels().contact }}</h2>
         </header>
         <dl class="contact-grid">
           <div *ngIf="profile()?.user?.email">

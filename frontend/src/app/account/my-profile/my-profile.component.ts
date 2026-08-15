@@ -184,8 +184,81 @@ export class MyProfileComponent implements OnInit {
   photoUrl = computed(() => this.absoluteMediaUrl(this.profile()?.photo));
   bannerUrl = computed(() => this.absoluteMediaUrl(this.profile()?.banner));
 
+  /** Idioma "vigente" del CV para el modo VIEW. Es DISTINTO de
+   *  cvEditingLang (que solo aplica al form del editor): el VIEW usa
+   *  siempre lo persistido en el profile (`cv_active_language`), asi
+   *  refleja lo que veria un reclutador que abriera el CV publico. */
+  viewLang = computed<CvLanguage>(() =>
+    this.profile()?.cv_active_language === 'en' ? 'en' : 'es',
+  );
+
+  /** Labels traducidos para los headers de las secciones en el VIEW.
+   *  Espeja el dict del ats-cv para consistencia visual entre las 2
+   *  vistas del CV (widget en /me y PDF exportado). */
+  labels = computed(() => {
+    const isEn = this.viewLang() === 'en';
+    return isEn
+      ? {
+          about: 'About me',
+          experience: 'Experience',
+          education: 'Education',
+          skills: 'Skills',
+          contact: 'Contact information',
+          portfolio: 'Portfolio',
+          present: 'Present',
+          aboutEmpty:
+            "Tell us who you are professionally. It's your presentation card to recruiters.",
+          expEmpty: 'Add your work history to improve match quality.',
+          eduEmpty: 'List your academic background.',
+          skillsEmpty: 'Add the skills you master — comma-separated.',
+          migrateExp: 'Edit your experience as blocks',
+          migrateEdu: 'Edit your education as blocks',
+        }
+      : {
+          about: 'Sobre mí',
+          experience: 'Experiencia',
+          education: 'Educación',
+          skills: 'Habilidades',
+          contact: 'Información de contacto',
+          portfolio: 'Portafolio',
+          present: 'Presente',
+          aboutEmpty:
+            'Cuenta quién eres profesionalmente. Aparece como tu carta de presentación a los reclutadores.',
+          expEmpty: 'Suma tu trayectoria laboral para mejorar la calidad de los matches.',
+          eduEmpty: 'Lista tu formación académica.',
+          skillsEmpty: 'Agrega las skills que dominas — separadas por coma.',
+          migrateExp: 'Edita tu experiencia como bloques',
+          migrateEdu: 'Edita tu educación como bloques',
+        };
+  });
+
+  /** Devuelve el valor de un campo del profile en el idioma vigente
+   *  (o el ES como fallback si el EN esta vacio). */
+  private viewFieldFor(base: string): string {
+    const p = this.profile();
+    if (!p) return '';
+    if (this.viewLang() === 'en') {
+      return p[`${base}_en`] || p[base] || '';
+    }
+    return p[base] || '';
+  }
+
+  /** Idem pero para experience/education que pueden ser array o string. */
+  private viewEntriesFieldFor(base: 'experience' | 'education'): unknown {
+    const p = this.profile();
+    if (!p) return null;
+    if (this.viewLang() === 'en') {
+      const en = p[`${base}_en`];
+      // Preferimos EN si tiene contenido — sino fallback al ES.
+      if (Array.isArray(en) && en.length > 0) return en;
+      if (typeof en === 'string' && en.trim() !== '') return en;
+      return p[base];
+    }
+    return p[base];
+  }
+
   skillsList = computed(() => {
-    const raw = this.profile()?.skills || '';
+    const raw = this.viewFieldFor('skills');
     return raw
       .split(',')
       .map((s: string) => s.trim())
@@ -194,15 +267,32 @@ export class MyProfileComponent implements OnInit {
 
   /** Experience como array parseado si el backend guardó JSON, sino null.
    *  Los templates de view mode lo usan para decidir entre render
-   *  estructurado (empresa/cargo/fechas) vs texto libre legacy. */
+   *  estructurado (empresa/cargo/fechas) vs texto libre legacy.
+   *  Respeta el idioma vigente del CV. */
   experienceEntries = computed<ExperienceEntry[] | null>(() => {
-    return this.tryParseEntriesFromRaw<ExperienceEntry>(this.profile()?.experience);
+    return this.tryParseEntriesFromRaw<ExperienceEntry>(this.viewEntriesFieldFor('experience'));
   });
 
   /** Idem para educación. */
   educationEntries = computed<EducationEntry[] | null>(() => {
-    return this.tryParseEntriesFromRaw<EducationEntry>(this.profile()?.education);
+    return this.tryParseEntriesFromRaw<EducationEntry>(this.viewEntriesFieldFor('education'));
   });
+
+  /** Summary y texto legacy expuestos como getters para que el template
+   *  no tenga que repetir la logica de viewFieldFor / viewEntriesFieldFor. */
+  viewSummary(): string {
+    return this.viewFieldFor('summary');
+  }
+
+  viewExperienceLegacy(): string {
+    const v = this.viewEntriesFieldFor('experience');
+    return typeof v === 'string' ? v : '';
+  }
+
+  viewEducationLegacy(): string {
+    const v = this.viewEntriesFieldFor('education');
+    return typeof v === 'string' ? v : '';
+  }
 
   private tryParseEntriesFromRaw<T>(raw: unknown): T[] | null {
     if (Array.isArray(raw)) return raw as T[];

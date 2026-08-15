@@ -287,7 +287,7 @@
      header chiquito "(cont.)" como las entries partidas. -->
 <ng-template #expTextTpl let-block>
   <section class="cv-section" [class.cv-section-continuation]="block?.isContinuation">
-    <h2 *ngIf="!block?.isContinuation" class="cv-section-title">Experiencia profesional</h2>
+    <h2 *ngIf="!block?.isContinuation" class="cv-section-title">{{ labels().experience }}</h2>
     <p *ngIf="block?.isContinuation" class="cv-entry-cont-header">
       {{ labels().experience }} <span class="cv-entry-cont-tag">— {{ labels().continued }}</span>
     </p>
@@ -338,7 +338,7 @@
 
 <ng-template #eduTextTpl let-block>
   <section class="cv-section" [class.cv-section-continuation]="block?.isContinuation">
-    <h2 *ngIf="!block?.isContinuation" class="cv-section-title">Educación</h2>
+    <h2 *ngIf="!block?.isContinuation" class="cv-section-title">{{ labels().education }}</h2>
     <p *ngIf="block?.isContinuation" class="cv-entry-cont-header">
       {{ labels().education }} <span class="cv-entry-cont-tag">— {{ labels().continued }}</span>
     </p>
@@ -380,7 +380,7 @@
 
 <ng-template #portfolioTpl>
   <section *ngIf="profileData as profile" class="cv-section">
-    <h2 class="cv-section-title">Portafolio</h2>
+    <h2 class="cv-section-title">{{ labels().portfolio }}</h2>
     <p class="cv-skills">{{ profile.portfolio_url }}</p>
   </section>
 </ng-template>
