@@ -48,10 +48,10 @@
     }
 
     &--accent {
-      /* Fraunces itálica variable — la línea de énfasis. */
+      /* Zilla Slab itálica — la línea de énfasis. `font-variation-settings`
+       * removido porque Zilla Slab NO es variable font (Fraunces sí lo era).
+       * La italic ya está en el import de weights. */
       font-style: italic;
-      font-optical-sizing: auto;
-      font-variation-settings: "opsz" 96;
       color: var(--pf-text);
     }
   }

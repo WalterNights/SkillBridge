@@ -47,7 +47,7 @@
     letter-spacing: -0.03em;
     color: var(--pf-text);
 
-    /* Efecto sutil: la última letra en itálica del serif Fraunces. */
+    /* Efecto sutil: puntito naranja como "cursor" al final del nombre. */
     &::after {
       content: ".";
       color: var(--pf-accent);

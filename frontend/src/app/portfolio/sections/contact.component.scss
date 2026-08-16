@@ -15,8 +15,13 @@
 
   &__cta {
     display: inline-flex;
-    align-items: center;
-    gap: 16px;
+    /* `baseline` alinea el label y el email sobre la misma línea base
+     * tipográfica — con `center`, sus bounding-boxes se centran pero
+     * los textos quedan visualmente corridos porque cada font-size
+     * tiene su propio ascender/descender. El SVG (sin baseline útil)
+     * usa `align-self: center` abajo. */
+    align-items: baseline;
+    gap: 14px;
     padding: 20px 28px;
     border: 1px solid var(--pf-line-strong);
     border-radius: var(--pf-radius-md);
@@ -36,6 +41,7 @@
     &-label {
       font-family: var(--pf-font-mono);
       font-size: 11px;
+      line-height: 1;
       letter-spacing: 0.14em;
       text-transform: uppercase;
       color: var(--pf-text-dim);
@@ -46,10 +52,12 @@
       font-family: var(--pf-font-display);
       font-weight: 600;
       font-size: 22px;
+      line-height: 1;
       letter-spacing: -0.01em;
     }
 
     svg {
+      align-self: center;
       color: var(--pf-text-dim);
       transition: transform 200ms ease, color 200ms ease;
     }
