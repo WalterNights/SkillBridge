@@ -45,11 +45,11 @@
           @for (link of socials(); track link.id + link.url) {
             <li>
               <a
-                [href]="link.url"
+                [href]="resolvedUrl(link)"
                 target="_blank"
                 rel="noopener noreferrer"
-                [attr.aria-label]="socialName(link.id)"
-                [attr.data-tooltip]="socialName(link.id)"
+                [attr.aria-label]="tooltipLabel(link)"
+                [attr.data-tooltip]="tooltipLabel(link)"
               >
                 <pf-icon [id]="link.id" [size]="20" />
               </a>

@@ -80,6 +80,48 @@ export class PortfolioSidebarComponent implements AfterViewInit, OnDestroy {
     return findIconById(id)?.name ?? id;
   }
 
+  /** URL final del social. Para WhatsApp normaliza inputs parciales:
+   *  `@nickname` o número puro → prefija con `https://wa.me/`.
+   *  wa.me redirige a WhatsApp Web en desktop y a la app en mobile,
+   *  así que un solo formato sirve para ambos. Para el resto de socials
+   *  devuelve el URL tal cual (asume que el user tipeó una URL completa). */
+  resolvedUrl(link: SocialLink): string {
+    const raw = (link.url ?? '').trim();
+    if (!raw) return '';
+    if (/^(https?:|mailto:|tel:)/i.test(raw)) return raw;
+
+    if (link.id === 'whatsapp') {
+      // Numero puro (con opcional +) → wa.me/numero (sin +).
+      const digitsOnly = raw.replace(/[\s\-()]/g, '');
+      if (/^\+?\d{7,}$/.test(digitsOnly)) {
+        return `https://wa.me/${digitsOnly.replace(/^\+/, '')}`;
+      }
+      // Nickname (con o sin @) → wa.me/@user (Meta nickname format).
+      const nick = raw.startsWith('@') ? raw : `@${raw}`;
+      return `https://wa.me/${nick}`;
+    }
+
+    // Default: dejamos como esta — responsabilidad del user tipearlo bien.
+    return raw;
+  }
+
+  /** Label del tooltip. Por default el nombre humano del icono
+   *  ("GitHub", "LinkedIn"). Para WhatsApp muestra el nickname o número
+   *  extraído del URL — mas util al hacer hover que un generico "WhatsApp". */
+  tooltipLabel(link: SocialLink): string {
+    if (link.id === 'whatsapp') {
+      const raw = (link.url ?? '').trim();
+      if (!raw) return this.socialName(link.id);
+      // Extrae la parte identificatoria despues de wa.me/ o web.whatsapp.com/
+      const stripped = raw
+        .replace(/^https?:\/\/(www\.)?wa\.me\//i, '')
+        .replace(/^https?:\/\/(www\.)?web\.whatsapp\.com\/send\?phone=/i, '')
+        .replace(/^https?:\/\/(www\.)?api\.whatsapp\.com\/send\?phone=/i, '');
+      return stripped || this.socialName(link.id);
+    }
+    return this.socialName(link.id);
+  }
+
   private observer?: IntersectionObserver;
 
   ngAfterViewInit(): void {
