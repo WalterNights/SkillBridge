@@ -622,7 +622,7 @@
           </label>
         </div>
 
-        <!-- ── Redes sociales (array) ── -->
+        <!-- ── Redes sociales (array, drag-drop reorder) ── -->
         <div class="pfe-array">
           <div class="pfe-array__header">
             <h3>Redes sociales / Links de contacto</h3>
@@ -631,37 +631,56 @@
               Agregar red
             </button>
           </div>
-          @for (item of socialsArr.controls; track $index; let i = $index) {
-            <div class="pfe-social-row" [formGroup]="socialItem(i)">
-              <div class="pfe-social-row__preview">
-                <pf-icon [id]="socialItem(i).get('id')?.value" [size]="22" />
-              </div>
-              <label class="pfe-field">
-                <span class="pfe-label">Icono</span>
-                <select formControlName="id">
-                  @for (group of socialGroups; track group.label) {
-                    <optgroup [label]="group.label">
-                      @for (icon of group.icons; track icon.id) {
-                        <option [value]="icon.id">{{ icon.name }}</option>
+          @if (socialsArr.controls.length > 0) {
+            <p class="pfe-hint">Arrastrá las filas por el grip para reordenar el sidebar público.</p>
+            <div
+              class="pfe-social-list"
+              cdkDropList
+              (cdkDropListDropped)="onSocialDrop($event)"
+            >
+              @for (item of socialsArr.controls; track item; let i = $index) {
+                <div class="pfe-social-row" [formGroup]="socialItem(i)" cdkDrag>
+                  <span class="pfe-social-row__grip" aria-hidden="true" cdkDragHandle>
+                    <svg viewBox="0 0 20 20" width="10" height="10">
+                      <circle cx="6" cy="5" r="1.2" fill="currentColor"/>
+                      <circle cx="14" cy="5" r="1.2" fill="currentColor"/>
+                      <circle cx="6" cy="10" r="1.2" fill="currentColor"/>
+                      <circle cx="14" cy="10" r="1.2" fill="currentColor"/>
+                      <circle cx="6" cy="15" r="1.2" fill="currentColor"/>
+                      <circle cx="14" cy="15" r="1.2" fill="currentColor"/>
+                    </svg>
+                  </span>
+                  <div class="pfe-social-row__preview">
+                    <pf-icon [id]="socialItem(i).get('id')?.value" [size]="22" />
+                  </div>
+                  <label class="pfe-field">
+                    <span class="pfe-label">Icono</span>
+                    <select formControlName="id">
+                      @for (group of socialGroups; track group.label) {
+                        <optgroup [label]="group.label">
+                          @for (icon of group.icons; track icon.id) {
+                            <option [value]="icon.id">{{ icon.name }}</option>
+                          }
+                        </optgroup>
                       }
-                    </optgroup>
-                  }
-                </select>
-              </label>
-              <label class="pfe-field pfe-field--wide">
-                <span class="pfe-label">URL</span>
-                <input formControlName="url" [placeholder]="hintForSocial(socialItem(i).get('id')?.value)" />
-              </label>
-              <button
-                type="button"
-                class="pfe-icon-btn pfe-icon-btn--danger"
-                (click)="removeSocial(i)"
-                title="Borrar"
-              >
-                <span class="material-symbols-outlined" style="font-size: 18px">delete</span>
-              </button>
+                    </select>
+                  </label>
+                  <label class="pfe-field pfe-field--wide">
+                    <span class="pfe-label">URL</span>
+                    <input formControlName="url" [placeholder]="hintForSocial(socialItem(i).get('id')?.value)" />
+                  </label>
+                  <button
+                    type="button"
+                    class="pfe-icon-btn pfe-icon-btn--danger"
+                    (click)="removeSocial(i)"
+                    title="Borrar"
+                  >
+                    <span class="material-symbols-outlined" style="font-size: 18px">delete</span>
+                  </button>
+                </div>
+              }
             </div>
-          } @empty {
+          } @else {
             <p class="pfe-empty">Todavía no agregaste redes. Usá "Agregar red" para sumar la primera.</p>
           }
         </div>

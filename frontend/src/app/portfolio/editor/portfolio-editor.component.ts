@@ -503,6 +503,17 @@ export class PortfolioEditorComponent implements OnInit {
     this.techArr.updateValueAndValidity();
   }
 
+  /** Idem para socials — misma técnica, mover FormGroup preservando
+   *  la referencia. El sync ES→EN al guardar copia el array completo
+   *  al content_en, asi que basta reordenar solo formEs. */
+  onSocialDrop(event: CdkDragDrop<unknown>): void {
+    if (event.previousIndex === event.currentIndex) return;
+    const ctrl = this.socialsArr.at(event.previousIndex);
+    this.socialsArr.removeAt(event.previousIndex, { emitEvent: false });
+    this.socialsArr.insert(event.currentIndex, ctrl, { emitEvent: false });
+    this.socialsArr.updateValueAndValidity();
+  }
+
   onTechInputChange(value: string): void {
     this.techQuery.set(value);
   }

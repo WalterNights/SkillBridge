@@ -200,6 +200,7 @@
   gap: 20px;
 
   a {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -217,6 +218,55 @@
     &:focus-visible {
       outline: 1px solid var(--pf-accent);
       outline-offset: 3px;
+    }
+
+    /* Tooltip custom (matching el aesthetic mono/naranja del portafolio).
+     * Contenido viene del atributo `data-tooltip`, seteado por el
+     * template con el nombre humano del icono (GitHub, LinkedIn, etc).
+     * `aria-label` sigue existiendo aparte — este tooltip es visual;
+     * ese es para screen readers. */
+    &::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      padding: 5px 10px;
+      background: var(--pf-bg-elev-2);
+      border: 1px solid var(--pf-line-strong);
+      border-radius: var(--pf-radius-sm);
+      color: var(--pf-text);
+      font-family: var(--pf-font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    /* Flechita del tooltip apuntando al icono. */
+    &::before {
+      content: "";
+      position: absolute;
+      bottom: calc(100% + 3px);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 5px solid var(--pf-line-strong);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    &:hover::after,
+    &:hover::before {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
   }
 }
