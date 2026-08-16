@@ -84,7 +84,11 @@
         "description": "SEO ranking platform for Google My Business, Google Ads, and Local SEO. Automates GMB profile audits, manages campaigns, and generates keyword ranking reports.",
         "stack": ["Python", "FastAPI", "Angular", "PostgreSQL", "Google APIs", "OpenAI"],
         "href": "",
-        "repo": ""
+        "repo": "",
+        "longDescription": "",
+        "process": "",
+        "challenges": [],
+        "features": []
       },
       {
         "id": "tax-bookkeeping",
@@ -94,7 +98,11 @@
         "description": "Payment and bank account management system for SMBs. Reconciles transactions, generates chart of accounts, and produces accountant-ready tax reports.",
         "stack": ["Node.js", "NestJS", "Next.js", "PostgreSQL", "Prisma", "Stripe"],
         "href": "",
-        "repo": ""
+        "repo": "",
+        "longDescription": "",
+        "process": "",
+        "challenges": [],
+        "features": []
       },
       {
         "id": "google-services",
@@ -104,7 +112,11 @@
         "description": "Central API orchestrating automation across Google Ads, GMB, Local SEO, and Analytics. The foundation RankTitan and OptimAds run on.",
         "stack": ["Python", "FastAPI", "Google Ads API", "GMB API", "Analytics"],
         "href": "",
-        "repo": ""
+        "repo": "",
+        "longDescription": "",
+        "process": "",
+        "challenges": [],
+        "features": []
       },
       {
         "id": "skiltak",
@@ -114,7 +126,11 @@
         "description": "Personal platform to centralize the job hunt: aggregates offers from multiple portals, matches them against the profile via AI, and generates tailored CVs and cover letters.",
         "stack": ["Python", "Django", "Angular", "PostgreSQL", "OpenAI"],
         "href": "https://skiltak.com",
-        "repo": ""
+        "repo": "",
+        "longDescription": "",
+        "process": "",
+        "challenges": [],
+        "features": []
       },
       {
         "id": "optimads",
@@ -124,7 +140,11 @@
         "description": "Ad campaign monitoring system and CRM for local SEO analysis. Detects spend anomalies and suggests strategy adjustments with AI.",
         "stack": ["Python", "FastAPI", "Next.js", "React", "PostgreSQL"],
         "href": "",
-        "repo": ""
+        "repo": "",
+        "longDescription": "",
+        "process": "",
+        "challenges": [],
+        "features": []
       },
       {
         "id": "estudiant",
@@ -134,7 +154,11 @@
         "description": "Academic management platform and virtual campus for educational institutions. Covers enrollment, course catalog, calendar, evaluations, and teacher-student communication.",
         "stack": ["Node.js", "NestJS", "Angular", "PostgreSQL"],
         "href": "",
-        "repo": ""
+        "repo": "",
+        "longDescription": "",
+        "process": "",
+        "challenges": [],
+        "features": []
       },
       {
         "id": "archtomatic",
@@ -144,9 +168,28 @@
         "description": "Platform for architects: inventory, quotes, budgets, and generation of renders and blueprints from natural-language descriptions.",
         "stack": ["Python", "FastAPI", "Next.js", "OpenAI", "Blender"],
         "href": "",
-        "repo": ""
+        "repo": "",
+        "longDescription": "",
+        "process": "",
+        "challenges": [],
+        "features": []
       }
     ]
+  },
+  "projectDetail": {
+    "back": "Back to projects",
+    "gallery": "Gallery",
+    "galleryEmpty": "No screenshots yet.",
+    "overview": "Overview",
+    "techStack": "Tech stack",
+    "process": "Development process",
+    "challenges": "Technical challenges",
+    "features": "Key features",
+    "notFound": "Project not found.",
+    "loading": "Loading project…",
+    "lightboxClose": "Close",
+    "lightboxPrev": "Previous",
+    "lightboxNext": "Next"
   },
   "github": {
     "eyebrow": "ACTIVITY",

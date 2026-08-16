@@ -253,6 +253,16 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./portfolio/portfolio-shell.component').then((m) => m.PortfolioShellComponent),
   },
+  // Detalle de un proyecto — pública, misma shell (sidebar sticky +
+  // main scrolleable). El componente reusa PortfolioSidebarComponent
+  // y las CSS vars scopeadas, cero duplicación de layout state.
+  {
+    path: 'portafolio/walternightsdev/proyectos/:id',
+    loadComponent: () =>
+      import('./portfolio/detail/project-detail.component').then(
+        (m) => m.ProjectDetailComponent,
+      ),
+  },
   // Editor admin del portafolio — AutoGuard + AdminGuard, standalone
   // (fuera del AppShell) para tener espacio libre. Solo is_staff.
   {

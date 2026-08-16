@@ -323,22 +323,18 @@
                 </button>
               </div>
 
-              <!-- Cover -->
-              <div class="pfe-cover">
-                <div class="pfe-cover__preview">
-                  @if (imageForProject(projItemEs(i).get('id')?.value); as img) {
-                    <img [src]="img.url" [alt]="projItemEs(i).get('name')?.value" />
-                  } @else {
-                    <div class="pfe-cover__empty">Sin captura</div>
-                  }
-                </div>
-                <div class="pfe-cover__actions">
+              <!-- Galería: múltiples imágenes por proyecto. La primera
+                   (más reciente) es la que aparece como cover en el card
+                   del grid; todas se muestran en la vista de detalle. -->
+              <div class="pfe-gallery">
+                <div class="pfe-gallery__header">
+                  <span class="pfe-label">Galería ({{ imagesForProject(projItemEs(i).get('id')?.value).length }})</span>
                   <label class="pfe-btn pfe-btn--ghost pfe-btn--sm">
-                    <span class="material-symbols-outlined" style="font-size: 16px">photo_camera</span>
+                    <span class="material-symbols-outlined" style="font-size: 16px">add_photo_alternate</span>
                     @if (uploading() === projItemEs(i).get('id')?.value) {
                       Subiendo…
                     } @else {
-                      Subir/cambiar captura
+                      Agregar captura
                     }
                     <input
                       type="file"
@@ -347,13 +343,26 @@
                       (change)="onCoverSelected($event, projItemEs(i).get('id')?.value)"
                     />
                   </label>
-                  @if (imageForProject(projItemEs(i).get('id')?.value)) {
-                    <button type="button" class="pfe-btn pfe-btn--ghost pfe-btn--sm pfe-btn--danger" (click)="deleteCover(projItemEs(i).get('id')?.value)">
-                      <span class="material-symbols-outlined" style="font-size: 16px">delete</span>
-                      Borrar
-                    </button>
-                  }
                 </div>
+                @if (imagesForProject(projItemEs(i).get('id')?.value).length > 0) {
+                  <ul class="pfe-gallery__grid">
+                    @for (img of imagesForProject(projItemEs(i).get('id')?.value); track img.id) {
+                      <li class="pfe-gallery__item">
+                        <img [src]="img.url" [alt]="projItemEs(i).get('name')?.value" />
+                        <button
+                          type="button"
+                          class="pfe-gallery__del"
+                          title="Borrar captura"
+                          (click)="deleteImageById(projItemEs(i).get('id')?.value, img.id)"
+                        >
+                          <span class="material-symbols-outlined" style="font-size: 14px">delete</span>
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <div class="pfe-gallery__empty">Sin capturas todavía. Agregá la primera con el botón de arriba.</div>
+                }
               </div>
 
               <!-- No traducibles -->
@@ -397,17 +406,90 @@
                 <input formControlName="stack" placeholder="Python, FastAPI, React" />
               </label>
 
-              <!-- Descripción bilingüe -->
+              <!-- Descripción corta (bilingüe) — la que sale en el card del grid -->
               <div class="pfe-bilingual">
                 <label class="pfe-field">
-                  <span class="pfe-label">Descripción (ES)</span>
+                  <span class="pfe-label">Descripción corta (ES)</span>
                   <textarea rows="3" [formControl]="$any(projItemEs(i).get('description'))"></textarea>
                 </label>
                 <label class="pfe-field">
-                  <span class="pfe-label">Descripción (EN)</span>
+                  <span class="pfe-label">Descripción corta (EN)</span>
                   <textarea rows="3" [formControl]="$any(projItemEn(i).get('description'))"></textarea>
                 </label>
               </div>
+
+              <!-- ═══ Detalle largo (aparece solo en /proyectos/:id) ═══ -->
+              <details class="pfe-details">
+                <summary>Detalle del proyecto (opcional — se muestra al hacer click en la card)</summary>
+
+                <!-- Descripción larga -->
+                <div class="pfe-bilingual">
+                  <label class="pfe-field">
+                    <span class="pfe-label">Descripción larga (ES)</span>
+                    <textarea rows="4" [formControl]="$any(projItemEs(i).get('longDescription'))" placeholder="Contexto completo del proyecto — problema que resuelve, alcance, impacto…"></textarea>
+                  </label>
+                  <label class="pfe-field">
+                    <span class="pfe-label">Descripción larga (EN)</span>
+                    <textarea rows="4" [formControl]="$any(projItemEn(i).get('longDescription'))"></textarea>
+                  </label>
+                </div>
+
+                <!-- Proceso de desarrollo -->
+                <div class="pfe-bilingual">
+                  <label class="pfe-field">
+                    <span class="pfe-label">Proceso de desarrollo (ES)</span>
+                    <textarea rows="4" [formControl]="$any(projItemEs(i).get('process'))" placeholder="Cómo lo construiste — decisiones de arquitectura, iteraciones, herramientas…"></textarea>
+                  </label>
+                  <label class="pfe-field">
+                    <span class="pfe-label">Proceso de desarrollo (EN)</span>
+                    <textarea rows="4" [formControl]="$any(projItemEn(i).get('process'))"></textarea>
+                  </label>
+                </div>
+
+                <!-- Desafíos técnicos (array bilingüe) -->
+                <div class="pfe-array pfe-array--nested">
+                  <div class="pfe-array__header">
+                    <h4>Desafíos técnicos</h4>
+                    <button type="button" class="pfe-btn pfe-btn--ghost pfe-btn--sm" (click)="addChallenge(i)">
+                      <span class="material-symbols-outlined" style="font-size: 14px">add</span>
+                      Agregar
+                    </button>
+                  </div>
+                  @for (ctrl of challengesArr(i).controls; track $index; let ci = $index) {
+                    <div class="pfe-nested-row">
+                      <div class="pfe-bilingual pfe-bilingual--tight">
+                        <input [formControl]="challengeCtrl(i, ci)" placeholder="Desafío (ES)" />
+                        <input [formControl]="challengeCtrl(i, ci, formEn)" placeholder="Desafío (EN)" />
+                      </div>
+                      <button type="button" class="pfe-icon-btn pfe-icon-btn--danger" (click)="removeChallenge(i, ci)" title="Borrar">
+                        <span class="material-symbols-outlined" style="font-size: 16px">delete</span>
+                      </button>
+                    </div>
+                  }
+                </div>
+
+                <!-- Características clave (array bilingüe) -->
+                <div class="pfe-array pfe-array--nested">
+                  <div class="pfe-array__header">
+                    <h4>Características clave</h4>
+                    <button type="button" class="pfe-btn pfe-btn--ghost pfe-btn--sm" (click)="addFeature(i)">
+                      <span class="material-symbols-outlined" style="font-size: 14px">add</span>
+                      Agregar
+                    </button>
+                  </div>
+                  @for (ctrl of featuresArr(i).controls; track $index; let fi = $index) {
+                    <div class="pfe-nested-row">
+                      <div class="pfe-bilingual pfe-bilingual--tight">
+                        <input [formControl]="featureCtrl(i, fi)" placeholder="Feature (ES)" />
+                        <input [formControl]="featureCtrl(i, fi, formEn)" placeholder="Feature (EN)" />
+                      </div>
+                      <button type="button" class="pfe-icon-btn pfe-icon-btn--danger" (click)="removeFeature(i, fi)" title="Borrar">
+                        <span class="material-symbols-outlined" style="font-size: 16px">delete</span>
+                      </button>
+                    </div>
+                  }
+                </div>
+              </details>
             </div>
           }
         </div>

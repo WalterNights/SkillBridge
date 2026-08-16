@@ -61,19 +61,33 @@
   }
 }
 
+.pf-cards__item {
+  display: block;
+  list-style: none;
+}
+
 .pf-card {
   display: flex;
   flex-direction: column;
+  height: 100%;
   background: var(--pf-bg-elev);
   border: 1px solid var(--pf-line);
   border-radius: var(--pf-radius-lg);
   overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
   transition: border-color 220ms ease, transform 220ms ease, background-color 220ms ease;
 
   &:hover {
     border-color: var(--pf-accent);
     transform: translateY(-4px);
     background: var(--pf-bg-elev-2);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--pf-accent);
+    outline-offset: 2px;
   }
 
   &__cover {

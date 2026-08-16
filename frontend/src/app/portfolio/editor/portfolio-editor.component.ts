@@ -210,6 +210,12 @@ export class PortfolioEditorComponent implements OnInit {
   }
 
   private buildProjectItem(seed: Record<string, unknown> = {}): FormGroup {
+    const challengesSeed = Array.isArray(seed['challenges'])
+      ? (seed['challenges'] as string[])
+      : [];
+    const featuresSeed = Array.isArray(seed['features'])
+      ? (seed['features'] as string[])
+      : [];
     return this.fb.group({
       id: [seed['id'] ?? '', Validators.required],
       name: [seed['name'] ?? ''],
@@ -219,6 +225,77 @@ export class PortfolioEditorComponent implements OnInit {
       stack: [Array.isArray(seed['stack']) ? (seed['stack'] as string[]).join(', ') : ''],
       href: [seed['href'] ?? ''],
       repo: [seed['repo'] ?? ''],
+      // Campos de detalle (bilingües, opcionales — la vista de detalle
+      // los oculta si están vacíos).
+      longDescription: [seed['longDescription'] ?? ''],
+      process: [seed['process'] ?? ''],
+      challenges: this.fb.array<FormControl<string>>(
+        challengesSeed.map((c) => new FormControl(c, { nonNullable: true })),
+      ),
+      features: this.fb.array<FormControl<string>>(
+        featuresSeed.map((f) => new FormControl(f, { nonNullable: true })),
+      ),
+    });
+  }
+
+  // ── Helpers para challenges/features (arrays anidados en cada
+  //    project item — ES y EN paralelos, add/remove sincronizados). ──
+  challengesArr(i: number, form: FormGroup = this.formEs): FormArray {
+    return (form.get('projects.items') as FormArray)
+      .at(i)
+      .get('challenges') as FormArray;
+  }
+
+  featuresArr(i: number, form: FormGroup = this.formEs): FormArray {
+    return (form.get('projects.items') as FormArray)
+      .at(i)
+      .get('features') as FormArray;
+  }
+
+  challengeCtrl(projectIdx: number, itemIdx: number, form: FormGroup = this.formEs): FormControl {
+    return this.challengesArr(projectIdx, form).at(itemIdx) as FormControl;
+  }
+
+  featureCtrl(projectIdx: number, itemIdx: number, form: FormGroup = this.formEs): FormControl {
+    return this.featuresArr(projectIdx, form).at(itemIdx) as FormControl;
+  }
+
+  addChallenge(projectIdx: number): void {
+    this.challengesArr(projectIdx, this.formEs).push(new FormControl('', { nonNullable: true }));
+    this.challengesArr(projectIdx, this.formEn).push(new FormControl('', { nonNullable: true }));
+  }
+
+  removeChallenge(projectIdx: number, itemIdx: number): void {
+    this.challengesArr(projectIdx, this.formEs).removeAt(itemIdx);
+    this.challengesArr(projectIdx, this.formEn).removeAt(itemIdx);
+  }
+
+  addFeature(projectIdx: number): void {
+    this.featuresArr(projectIdx, this.formEs).push(new FormControl('', { nonNullable: true }));
+    this.featuresArr(projectIdx, this.formEn).push(new FormControl('', { nonNullable: true }));
+  }
+
+  removeFeature(projectIdx: number, itemIdx: number): void {
+    this.featuresArr(projectIdx, this.formEs).removeAt(itemIdx);
+    this.featuresArr(projectIdx, this.formEn).removeAt(itemIdx);
+  }
+
+  /** Todas las imágenes de un proyecto (galería completa, no solo
+   *  la última). Ordenadas por -created_at (backend). */
+  imagesForProject(projectId: string): PortfolioImage[] {
+    if (!projectId) return [];
+    return this.images().filter((img) => img.project_id === projectId);
+  }
+
+  deleteImageById(projectId: string, imageId: number): void {
+    if (!confirm(`¿Borrar esta captura de "${projectId}"?`)) return;
+    this.api.deleteImage(SLUG, imageId).subscribe({
+      next: () => {
+        this.images.update((current) => current.filter((i) => i.id !== imageId));
+      },
+      error: () => {
+        this.errorMsg.set('No se pudo borrar la imagen.');
+      },
     });
   }
 
@@ -462,15 +539,13 @@ export class PortfolioEditorComponent implements OnInit {
     this.errorMsg.set('');
     this.api.uploadImage(SLUG, file, projectId).subscribe({
       next: (img) => {
-        // Reemplazamos cualquier imagen previa del mismo project_id en el
-        // signal local; el backend ordena por -created_at, así que la
-        // más nueva termina ganando en el shell público.
-        this.images.update((current) => [
-          img,
-          ...current.filter((i) => i.project_id !== projectId),
-        ]);
+        // APPEND: guardamos todas las imágenes del proyecto. La vista
+        // de detalle las muestra como galería completa; la card del
+        // grid usa `imageForProject` que devuelve la primera (más
+        // reciente por -created_at del backend).
+        this.images.update((current) => [img, ...current]);
         this.uploading.set(null);
-        this.successMsg.set(`Captura de "${projectId}" subida.`);
+        this.successMsg.set(`Captura agregada a "${projectId}".`);
         setTimeout(() => this.successMsg.set(''), 3500);
       },
       error: (err) => {

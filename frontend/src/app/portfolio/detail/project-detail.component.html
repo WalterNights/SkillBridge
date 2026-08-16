@@ -1,0 +1,186 @@
+<div class="portfolio-root">
+  <!-- Fondo idéntico al shell principal para consistencia visual. -->
+  <div class="portfolio-grid-bg" aria-hidden="true"></div>
+  <div class="portfolio-vignette" aria-hidden="true"></div>
+  <div class="portfolio-cursor-glow" aria-hidden="true"></div>
+
+  <div class="portfolio-layout">
+    <app-portfolio-sidebar />
+
+    <main class="portfolio-main">
+      @if (loading()) {
+        <p class="pfd-status">{{ i18n.t('projectDetail.loading') }}</p>
+      } @else if (notFound()) {
+        <section class="pfd-notfound">
+          <p class="pfd-status">{{ i18n.t('projectDetail.notFound') }}</p>
+          <a routerLink="/portafolio/walternightsdev" fragment="projects" class="pfd-back">
+            ← {{ i18n.t('projectDetail.back') }}
+          </a>
+        </section>
+      }
+
+      <!-- Bloque de detalle: Angular 19 no permite `as` binding en
+           @else if, así que usamos un @if independiente con la guarda
+           combinada. Solo renderiza cuando hay proyecto resuelto. -->
+      @if (!loading() && !notFound() && project(); as p) {
+        <!-- Back link -->
+        <a routerLink="/portafolio/walternightsdev" fragment="projects" class="pfd-back">
+          ← {{ i18n.t('projectDetail.back') }}
+        </a>
+
+        <!-- Header -->
+        <header class="pfd-header">
+          <div class="pfd-header__meta">
+            <span class="pfd-header__kind" [attr.data-kind]="p.kind">{{ labelOf(p.kind) }}</span>
+            <span class="pfd-header__status" [attr.data-status]="p.status">
+              <span class="pfd-header__status-dot" aria-hidden="true"></span>
+              {{ labelOf(p.status) }}
+            </span>
+          </div>
+          <h1 class="pfd-header__title">{{ p.name }}</h1>
+          <p class="pfd-header__desc">{{ p.description }}</p>
+
+          @if (p.href || p.repo) {
+            <div class="pfd-header__links">
+              @if (p.href) {
+                <a [href]="p.href" target="_blank" rel="noopener noreferrer" class="pfd-header__link">
+                  {{ labelOf('viewSite') }}
+                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M9 7h8v8"/>
+                  </svg>
+                </a>
+              }
+              @if (p.repo) {
+                <a [href]="p.repo" target="_blank" rel="noopener noreferrer" class="pfd-header__link">
+                  {{ labelOf('viewRepo') }}
+                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M9 7h8v8"/>
+                  </svg>
+                </a>
+              }
+            </div>
+          }
+        </header>
+
+        <!-- Galería (grid de thumbnails con lightbox) -->
+        <section class="pfd-section">
+          <h2 class="pfd-section__title">{{ i18n.t('projectDetail.gallery') }}</h2>
+          @if (images().length === 0) {
+            <p class="pfd-empty">{{ i18n.t('projectDetail.galleryEmpty') }}</p>
+          } @else {
+            <ul class="pfd-gallery">
+              @for (img of images(); track img.id; let i = $index) {
+                <li class="pfd-gallery__item">
+                  <button
+                    type="button"
+                    class="pfd-gallery__btn"
+                    (click)="openLightbox(i)"
+                    [attr.aria-label]="img.alt_text || p.name"
+                  >
+                    <img [src]="img.url" [alt]="img.alt_text || p.name" loading="lazy" />
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        <!-- Long description (opcional) -->
+        @if (p.longDescription) {
+          <section class="pfd-section">
+            <h2 class="pfd-section__title">{{ i18n.t('projectDetail.overview') }}</h2>
+            <p class="pfd-prose">{{ p.longDescription }}</p>
+          </section>
+        }
+
+        <!-- Tech stack (siempre; ya viene del card) -->
+        @if (p.stack && p.stack.length > 0) {
+          <section class="pfd-section">
+            <h2 class="pfd-section__title">{{ i18n.t('projectDetail.techStack') }}</h2>
+            <ul class="pfd-stack">
+              @for (tech of p.stack; track tech) {
+                <li class="pfd-stack__chip">
+                  <pf-icon [id]="tech.toLowerCase().replace(' ', '-').replace('.', '')" [size]="14" />
+                  <span>{{ tech }}</span>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        <!-- Proceso (opcional) -->
+        @if (p.process) {
+          <section class="pfd-section">
+            <h2 class="pfd-section__title">{{ i18n.t('projectDetail.process') }}</h2>
+            <p class="pfd-prose">{{ p.process }}</p>
+          </section>
+        }
+
+        <!-- Desafíos (opcional) -->
+        @if (p.challenges && p.challenges.length > 0) {
+          <section class="pfd-section">
+            <h2 class="pfd-section__title">{{ i18n.t('projectDetail.challenges') }}</h2>
+            <ul class="pfd-bullets">
+              @for (c of p.challenges; track $index) {
+                <li>{{ c }}</li>
+              }
+            </ul>
+          </section>
+        }
+
+        <!-- Características clave (opcional) -->
+        @if (p.features && p.features.length > 0) {
+          <section class="pfd-section">
+            <h2 class="pfd-section__title">{{ i18n.t('projectDetail.features') }}</h2>
+            <ul class="pfd-bullets">
+              @for (f of p.features; track $index) {
+                <li>{{ f }}</li>
+              }
+            </ul>
+          </section>
+        }
+      }
+    </main>
+  </div>
+
+  <!-- Lightbox: overlay full-screen sobre todo. Se cierra con Esc, click
+       fuera, o botón close. Navega con flechas del teclado o botones. -->
+  @if (lightboxIndex() !== null && images().length > 0) {
+    <div class="pfd-lightbox" role="dialog" aria-modal="true" (click)="closeLightbox()">
+      <button
+        type="button"
+        class="pfd-lightbox__close"
+        (click)="closeLightbox(); $event.stopPropagation()"
+        [attr.aria-label]="i18n.t('projectDetail.lightboxClose')"
+      >×</button>
+
+      @if (images().length > 1) {
+        <button
+          type="button"
+          class="pfd-lightbox__nav pfd-lightbox__nav--prev"
+          (click)="prevImage(); $event.stopPropagation()"
+          [attr.aria-label]="i18n.t('projectDetail.lightboxPrev')"
+        >‹</button>
+        <button
+          type="button"
+          class="pfd-lightbox__nav pfd-lightbox__nav--next"
+          (click)="nextImage(); $event.stopPropagation()"
+          [attr.aria-label]="i18n.t('projectDetail.lightboxNext')"
+        >›</button>
+      }
+
+      <img
+        class="pfd-lightbox__img"
+        [src]="images()[lightboxIndex()!].url"
+        [alt]="images()[lightboxIndex()!].alt_text"
+        (click)="$event.stopPropagation()"
+      />
+
+      @if (images().length > 1) {
+        <div class="pfd-lightbox__counter">
+          {{ lightboxIndex()! + 1 }} / {{ images().length }}
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -18,57 +18,77 @@
 
   <ul class="pf-cards">
     @for (project of filtered(); track project.id) {
-      <li class="pf-card">
-        <div class="pf-card__cover">
-          @if (coverFor(project); as cover) {
-            <img [src]="cover" [alt]="coverAltFor(project)" loading="lazy" />
-          } @else {
-            <div class="pf-card__placeholder">
-              <span class="pf-card__placeholder-mark" aria-hidden="true">{{ project.name.charAt(0) }}</span>
-              <span class="pf-card__placeholder-label">{{ labelOf('screenshot') }}</span>
-            </div>
-          }
-        </div>
-
-        <div class="pf-card__body">
-          <div class="pf-card__meta">
-            <span class="pf-card__kind" [attr.data-kind]="project.kind">{{ labelOf(project.kind) }}</span>
-            <span class="pf-card__status" [attr.data-status]="project.status">
-              <span class="pf-card__status-dot" aria-hidden="true"></span>
-              {{ labelOf(project.status) }}
-            </span>
+      <li class="pf-cards__item">
+        <!-- Toda la card es link al detalle. Los links internos (href /
+             repo) hacen stopPropagation para abrir en nueva pestaña sin
+             navegar al detalle. -->
+        <a
+          class="pf-card"
+          [routerLink]="['/portafolio/walternightsdev/proyectos', project.id]"
+        >
+          <div class="pf-card__cover">
+            @if (coverFor(project); as cover) {
+              <img [src]="cover" [alt]="coverAltFor(project)" loading="lazy" />
+            } @else {
+              <div class="pf-card__placeholder">
+                <span class="pf-card__placeholder-mark" aria-hidden="true">{{ project.name.charAt(0) }}</span>
+                <span class="pf-card__placeholder-label">{{ labelOf('screenshot') }}</span>
+              </div>
+            }
           </div>
 
-          <h3 class="pf-card__title">{{ project.name }}</h3>
-          <p class="pf-card__desc">{{ project.description }}</p>
-
-          <ul class="pf-chips">
-            @for (tech of project.stack; track tech) {
-              <li class="pf-chip">{{ tech }}</li>
-            }
-          </ul>
-
-          @if (project.href || project.repo) {
-            <div class="pf-card__links">
-              @if (project.href) {
-                <a [href]="project.href" target="_blank" rel="noopener noreferrer" class="pf-card__link">
-                  {{ labelOf('viewSite') }}
-                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M9 7h8v8"/>
-                  </svg>
-                </a>
-              }
-              @if (project.repo) {
-                <a [href]="project.repo" target="_blank" rel="noopener noreferrer" class="pf-card__link">
-                  {{ labelOf('viewRepo') }}
-                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M9 7h8v8"/>
-                  </svg>
-                </a>
-              }
+          <div class="pf-card__body">
+            <div class="pf-card__meta">
+              <span class="pf-card__kind" [attr.data-kind]="project.kind">{{ labelOf(project.kind) }}</span>
+              <span class="pf-card__status" [attr.data-status]="project.status">
+                <span class="pf-card__status-dot" aria-hidden="true"></span>
+                {{ labelOf(project.status) }}
+              </span>
             </div>
-          }
-        </div>
+
+            <h3 class="pf-card__title">{{ project.name }}</h3>
+            <p class="pf-card__desc">{{ project.description }}</p>
+
+            <ul class="pf-chips">
+              @for (tech of project.stack; track tech) {
+                <li class="pf-chip">{{ tech }}</li>
+              }
+            </ul>
+
+            @if (project.href || project.repo) {
+              <div class="pf-card__links">
+                @if (project.href) {
+                  <a
+                    [href]="project.href"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="pf-card__link"
+                    (click)="$event.stopPropagation()"
+                  >
+                    {{ labelOf('viewSite') }}
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M9 7h8v8"/>
+                    </svg>
+                  </a>
+                }
+                @if (project.repo) {
+                  <a
+                    [href]="project.repo"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="pf-card__link"
+                    (click)="$event.stopPropagation()"
+                  >
+                    {{ labelOf('viewRepo') }}
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M9 7h8v8"/>
+                    </svg>
+                  </a>
+                }
+              </div>
+            }
+          </div>
+        </a>
       </li>
     }
   </ul>

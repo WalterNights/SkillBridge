@@ -1,9 +1,19 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { PortfolioI18nService } from '../i18n/portfolio-i18n.service';
 import { PfSectionHeaderComponent } from './section-header.component';
 
-/** Shape esperado de cada item en `projects.items` (backend o bundled JSON). */
+/** Shape esperado de cada item en `projects.items` (backend o bundled JSON).
+ *
+ *  Campos "core" (id, name, kind, status, description, stack, href, repo)
+ *  se muestran en las cards del grid.
+ *
+ *  Campos "detalle" (longDescription, process, challenges, features) se
+ *  muestran solo en la ruta `/proyectos/:id`. Todos son opcionales:
+ *  si un proyecto no los tiene, la sección correspondiente se oculta
+ *  en la vista de detalle (backward-compatible con seed viejo).
+ */
 export interface PortfolioProject {
   id: string;
   name: string;
@@ -13,6 +23,11 @@ export interface PortfolioProject {
   stack: string[];
   href?: string;
   repo?: string;
+  // ── Detalle (bilingüe, opcional) ──
+  longDescription?: string;
+  process?: string;
+  challenges?: string[];
+  features?: string[];
 }
 
 type FilterKind = 'all' | PortfolioProject['kind'];
@@ -20,7 +35,7 @@ type FilterKind = 'all' | PortfolioProject['kind'];
 @Component({
   selector: 'app-projects-section',
   standalone: true,
-  imports: [PfSectionHeaderComponent],
+  imports: [PfSectionHeaderComponent, RouterLink],
   templateUrl: './projects.component.html',
   styleUrl: './projects.component.scss',
 })
