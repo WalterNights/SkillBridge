@@ -12,6 +12,40 @@ const BUNDLED_DICTS: Record<PortfolioLang, Dict> = { es, en: en as Dict };
 const STORAGE_KEY = 'portfolio.lang';
 
 /**
+ * Merge profundo específico para nuestros diccionarios i18n.
+ *
+ * Reglas:
+ *  - Objetos: recursivo. Keys en `overlay` pisan las de `base`; keys
+ *    solo en `base` se preservan.
+ *  - Arrays: reemplazo completo. Los diccionarios tienen arrays como
+ *    "unidades" (ej. `projects.items`) — mezclar por índice traería
+ *    ítems fantasma del bundled que el backend borró.
+ *  - Primitivos: overlay gana. Si overlay tiene `""` explícito, respeta
+ *    el vacío (no cae al bundled) — el editor puede querer "borrar"
+ *    una string.
+ */
+function mergeDicts<T>(base: T, overlay: unknown): T {
+  if (Array.isArray(overlay)) return overlay as T;
+  if (!isPlainObject(overlay)) {
+    // Overlay es primitivo o null: gana overlay (permite string vacío).
+    return overlay as T;
+  }
+  if (!isPlainObject(base)) return overlay as T;
+
+  const result: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+  for (const key of Object.keys(overlay as Record<string, unknown>)) {
+    const baseVal = (base as Record<string, unknown>)[key];
+    const overlayVal = (overlay as Record<string, unknown>)[key];
+    result[key] = mergeDicts(baseVal, overlayVal);
+  }
+  return result as T;
+}
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/**
  * i18n mínimo scopeado al portafolio — cero dependencias externas.
  *
  * SkilTak no usa ngx-translate ni @angular/localize a nivel app, y la
@@ -37,7 +71,13 @@ export class PortfolioI18nService {
   readonly lang = this._lang.asReadonly();
   readonly dict = computed<Dict>(() => {
     const lang = this._lang();
-    return this._overrides()[lang] ?? BUNDLED_DICTS[lang];
+    const override = this._overrides()[lang];
+    if (!override) return BUNDLED_DICTS[lang];
+    // Merge profundo: bundled es la base (contiene claves NUEVAS agregadas
+    // en frontend que aún no llegaron al backend), backend overlay sobre
+    // eso. Sin el merge, agregar una key i18n nueva rompía todos los
+    // templates que la usaran hasta hacer data-migration.
+    return mergeDicts(BUNDLED_DICTS[lang], override);
   });
 
   /** Imágenes servidas por el backend, keyed por `project_id`. La
