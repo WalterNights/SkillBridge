@@ -115,6 +115,62 @@ const CUSTOM_PATHS = {
   // Metáfora estándar de "AI-enhanced capability" en la industria.
   skills:
     'M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2zm7 12l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3zM6 15l.75 2.25L9 18l-2.25.75L6 21l-.75-2.25L3 18l2.25-.75L6 15z',
+
+  // ═══ AWS y servicios ═══
+  // Removidos de simple-icons por trademark de Amazon. Uso nominativo
+  // (identificación de tecnologías usadas), no de endorsement. Shapes
+  // geométricos simples que sugieren cada servicio sin copiar los
+  // logos oficiales de AWS pixel-por-pixel.
+
+  // AWS — cubo isométrico + "smile" curve arriba. Metáfora del logo.
+  aws:
+    'M4 8l8-4 8 4v8l-8 4-8-4V8zm2 1.15v6.35l6 3v-6.35l-6-3zm12 0l-6 3v6.35l6-3V9.15zm-6-3.15l-5.5 2.75L12 11.5l5.5-2.75L12 5zm-6 14c1 1 3 2 6 2s5-1 6-2c-.5.5-2.5 1-6 1s-5.5-.5-6-1z',
+
+  // S3 — bucket con la banda característica del logo.
+  s3:
+    'M5 6h14l-1.5 14a1 1 0 01-1 1H7.5a1 1 0 01-1-1L5 6zm2 2l.3 3h9.4L17 8H7zm.4 5l.3 3h8.6l.3-3H7.4zm.5 5l.2 2h7.8l.2-2H7.9z',
+
+  // EC2 — server rack (chip-like) con esquinas cortadas.
+  ec2:
+    'M6 4h12v2h2v2h-2v2h2v2h-2v2h2v2h-2v2h-2v2h-2v-2h-2v2h-2v-2H8v2H6v-2H4v-2h2v-2H4v-2h2v-2H4V8h2V6H4V4h2zm2 4v8h8V8H8zm2 2h4v4h-4v-4z',
+
+  // Lambda — el simbolo griego λ inscripto en un cuadrado redondeado.
+  'aws-lambda':
+    'M4 4h4l7 16h-4l-1.5-3.5-3-.5L4 20V4zm2 12l3-8 3.5 8h-6.5z',
+
+  // RDS — cilindro clasico de database.
+  'aws-rds':
+    'M4 6c0-1.66 3.58-3 8-3s8 1.34 8 3v12c0 1.66-3.58 3-8 3s-8-1.34-8-3V6zm2 0c0 .55 2.24 1 6 1s6-.45 6-1-2.24-1-6-1-6 .45-6 1zm0 3c1.5.6 3.6 1 6 1s4.5-.4 6-1v3c-1.5.6-3.6 1-6 1s-4.5-.4-6-1V9zm0 6c1.5.6 3.6 1 6 1s4.5-.4 6-1v3c0 .55-2.24 1-6 1s-6-.45-6-1v-3z',
+
+  // DynamoDB — dos cilindros superpuestos (D + D shape).
+  'aws-dynamodb':
+    'M3 4c0-1.1 2.5-2 6-2s6 .9 6 2v3c0 1.1-2.5 2-6 2s-6-.9-6-2V4zm10 5.9c2.5-.4 4-1.1 4-1.9V6c1.5.2 3 .8 3 2v3c0 1.1-2.5 2-6 2h-1v-3.1zM3 8c0 1.1 2.5 2 6 2s6-.9 6-2v4c0 1.1-2.5 2-6 2s-6-.9-6-2V8zm11 5.9c2-.2 4-.8 4-1.9V11c1.5.2 3 .8 3 2v3c0 1.1-2.5 2-6 2h-1v-2.1zM3 13c0 1.1 2.5 2 6 2s6-.9 6-2v4c0 1.1-2.5 2-6 2s-6-.9-6-2v-4zm11 5.9c2-.2 4-.8 4-1.9v-1c1.5.2 3 .8 3 2v3c0 1.1-2.5 2-6 2h-1v-2.1z',
+
+  // CloudFront — globo con lineas radiales sugerendo CDN edges.
+  'aws-cloudfront':
+    'M12 2a10 10 0 100 20 10 10 0 000-20zm-1 2.07v3.93H7.7A8.02 8.02 0 0111 4.07zM6.06 10H10v4H6.06a8 8 0 010-4zM7.7 16H11v3.93A8.02 8.02 0 017.7 16zM13 19.93V16h3.3a8.02 8.02 0 01-3.3 3.93zM17.94 14H14v-4h3.94a8 8 0 010 4zM16.3 8H13V4.07A8.02 8.02 0 0116.3 8z',
+
+  // API Gateway — hexagono con nodos en los vertices (representa
+  // enrutamiento).
+  'aws-api-gateway':
+    'M12 2l9 5v10l-9 5-9-5V7l9-5zm0 2.3L5 8v8l7 4 7-4V8l-7-3.7zM9 9h6v2H9V9zm0 4h6v2H9v-2z',
+
+  // IAM — escudo con silueta de persona (identity + access).
+  'aws-iam':
+    'M12 1L3 5v6c0 5 4 9 9 11 5-2 9-6 9-11V5l-9-4zm0 6a2.5 2.5 0 110 5 2.5 2.5 0 010-5zm0 6c2 0 5 1 5 3v1H7v-1c0-2 3-3 5-3z',
+
+  // ECS — tres containers apilados con cintas ilustrando orquestacion.
+  'aws-ecs':
+    'M3 4h18v6H3V4zm2 2v2h4V6H5zm6 0v2h4V6h-4zm6 0v2h2V6h-2zM3 11h18v6H3v-6zm2 2v2h4v-2H5zm6 0v2h4v-2h-4zm6 0v2h2v-2h-2zM3 18h18v3H3v-3zm2 1v1h4v-1H5zm6 0v1h4v-1h-4zm6 0v1h2v-1h-2z',
+
+  // SQS — cola de mensajes (rectangulos alineados horizontalmente
+  // con flecha).
+  'aws-sqs':
+    'M2 8h4v8H2V8zm5 0h4v8H7V8zm5 0h4v8h-4V8zm5 3h3l-2-2h2l3 3-3 3h-2l2-2h-3v-2z',
+
+  // CloudWatch — un ojo/reloj de monitoring dentro de una nube.
+  'aws-cloudwatch':
+    'M18 10c-.5-2-2-4-4-4s-4 2-4 4c-2 0-4 2-4 4s2 4 4 4h8c2 0 4-2 4-4s-2-4-4-4zm-6 3a2 2 0 100 4 2 2 0 000-4z',
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -233,6 +289,23 @@ export const TECH_ICONS: readonly PortfolioIcon[] = [
   { id: 'cloudflare', name: 'Cloudflare', category: 'devops', path: siCloudflare.path },
   { id: 'github-actions', name: 'GitHub Actions', category: 'devops', path: siGithubactions.path },
   { id: 'ansible', name: 'Ansible', category: 'devops', path: siAnsible.path },
+
+  // ── AWS y servicios ──
+  // Removidos de simple-icons por trademark. Custom paths inline en
+  // CUSTOM_PATHS. Los IDs "aws-*" son consistentes para autocomplete
+  // (buscando "aws" salen todos juntos).
+  { id: 'aws', name: 'AWS', category: 'devops', path: CUSTOM_PATHS.aws },
+  { id: 's3', name: 'AWS S3', category: 'devops', path: CUSTOM_PATHS.s3 },
+  { id: 'ec2', name: 'AWS EC2', category: 'devops', path: CUSTOM_PATHS.ec2 },
+  { id: 'aws-lambda', name: 'AWS Lambda', category: 'devops', path: CUSTOM_PATHS['aws-lambda'] },
+  { id: 'aws-rds', name: 'AWS RDS', category: 'devops', path: CUSTOM_PATHS['aws-rds'] },
+  { id: 'aws-dynamodb', name: 'AWS DynamoDB', category: 'devops', path: CUSTOM_PATHS['aws-dynamodb'] },
+  { id: 'aws-cloudfront', name: 'AWS CloudFront', category: 'devops', path: CUSTOM_PATHS['aws-cloudfront'] },
+  { id: 'aws-api-gateway', name: 'AWS API Gateway', category: 'devops', path: CUSTOM_PATHS['aws-api-gateway'] },
+  { id: 'aws-iam', name: 'AWS IAM', category: 'devops', path: CUSTOM_PATHS['aws-iam'] },
+  { id: 'aws-ecs', name: 'AWS ECS', category: 'devops', path: CUSTOM_PATHS['aws-ecs'] },
+  { id: 'aws-sqs', name: 'AWS SQS', category: 'devops', path: CUSTOM_PATHS['aws-sqs'] },
+  { id: 'aws-cloudwatch', name: 'AWS CloudWatch', category: 'devops', path: CUSTOM_PATHS['aws-cloudwatch'] },
 
   // ── Tools ──
   { id: 'git', name: 'Git', category: 'tool', path: siGit.path },
