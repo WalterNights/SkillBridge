@@ -24,12 +24,13 @@ import {
   siStackoverflow, siCodesandbox, siNpm,
   // Social
   siX, siInstagram, siFacebook, siYoutube, siTiktok, siThreads,
-  siBluesky, siMastodon, siReddit, siDiscord, siTwitch,
+  siBluesky, siMastodon, siReddit, siDiscord, siTwitch, siWhatsapp,
   // Creative
   siDribbble, siBehance, siFigma, siNotion, siSubstack,
   // Languages
   siTypescript, siJavascript, siPython, siRust, siGo, siPhp, siRuby,
   siKotlin, siSwift, siDart, siElixir, siCplusplus, siLua, siR, siOpenjdk,
+  siHtml5, siCss,
   // Frontend frameworks
   siReact, siNextdotjs, siVuedotjs, siAngular, siSvelte, siSolid,
   siAstro, siRemix, siNuxt, siEmberdotjs,
@@ -46,6 +47,8 @@ import {
   siGit, siTailwindcss, siSass, siWebpack, siVite, siJira,
   // Testing
   siJest, siCypress, siVitest, siSelenium,
+  // Automation / workflow
+  siN8n,
   // AI / ML — frameworks
   siTensorflow, siPytorch, siHuggingface, siScikitlearn,
   // AI — LLM providers & tools (simple-icons DOES ship these)
@@ -202,6 +205,9 @@ export const SOCIAL_ICONS: readonly PortfolioIcon[] = [
   { id: 'reddit', name: 'Reddit', category: 'social', path: siReddit.path, hint: 'https://reddit.com/user/tu-usuario' },
   { id: 'discord', name: 'Discord', category: 'social', path: siDiscord.path, hint: 'https://discord.gg/tu-invite' },
   { id: 'twitch', name: 'Twitch', category: 'social', path: siTwitch.path, hint: 'https://twitch.tv/tu-canal' },
+  // WhatsApp — acepta URL con numero o con nickname nuevo de Meta.
+  // El input del editor es texto libre, asi que cualquier variante valida.
+  { id: 'whatsapp', name: 'WhatsApp', category: 'social', path: siWhatsapp.path, hint: 'https://wa.me/1234567890 o /@tu-usuario' },
 
   // ── Creative / Publishing ──
   { id: 'dribbble', name: 'Dribbble', category: 'creative', path: siDribbble.path, hint: 'https://dribbble.com/tu-usuario' },
@@ -241,6 +247,13 @@ export const TECH_ICONS: readonly PortfolioIcon[] = [
   { id: 'lua', name: 'Lua', category: 'language', path: siLua.path },
   { id: 'r', name: 'R', category: 'language', path: siR.path },
   { id: 'dotnet', name: '.NET / C#', category: 'language', path: siDotnet.path },
+  // Web basics — con variantes de alias comunes (html5/css3 caen al
+  // mismo icon que html/css para tolerar como el user escriba el stack).
+  { id: 'html', name: 'HTML', category: 'language', path: siHtml5.path },
+  { id: 'html5', name: 'HTML5', category: 'language', path: siHtml5.path },
+  { id: 'css', name: 'CSS', category: 'language', path: siCss.path },
+  { id: 'css3', name: 'CSS3', category: 'language', path: siCss.path },
+  { id: 'js', name: 'JS', category: 'language', path: siJavascript.path },
 
   // ── Frontend frameworks ──
   { id: 'react', name: 'React', category: 'framework', path: siReact.path },
@@ -289,6 +302,7 @@ export const TECH_ICONS: readonly PortfolioIcon[] = [
   { id: 'cloudflare', name: 'Cloudflare', category: 'devops', path: siCloudflare.path },
   { id: 'github-actions', name: 'GitHub Actions', category: 'devops', path: siGithubactions.path },
   { id: 'ansible', name: 'Ansible', category: 'devops', path: siAnsible.path },
+  { id: 'n8n', name: 'n8n', category: 'devops', path: siN8n.path },
 
   // ── AWS y servicios ──
   // Removidos de simple-icons por trademark. Custom paths inline en
