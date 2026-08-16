@@ -129,6 +129,60 @@
   }
 }
 
+/* ---------- Tech chips ---------- */
+.pf-tech {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  &__label {
+    margin: 0;
+    font-family: var(--pf-font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--pf-text-mute);
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: rgba(232, 229, 221, 0.04);
+    border: 1px solid var(--pf-line-strong);
+    color: var(--pf-text-dim);
+    font-family: var(--pf-font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.03em;
+    transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease;
+
+    &:hover {
+      color: var(--pf-accent);
+      border-color: rgba(249, 115, 22, 0.35);
+      background: var(--pf-accent-soft);
+    }
+
+    pf-icon {
+      opacity: 0.85;
+    }
+  }
+
+  &__name {
+    line-height: 1;
+  }
+}
+
 /* ---------- Footer del sidebar ---------- */
 .pf-sidebar__footer {
   margin-top: auto;

@@ -341,6 +341,14 @@ PASSWORD_RESET_TIMEOUT = 600  # 10 min
 GEMINI_API_KEY = config("GEMINI_API_KEY", default="")
 GEMINI_MODEL = config("GEMINI_MODEL", default="gemini-2.5-flash")
 
+# ----- GitHub API (portfolio) -----
+# Personal Access Token con scope `read:user`. Cuando está seteado, el
+# endpoint del portafolio consulta el GraphQL oficial (contribuciones
+# reales, incluye repos privados si el user tiene "Include private
+# contributions on my profile" habilitado). Sin token, cae al proxy
+# público `github-contributions-api.jogruber.de` que solo ve públicas.
+GITHUB_TOKEN = config("GITHUB_TOKEN", default="")
+
 
 # ----- Cupos de uso de AI (tier free) -----
 # Límites lifetime por cuenta para features que llaman al LLM. Al

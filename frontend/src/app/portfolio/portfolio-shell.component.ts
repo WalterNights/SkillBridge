@@ -7,7 +7,6 @@ import {
   OnInit,
   effect,
   inject,
-  viewChild,
 } from '@angular/core';
 import { Title, Meta } from '@angular/platform-browser';
 
@@ -54,11 +53,7 @@ export class PortfolioShellComponent implements OnInit, OnDestroy {
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
   private readonly zone = inject(NgZone);
-
-  /** Referencia al div del cursor-glow. El CSS lee las CSS vars
-   *  --pf-mx / --pf-my desde este elemento para posicionar el
-   *  radial-gradient donde está el mouse. */
-  private readonly cursorGlow = viewChild<ElementRef<HTMLDivElement>>('cursorGlow');
+  private readonly host = inject(ElementRef<HTMLElement>);
 
   private mouseMoveHandler: ((e: MouseEvent) => void) | null = null;
 
@@ -105,9 +100,13 @@ export class PortfolioShellComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Cursor glow: escucha `mousemove` a nivel window y actualiza dos
-   *  CSS vars sobre el elemento `.portfolio-cursor-glow`. El CSS hace
-   *  el resto — `radial-gradient(600px at var(--pf-mx) var(--pf-my))`.
+  /** Cursor tracking: escucha `mousemove` a nivel window y actualiza
+   *  dos CSS vars (`--pf-mx`, `--pf-my`) sobre el HOST del componente.
+   *  El `.portfolio-cursor-glow` las lee para posicionar su radial-gradient
+   *  detrás del cursor. Las vars viven en el host (no en el elemento
+   *  glow) por si en el futuro sumamos más efectos que las necesiten
+   *  como siblings — CSS vars no se heredan entre hermanos, pero sí
+   *  desde el ancestro común.
    *
    *  Corre FUERA de la Angular zone: mutamos `.style.setProperty` que
    *  no dispara change detection, y así 60fps de mousemove no le
@@ -116,12 +115,11 @@ export class PortfolioShellComponent implements OnInit, OnDestroy {
     if (typeof window === 'undefined') return;
     if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
+    const hostEl = this.host.nativeElement;
     this.zone.runOutsideAngular(() => {
       this.mouseMoveHandler = (e: MouseEvent) => {
-        const el = this.cursorGlow()?.nativeElement;
-        if (!el) return;
-        el.style.setProperty('--pf-mx', `${e.clientX}px`);
-        el.style.setProperty('--pf-my', `${e.clientY}px`);
+        hostEl.style.setProperty('--pf-mx', `${e.clientX}px`);
+        hostEl.style.setProperty('--pf-my', `${e.clientY}px`);
       };
       window.addEventListener('mousemove', this.mouseMoveHandler, { passive: true });
     });

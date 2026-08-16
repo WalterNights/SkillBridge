@@ -12,11 +12,16 @@
       "projects": "Projects",
       "contact": "Contact"
     },
-    "socials": {
-      "github": "GitHub",
-      "linkedin": "LinkedIn",
-      "email": "Email"
-    }
+    "techLabel": "Stack",
+    "socials": [
+      { "id": "github", "url": "https://github.com/WalterNights" },
+      { "id": "linkedin", "url": "https://www.linkedin.com/in/walternightsdev/" },
+      { "id": "email", "url": "mailto:walter@geeks5g.com" }
+    ],
+    "tech": [
+      "python", "django", "fastapi", "typescript", "angular", "react",
+      "nextjs", "nestjs", "postgresql", "redis", "docker", "gcp"
+    ]
   },
   "hero": {
     "eyebrow": "WALTER NIGHTS ─ FULLSTACK ENGINEER",
@@ -142,6 +147,17 @@
         "repo": ""
       }
     ]
+  },
+  "github": {
+    "eyebrow": "ACTIVITY",
+    "title": "Consistency on GitHub",
+    "loading": "Loading activity…",
+    "contributionsInLastYear": "contributions in the last year as",
+    "less": "Less",
+    "more": "More",
+    "tooltip": "{count} contributions on {date}",
+    "tooltipNone": "No contributions on {date}",
+    "dow": { "mon": "Mon", "wed": "Wed", "fri": "Fri" }
   },
   "contact": {
     "eyebrow": "CONTACT",

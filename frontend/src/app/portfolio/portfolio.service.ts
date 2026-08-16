@@ -36,6 +36,18 @@ export interface PortfolioUpdatePayload {
   content_en: Record<string, unknown>;
 }
 
+export interface GithubContribution {
+  date: string;    // ISO date "2026-01-01"
+  count: number;
+  level: 0 | 1 | 2 | 3 | 4;
+}
+
+export interface GithubContributionsPayload {
+  username: string;
+  total: Record<string, number>;  // { "lastYear": 1200, "2026": ..., ... }
+  contributions: GithubContribution[];
+}
+
 /**
  * Cliente del backend `portfolio`. Endpoints:
  *   - `GET  /api/portfolio/<slug>/`        público
@@ -78,5 +90,11 @@ export class PortfolioService {
 
   deleteImage(slug: string, imageId: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${slug}/images/${imageId}/`);
+  }
+
+  getGithubContributions(slug: string): Observable<GithubContributionsPayload> {
+    return this.http.get<GithubContributionsPayload>(
+      `${this.base}/${slug}/github-contributions/`,
+    );
   }
 }

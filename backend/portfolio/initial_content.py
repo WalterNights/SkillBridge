@@ -31,11 +31,16 @@ WALTERNIGHTSDEV_ES: dict = {
             "projects": "Proyectos",
             "contact": "Contacto",
         },
-        "socials": {
-            "github": "GitHub",
-            "linkedin": "LinkedIn",
-            "email": "Email",
-        },
+        "techLabel": "Stack",
+        "socials": [
+            {"id": "github", "url": "https://github.com/WalterNights"},
+            {"id": "linkedin", "url": "https://www.linkedin.com/in/walternightsdev/"},
+            {"id": "email", "url": "mailto:walter@geeks5g.com"},
+        ],
+        "tech": [
+            "python", "django", "fastapi", "typescript", "angular", "react",
+            "nextjs", "nestjs", "postgresql", "redis", "docker", "gcp",
+        ],
     },
     "hero": {
         "eyebrow": "WALTER NIGHTS ─ FULLSTACK ENGINEER",
@@ -252,7 +257,16 @@ WALTERNIGHTSDEV_EN: dict = {
             "projects": "Projects",
             "contact": "Contact",
         },
-        "socials": {"github": "GitHub", "linkedin": "LinkedIn", "email": "Email"},
+        "techLabel": "Stack",
+        "socials": [
+            {"id": "github", "url": "https://github.com/WalterNights"},
+            {"id": "linkedin", "url": "https://www.linkedin.com/in/walternightsdev/"},
+            {"id": "email", "url": "mailto:walter@geeks5g.com"},
+        ],
+        "tech": [
+            "python", "django", "fastapi", "typescript", "angular", "react",
+            "nextjs", "nestjs", "postgresql", "redis", "docker", "gcp",
+        ],
     },
     "hero": {
         "eyebrow": "WALTER NIGHTS ─ FULLSTACK ENGINEER",

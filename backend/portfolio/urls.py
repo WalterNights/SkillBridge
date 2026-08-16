@@ -7,6 +7,7 @@ from django.urls import path
 
 from portfolio.views import (
     PortfolioAdminView,
+    PortfolioGithubContributionsView,
     PortfolioImageDeleteView,
     PortfolioImageListCreateView,
     PortfolioPublicView,
@@ -24,5 +25,10 @@ urlpatterns = [
         "<slug:slug>/images/<int:pk>/",
         PortfolioImageDeleteView.as_view(),
         name="portfolio-image-detail",
+    ),
+    path(
+        "<slug:slug>/github-contributions/",
+        PortfolioGithubContributionsView.as_view(),
+        name="portfolio-github-contributions",
     ),
 ]

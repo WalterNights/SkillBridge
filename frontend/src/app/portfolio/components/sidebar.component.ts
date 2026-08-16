@@ -2,32 +2,43 @@ import {
   AfterViewInit,
   Component,
   OnDestroy,
+  computed,
   inject,
   signal,
 } from '@angular/core';
 
 import { PortfolioI18nService } from '../i18n/portfolio-i18n.service';
+import { findIconById } from '../data/portfolio-icons.data';
+import { PortfolioIconComponent } from './portfolio-icon.component';
 
 interface NavItem {
   id: 'about' | 'experience' | 'projects' | 'contact';
   labelKey: string;
 }
 
+interface SocialLink {
+  id: string;
+  url: string;
+}
+
 /**
  * Sidebar sticky del portafolio.
  *
- * Estructura: identidad (nombre + rol + tagline) arriba, nav-anchor al
- * medio con la línea que crece al item activo (estilo Brittany Chiang),
- * socials + toggle de idioma abajo.
+ * Estructura: identidad → nav-anchor con línea que crece (estilo Brittany
+ * Chiang) → tech chips → socials → lang toggle.
  *
- * El item activo se detecta con IntersectionObserver sobre las <section>
- * del <main> — cuando el centro del viewport toca una sección, ese item
- * enciende la línea. No usamos scroll listener (mucho más caro).
+ * Socials y tech vienen del JSON del backend (editable via editor).
+ * Cada uno se renderiza con `<pf-icon>` a partir del catálogo curado
+ * en `portfolio-icons.data.ts`. Si un id no existe en el catálogo, el
+ * icono no se pinta (fail-silent) — mejor que un placeholder feo.
+ *
+ * La detección de sección activa usa IntersectionObserver — más barato
+ * que un scroll listener y con narrow-ing automático de tipos.
  */
 @Component({
   selector: 'app-portfolio-sidebar',
   standalone: true,
-  imports: [],
+  imports: [PortfolioIconComponent],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
 })
@@ -43,6 +54,32 @@ export class PortfolioSidebarComponent implements AfterViewInit, OnDestroy {
 
   readonly activeId = signal<NavItem['id']>('about');
 
+  /** Lista de socials del JSON — array de {id, url}. Filtra los ids
+   *  desconocidos por defensa (json corrupto o icono removido). */
+  readonly socials = computed<SocialLink[]>(() => {
+    const raw = this.i18n.raw<SocialLink[]>('sidebar.socials');
+    if (!Array.isArray(raw)) return [];
+    return raw.filter(
+      (link) => link && typeof link.id === 'string' && typeof link.url === 'string' && link.url,
+    );
+  });
+
+  /** Stack tech — array de icon ids. Filtra unknowns. */
+  readonly tech = computed<{ id: string; name: string }[]>(() => {
+    const raw = this.i18n.raw<string[]>('sidebar.tech');
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((id) => {
+        const def = findIconById(id);
+        return def ? { id, name: def.name } : null;
+      })
+      .filter((x): x is { id: string; name: string } => x !== null);
+  });
+
+  socialName(id: string): string {
+    return findIconById(id)?.name ?? id;
+  }
+
   private observer?: IntersectionObserver;
 
   ngAfterViewInit(): void {
@@ -52,9 +89,6 @@ export class PortfolioSidebarComponent implements AfterViewInit, OnDestroy {
 
     if (sections.length === 0) return;
 
-    // rootMargin: activa cuando la sección está en el tercio central del
-    // viewport. Threshold escalonado da mejor granularidad para elegir
-    // la sección con mayor visibilidad cuando dos están en pantalla.
     this.observer = new IntersectionObserver(
       (entries) => {
         const visible = entries

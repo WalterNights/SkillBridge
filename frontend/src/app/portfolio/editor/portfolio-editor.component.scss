@@ -230,6 +230,10 @@
   min-width: 0;
   flex: 1;
 
+  &--wide {
+    flex: 2;
+  }
+
   input,
   textarea,
   select {
@@ -372,4 +376,155 @@
     gap: 8px;
     align-items: center;
   }
+}
+
+/* ---------- Socials rows (dropdown picker + URL) ---------- */
+.pfe-social-row {
+  display: grid;
+  grid-template-columns: auto 200px 1fr auto;
+  gap: 12px;
+  align-items: end;
+  padding: 12px;
+  background: #161a24;
+  border: 1px solid rgba(232, 229, 221, 0.08);
+  border-radius: 12px;
+
+  @media (max-width: 720px) {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  &__preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #0b0e14;
+    color: #f97316;
+    border: 1px solid rgba(232, 229, 221, 0.08);
+  }
+}
+
+.pfe-empty {
+  margin: 8px 0 0;
+  padding: 12px;
+  background: rgba(232, 229, 221, 0.03);
+  border: 1px dashed rgba(232, 229, 221, 0.1);
+  border-radius: 8px;
+  color: #8b8a85;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ---------- Tech autocomplete + chips ---------- */
+.pfe-tech-picker {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.pfe-hint {
+  margin: 8px 0 6px;
+  font-size: 11px;
+  color: #8b8a85;
+  letter-spacing: 0.02em;
+}
+
+.pfe-tech-chips {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 6px 5px 6px;
+    background: rgba(249, 115, 22, 0.1);
+    border: 1px solid rgba(249, 115, 22, 0.28);
+    color: #fbab74;
+    border-radius: 999px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    /* Transición sutil para el reflow cuando otro chip se acomoda. */
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+                background-color 160ms ease,
+                border-color 160ms ease;
+
+    pf-icon {
+      opacity: 0.85;
+    }
+
+    &:hover .pfe-tech-chips__grip {
+      opacity: 0.85;
+    }
+  }
+
+  &__grip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 18px;
+    color: currentColor;
+    opacity: 0.35;
+    cursor: grab;
+    transition: opacity 160ms ease;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  &__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: currentColor;
+    opacity: 0.6;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+
+    &:hover { opacity: 1; }
+  }
+}
+
+/* ── CDK DragDrop feedback ────────────────────────────────────────
+ * .cdk-drag-preview  → clone que sigue al mouse mientras arrastrás
+ * .cdk-drag-placeholder → hueco original con opacidad reducida
+ * .cdk-drop-list-dragging → aplica a hermanos que se van moviendo
+ *   para hacer lugar (usa transition ya definida arriba). */
+
+.cdk-drag-preview {
+  /* Ya viene con estilos inline heredados del chip original — le
+   * agregamos un box-shadow para "levantar" del canvas y remover
+   * la transición que dejaría el clone lagueando detrás del cursor. */
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(249, 115, 22, 0.5);
+  transition: none !important;
+  /* El cursor durante el drag activo. */
+  cursor: grabbing;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.25;
+  /* Filter invert-ish para que el hueco se vea "vacío" (sin naranja). */
+  filter: grayscale(1);
+}
+
+.cdk-drag-animating {
+  /* Animación de "snap back" si el user suelta afuera. */
+  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
 }

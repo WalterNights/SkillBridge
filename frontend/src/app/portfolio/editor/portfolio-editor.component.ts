@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 import {
   FormArray,
   FormBuilder,
@@ -16,6 +17,14 @@ import {
   PortfolioService,
   PortfolioAdminPayload,
 } from '../portfolio.service';
+import {
+  SOCIAL_ICONS,
+  TECH_ICONS,
+  findIconById,
+  searchTechIcons,
+  PortfolioIcon,
+} from '../data/portfolio-icons.data';
+import { PortfolioIconComponent } from '../components/portfolio-icon.component';
 
 const SLUG = 'walternightsdev';
 
@@ -58,7 +67,13 @@ const TABS: readonly { id: SectionTab; label: string }[] = [
 @Component({
   selector: 'app-portfolio-editor',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    PortfolioIconComponent,
+    CdkDropList,
+    CdkDrag,
+  ],
   templateUrl: './portfolio-editor.component.html',
   styleUrl: './portfolio-editor.component.scss',
 })
@@ -82,6 +97,19 @@ export class PortfolioEditorComponent implements OnInit {
   formEs: FormGroup = this.buildForm();
   formEn: FormGroup = this.buildForm();
 
+  // ── Icon pickers ──────────────────────────────────────────────────
+  /** Socials agrupados por categoría — para <optgroup> del dropdown. */
+  readonly socialGroups: readonly { label: string; icons: readonly PortfolioIcon[] }[] = [
+    { label: 'Dev platforms', icons: SOCIAL_ICONS.filter((i) => i.category === 'developer') },
+    { label: 'Redes sociales', icons: SOCIAL_ICONS.filter((i) => i.category === 'social') },
+    { label: 'Creative / Publishing', icons: SOCIAL_ICONS.filter((i) => i.category === 'creative') },
+    { label: 'Contacto', icons: SOCIAL_ICONS.filter((i) => i.category === 'contact') },
+  ];
+
+  /** Query del autocomplete de tech + resultados filtrados. */
+  readonly techQuery = signal<string>('');
+  readonly techSuggestions = computed(() => searchTechIcons(this.techQuery()));
+
   ngOnInit(): void {
     this.titleService.setTitle('Editar portafolio — SkilTak');
     this.load();
@@ -99,17 +127,18 @@ export class PortfolioEditorComponent implements OnInit {
       sidebar: this.fb.group({
         role: [''],
         tagline: [''],
+        techLabel: [''],
         nav: this.fb.group({
           about: [''],
           experience: [''],
           projects: [''],
           contact: [''],
         }),
-        socials: this.fb.group({
-          github: [''],
-          linkedin: [''],
-          email: [''],
-        }),
+        // socials + tech: NO traducibles. Los editamos SOLO en formEs
+        // y en save() se copian al content_en. Formas paralelas serían
+        // desperdicio + fuente de bugs (arrays desincronizados).
+        socials: this.fb.array<FormGroup>([]),
+        tech: this.fb.array<FormControl<string>>([]),
       }),
       hero: this.fb.group({
         eyebrow: [''],
@@ -173,6 +202,13 @@ export class PortfolioEditorComponent implements OnInit {
     });
   }
 
+  private buildSocialItem(id: string, url: string): FormGroup {
+    return this.fb.group({
+      id: [id, Validators.required],
+      url: [url],
+    });
+  }
+
   private buildProjectItem(seed: Record<string, unknown> = {}): FormGroup {
     return this.fb.group({
       id: [seed['id'] ?? '', Validators.required],
@@ -216,6 +252,23 @@ export class PortfolioEditorComponent implements OnInit {
     const paragraphsArr = (form.get('about.paragraphs') as FormArray);
     paragraphsArr.clear();
     paragraphs.forEach((p) => paragraphsArr.push(new FormControl(p, { nonNullable: true })));
+
+    // Socials — solo en formEs (no traducible). En formEn los arrays
+    // quedan vacíos y se llenan desde ES en save().
+    if (form === this.formEs) {
+      const sidebar = (content['sidebar'] as Record<string, unknown>) ?? {};
+      const socialsData = (sidebar['socials'] as { id: string; url: string }[]) ?? [];
+      const socialsArr = form.get('sidebar.socials') as FormArray;
+      socialsArr.clear();
+      socialsData.forEach((s) =>
+        socialsArr.push(this.buildSocialItem(s.id ?? '', s.url ?? '')),
+      );
+
+      const techData = (sidebar['tech'] as string[]) ?? [];
+      const techArr = form.get('sidebar.tech') as FormArray;
+      techArr.clear();
+      techData.forEach((t) => techArr.push(new FormControl(t, { nonNullable: true })));
+    }
 
     const exp = (content['experience'] as Record<string, unknown>) ?? {};
     const expItems = (exp['items'] as Record<string, unknown>[]) ?? [];
@@ -304,6 +357,89 @@ export class PortfolioEditorComponent implements OnInit {
   removeProject(i: number): void {
     this.projectItemsEs.removeAt(i);
     this.projectItemsEn.removeAt(i);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Socials + Tech (viven solo en formEs, se sincronizan a EN al save)
+  // ═══════════════════════════════════════════════════════════════════
+
+  get socialsArr(): FormArray {
+    return this.formEs.get('sidebar.socials') as FormArray;
+  }
+
+  get techArr(): FormArray {
+    return this.formEs.get('sidebar.tech') as FormArray;
+  }
+
+  socialItem(i: number): FormGroup {
+    return this.socialsArr.at(i) as FormGroup;
+  }
+
+  techCtrl(i: number): FormControl {
+    return this.techArr.at(i) as FormControl;
+  }
+
+  addSocial(): void {
+    this.socialsArr.push(this.buildSocialItem('github', ''));
+  }
+
+  removeSocial(i: number): void {
+    this.socialsArr.removeAt(i);
+  }
+
+  /** Actualiza el placeholder de URL según el icono seleccionado. */
+  hintForSocial(id: string): string {
+    return findIconById(id)?.hint ?? 'https://';
+  }
+
+  /** Agrega un tech por id, si existe en el catálogo y no está repetido. */
+  addTech(id: string): void {
+    const trimmed = id.trim().toLowerCase();
+    if (!trimmed) return;
+    const def = findIconById(trimmed);
+    if (!def) {
+      this.errorMsg.set(`No hay icono para "${trimmed}". Elegí uno de la lista.`);
+      setTimeout(() => this.errorMsg.set(''), 3000);
+      return;
+    }
+    // Evitar duplicados.
+    const existing = this.techArr.controls.map((c) => c.value as string);
+    if (existing.includes(trimmed)) return;
+    this.techArr.push(new FormControl(trimmed, { nonNullable: true }));
+    this.techQuery.set('');
+  }
+
+  removeTech(i: number): void {
+    this.techArr.removeAt(i);
+  }
+
+  /** Reordena el FormArray al soltar el chip en otra posición.
+   *  Movemos el CONTROL (no el valor) — preserva la referencia y evita
+   *  disparar valueChanges innecesarios en cada chip afectado. */
+  onTechDrop(event: CdkDragDrop<unknown>): void {
+    if (event.previousIndex === event.currentIndex) return;
+    const ctrl = this.techArr.at(event.previousIndex);
+    this.techArr.removeAt(event.previousIndex, { emitEvent: false });
+    this.techArr.insert(event.currentIndex, ctrl, { emitEvent: false });
+    // Un solo emit al final: notifica que el array cambió sin generar
+    // N eventos por chip.
+    this.techArr.updateValueAndValidity();
+  }
+
+  onTechInputChange(value: string): void {
+    this.techQuery.set(value);
+  }
+
+  /** Cuando el user aprieta Enter en el input, agrega el primer match. */
+  onTechInputEnter(event: Event): void {
+    event.preventDefault();
+    const first = this.techSuggestions()[0];
+    if (first) this.addTech(first.id);
+  }
+
+  /** Nombre de un tech id — para mostrar en los chips. */
+  techName(id: string): string {
+    return findIconById(id)?.name ?? id;
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -411,6 +547,13 @@ export class PortfolioEditorComponent implements OnInit {
     src: Record<string, unknown>,
     dst: Record<string, unknown>,
   ): void {
+    // Sidebar socials + tech: copiamos completo de ES → EN (no
+    // traducibles). El editor solo los muestra/edita en ES.
+    const srcSidebar = (src['sidebar'] as Record<string, unknown>) ?? {};
+    const dstSidebar = (dst['sidebar'] as Record<string, unknown>) ?? {};
+    dstSidebar['socials'] = srcSidebar['socials'] ?? [];
+    dstSidebar['tech'] = srcSidebar['tech'] ?? [];
+
     const srcExp = ((src['experience'] as Record<string, unknown>)?.['items'] as Record<string, unknown>[]) ?? [];
     const dstExpParent = (dst['experience'] as Record<string, unknown>) ?? {};
     const dstExp = (dstExpParent['items'] as Record<string, unknown>[]) ?? [];

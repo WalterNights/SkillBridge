@@ -23,6 +23,13 @@ Notas de diseño:
 
 from __future__ import annotations
 
+import logging
+import re
+from urllib.parse import urlparse
+
+import requests
+from django.conf import settings
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.generics import (
     RetrieveUpdateAPIView,
@@ -40,6 +47,116 @@ from portfolio.serializers import (
     PortfolioImageUploadSerializer,
     PortfolioPublicSerializer,
 )
+
+logger = logging.getLogger(__name__)
+
+# Servicio público que scrapea la contribución de un usuario. Fallback
+# cuando GITHUB_TOKEN no está seteado — solo ve contribuciones públicas.
+_GH_CONTRIB_API = "https://github-contributions-api.jogruber.de/v4/{username}"
+# GitHub GraphQL — precisión real, incluye privadas si el token tiene
+# `read:user` y el user tiene "Include private contributions" activo.
+_GH_GRAPHQL_URL = "https://api.github.com/graphql"
+_GH_CACHE_TTL_SECONDS = 3600
+_GH_HTTP_TIMEOUT_SECONDS = 8
+# Validación defensiva del username antes de embed en URL.
+_GH_USERNAME_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$")
+
+_GH_CONTRIB_QUERY = """
+query($login: String!) {
+  user(login: $login) {
+    contributionsCollection {
+      contributionCalendar {
+        totalContributions
+        weeks {
+          contributionDays {
+            date
+            contributionCount
+            contributionLevel
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+# GraphQL devuelve el nivel como enum string; el frontend espera 0-4.
+_GH_LEVEL_MAP = {
+    "NONE": 0,
+    "FIRST_QUARTILE": 1,
+    "SECOND_QUARTILE": 2,
+    "THIRD_QUARTILE": 3,
+    "FOURTH_QUARTILE": 4,
+}
+
+
+def _fetch_github_via_graphql(username: str, token: str) -> dict:
+    """Consulta GraphQL oficial. Incluye contribuciones privadas si el
+    token tiene scope `read:user` y el user activó "Include private
+    contributions on my profile".
+
+    Raise `requests.RequestException` o `ValueError` en cualquier error;
+    la view los captura y responde 502.
+    """
+    resp = requests.post(
+        _GH_GRAPHQL_URL,
+        json={"query": _GH_CONTRIB_QUERY, "variables": {"login": username}},
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "skiltak-portfolio",
+        },
+        timeout=_GH_HTTP_TIMEOUT_SECONDS,
+    )
+    resp.raise_for_status()
+    body = resp.json()
+
+    # GraphQL puede devolver 200 con errores en el body — hay que chequear.
+    if body.get("errors"):
+        raise ValueError(f"GitHub GraphQL errors: {body['errors']}")
+
+    user_node = (body.get("data") or {}).get("user")
+    if not user_node:
+        raise ValueError(f"GitHub user '{username}' no encontrado")
+
+    calendar = user_node["contributionsCollection"]["contributionCalendar"]
+    total = calendar["totalContributions"]
+
+    contributions = []
+    for week in calendar["weeks"]:
+        for day in week["contributionDays"]:
+            contributions.append({
+                "date": day["date"],
+                "count": day["contributionCount"],
+                "level": _GH_LEVEL_MAP.get(day["contributionLevel"], 0),
+            })
+
+    return {
+        "username": username,
+        "total": {"lastYear": total},
+        "contributions": contributions,
+    }
+
+
+def _fetch_github_via_jogruber(username: str) -> dict:
+    """Fallback público: consulta el proxy jogruber. Solo ve contribuciones
+    en repos públicos — el número puede ser menor al que muestra GitHub
+    en el profile si el user tiene contribuciones privadas.
+    """
+    resp = requests.get(
+        _GH_CONTRIB_API.format(username=username),
+        params={"y": "last"},
+        timeout=_GH_HTTP_TIMEOUT_SECONDS,
+        headers={"Accept": "application/json"},
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    return {
+        "username": username,
+        "total": data.get("total", {}),
+        "contributions": data.get("contributions", []),
+    }
 
 
 class PortfolioPublicView(APIView):
@@ -111,6 +228,104 @@ class PortfolioImageListCreateView(ListCreateAPIView):
         # Respondemos con el serializer de lectura (incluye URL absoluta).
         out = PortfolioImageSerializer(image, context={"request": request})
         return Response(out.data, status=status.HTTP_201_CREATED)
+
+
+def _extract_github_username(sidebar: dict) -> str | None:
+    """Deriva el username de GitHub del social link con id='github'.
+
+    Acepta URLs tipo `https://github.com/foo`, `https://github.com/foo/`,
+    `https://github.com/foo/repo`, o solo `foo`. Devuelve None si no
+    encuentra un valor válido — la view responde 404 en ese caso.
+    """
+    socials = sidebar.get("socials") if isinstance(sidebar, dict) else None
+    if not isinstance(socials, list):
+        return None
+
+    for item in socials:
+        if not isinstance(item, dict) or item.get("id") != "github":
+            continue
+        raw = (item.get("url") or "").strip()
+        if not raw:
+            return None
+        # Aceptamos URL completa o solo username.
+        candidate = raw
+        if "://" in raw or raw.startswith("//") or raw.startswith("github.com"):
+            parsed = urlparse(raw if "://" in raw else f"https://{raw}")
+            # Primera parte del path — descartamos /repo, /?tab=..., etc.
+            candidate = parsed.path.strip("/").split("/", 1)[0]
+        if _GH_USERNAME_RE.match(candidate):
+            return candidate
+        return None
+    return None
+
+
+class PortfolioGithubContributionsView(APIView):
+    """`GET /api/portfolio/<slug>/github-contributions/`
+
+    Público (sin auth). Deriva el username del social link `id='github'`
+    del portfolio, consulta el servicio externo, cachea 1h. Si el social
+    no existe o el servicio falla, devuelve 404 — el frontend oculta
+    la sección graceful.
+
+    El shape del response matchea lo que devuelve jogruber:
+    { total: {"lastYear": int}, contributions: [{date, count, level}, ...] }
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, slug):
+        try:
+            portfolio = Portfolio.objects.get(slug=slug)
+        except Portfolio.DoesNotExist:
+            return Response(
+                {"detail": "Portafolio no encontrado."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        sidebar = portfolio.content.get("sidebar") if isinstance(portfolio.content, dict) else None
+        username = _extract_github_username(sidebar or {})
+        if not username:
+            return Response(
+                {"detail": "El portafolio no tiene un link de GitHub configurado."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Cache key incluye la fuente — si el admin agrega el GITHUB_TOKEN
+        # después de un fetch por jogruber, no devolvemos el conteo bajo
+        # cacheado, forzamos refresh via GraphQL.
+        token = getattr(settings, "GITHUB_TOKEN", "") or ""
+        source = "graphql" if token else "jogruber"
+        cache_key = f"portfolio:github-contrib:{source}:{username}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        try:
+            if token:
+                normalized = _fetch_github_via_graphql(username, token)
+            else:
+                normalized = _fetch_github_via_jogruber(username)
+        except requests.RequestException as exc:
+            logger.warning(
+                "portfolio: fallo GitHub contributions [%s] para %s: %s",
+                source, username, exc,
+            )
+            return Response(
+                {"detail": "No se pudo cargar la contribución de GitHub."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except ValueError as exc:
+            logger.warning(
+                "portfolio: respuesta inválida de GitHub [%s] para %s: %s",
+                source, username, exc,
+            )
+            return Response(
+                {"detail": "Respuesta inválida del servicio externo."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        cache.set(cache_key, normalized, timeout=_GH_CACHE_TTL_SECONDS)
+        return Response(normalized)
 
 
 class PortfolioImageDeleteView(DestroyAPIView):

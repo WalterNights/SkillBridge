@@ -13,8 +13,10 @@ Cubre:
 from __future__ import annotations
 
 import io
+from unittest.mock import patch
 
 import pytest
+import requests
 from PIL import Image
 
 from portfolio.models import Portfolio, PortfolioImage
@@ -198,6 +200,334 @@ class TestPortfolioImages:
 # ═════════════════════════════════════════════════════════════════════
 # Seed data migration
 # ═════════════════════════════════════════════════════════════════════
+
+# ═════════════════════════════════════════════════════════════════════
+# GitHub contributions
+# ═════════════════════════════════════════════════════════════════════
+
+@pytest.fixture
+def portfolio_with_github(admin_user):
+    """Portfolio con un social link de GitHub válido."""
+    return Portfolio.objects.create(
+        slug="withgh",
+        owner=admin_user,
+        content={
+            "sidebar": {
+                "socials": [{"id": "github", "url": "https://github.com/octocat"}],
+            },
+        },
+        content_en={},
+    )
+
+
+@pytest.fixture
+def portfolio_no_github(admin_user):
+    """Portfolio sin el social link de GitHub."""
+    return Portfolio.objects.create(
+        slug="nogh",
+        owner=admin_user,
+        content={"sidebar": {"socials": [{"id": "linkedin", "url": "https://x.com/y"}]}},
+        content_en={},
+    )
+
+
+@pytest.fixture(autouse=True)
+def _clear_django_cache():
+    """El locmem cache es compartido entre tests dentro del proceso —
+    limpiamos siempre para no arrastrar entries de tests previos."""
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
+@pytest.mark.django_db
+class TestGithubContributions:
+    """Tests del path jogruber (fallback público sin token).
+
+    Los tests explícitos de GraphQL viven en TestGithubGraphQL abajo —
+    settings.GITHUB_TOKEN se seta ahí.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _no_github_token(self, settings):
+        """Forzamos GITHUB_TOKEN vacío para que la view tome el path
+        jogruber. Sin esto, un `.env` local con el token real hace que
+        la view use GraphQL y los mocks de `requests.get` no apliquen."""
+        settings.GITHUB_TOKEN = ""
+
+    def _mock_response(self, monkeypatch, payload=None, exc=None):
+        """Mock de requests.get para el path jogruber."""
+        from portfolio import views as pf_views
+
+        def fake_get(*args, **kwargs):
+            if exc is not None:
+                raise exc
+            m = type("Resp", (), {})()
+            m.raise_for_status = lambda: None
+            m.json = lambda: payload
+            return m
+
+        monkeypatch.setattr(pf_views.requests, "get", fake_get)
+
+    def test_returns_normalized_shape_on_success(
+        self, api_client, portfolio_with_github, monkeypatch
+    ):
+        self._mock_response(
+            monkeypatch,
+            payload={
+                "total": {"lastYear": 1200},
+                "contributions": [{"date": "2026-01-01", "count": 3, "level": 2}],
+            },
+        )
+        r = api_client.get(f"/api/portfolio/{portfolio_with_github.slug}/github-contributions/")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["username"] == "octocat"
+        assert body["total"]["lastYear"] == 1200
+        assert body["contributions"][0]["date"] == "2026-01-01"
+
+    def test_returns_404_when_portfolio_has_no_github_link(
+        self, api_client, portfolio_no_github
+    ):
+        r = api_client.get(f"/api/portfolio/{portfolio_no_github.slug}/github-contributions/")
+        assert r.status_code == 404
+
+    def test_returns_404_for_unknown_portfolio(self, api_client):
+        r = api_client.get("/api/portfolio/nope/github-contributions/")
+        assert r.status_code == 404
+
+    def test_returns_502_when_upstream_fails(
+        self, api_client, portfolio_with_github, monkeypatch
+    ):
+        self._mock_response(monkeypatch, exc=requests.RequestException("network down"))
+        r = api_client.get(f"/api/portfolio/{portfolio_with_github.slug}/github-contributions/")
+        assert r.status_code == 502
+
+    def test_extracts_username_from_url_with_trailing_path(
+        self, api_client, admin_user, monkeypatch
+    ):
+        """URL tipo https://github.com/foo/bar debe extraer 'foo'."""
+        p = Portfolio.objects.create(
+            slug="urlpath",
+            owner=admin_user,
+            content={
+                "sidebar": {
+                    "socials": [{"id": "github", "url": "https://github.com/torvalds/linux"}],
+                },
+            },
+            content_en={},
+        )
+        captured = {}
+
+        from portfolio import views as pf_views
+
+        def fake_get(url, *args, **kwargs):
+            captured["url"] = url
+            m = type("Resp", (), {})()
+            m.raise_for_status = lambda: None
+            m.json = lambda: {"total": {}, "contributions": []}
+            return m
+
+        monkeypatch.setattr(pf_views.requests, "get", fake_get)
+        r = api_client.get(f"/api/portfolio/{p.slug}/github-contributions/")
+        assert r.status_code == 200
+        assert "torvalds" in captured["url"]
+        assert "linux" not in captured["url"]
+
+    def test_rejects_invalid_username_gracefully(self, api_client, admin_user):
+        """URL con caracteres no permitidos → 404 sin llamar al servicio."""
+        p = Portfolio.objects.create(
+            slug="badgh",
+            owner=admin_user,
+            content={
+                "sidebar": {
+                    "socials": [{"id": "github", "url": "https://github.com/../../etc/passwd"}],
+                },
+            },
+            content_en={},
+        )
+        r = api_client.get(f"/api/portfolio/{p.slug}/github-contributions/")
+        assert r.status_code == 404
+
+    def test_second_call_hits_cache(
+        self, api_client, portfolio_with_github, monkeypatch
+    ):
+        """La primera call pega al servicio externo, la segunda usa cache."""
+        call_count = {"n": 0}
+        from portfolio import views as pf_views
+
+        def fake_get(*args, **kwargs):
+            call_count["n"] += 1
+            m = type("Resp", (), {})()
+            m.raise_for_status = lambda: None
+            m.json = lambda: {"total": {"lastYear": 99}, "contributions": []}
+            return m
+
+        monkeypatch.setattr(pf_views.requests, "get", fake_get)
+        url = f"/api/portfolio/{portfolio_with_github.slug}/github-contributions/"
+        r1 = api_client.get(url)
+        r2 = api_client.get(url)
+        assert r1.status_code == 200
+        assert r2.status_code == 200
+        assert call_count["n"] == 1  # Segunda call usa cache
+
+
+# ═════════════════════════════════════════════════════════════════════
+# GitHub GraphQL path (requiere GITHUB_TOKEN)
+# ═════════════════════════════════════════════════════════════════════
+
+@pytest.mark.django_db
+class TestGithubGraphQL:
+    """Tests del path GraphQL — se activa cuando settings.GITHUB_TOKEN
+    está seteado. Los mismos endpoints devuelven data del GraphQL oficial
+    (que incluye contribuciones privadas si el token tiene scope y el
+    user tiene el flag habilitado).
+    """
+
+    def _mock_post(self, monkeypatch, payload=None, exc=None):
+        """Mock de requests.post — GraphQL usa POST, no GET."""
+        from portfolio import views as pf_views
+
+        captured = {}
+
+        def fake_post(url, *args, **kwargs):
+            captured["url"] = url
+            captured["json"] = kwargs.get("json")
+            captured["headers"] = kwargs.get("headers", {})
+            if exc is not None:
+                raise exc
+            m = type("Resp", (), {})()
+            m.raise_for_status = lambda: None
+            m.json = lambda: payload
+            return m
+
+        monkeypatch.setattr(pf_views.requests, "post", fake_post)
+        return captured
+
+    def _fake_calendar(self, total=1060, first_date="2026-08-16"):
+        """Devuelve un payload GraphQL válido con 1 semana × 7 días."""
+        # 7 días desde first_date con contributionCount y level variados
+        # cubriendo cada nivel del enum.
+        return {
+            "data": {
+                "user": {
+                    "contributionsCollection": {
+                        "contributionCalendar": {
+                            "totalContributions": total,
+                            "weeks": [
+                                {
+                                    "contributionDays": [
+                                        {"date": "2026-08-10", "contributionCount": 0, "contributionLevel": "NONE"},
+                                        {"date": "2026-08-11", "contributionCount": 1, "contributionLevel": "FIRST_QUARTILE"},
+                                        {"date": "2026-08-12", "contributionCount": 5, "contributionLevel": "SECOND_QUARTILE"},
+                                        {"date": "2026-08-13", "contributionCount": 12, "contributionLevel": "THIRD_QUARTILE"},
+                                        {"date": "2026-08-14", "contributionCount": 25, "contributionLevel": "FOURTH_QUARTILE"},
+                                        {"date": "2026-08-15", "contributionCount": 3, "contributionLevel": "SECOND_QUARTILE"},
+                                        {"date": "2026-08-16", "contributionCount": 8, "contributionLevel": "THIRD_QUARTILE"},
+                                    ]
+                                }
+                            ],
+                        }
+                    }
+                }
+            }
+        }
+
+    def test_uses_graphql_when_token_is_set(
+        self, api_client, portfolio_with_github, monkeypatch, settings
+    ):
+        settings.GITHUB_TOKEN = "ghp_faketoken"
+        captured = self._mock_post(monkeypatch, payload=self._fake_calendar(total=1060))
+
+        r = api_client.get(f"/api/portfolio/{portfolio_with_github.slug}/github-contributions/")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["username"] == "octocat"
+        assert body["total"]["lastYear"] == 1060  # ← número real, no el jogruber
+        assert len(body["contributions"]) == 7
+        # Verifica mapping de niveles enum → int.
+        assert body["contributions"][0]["level"] == 0  # NONE
+        assert body["contributions"][4]["level"] == 4  # FOURTH_QUARTILE
+        # URL fue la del GraphQL, no jogruber.
+        assert "api.github.com/graphql" in captured["url"]
+        # Header de Bearer bien inyectado.
+        assert captured["headers"].get("Authorization") == "Bearer ghp_faketoken"
+
+    def test_falls_back_to_jogruber_when_no_token(
+        self, api_client, portfolio_with_github, monkeypatch, settings
+    ):
+        """Sin token, sigue funcionando el path público (backward compat)."""
+        settings.GITHUB_TOKEN = ""
+        from portfolio import views as pf_views
+
+        def fake_get(*args, **kwargs):
+            m = type("Resp", (), {})()
+            m.raise_for_status = lambda: None
+            m.json = lambda: {"total": {"lastYear": 216}, "contributions": []}
+            return m
+
+        monkeypatch.setattr(pf_views.requests, "get", fake_get)
+        r = api_client.get(f"/api/portfolio/{portfolio_with_github.slug}/github-contributions/")
+        assert r.status_code == 200
+        assert r.json()["total"]["lastYear"] == 216
+
+    def test_returns_502_when_graphql_returns_errors(
+        self, api_client, portfolio_with_github, monkeypatch, settings
+    ):
+        """GraphQL puede devolver 200 con errors: [] — hay que detectarlo."""
+        settings.GITHUB_TOKEN = "ghp_faketoken"
+        self._mock_post(
+            monkeypatch,
+            payload={"errors": [{"message": "Bad credentials", "type": "UNAUTHORIZED"}]},
+        )
+        r = api_client.get(f"/api/portfolio/{portfolio_with_github.slug}/github-contributions/")
+        assert r.status_code == 502
+
+    def test_returns_502_when_user_not_found_on_graphql(
+        self, api_client, portfolio_with_github, monkeypatch, settings
+    ):
+        """user: null en la respuesta = usuario inexistente."""
+        settings.GITHUB_TOKEN = "ghp_faketoken"
+        self._mock_post(monkeypatch, payload={"data": {"user": None}})
+        r = api_client.get(f"/api/portfolio/{portfolio_with_github.slug}/github-contributions/")
+        assert r.status_code == 502
+
+    def test_returns_502_when_graphql_network_fails(
+        self, api_client, portfolio_with_github, monkeypatch, settings
+    ):
+        settings.GITHUB_TOKEN = "ghp_faketoken"
+        self._mock_post(monkeypatch, exc=requests.RequestException("dns fail"))
+        r = api_client.get(f"/api/portfolio/{portfolio_with_github.slug}/github-contributions/")
+        assert r.status_code == 502
+
+    def test_cache_key_differs_between_graphql_and_jogruber(
+        self, api_client, portfolio_with_github, monkeypatch, settings
+    ):
+        """Si el admin agrega el token después de que jogruber cacheó,
+        el fetch GraphQL fresco NO debe reusar el cache viejo."""
+        from portfolio import views as pf_views
+
+        # Primera call: sin token, hace get, cachea "jogruber:{user}".
+        settings.GITHUB_TOKEN = ""
+        monkeypatch.setattr(
+            pf_views.requests, "get",
+            lambda *a, **k: type("R", (), {
+                "raise_for_status": lambda self: None,
+                "json": lambda self: {"total": {"lastYear": 216}, "contributions": []},
+            })(),
+        )
+        url = f"/api/portfolio/{portfolio_with_github.slug}/github-contributions/"
+        r1 = api_client.get(url)
+        assert r1.json()["total"]["lastYear"] == 216
+
+        # Segunda call: con token, tiene que hacer POST fresco y devolver 1060.
+        settings.GITHUB_TOKEN = "ghp_now"
+        self._mock_post(monkeypatch, payload=self._fake_calendar(total=1060))
+        r2 = api_client.get(url)
+        assert r2.json()["total"]["lastYear"] == 1060
+
 
 @pytest.mark.django_db
 class TestSeedMigration:

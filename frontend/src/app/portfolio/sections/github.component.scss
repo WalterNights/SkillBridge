@@ -1,0 +1,165 @@
+:host {
+  display: block;
+  /* Embebido dentro del hero: usa margin (colapsable) en vez de padding
+   * para que herede el ritmo vertical del contenedor padre. */
+  margin-top: 48px;
+}
+
+.pf-github {
+  &__status {
+    margin: 0;
+    color: var(--pf-text-dim);
+    font-family: var(--pf-font-mono);
+    font-size: 13px;
+  }
+
+  &__summary {
+    margin: 0 0 32px;
+    color: var(--pf-text-dim);
+    font-size: 16px;
+    line-height: 1.6;
+
+    strong {
+      color: var(--pf-text);
+      font-weight: 700;
+    }
+  }
+
+  &__handle {
+    color: var(--pf-accent);
+    text-decoration: none;
+    font-family: var(--pf-font-mono);
+    font-size: 14px;
+    margin-left: 4px;
+
+    &:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  }
+
+  /* Viewport: contiene el grid al ancho disponible del contenedor
+   * padre. Sin overflow — las celdas son fluidas con aspect-ratio 1
+   * para siempre entrar sin scroll. */
+  &__viewport {
+    padding: 4px 0 8px;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* Grid layout — dos columnas: [dow labels] [heatmap]. `minmax(0,1fr)`
+   * en la segunda columna permite que el grid interno se encoja hasta
+   * lo que haya de ancho, sin desbordar. */
+  &__grid {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    gap: 4px 6px;
+  }
+
+  /* Etiquetas de mes — fila superior, alineadas con columnas del heatmap
+   * usando el MISMO grid de 53 columnas que el heatmap abajo. */
+  &__months {
+    grid-column: 2;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: repeat(53, minmax(0, 1fr));
+    column-gap: 2px;
+    height: 14px;
+    font-family: var(--pf-font-mono);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    color: var(--pf-text-mute);
+    min-width: 0;
+  }
+
+  &__month {
+    grid-row: 1;
+    white-space: nowrap;
+  }
+
+  /* Días de la semana. Solo tres visibles (Mon/Wed/Fri) — dejamos
+   * height auto para que match natural con las filas del heatmap. */
+  &__dow {
+    grid-column: 1;
+    grid-row: 2;
+    display: grid;
+    grid-template-rows: repeat(7, 1fr);
+    row-gap: 2px;
+    padding-right: 4px;
+    font-family: var(--pf-font-mono);
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    color: var(--pf-text-mute);
+
+    span {
+      display: flex;
+      align-items: center;
+      line-height: 1;
+    }
+  }
+
+  /* Heatmap: 53 columnas fluidas. Cada celda es cuadrada via aspect-ratio,
+   * y el grid entero se encoge/agranda para llenar el contenedor sin
+   * generar overflow horizontal. */
+  &__cells {
+    grid-column: 2;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(53, minmax(0, 1fr));
+    column-gap: 2px;
+    min-width: 0;
+  }
+
+  &__week {
+    display: grid;
+    grid-template-rows: repeat(7, 1fr);
+    row-gap: 2px;
+  }
+
+  &__day {
+    /* Ancho: se estira al slot del grid. Alto: cuadrado via aspect-ratio.
+     * Combinado da celdas fluidas que se ajustan al ancho disponible. */
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 2px;
+    background: rgba(232, 229, 221, 0.05);
+    transition: transform 100ms ease;
+
+    &[data-level="1"] { background: rgba(249, 115, 22, 0.25); }
+    &[data-level="2"] { background: rgba(249, 115, 22, 0.5); }
+    &[data-level="3"] { background: rgba(249, 115, 22, 0.75); }
+    &[data-level="4"] { background: rgba(249, 115, 22, 1); }
+
+    &--empty {
+      background: transparent;
+    }
+
+    &:hover:not(&--empty) {
+      transform: scale(1.4);
+      z-index: 1;
+      box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.6);
+    }
+  }
+
+  /* Leyenda Less/More debajo del heatmap. Sus cuadraditos son fijos
+   * (no fluidos) porque son referencias visuales, no datos. */
+  &__legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    font-family: var(--pf-font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--pf-text-mute);
+
+    .pf-github__day {
+      width: 10px;
+      height: 10px;
+      aspect-ratio: auto;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+  }
+}

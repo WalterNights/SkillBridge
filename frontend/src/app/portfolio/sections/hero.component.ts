@@ -1,11 +1,12 @@
 import { Component, inject } from '@angular/core';
 
 import { PortfolioI18nService } from '../i18n/portfolio-i18n.service';
+import { GithubSectionComponent } from './github.component';
 
 @Component({
   selector: 'app-hero-section',
   standalone: true,
-  imports: [],
+  imports: [GithubSectionComponent],
   templateUrl: './hero.component.html',
   styleUrl: './hero.component.scss',
 })

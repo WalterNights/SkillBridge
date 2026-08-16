@@ -1,0 +1,75 @@
+<!-- El widget se oculta entero si falla — nunca deja layout vacío
+     ni "hueco" en el contenedor que lo embebe. -->
+@if (!failed()) {
+  <div class="pf-github">
+    @if (loading()) {
+      <p class="pf-github__status">{{ i18n.t('github.loading') }}</p>
+    } @else if (payload()) {
+      <p class="pf-github__summary">
+        <strong>{{ formatNumber(totalLastYear()) }}</strong>
+        {{ i18n.t('github.contributionsInLastYear') }}
+        <a
+          class="pf-github__handle"
+          [href]="'https://github.com/' + username()"
+          target="_blank"
+          rel="noopener noreferrer"
+        >{{ '@' + username() }}</a>
+      </p>
+
+      <div class="pf-github__viewport">
+        <div class="pf-github__grid" role="img" [attr.aria-label]="i18n.t('github.title')">
+          <!-- Fila de etiquetas de mes (arriba del heatmap). -->
+          <div class="pf-github__months" aria-hidden="true">
+            @for (m of months(); track m.weekIndex) {
+              <span
+                class="pf-github__month"
+                [style.grid-column]="m.weekIndex + 1"
+              >{{ m.label }}</span>
+            }
+          </div>
+
+          <!-- Columna de días (Mon, Wed, Fri). -->
+          <div class="pf-github__dow" aria-hidden="true">
+            <span></span>
+            <span>{{ i18n.t('github.dow.mon') }}</span>
+            <span></span>
+            <span>{{ i18n.t('github.dow.wed') }}</span>
+            <span></span>
+            <span>{{ i18n.t('github.dow.fri') }}</span>
+            <span></span>
+          </div>
+
+          <!-- Heatmap propiamente dicho: 53 columnas × 7 filas. -->
+          <div class="pf-github__cells">
+            @for (week of weeks(); track $index) {
+              <div class="pf-github__week">
+                @for (day of week.days; track $index) {
+                  @if (day) {
+                    <span
+                      class="pf-github__day"
+                      [attr.data-level]="day.level"
+                      [attr.title]="tooltipFor(day)"
+                    ></span>
+                  } @else {
+                    <span class="pf-github__day pf-github__day--empty" aria-hidden="true"></span>
+                  }
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Leyenda: Less/More con las 5 celdas de referencia. -->
+      <div class="pf-github__legend">
+        <span>{{ i18n.t('github.less') }}</span>
+        <span class="pf-github__day" data-level="0"></span>
+        <span class="pf-github__day" data-level="1"></span>
+        <span class="pf-github__day" data-level="2"></span>
+        <span class="pf-github__day" data-level="3"></span>
+        <span class="pf-github__day" data-level="4"></span>
+        <span>{{ i18n.t('github.more') }}</span>
+      </div>
+    }
+  </div>
+}
