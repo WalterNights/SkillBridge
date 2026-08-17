@@ -47,8 +47,8 @@ export class PortfolioSidebarComponent implements AfterViewInit, OnDestroy {
 
   readonly nav: readonly NavItem[] = [
     { id: 'about', labelKey: 'sidebar.nav.about' },
-    { id: 'experience', labelKey: 'sidebar.nav.experience' },
     { id: 'projects', labelKey: 'sidebar.nav.projects' },
+    { id: 'experience', labelKey: 'sidebar.nav.experience' },
     { id: 'contact', labelKey: 'sidebar.nav.contact' },
   ];
 
