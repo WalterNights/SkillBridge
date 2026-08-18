@@ -679,9 +679,36 @@
           </div>
         </div>
 
+        <!-- Skills: 2 campos separados. `skills` es CSV plano que SkilTak
+             usa para matchear ofertas laborales (bold/markdown bajaria el
+             score). `cv_skills` es rich text que se renderiza en el CV
+             — permite bold, bullets y agrupaciones por categoria. -->
         <div>
-          <label class="field-label" for="me-skills">Habilidades *</label>
-          <textarea id="me-skills" formControlName="skills" rows="3" class="field-input rich-textarea"></textarea>
+          <label class="field-label" for="me-skills">Habilidades para matching *</label>
+          <textarea
+            id="me-skills"
+            formControlName="skills"
+            rows="3"
+            class="field-input rich-textarea"
+            placeholder="Angular, TypeScript, Node.js, Docker, PostgreSQL…"
+          ></textarea>
+          <p class="text-xs text-warm-grey mt-1">
+            Lista simple separada por comas — se usa para cruzar tu perfil con las ofertas laborales. Evita formato o categorías aquí.
+          </p>
+        </div>
+
+        <div>
+          <label class="field-label" for="me-cv-skills">Habilidades para el CV</label>
+          <textarea
+            id="me-cv-skills"
+            formControlName="cv_skills"
+            rows="4"
+            class="field-input rich-textarea"
+            placeholder="**Frontend:** Angular, React, TypeScript&#10;**Backend:** Node.js, Django, PostgreSQL&#10;- Docker · Kubernetes · AWS"
+          ></textarea>
+          <p class="text-xs text-warm-grey mt-1">
+            Versión formateada que aparece en tu CV. Acepta <code>**negrita**</code>, <code>*cursiva*</code> y viñetas con <code>-</code>. Si la dejas vacía, el CV cae a las habilidades de arriba.
+          </p>
         </div>
 
         <!-- Experiencia: modo estructurado (entries) o legacy (textarea viejo) -->
@@ -799,6 +826,63 @@
           <div>
             <label class="field-label" for="me-portfolio">Portafolio</label>
             <input id="me-portfolio" type="url" formControlName="portfolio_url" class="field-input" />
+          </div>
+        </div>
+
+        <!-- Idiomas hablados. FormArray de {language, level}. Se serializan
+             como JSON string al backend (que los guarda en un TextField). -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="field-label !mb-0">Idiomas</label>
+          </div>
+          <p class="text-xs text-warm-grey">
+            Aparecen en el header del CV separados por <code>·</code>. Ejemplo de nivel: "Nativo", "C1", "Fluido", "Intermedio".
+          </p>
+          <div formArrayName="languages" class="space-y-3">
+            <div
+              *ngFor="let lang of languagesArray.controls; let i = index"
+              [formGroupName]="i"
+              class="rounded-xl p-4 bg-white/[0.02] border border-white/[0.06]"
+            >
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs uppercase tracking-wider text-warm-grey">Idioma {{ i + 1 }}</span>
+                <button
+                  type="button"
+                  (click)="removeLanguage(i)"
+                  class="text-xs text-danger hover:underline underline-offset-4"
+                >
+                  Eliminar
+                </button>
+              </div>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="field-label">Idioma *</label>
+                  <input
+                    type="text"
+                    formControlName="language"
+                    class="field-input"
+                    placeholder="Español · English · Português"
+                  />
+                </div>
+                <div>
+                  <label class="field-label">Nivel *</label>
+                  <input
+                    type="text"
+                    formControlName="level"
+                    class="field-input"
+                    placeholder="Nativo · C1 · Intermedio"
+                  />
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              (click)="addLanguage()"
+              class="w-full py-2.5 rounded-xl border border-dashed border-white/[0.15] text-sm text-warm-grey hover:border-primary/40 hover:text-bone transition-colors inline-flex items-center justify-center gap-2"
+            >
+              <span class="material-symbols-outlined" style="font-size: 18px">add</span>
+              Agregar idioma
+            </button>
           </div>
         </div>
 

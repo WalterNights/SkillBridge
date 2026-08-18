@@ -99,6 +99,10 @@ export interface CvProfileData {
   linkedin_url: string;
   portfolio_url: string;
   github_url: string;
+  // Skills rich text para display en el CV (separado de `skills` que
+  // se usa para matching contra ofertas).
+  cv_skills: string;
+  cv_skills_en: string;
   skills: string;
   soft_skills: string;
   languages: LanguageEntry[];
@@ -144,6 +148,8 @@ export interface ProfileApiResponse {
   linkedin_url?: string | null;
   portfolio_url?: string | null;
   github_url?: string | null;
+  cv_skills?: string | null;
+  cv_skills_en?: string | null;
   skills?: string | null;
   soft_skills?: string | null;
   languages?: LanguageEntry[] | string | null;
@@ -192,5 +198,8 @@ export interface ProfileFormData {
   linkedin_url: string;
   portfolio_url?: string;
   github_url?: string;
+  cv_skills?: string;
+  cv_skills_en?: string;
+  languages?: LanguageEntry[] | string;
   resume?: File | null;
 }

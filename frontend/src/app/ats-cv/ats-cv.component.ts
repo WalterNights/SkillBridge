@@ -396,6 +396,19 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
     return p.cv_active_language === 'en' ? p.skills_en || p.skills || '' : p.skills || '';
   }
 
+  /** Rich text de skills para el display en el CV. Si el user no llenó
+   *  cv_skills, fallback a `activeSkills()` (CSV plano de matching) —
+   *  garantiza que perfiles pre-migración sigan viendo sus skills en
+   *  el CV. Respeta el toggle ES/EN igual que `activeSkills`. */
+  activeCvSkills(): string {
+    const p = this.profileData;
+    if (!p) return '';
+    const raw = p.cv_active_language === 'en'
+      ? p.cv_skills_en || p.cv_skills || ''
+      : p.cv_skills || '';
+    return raw.trim() !== '' ? raw : this.activeSkills();
+  }
+
   activeSoftSkills(): string {
     const p = this.profileData;
     if (!p) return '';
@@ -788,6 +801,8 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
       portfolio_url: profile.portfolio_url ?? '',
       github_url: profile.github_url ?? '',
       skills: profile.skills ?? '',
+      cv_skills: profile.cv_skills ?? '',
+      cv_skills_en: profile.cv_skills_en ?? '',
       soft_skills: profile.soft_skills ?? '',
       languages: this.parseLanguages(profile.languages),
       experience: this.parseEntriesField<ExperienceEntry>(profile.experience),

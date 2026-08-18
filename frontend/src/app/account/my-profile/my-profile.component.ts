@@ -20,6 +20,7 @@ import {
   CvTextAlign,
   EducationEntry,
   ExperienceEntry,
+  LanguageEntry,
 } from '../../models/profile.model';
 import {
   parseLegacyEducation,
@@ -38,6 +39,9 @@ interface CvLangSnapshot {
   summary: string;
   skills: string;
   soft_skills: string;
+  // Skills rich text para display en el CV — separado de `skills` que
+  // se usa para matching contra ofertas.
+  cv_skills: string;
   experience: ExperienceEntry[] | string;
   education: EducationEntry[] | string;
 }
@@ -162,6 +166,7 @@ export class MyProfileComponent implements OnInit {
       summary: '',
       skills: '',
       soft_skills: '',
+      cv_skills: '',
       experience: [],
       education: [],
     };
@@ -382,6 +387,7 @@ export class MyProfileComponent implements OnInit {
     this.profileForm = this.profileBuilder.buildProfileForm({
       education: this.fb.array([]),
       experience: this.fb.array([]),
+      languages: this.fb.array([]),
     });
     this.countryCodeService.getCountryCodes().subscribe((data) => {
       this.countryCodes = data;
@@ -428,6 +434,29 @@ export class MyProfileComponent implements OnInit {
       end_date: [entry?.end_date === 'Actual' ? '' : (entry?.end_date ?? '')],
       is_current: [entry?.is_current ?? (entry?.end_date === 'Actual')],
     });
+  }
+
+  // ---- Languages FormArray helpers ---------------------------------
+
+  get languagesArray(): FormArray {
+    return this.profileForm.get('languages') as FormArray;
+  }
+
+  /** Crea un FormGroup para un idioma hablado. Ambos campos son
+   *  requeridos porque no tiene sentido guardar filas huerfanas. */
+  createLanguageGroup(entry?: Partial<LanguageEntry>): FormGroup {
+    return this.fb.group({
+      language: [entry?.language ?? '', Validators.required],
+      level: [entry?.level ?? '', Validators.required],
+    });
+  }
+
+  addLanguage(): void {
+    this.languagesArray.push(this.createLanguageGroup());
+  }
+
+  removeLanguage(index: number): void {
+    this.languagesArray.removeAt(index);
   }
 
   addExperience(): void {
@@ -609,6 +638,35 @@ export class MyProfileComponent implements OnInit {
     };
 
     this.applySnapshotToForm(activeLang);
+
+    // Idiomas: el backend guarda como JSON string en un TextField, pero
+    // el form los consume como FormArray de {language, level}. Parseamos
+    // si viene string, o usamos el array directo si el serializer ya lo
+    // devolvió parseado.
+    this.hydrateLanguagesFromProfile(profile.languages);
+  }
+
+  /** Parse-y-populate del FormArray de idiomas desde el profile crudo.
+   *  Cubre los 3 shapes posibles del backend: array parseado, JSON string
+   *  o null/vacio. */
+  private hydrateLanguagesFromProfile(raw: unknown): void {
+    let entries: LanguageEntry[] = [];
+    if (Array.isArray(raw)) {
+      entries = raw as LanguageEntry[];
+    } else if (typeof raw === 'string' && raw.trim().startsWith('[')) {
+      try {
+        const parsed: unknown = JSON.parse(raw);
+        if (Array.isArray(parsed)) entries = parsed as LanguageEntry[];
+      } catch {
+        /* raw invalido — dejamos vacio */
+      }
+    }
+    const array = this.fb.array<FormGroup>(
+      entries
+        .filter((e) => e && typeof e.language === 'string' && e.language.trim() !== '')
+        .map((e) => this.createLanguageGroup(e)),
+    );
+    this.profileForm.setControl('languages', array);
   }
 
   /** Detecta el modo (structured / legacy) de un campo experience o
@@ -635,6 +693,7 @@ export class MyProfileComponent implements OnInit {
       summary: profile[key('summary')] || '',
       skills: profile[key('skills')] || '',
       soft_skills: profile[key('soft_skills')] || '',
+      cv_skills: profile[key('cv_skills')] || '',
       experience: expEntries !== null ? expEntries : (typeof rawExp === 'string' ? rawExp : ''),
       education: eduEntries !== null ? eduEntries : (typeof rawEdu === 'string' ? rawEdu : ''),
     };
@@ -828,9 +887,11 @@ export class MyProfileComponent implements OnInit {
     this.profileForm.setControl('summary', this.fb.control(es.summary, Validators.required));
     this.profileForm.setControl('skills', this.fb.control(es.skills, Validators.required));
     this.setOrAddControl('soft_skills', es.soft_skills);
+    this.setOrAddControl('cv_skills', es.cv_skills);
     this.setOrAddControl('summary_en', en.summary);
     this.setOrAddControl('skills_en', en.skills);
     this.setOrAddControl('soft_skills_en', en.soft_skills);
+    this.setOrAddControl('cv_skills_en', en.cv_skills);
 
     // 3) Experience/education del idioma ACTIVO — mismo patron que
     //    antes: array o string legacy segun el modo.
@@ -931,6 +992,7 @@ export class MyProfileComponent implements OnInit {
       summary: this._snapshotEs.summary,
       skills: this._snapshotEs.skills,
       soft_skills: this._snapshotEs.soft_skills,
+      cv_skills: this._snapshotEs.cv_skills,
       experience: Array.isArray(this._snapshotEs.experience)
         ? this._snapshotEs.experience.map((e) => ({ ...e }))
         : this._snapshotEs.experience,
@@ -965,6 +1027,7 @@ export class MyProfileComponent implements OnInit {
       summary: this.profileForm.get('summary')?.value ?? '',
       skills: this.profileForm.get('skills')?.value ?? '',
       soft_skills: this.profileForm.get('soft_skills')?.value ?? '',
+      cv_skills: this.profileForm.get('cv_skills')?.value ?? '',
       experience: this.snapshotExperienceFromForm(),
       education: this.snapshotEducationFromForm(),
     };
@@ -1021,6 +1084,7 @@ export class MyProfileComponent implements OnInit {
       summary: snap.summary,
       skills: snap.skills,
       soft_skills: snap.soft_skills,
+      cv_skills: snap.cv_skills,
     });
 
     // Experience mode + content

@@ -84,6 +84,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "skills_en",
             "experience_en",
             "soft_skills_en",
+            # Skills rich text para display en el CV (separado de `skills`
+            # que se usa para matching contra ofertas).
+            "cv_skills",
+            "cv_skills_en",
             # Preferencias de display del CV (idioma activo del editor +
             # export, alineación y tamaño de fuente).
             "cv_active_language",

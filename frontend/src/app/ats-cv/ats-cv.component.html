@@ -359,7 +359,10 @@
 <ng-template #skillsTpl>
   <section *ngIf="profileData as profile" class="cv-section">
     <h2 class="cv-section-title">{{ labels().technicalSkills }}</h2>
-    <p class="cv-skills">{{ activeSkills() }}</p>
+    <!-- Usa cv_skills (rich text del user) con fallback al CSV de matching.
+         app-rich-text renderea markdown-light: **bold**, *italic*, bullets
+         con `-`. Para CSVs planos se ve igual que un párrafo. -->
+    <app-rich-text class="cv-skills" [value]="activeCvSkills()" />
   </section>
 </ng-template>
 

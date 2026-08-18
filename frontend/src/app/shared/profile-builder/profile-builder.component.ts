@@ -41,6 +41,7 @@ export class ProfileBuilderComponent {
     overrides: Partial<{
       education: FormArray;
       experience: FormArray;
+      languages: FormArray;
     }> = {},
   ): FormGroup {
     return this.fb.group({
@@ -70,6 +71,13 @@ export class ProfileBuilderComponent {
       // Opcional, sin validator estricto (aceptamos short forms como
       // "github.com/user" o "user" — el CV los normaliza al render).
       github_url: [''],
+      // Skills formateado para el CV (rich text markdown-light: bold +
+      // bullets). Separado de `skills` (CSV plano para matching contra
+      // ofertas). Opcional — si esta vacio el CV cae al `skills` legacy.
+      cv_skills: [''],
+      // Idiomas hablados con nivel. FormArray de {language, level}.
+      // Se envia al backend como JSON string.
+      languages: overrides.languages ?? this.fb.array<FormGroup>([]),
       resume: [null],
     });
   }
@@ -277,9 +285,21 @@ export class ProfileBuilderComponent {
     }
     localStorage.setItem(STORAGE_KEYS.MANUAL_PROFILE_DRAFT, JSON.stringify(dataToSave));
 
+    // Languages: FormArray de {language, level}. El backend lo espera
+    // como JSON string en un TextField. Serializamos y appendemos aca
+    // — asi el loop generico de abajo no lo procesa dos veces.
+    if (Array.isArray(rawData.languages)) {
+      const cleaned = rawData.languages
+        .filter((l): l is { language: string; level: string } =>
+          l && typeof l.language === 'string' && l.language.trim() !== '',
+        )
+        .map((l) => ({ language: l.language.trim(), level: (l.level ?? '').trim() }));
+      formData.append('languages', JSON.stringify(cleaned));
+    }
+
     // Append all other form fields
     Object.entries(rawData).forEach(([key, value]) => {
-      if (['education', 'experience'].includes(key)) return;
+      if (['education', 'experience', 'languages'].includes(key)) return;
       if (value instanceof File) {
         formData.append(key, value);
       } else if (value !== null && value !== undefined) {

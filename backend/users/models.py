@@ -314,6 +314,22 @@ class UserProfile(models.Model):
     skills_en = models.TextField(blank=True, default="")
     experience_en = models.TextField(blank=True, default="")
     soft_skills_en = models.TextField(blank=True, default="")
+    # ─── Skills separados: matching vs display ───────────────────────
+    # `skills` (existente) sigue siendo CSV plano usado por SkilTak para
+    # matchear contra keywords de las ofertas — el algoritmo tokeniza
+    # este campo y compara con la oferta.
+    #
+    # `cv_skills` es rich text markdown-light (bold + bullets) usado
+    # SOLO para render en el CV. Formato tipico:
+    #   - **Frontend**: React.js, Next.js, ...
+    #   - **Backend**: Python, Django, ...
+    #
+    # Separar los dos evita el conflicto donde meter "**Frontend**" en
+    # `skills` haria que el matcher lo lea como skill inexistente y baje
+    # el match score. El CV renderiza `cv_skills` via <app-rich-text>;
+    # si esta vacio, cae al `skills` legacy (backwards compat).
+    cv_skills = models.TextField(blank=True, default="")
+    cv_skills_en = models.TextField(blank=True, default="")
     resume = models.FileField(
         upload_to=_resume_upload_path,
         null=True,
