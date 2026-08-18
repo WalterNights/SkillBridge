@@ -447,6 +447,21 @@
   }
 }
 
+/* Render inline (nuevo, matching el estilo del header + skills).
+ * Reemplaza al display: flex de .cv-languages cuando el template
+ * usa <p> con spans separados por · en lugar de lista <ul>. */
+.cv-languages-inline {
+  margin: 1mm 0 0;
+  font-size: 10pt;
+  color: #374151;
+  line-height: 1.55;
+
+  .cv-sep {
+    margin: 0 2mm;
+    color: #9ca3af;
+  }
+}
+
 /* Botón AI inline al pie de cada descripción de experiencia. Solo
  * visible en pantalla; al exportar PDF se setea `isExporting=true` y
  * el botón se quita del DOM. */

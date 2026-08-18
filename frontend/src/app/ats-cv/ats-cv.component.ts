@@ -404,6 +404,58 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
       : p.soft_skills || '';
   }
 
+  /** Compone la línea de ubicación del header del CV: "Ciudad, País (Nota)".
+   *  Si falta ciudad, muestra solo país. Si falta ambos, string vacío.
+   *  La nota opcional aparece entre paréntesis (ej. "Remote — US/EU time zones"). */
+  headerLocation(): string {
+    const p = this.profileData;
+    if (!p) return '';
+    const parts: string[] = [];
+    if (p.city) parts.push(p.city);
+    if (p.country) parts.push(p.country);
+    const base = parts.join(', ');
+    if (p.location_note) return base ? `${base} (${p.location_note})` : `(${p.location_note})`;
+    return base;
+  }
+
+  /** Formatea el número de teléfono con espacios cada 3 dígitos para
+   *  legibilidad. `phone_code` (ej. "+57") se antepone tal cual, sin
+   *  reformateo. Ejemplo: "+57 3103008596" → "+57 310 300 8596". */
+  headerPhone(): string {
+    const p = this.profileData;
+    if (!p || !p.phone_number) return '';
+    const code = (p.phone_code || '').trim();
+    // Extrae solo digitos del numero, ignora espacios/guiones que el user haya puesto
+    const digits = p.phone_number.replace(/\D/g, '');
+    if (!digits) return '';
+    // Formato "XXX XXX XXXX" o "XXX XXX XX" segun cantidad de digitos
+    let formatted: string;
+    if (digits.length >= 10) {
+      formatted = `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+    } else if (digits.length >= 7) {
+      formatted = `${digits.slice(0, 3)} ${digits.slice(3)}`;
+    } else {
+      formatted = digits;
+    }
+    return code ? `${code} ${formatted}` : formatted;
+  }
+
+  /** Extrae el host + path del URL de GitHub para display corto.
+   *  "https://github.com/foo" → "github.com/foo". Si viene vacio o mal
+   *  formado, devuelve el valor tal cual. */
+  headerGithubDisplay(): string {
+    const p = this.profileData;
+    if (!p || !p.github_url) return '';
+    return p.github_url.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, '');
+  }
+
+  /** Idem para LinkedIn — display corto. */
+  headerLinkedinDisplay(): string {
+    const p = this.profileData;
+    if (!p || !p.linkedin_url) return '';
+    return p.linkedin_url.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, '');
+  }
+
   /** Version string del campo experience/education para el fallback
    *  legacy (cuando no es un array estructurado). Respeta el idioma
    *  activo con fallback al ES. */
@@ -729,10 +781,12 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
       phone_number: profile.phone_number ?? profile.phone ?? '',
       city: profile.city ?? '',
       country: profile.country ?? '',
+      location_note: profile.location_note ?? '',
       professional_title: profile.professional_title ?? '',
       summary: profile.summary ?? '',
       linkedin_url: profile.linkedin_url ?? '',
       portfolio_url: profile.portfolio_url ?? '',
+      github_url: profile.github_url ?? '',
       skills: profile.skills ?? '',
       soft_skills: profile.soft_skills ?? '',
       languages: this.parseLanguages(profile.languages),

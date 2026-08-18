@@ -93,10 +93,12 @@ export interface CvProfileData {
   phone_number: string;
   city: string;
   country: string;
+  location_note: string;
   professional_title: string;
   summary: string;
   linkedin_url: string;
   portfolio_url: string;
+  github_url: string;
   skills: string;
   soft_skills: string;
   languages: LanguageEntry[];
@@ -136,10 +138,12 @@ export interface ProfileApiResponse {
   phone?: string | null; // alias legacy
   city?: string | null;
   country?: string | null;
+  location_note?: string | null;
   professional_title?: string | null;
   summary?: string | null;
   linkedin_url?: string | null;
   portfolio_url?: string | null;
+  github_url?: string | null;
   skills?: string | null;
   soft_skills?: string | null;
   languages?: LanguageEntry[] | string | null;
@@ -179,6 +183,7 @@ export interface ProfileFormData {
   phone_number: string;
   country: string;
   city: string;
+  location_note?: string;
   professional_title: string;
   summary: string;
   education: EducationEntry[] | string;
@@ -186,5 +191,6 @@ export interface ProfileFormData {
   skills: string;
   linkedin_url: string;
   portfolio_url?: string;
+  github_url?: string;
   resume?: File | null;
 }

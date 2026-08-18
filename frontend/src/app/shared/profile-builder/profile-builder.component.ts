@@ -52,6 +52,10 @@ export class ProfileBuilderComponent {
       phone_number: ['', Validators.required],
       country: [''],
       city: ['', Validators.required],
+      // Nota adicional de ubicacion (ej. "Remote — US/EU time zones").
+      // Aparece entre parentesis en el header del CV despues de
+      // ciudad + pais. Opcional.
+      location_note: [''],
       professional_title: ['', Validators.required],
       summary: ['', Validators.required],
       education: overrides.education ?? this.fb.control('', Validators.required),
@@ -62,6 +66,10 @@ export class ProfileBuilderComponent {
         Validators.pattern(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9%_-]+\/?$/),
       ],
       portfolio_url: [''],
+      // URL del perfil de GitHub. Se muestra en el header del CV.
+      // Opcional, sin validator estricto (aceptamos short forms como
+      // "github.com/user" o "user" — el CV los normaliza al render).
+      github_url: [''],
       resume: [null],
     });
   }

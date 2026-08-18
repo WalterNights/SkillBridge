@@ -188,16 +188,20 @@
     <header class="cv-header">
       <h1 class="cv-name">{{ profile.first_name }} {{ profile.last_name }}</h1>
       <p *ngIf="profile.professional_title" class="cv-title">{{ profile.professional_title }}</p>
+      <!-- Orden: ubicación → teléfono → email → LinkedIn → GitHub.
+           Ubicación compone city + country + location_note (helper).
+           Teléfono se formatea con espacios (helper).
+           LinkedIn/GitHub se muestran como texto corto sin protocolo. -->
       <div class="cv-contact">
-        <span *ngIf="profile.city"
-          >{{ profile.city }}<span *ngIf="profile.country">, {{ profile.country }}</span></span
-        >
-        <span *ngIf="profile.linkedin_url" class="cv-sep">·</span>
-        <span *ngIf="profile.linkedin_url">{{ profile.linkedin_url }}</span>
-        <span *ngIf="profile.phone_number" class="cv-sep">·</span>
-        <span *ngIf="profile.phone_number" class="cv-nowrap">{{ profile.phone_code }} {{ profile.phone_number }}</span>
+        <span *ngIf="headerLocation()">{{ headerLocation() }}</span>
+        <span *ngIf="headerPhone()" class="cv-sep">·</span>
+        <span *ngIf="headerPhone()" class="cv-nowrap">{{ headerPhone() }}</span>
         <span *ngIf="profile.email" class="cv-sep">·</span>
         <span *ngIf="profile.email" class="cv-nowrap">{{ profile.email }}</span>
+        <span *ngIf="profile.linkedin_url" class="cv-sep">·</span>
+        <span *ngIf="profile.linkedin_url">{{ headerLinkedinDisplay() }}</span>
+        <span *ngIf="profile.github_url" class="cv-sep">·</span>
+        <span *ngIf="profile.github_url">{{ headerGithubDisplay() }}</span>
       </div>
     </header>
   </ng-container>
@@ -369,12 +373,19 @@
 <ng-template #languagesTpl>
   <section *ngIf="profileData as profile" class="cv-section">
     <h2 class="cv-section-title">{{ labels().languages }}</h2>
-    <ul class="cv-languages">
-      <li *ngFor="let lang of profile.languages">
-        <strong>{{ lang.language }}</strong
-        ><span *ngIf="lang.level">: {{ lang.level }}</span>
-      </li>
-    </ul>
+    <!-- Render inline con separador · matching el estilo del header
+         y de la sección de skills. Formato: "Español — Nativo · English
+         — Professional working proficiency (B2)". La lista debajo del
+         <span visible> es fallback semántico para screen readers
+         (aria-hidden lo oculta visualmente al render inline). -->
+    <p class="cv-languages-inline">
+      <ng-container *ngFor="let lang of profile.languages; let i = index">
+        <span *ngIf="i > 0" class="cv-sep">·</span>
+        <span class="cv-nowrap">
+          {{ lang.language }}<span *ngIf="lang.level"> — {{ lang.level }}</span>
+        </span>
+      </ng-container>
+    </p>
   </section>
 </ng-template>
 

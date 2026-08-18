@@ -281,6 +281,15 @@ class UserProfile(models.Model):
     number_id = models.CharField(max_length=20, unique=True, null=True, blank=True)
     phone = models.CharField(max_length=30)
     city = models.CharField(max_length=100)
+    # País de residencia. El editor guarda el ISO code (ej. "CO") desde
+    # el picker de country-state-city; el CV renderiza esto como texto
+    # plano al lado de la ciudad ("Medellín, Colombia"). Blank permite
+    # perfiles legacy que no lo tenían.
+    country = models.CharField(max_length=60, blank=True, default="")
+    # Nota adicional de ubicación — libre. Ej: "Remote — US/EU time zones",
+    # "Presencial Medellín + hybrid", "Open to relocation". Aparece entre
+    # paréntesis después de la ciudad + país en el header del CV.
+    location_note = models.CharField(max_length=120, blank=True, default="")
     professional_title = models.CharField(max_length=100)
     summary = models.TextField(blank=True)
     education = models.TextField(blank=True)
@@ -325,6 +334,10 @@ class UserProfile(models.Model):
     )
     linkedin_url = models.URLField(null=True, blank=True)
     portfolio_url = models.URLField(null=True, blank=True)
+    # URL del perfil de GitHub. Se muestra en el header del CV al lado de
+    # LinkedIn. Semanticamente distinto de `portfolio_url` (portfolio puede
+    # ser tu sitio propio, Behance, Dribbble, etc.).
+    github_url = models.URLField(null=True, blank=True)
     # Habilidades blandas (liderazgo, comunicación, trabajo en equipo, etc).
     # Texto libre separado por coma, igual contrato que `skills` para que
     # el front pueda hacer split sin lógica especial.

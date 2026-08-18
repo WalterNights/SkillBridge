@@ -568,6 +568,20 @@
         </div>
 
         <div>
+          <label class="field-label" for="me-location-note">Nota de ubicación</label>
+          <input
+            id="me-location-note"
+            type="text"
+            formControlName="location_note"
+            class="field-input"
+            placeholder="Ej: Remote — US/EU time zones · Presencial · Open to relocation"
+          />
+          <p class="text-xs text-warm-grey mt-1">
+            Aparece entre paréntesis después de la ciudad y el país en tu CV. Opcional.
+          </p>
+        </div>
+
+        <div>
           <label class="field-label" for="me-title">Cargo / título profesional *</label>
           <input id="me-title" type="text" formControlName="professional_title" class="field-input" />
         </div>
@@ -771,6 +785,16 @@
           <div>
             <label class="field-label" for="me-linkedin">LinkedIn</label>
             <input id="me-linkedin" type="url" formControlName="linkedin_url" class="field-input" />
+          </div>
+          <div>
+            <label class="field-label" for="me-github">GitHub</label>
+            <input
+              id="me-github"
+              type="url"
+              formControlName="github_url"
+              class="field-input"
+              placeholder="https://github.com/tu-usuario"
+            />
           </div>
           <div>
             <label class="field-label" for="me-portfolio">Portafolio</label>

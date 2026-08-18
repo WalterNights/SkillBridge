@@ -63,6 +63,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "phone_number",
             "phone",
             "city",
+            "country",
+            "location_note",
             "professional_title",
             "summary",
             "education",
@@ -73,6 +75,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "banner",
             "linkedin_url",
             "portfolio_url",
+            "github_url",
             "soft_skills",
             "languages",
             # CV multi-idioma — contenido en EN paralelo al ES existente.

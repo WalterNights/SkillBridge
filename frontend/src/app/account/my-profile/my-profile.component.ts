@@ -577,9 +577,11 @@ export class MyProfileComponent implements OnInit {
       phone_number: profile.phone_number || '',
       country: isoCode,
       city: profile.city || '',
+      location_note: profile.location_note || '',
       professional_title: profile.professional_title || '',
       linkedin_url: profile.linkedin_url || '',
       portfolio_url: profile.portfolio_url || '',
+      github_url: profile.github_url || '',
     });
 
     // IMPORTANTE: en el submit reemplazamos el FormArray por un
