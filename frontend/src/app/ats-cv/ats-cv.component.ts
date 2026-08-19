@@ -941,6 +941,37 @@ export class AtsCvComponent implements OnInit, AfterViewChecked {
    * `isExporting` oculta los botones AI antes de capturar (html2canvas
    * no respeta @media print, hay que toggle de clase manual).
    */
+  /**
+   * Genera un PDF con capa de texto real via el diálogo de impresión del
+   * browser. Alternativa al `downloadCV()` clásico (que usa html2canvas
+   * + jsPDF y produce un PDF con imágenes JPEG, sin texto seleccionable).
+   *
+   * Requerido cuando el user sube el CV a portales tipo ATS/Workday/Taleo
+   * que extraen texto via `pdftotext` — con el PDF rasterizado esos
+   * portales devuelven "Unable to Read Resume/CV" porque no encuentran
+   * texto que parsear.
+   *
+   * Flow:
+   *   1) Agregamos `is-printing-cv` al body para activar las reglas
+   *      `@media print` que ocultan todo menos `.cv-pages-wrap`.
+   *   2) `requestAnimationFrame` da un tick al browser para pintar los
+   *      estilos antes de abrir el diálogo (sin esto vimos casos donde
+   *      el print tomaba el layout viejo).
+   *   3) `window.print()` abre el diálogo — el user elige "Guardar como
+   *      PDF" y el destino.
+   *   4) `afterprint` limpia la clase, independientemente de si el user
+   *      confirmó o canceló.
+   */
+  printAtsPdf(): void {
+    document.body.classList.add('is-printing-cv');
+    const cleanup = () => {
+      document.body.classList.remove('is-printing-cv');
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+    requestAnimationFrame(() => window.print());
+  }
+
   async downloadCV(): Promise<void> {
     if (!this.pagesWrap?.nativeElement) return;
     const pageEls = Array.from(

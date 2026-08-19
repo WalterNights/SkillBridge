@@ -530,3 +530,50 @@ a:focus-visible {
     }
   }
 }
+
+/* ============================================================
+   PRINT — flujo "PDF ATS" del /cv.
+   Se activa cuando `printAtsPdf()` en ats-cv.component.ts agrega
+   `is-printing-cv` al body antes de invocar `window.print()`. La
+   clase se remueve en el evento `afterprint`.
+
+   Estrategia: visibility hidden en todo, visible solo en
+   `.cv-pages-wrap` y descendientes. Reposicionamos el wrap a
+   top:0/left:0 asi la primera hoja empieza en el margen fisico
+   sin espacio en blanco del shell.
+   ============================================================ */
+@media print {
+  body.is-printing-cv {
+    background: #fff !important;
+    margin: 0 !important;
+
+    * {
+      visibility: hidden !important;
+      box-shadow: none !important;
+      text-shadow: none !important;
+    }
+
+    .cv-pages-wrap,
+    .cv-pages-wrap * {
+      visibility: visible !important;
+    }
+
+    .cv-pages-wrap {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #fff !important;
+      gap: 0 !important;
+    }
+  }
+
+  /* Hoja Oficio sin margenes del user-agent — el padding interno de
+     .cv-page ya provee el area segura de contenido. */
+  @page {
+    size: legal;
+    margin: 0;
+  }
+}

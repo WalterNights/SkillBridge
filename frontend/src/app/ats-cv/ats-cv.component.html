@@ -71,11 +71,23 @@
         type="button"
         (click)="downloadCV()"
         class="cv-action-btn cv-action-btn--secondary"
-        title="Descargar PDF"
-        aria-label="Descargar PDF"
+        title="PDF con el diseño exacto que ves en pantalla (imagen, no seleccionable)"
+        aria-label="Descargar PDF visual"
       >
         <span class="material-symbols-outlined cv-action-btn-icon">download</span>
-        <span class="cv-action-btn-label">Descargar PDF</span>
+        <span class="cv-action-btn-label">PDF visual</span>
+      </button>
+      <!-- PDF con capa de texto para portales ATS. Abre el dialogo de
+           impresion del browser; el user elige "Guardar como PDF". -->
+      <button
+        type="button"
+        (click)="printAtsPdf()"
+        class="cv-action-btn cv-action-btn--secondary"
+        title="PDF con texto seleccionable — súbelo a portales ATS (Workday, Taleo, LinkedIn Easy Apply)"
+        aria-label="Descargar PDF ATS"
+      >
+        <span class="material-symbols-outlined cv-action-btn-icon">description</span>
+        <span class="cv-action-btn-label">PDF ATS</span>
       </button>
       <button
         type="button"

@@ -521,7 +521,9 @@
 }
 
 /* ===========================================
-   Print & PDF.
+   Print & PDF — la impresion vive controlada por `body.is-printing-cv`
+   que setea `printAtsPdf()` antes de abrir el dialogo. Ver
+   `styles.scss` para las reglas globales que ocultan el shell.
    =========================================== */
 @media print {
   .cv-pages-wrap {
@@ -532,7 +534,15 @@
     margin: 0;
     box-shadow: none;
     border-radius: 0;
-    page-break-after: always;
+    // page-break-after en todas menos la ultima — sino Chrome agrega
+    // una hoja en blanco extra al final del PDF exportado.
+    &:not(:last-child) {
+      page-break-after: always;
+    }
+    // Evita que el browser parta una hoja de nuestro layout en dos
+    // hojas fisicas — el algoritmo de paginacion ya distribuyo el
+    // contenido para que quepa en una Oficio por bloque.
+    page-break-inside: avoid;
   }
 }
 
