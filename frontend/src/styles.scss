@@ -558,6 +558,15 @@ a:focus-visible {
       visibility: visible !important;
     }
 
+    // Botones AI y cualquier control marcado como no-export (ej.
+    // "Cuantificar" dentro de las entries) NO deben aparecer en el PDF
+    // que se sube al ATS. `display:none` los saca del layout tambien —
+    // sin esto quedaria el hueco donde estaba el boton.
+    .cv-pages-wrap .cv-ai-btn,
+    .cv-pages-wrap .no-export {
+      display: none !important;
+    }
+
     .cv-pages-wrap {
       position: absolute !important;
       top: 0 !important;
