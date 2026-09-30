@@ -12,6 +12,7 @@ import {
 } from '../services/application.service';
 import { portalMeta } from '../shared/portal';
 import { CoverLetterModalComponent } from '../cover-letter/cover-letter-modal.component';
+import { ReviewPromptComponent } from './review-prompt.component';
 
 const _RELATIVE_FMT = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
 
@@ -48,7 +49,7 @@ const TABS: readonly TabConfig[] = [
 @Component({
   selector: 'app-applications',
   standalone: true,
-  imports: [CommonModule, RouterModule, CoverLetterModalComponent],
+  imports: [CommonModule, RouterModule, CoverLetterModalComponent, ReviewPromptComponent],
   templateUrl: './applications.component.html',
   styleUrl: './applications.component.scss',
 })
@@ -75,9 +76,8 @@ export class ApplicationsComponent {
       // la vista). Sin esta exclusión el badge mostraba 1 mientras el
       // panel decía "No tienes postulaciones en este estado".
       all: all.filter((a) => a.status !== 'pending').length,
-      active: all.filter((a) =>
-        ['applied', 'in_review', 'interview', 'offer'].includes(a.status),
-      ).length,
+      active: all.filter((a) => ['applied', 'in_review', 'interview', 'offer'].includes(a.status))
+        .length,
       interview: all.filter((a) => a.status === 'interview').length,
       offer: all.filter((a) => a.status === 'offer').length,
       rejected: all.filter((a) => a.status === 'rejected').length,
@@ -98,9 +98,7 @@ export class ApplicationsComponent {
       return all.filter((a) => a.status !== 'pending');
     }
     if (tab === 'active') {
-      return all.filter((a) =>
-        ['applied', 'in_review', 'interview', 'offer'].includes(a.status),
-      );
+      return all.filter((a) => ['applied', 'in_review', 'interview', 'offer'].includes(a.status));
     }
     return all.filter((a) => a.status === tab);
   });
@@ -162,16 +160,12 @@ export class ApplicationsComponent {
     this.api.updateStatus(application.id, newStatus).subscribe({
       next: (updated) => {
         // Reemplazamos con el dto fresco (incluye status_changed_at actualizado).
-        this.applications.update((list) =>
-          list.map((a) => (a.id === updated.id ? updated : a)),
-        );
+        this.applications.update((list) => list.map((a) => (a.id === updated.id ? updated : a)));
       },
       error: () => {
         // Rollback
         this.applications.update((list) =>
-          list.map((a) =>
-            a.id === application.id ? { ...a, status: previousStatus } : a,
-          ),
+          list.map((a) => (a.id === application.id ? { ...a, status: previousStatus } : a)),
         );
       },
     });

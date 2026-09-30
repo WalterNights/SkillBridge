@@ -1,0 +1,103 @@
+<section class="px-4 lg:px-8 py-8 lg:py-10">
+  <div class="max-w-4xl mx-auto">
+    <header class="mb-7">
+      <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-2">Administración</p>
+      <h1 class="text-3xl lg:text-4xl font-black text-bone tracking-tight leading-tight">Reseñas</h1>
+      <p class="text-sm text-warm-grey mt-2 max-w-2xl">
+        Publica o rechaza las reseñas de usuarios. En el landing solo aparecen las publicadas con 4-5 estrellas y con
+        autorización del usuario; las demás quedan como feedback.
+      </p>
+    </header>
+
+    <nav class="flex gap-2 mb-6 flex-wrap" aria-label="Filtrar reseñas">
+      <button
+        *ngFor="let f of filters"
+        type="button"
+        class="text-xs uppercase tracking-[0.12em] font-semibold px-3 py-1.5 rounded-full border transition-colors"
+        [ngClass]="
+          filter() === f.key
+            ? ['border-primary', 'text-primary', 'bg-primary/10']
+            : ['border-white/10', 'text-warm-grey', 'hover:text-bone']
+        "
+        (click)="setFilter(f.key)"
+      >
+        {{ f.label }}
+      </button>
+    </nav>
+
+    <div *ngIf="isLoading()" class="glass-strong rounded-2xl p-10 text-center">
+      <p class="text-sm text-warm-grey">Cargando reseñas…</p>
+    </div>
+
+    <div *ngIf="!isLoading() && errorMessage()" class="glass-strong rounded-2xl p-10 text-center">
+      <p class="text-sm text-warm-grey">{{ errorMessage() }}</p>
+    </div>
+
+    <div
+      *ngIf="!isLoading() && !errorMessage() && reviews().length === 0"
+      class="glass-strong rounded-2xl p-10 text-center"
+    >
+      <p class="text-sm text-warm-grey">No hay reseñas en este estado.</p>
+    </div>
+
+    <div *ngIf="!isLoading() && !errorMessage() && reviews().length > 0" class="space-y-3">
+      <p class="text-xs text-warm-grey">{{ total() }} reseña(s)</p>
+      <article *ngFor="let r of reviews()" class="glass-strong rounded-2xl p-5">
+        <div class="flex items-center gap-2 flex-wrap mb-2">
+          <p class="text-sm text-bone font-semibold">{{ r.display_name }}</p>
+          <span class="text-xs text-warm-grey">&#64;{{ r.username }}</span>
+          <span class="flex gap-0.5 ml-1" [attr.aria-label]="r.rating + ' de 5'">
+            <span
+              *ngFor="let n of stars"
+              class="material-symbols-outlined"
+              [class.text-primary]="n <= r.rating"
+              [class.text-warm-grey]="n > r.rating"
+              style="font-size: 14px; font-variation-settings: 'FILL' 1"
+              >star</span
+            >
+          </span>
+          <span
+            *ngIf="r.landing_eligible"
+            class="text-[10px] uppercase tracking-[0.12em] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400"
+            >Apta para landing</span
+          >
+          <span
+            *ngIf="!r.allow_public"
+            class="text-[10px] uppercase tracking-[0.12em] font-semibold px-2 py-0.5 rounded-full bg-white/5 text-warm-grey"
+            >Sin autorización pública</span
+          >
+          <span class="ml-auto text-xs text-warm-grey">{{ formatDate(r.updated_at) }}</span>
+        </div>
+
+        <p class="text-sm text-bone/90 italic leading-relaxed">"{{ r.comment }}"</p>
+
+        <p *ngIf="r.moderated_by_username" class="text-xs text-warm-grey mt-2">
+          {{ r.status === 'published' ? 'Publicada' : r.status === 'rejected' ? 'Rechazada' : 'Moderada' }}
+          por {{ r.moderated_by_username
+          }}<ng-container *ngIf="r.moderation_note"> — {{ r.moderation_note }}</ng-container>
+        </p>
+
+        <div class="flex gap-3 mt-4">
+          <button
+            *ngIf="r.status !== 'published'"
+            type="button"
+            class="btn-primary px-4 py-2 rounded-xl text-xs disabled:opacity-50"
+            [disabled]="savingId() === r.id"
+            (click)="publish(r)"
+          >
+            Publicar
+          </button>
+          <button
+            *ngIf="r.status !== 'rejected'"
+            type="button"
+            class="px-4 py-2 rounded-xl text-xs border border-white/10 text-warm-grey hover:text-bone disabled:opacity-50"
+            [disabled]="savingId() === r.id"
+            (click)="reject(r)"
+          >
+            Rechazar
+          </button>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>

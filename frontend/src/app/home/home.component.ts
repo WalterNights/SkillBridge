@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { STORAGE_KEYS } from '../constants/app-stats';
 import { AnalyticsService } from '../services/analytics.service';
+import { LandingReview, ReviewService } from '../services/review.service';
 import { RevealDirective } from '../shared/directives/reveal.directive';
 import { PublicFooterComponent } from '../shared/public-footer/public-footer.component';
 import { UserNavComponent } from '../shared/user-nav/user-nav.component';
@@ -19,19 +20,34 @@ const POST_SIGNUP_REDIRECT = '/profile';
 
 type AnchorId = 'como-funciona' | 'recursos' | 'blog';
 
+/** Reseñas reales que se muestran en el landing (una fila de 3 columnas). */
+const LANDING_REVIEWS_SHOWN = 3;
+
+/** Tarjeta de testimonio real, con las iniciales precalculadas para el
+ * avatar cuando el usuario no subió foto. */
+type LandingReviewCard = LandingReview & { initials: string };
+
+function toInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join('');
+}
+
 /**
  * Snippet de feedback positivo que se renderiza en el bloque final del
  * landing cuando el usuario está logueado (en lugar del CTA "Empezar",
- * que ya no le aporta a alguien dentro del producto). Texto stub hasta
- * que tengamos backend de comentarios — cuando esté, swappearlo por un
- * fetch al endpoint `top-positive` y ordenar por rating desc.
+ * que ya no le aporta a alguien dentro del producto). El stub se usa
+ * solo mientras `/api/reviews/landing/` no devuelva reseñas reales.
  */
 interface UserComment {
   quote: string;
   name: string;
   role: string;
   city: string;
-  rating: 5;
+  rating: number;
 }
 
 const POSITIVE_COMMENTS_STUB: UserComment[] = [
@@ -79,6 +95,7 @@ export class HomeComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
   private analytics = inject(AnalyticsService);
+  private reviewService = inject(ReviewService);
 
   /**
    * Signals derived from AuthService observables. `toSignal` handles
@@ -91,12 +108,38 @@ export class HomeComponent {
   /** Active anchor in the navbar, updated on click. */
   currentSection = signal<AnchorId | null>(null);
 
-  /** Comentarios positivos para el bloque final cuando el usuario está
-   * logueado. Stub hasta que exista el backend de comentarios. */
-  positiveComments: readonly UserComment[] = POSITIVE_COMMENTS_STUB;
+  /** Reseñas reales aprobadas (4-5 estrellas, con consentimiento).
+   * Vacío mientras carga o si no hay ninguna — en ese caso el template
+   * sigue mostrando los testimonios estáticos. */
+  landingReviews = signal<LandingReview[]>([]);
+
+  landingCards = computed<LandingReviewCard[]>(() =>
+    this.landingReviews()
+      .slice(0, LANDING_REVIEWS_SHOWN)
+      .map((r) => ({ ...r, initials: toInitials(r.name) })),
+  );
+
+  /** Comentarios del bloque final para usuarios logueados: reseñas
+   * reales si existen, stub si todavía no hay. */
+  positiveComments = computed<readonly UserComment[]>(() => {
+    const cards = this.landingCards();
+    if (cards.length === 0) return POSITIVE_COMMENTS_STUB;
+    return cards.map((r) => ({
+      quote: r.comment,
+      name: r.name,
+      role: r.role,
+      city: r.city,
+      rating: r.rating,
+    }));
+  });
 
   constructor(title: Title) {
     title.setTitle('SkilTak — Deja de buscar en mil portales');
+    this.reviewService.landing().subscribe({
+      next: (reviews) => this.landingReviews.set(reviews),
+      // Silencioso: sin reseñas el landing cae a los testimonios estáticos.
+      error: () => {},
+    });
   }
 
   /** Navbar link click: mark as active + smooth-scroll to the section. */

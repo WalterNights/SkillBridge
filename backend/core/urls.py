@@ -17,6 +17,7 @@ urlpatterns = [
     path("api/analytics/", include("analytics.urls")),
     path("api/system/", include("system_settings.urls")),
     path("api/portfolio/", include("portfolio.urls")),
+    path("api/reviews/", include("reviews.urls")),
     path("api/", include("notifications.urls")),
     path("api/", include("tips.urls")),
     path("api/", include("applications.urls")),

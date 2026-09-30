@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "analytics",
     "system_settings",
     "portfolio",
+    "reviews",
     "corsheaders",
     "rest_framework",
     # Necesario para invalidar refresh tokens al rotar (SEGURIDAD).
@@ -348,6 +349,12 @@ GEMINI_MODEL = config("GEMINI_MODEL", default="gemini-2.5-flash")
 # contributions on my profile" habilitado). Sin token, cae al proxy
 # público `github-contributions-api.jogruber.de` que solo ve públicas.
 GITHUB_TOKEN = config("GITHUB_TOKEN", default="")
+
+# ----- Reseñas -----
+# Mínimo de postulaciones reales (confirmadas con "Sí, apliqué")
+# para poder dejar una reseña. Filtra opiniones de gente que no usó el
+# producto de verdad.
+REVIEWS_MIN_APPLICATIONS = config("REVIEWS_MIN_APPLICATIONS", default=5, cast=int)
 
 
 # ----- Cupos de uso de AI (tier free) -----

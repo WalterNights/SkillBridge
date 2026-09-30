@@ -1,0 +1,128 @@
+<ng-container *ngIf="state() as s">
+  <!-- No elegible: progreso hacia el mínimo de postulaciones -->
+  <div *ngIf="!s.eligible" class="glass-strong rounded-2xl p-5 mb-6 flex items-center gap-4">
+    <span
+      class="inline-flex w-10 h-10 rounded-full bg-primary/15 items-center justify-center shrink-0 material-symbols-outlined text-primary"
+      style="font-size: 20px; font-variation-settings: 'FILL' 1"
+      >rate_review</span
+    >
+    <div class="flex-1 min-w-0">
+      <p class="text-sm text-bone font-semibold">Cuéntanos tu experiencia con SkilTak</p>
+      <p class="text-xs text-warm-grey mt-0.5">
+        Podrás dejar tu reseña cuando confirmes {{ s.min_applications }} postulaciones. Llevas
+        {{ s.applications_count }}.
+      </p>
+      <div class="h-1 rounded-full bg-white/[0.06] mt-2.5 overflow-hidden">
+        <div class="h-full bg-primary rounded-full" [style.width.%]="progressPct()"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario (elegible sin reseña, o editando) -->
+  <form *ngIf="showForm()" class="glass-strong rounded-2xl p-6 mb-6" (ngSubmit)="submit()">
+    <p class="text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-1.5">Tu reseña</p>
+    <h2 class="text-lg font-semibold text-bone">¿Cómo te ha ido con SkilTak?</h2>
+    <p class="text-sm text-warm-grey mt-1 mb-4">
+      Ya aplicaste a {{ s.applications_count }} ofertas — tu opinión ayuda a otros profesionales.
+    </p>
+
+    <div class="flex gap-1 mb-4" role="radiogroup" aria-label="Calificación">
+      <button
+        *ngFor="let n of stars"
+        type="button"
+        role="radio"
+        [attr.aria-checked]="rating() === n"
+        [attr.aria-label]="n + ' de 5'"
+        class="material-symbols-outlined transition-colors"
+        [class.text-primary]="n <= rating()"
+        [class.text-warm-grey]="n > rating()"
+        [style.font-variation-settings]="n <= rating() ? fillOn : fillOff"
+        style="font-size: 28px"
+        (click)="rating.set(n)"
+      >
+        star
+      </button>
+    </div>
+
+    <label class="block">
+      <span class="sr-only">Comentario</span>
+      <textarea
+        name="comment"
+        rows="4"
+        [maxlength]="commentMax"
+        [ngModel]="comment()"
+        (ngModelChange)="comment.set($event)"
+        placeholder="¿Qué te ha servido? ¿Qué cambió en tu búsqueda de empleo?"
+        class="w-full rounded-xl bg-white/[0.03] border border-white/[0.08] p-3 text-sm text-bone placeholder:text-warm-grey/60 focus:outline-none focus:border-primary/60 resize-y"
+      ></textarea>
+    </label>
+    <p class="text-xs text-warm-grey text-right mt-1">
+      {{ comment().trim().length }}/{{ commentMax }}
+      <span *ngIf="comment().trim().length < commentMin"> · mínimo {{ commentMin }}</span>
+    </p>
+
+    <label class="flex items-start gap-2.5 mt-3 cursor-pointer">
+      <input
+        type="checkbox"
+        name="allowPublic"
+        class="mt-0.5 accent-primary"
+        [ngModel]="allowPublic()"
+        (ngModelChange)="allowPublic.set($event)"
+      />
+      <span class="text-xs text-warm-grey leading-relaxed">
+        Autorizo que mi reseña, mi nombre (ej. "Ana G."), cargo, ciudad y foto de perfil aparezcan en la página
+        principal de SkilTak.
+      </span>
+    </label>
+
+    <div class="flex items-center gap-3 mt-5">
+      <button
+        type="submit"
+        class="btn-primary px-5 py-2.5 rounded-xl text-sm disabled:opacity-50"
+        [disabled]="!canSubmit()"
+      >
+        {{ saving() ? 'Enviando…' : 'Enviar reseña' }}
+      </button>
+      <button *ngIf="s.review" type="button" class="text-sm text-warm-grey hover:text-bone" (click)="cancelEdit()">
+        Cancelar
+      </button>
+    </div>
+  </form>
+
+  <!-- Reseña enviada -->
+  <div *ngIf="s.eligible && s.review && !editing()" class="glass-strong rounded-2xl p-5 mb-6">
+    <div class="flex items-center gap-2 mb-2 flex-wrap">
+      <p class="text-sm text-bone font-semibold">Tu reseña</p>
+      <span
+        class="text-[10px] uppercase tracking-[0.12em] font-semibold px-2 py-0.5 rounded-full"
+        [ngClass]="{
+          'bg-amber-500/15 text-amber-400': s.review.status === 'pending',
+          'bg-emerald-500/15 text-emerald-400': s.review.status === 'published',
+          'bg-white/5 text-warm-grey': s.review.status === 'rejected',
+        }"
+      >
+        {{ statusLabel(s.review.status) }}
+      </span>
+      <span class="ml-auto flex gap-0.5" [attr.aria-label]="s.review.rating + ' de 5'">
+        <span
+          *ngFor="let n of stars"
+          class="material-symbols-outlined"
+          [class.text-primary]="n <= s.review.rating"
+          [class.text-warm-grey]="n > s.review.rating"
+          style="font-size: 14px; font-variation-settings: 'FILL' 1"
+          >star</span
+        >
+      </span>
+    </div>
+    <p class="text-sm text-bone/90 italic leading-relaxed">"{{ s.review.comment }}"</p>
+    <p *ngIf="s.review.status === 'rejected' && s.review.moderation_note" class="text-xs text-warm-grey mt-2">
+      Motivo: {{ s.review.moderation_note }}
+    </p>
+    <div class="flex gap-4 mt-3">
+      <button type="button" class="text-xs text-primary font-semibold hover:underline" (click)="startEdit()">
+        Editar
+      </button>
+      <button type="button" class="text-xs text-warm-grey hover:text-bone" (click)="remove()">Borrar</button>
+    </div>
+  </div>
+</ng-container>

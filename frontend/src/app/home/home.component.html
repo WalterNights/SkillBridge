@@ -314,6 +314,42 @@
       <h2 class="text-headline text-bone">Profesionales que ya dieron el paso</h2>
     </div>
 
+    <!-- Reseñas reales (aprobadas, 4-5 estrellas, con consentimiento).
+         Sin reseñas todavía → testimonios estáticos de abajo. -->
+    <div
+      *ngIf="landingCards().length > 0; else staticTestimonials"
+      class="flex flex-wrap justify-center gap-6"
+    >
+      <!-- Flex centrado (no grid) para que 1-2 reseñas no queden
+           pegadas a la izquierda; el ancho replica una columna de 3. -->
+      <div
+        *ngFor="let r of landingCards(); let i = index"
+        class="glass rounded-2xl p-8 flex flex-col w-full md:w-[calc((100%-3rem)/3)]"
+        appReveal
+        [style.transition-delay.ms]="i * 80"
+      >
+        <p class="text-body-lg text-bone/90 italic leading-relaxed mb-7 flex-1">"{{ r.comment }}"</p>
+        <div class="flex items-center gap-3">
+          <div class="photo w-11 h-11 rounded-full shrink-0">
+            <img *ngIf="r.photo_url; else initialsAvatar" [src]="r.photo_url" alt="" />
+            <ng-template #initialsAvatar>
+              <span
+                class="w-full h-full rounded-full bg-primary/15 text-primary text-sm font-semibold flex items-center justify-center"
+                >{{ r.initials }}</span
+              >
+            </ng-template>
+          </div>
+          <div>
+            <p class="text-body text-bone font-semibold">{{ r.name }}</p>
+            <p class="text-label uppercase text-warm-grey">
+              {{ r.role }}<ng-container *ngIf="r.role && r.city"> · </ng-container>{{ r.city }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #staticTestimonials>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div class="glass rounded-2xl p-8" appReveal>
         <p class="text-body-lg text-bone/90 italic leading-relaxed mb-7">
@@ -369,6 +405,7 @@
         </div>
       </div>
     </div>
+    </ng-template>
   </div>
 </section>
 
@@ -407,7 +444,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
           <article
-            *ngFor="let c of positiveComments"
+            *ngFor="let c of positiveComments()"
             class="rounded-2xl border-l-2 border-primary bg-canvas/40 backdrop-blur p-6 flex flex-col"
           >
             <div class="flex gap-1 mb-4" [attr.aria-label]="'Calificación ' + c.rating + ' de 5'">

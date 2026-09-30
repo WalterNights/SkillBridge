@@ -184,6 +184,16 @@
       </a>
       <a
         class="nav-item"
+        routerLink="/admin/reviews"
+        routerLinkActive="active"
+        (click)="toggleDrawer(false)"
+        title="Reseñas de usuarios"
+      >
+        <span class="material-symbols-outlined">reviews</span>
+        <span class="nav-label">Reseñas</span>
+      </a>
+      <a
+        class="nav-item"
         routerLink="/admin/feature-flags"
         routerLinkActive="active"
         (click)="toggleDrawer(false)"

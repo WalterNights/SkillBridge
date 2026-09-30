@@ -202,6 +202,11 @@ export const routes: Routes = [
               import('./admin/admin-faqs.component').then((m) => m.AdminFaqsComponent),
           },
           {
+            path: 'reviews',
+            loadComponent: () =>
+              import('./admin/admin-reviews.component').then((m) => m.AdminReviewsComponent),
+          },
+          {
             path: 'feature-flags',
             loadComponent: () =>
               import('./admin/admin-feature-flags.component').then(
