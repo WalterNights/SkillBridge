@@ -21,7 +21,37 @@
     /* Red de seguridad para pantallas bajas: si el contenido no cabe en
        100vh, el sidebar scrollea en vez de cortar socials/lang. */
     overflow-y: auto;
-    scrollbar-width: thin;
+
+    /* Scrollbar estilizada: sin track ni flechas, thumb fino con el
+       color de las líneas del diseño que se enciende en acento al hover.
+       Chromium/Safari usan ::-webkit-scrollbar; Firefox cae al estándar
+       (en Chrome 121+ `scrollbar-color` anula los pseudo-elementos, por
+       eso va solo donde webkit no está soportado). */
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--pf-line-strong);
+      border-radius: 999px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: var(--pf-accent);
+    }
+
+    &::-webkit-scrollbar-button {
+      display: none;
+    }
+
+    @supports not selector(::-webkit-scrollbar) {
+      scrollbar-width: thin;
+      scrollbar-color: var(--pf-line-strong) transparent;
+    }
   }
 }
 
