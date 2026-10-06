@@ -372,9 +372,7 @@ class WebSearchJobsScraper(JobScraper):
         except requests.RequestException as e:
             logger.error("WebSearch fetch failed: %s", e)
             return None
-        if response.status_code == 429 or (
-            response.status_code == _ANTIBOT_STATUS or self._is_rate_limited(response.text)
-        ):
+        if response.status_code in (429, _ANTIBOT_STATUS) or self._is_rate_limited(response.text):
             raise ScraperError(
                 f"DuckDuckGo bloqueó la búsqueda (HTTP {response.status_code}, anti-bot)"
             )
