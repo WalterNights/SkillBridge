@@ -98,6 +98,10 @@ class JobOffer(models.Model):
     # priorizar el probe diario (chequear primero las que llevan más
     # tiempo sin verificar).
     last_checked_at = models.DateTimeField(null=True, blank=True)
+    # Fecha de cierre publicada por el portal (JSON-LD `validThrough`,
+    # `deadline` de Torre). El feed oculta las vencidas y el probe diario
+    # las desactiva. Null = el portal no publica fecha de cierre.
+    expires_at = models.DateTimeField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

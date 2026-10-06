@@ -1,4 +1,5 @@
 import { CommonModule, Location } from '@angular/common';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { JobService } from '../services/job.service';
@@ -46,6 +47,7 @@ function _formatRelative(iso: string | undefined): string {
 export class JobDetailComponent implements OnInit {
   job: JobOffer | null = null;
   isLoading = true;
+  errorTitle = 'No pudimos cargar la oferta';
   errorMessage = '';
   isBookmarked = false;
   isHidden = false;
@@ -96,8 +98,14 @@ export class JobDetailComponent implements OnInit {
         this.isLoading = false;
         this.hydrateApplicationState(data.id);
       },
-      error: () => {
-        this.errorMessage = 'No pudimos cargar la oferta.';
+      error: (err: HttpErrorResponse) => {
+        // 410: el backend la verificó al abrirla y el portal ya la dio de baja.
+        if (err.status === HttpStatusCode.Gone) {
+          this.errorTitle = 'Esta oferta ya cerró';
+          this.errorMessage = 'El portal de origen la dio de baja. Ya no aparecerá en tu feed.';
+        } else {
+          this.errorMessage = 'No pudimos cargar la oferta.';
+        }
         this.isLoading = false;
       },
     });

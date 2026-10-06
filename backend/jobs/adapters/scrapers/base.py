@@ -13,6 +13,7 @@ from __future__ import annotations
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from common.skills_taxonomy import all_recognizable, normalize
 
@@ -32,6 +33,25 @@ class JobOfferData:
     url: str
     keywords: str
     portal: str = "other"
+    #: Fecha de cierre publicada por el portal (JSON-LD `validThrough`,
+    #: `deadline` de Torre). None si el portal no la publica.
+    expires_at: datetime | None = None
+
+
+def parse_iso_datetime(raw: object) -> datetime | None:
+    """Parsea una fecha ISO 8601 de un portal a datetime con zona horaria.
+
+    Acepta "2026-10-30", "2026-10-30T23:59:59Z" o con offset. Fechas sin
+    zona se asumen UTC. Devuelve None si viene vacía o malformada — una
+    fecha rota no debe tumbar el scrape de la oferta.
+    """
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        parsed = datetime.fromisoformat(raw.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
 class JobScraper(ABC):

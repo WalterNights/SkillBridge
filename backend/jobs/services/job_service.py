@@ -264,10 +264,16 @@ class JobService:
                         "modality": modality,
                         "category": category,
                         "salary_text": salary_text,
+                        "expires_at": data.expires_at,
                     },
                 )
                 if was_created:
                     created.append(obj)
+                elif data.expires_at and obj.expires_at != data.expires_at:
+                    # El portal publicó (o movió) la fecha de cierre desde
+                    # el primer scrape — la mantenemos al día.
+                    obj.expires_at = data.expires_at
+                    obj.save(update_fields=["expires_at"])
             except Exception:
                 skipped += 1
                 logger.exception("Skipping offer (url=%r)", data.url)

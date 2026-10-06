@@ -350,6 +350,12 @@ GEMINI_MODEL = config("GEMINI_MODEL", default="gemini-2.5-flash")
 # público `github-contributions-api.jogruber.de` que solo ve públicas.
 GITHUB_TOKEN = config("GITHUB_TOKEN", default="")
 
+# ----- Disponibilidad de ofertas -----
+# Verificación on-demand: al abrir el detalle de una oferta no verificada en
+# 24h, y cuando un usuario la reporta "no disponible". Los tests lo apagan
+# para no hacer requests reales a los portales.
+JOBS_ONDEMAND_CHECK = config("JOBS_ONDEMAND_CHECK", default=True, cast=bool)
+
 # ----- Reseñas -----
 # Mínimo de postulaciones reales (confirmadas con "Sí, apliqué")
 # para poder dejar una reseña. Filtra opiniones de gente que no usó el

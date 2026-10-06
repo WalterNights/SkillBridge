@@ -3,13 +3,15 @@ Tareas asíncronas para el módulo de jobs.
 """
 
 import logging
+import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import urlparse
 
 import requests
+from celery import shared_task
 from django.utils import timezone
 
-from celery import shared_task
-
+from jobs.adapters.scrapers.base import parse_iso_datetime
 from jobs.models import JobOffer
 from jobs.services.job_service import JobService
 from jobs.services.matching_service import JobMatchingService
@@ -162,9 +164,31 @@ _PORTAL_DEAD_MARKERS: dict[str, tuple[str, ...]] = {
         "esta oferta no se encuentra disponible",
     ),
     # Otros portales: agregar marcadores cuando aparezcan casos reales.
-    # Sin marcador, solo el 404/410 los descarta — más conservador pero
-    # mejor que false positives.
 }
+
+# Marcadores aplicados a TODOS los portales. Son frases completas que solo
+# aparecen cuando la propia oferta está cerrada ("esta oferta…", "this
+# job…"), no palabras sueltas como "no disponible" que podrían salir en un
+# bloque de "ofertas similares" de una oferta viva.
+_GENERIC_DEAD_MARKERS: tuple[str, ...] = (
+    "esta oferta ya no está disponible",
+    "esta oferta ya no esta disponible",
+    "esta oferta ha finalizado",
+    "esta oferta ha expirado",
+    "esta vacante ya no está disponible",
+    "esta vacante ya no esta disponible",
+    "esta vacante ha sido cerrada",
+    "this job is no longer available",
+    "this job has expired",
+)
+
+# `validThrough` del JSON-LD JobPosting (schema.org). Si la página dice que
+# la oferta venció, le creemos al portal.
+_VALID_THROUGH_RE = re.compile(r'"validThrough"\s*:\s*"([^"]+)"')
+
+# Cuánto HTML leemos buscando marcadores / JSON-LD. El JSON-LD suele ir en
+# el <head>, pero en portales con mucho inline CSS/JS queda más abajo.
+_PROBE_SAMPLE_BYTES = 256 * 1024
 
 # HTTP timeout corto — el probe no debe colgar el worker si un portal está
 # lento. La respuesta es binaria (viva / muerta), no necesitamos el body
@@ -179,25 +203,58 @@ _PROBE_TIMEOUT_SECONDS = 8
 _PROBE_WORKERS = 5
 
 
-def _probe_offer(offer_id: int, url: str, portal: str) -> tuple[int, bool, str]:
+def _redirected_to_listing(original_url: str, final_url: str) -> bool:
+    """True si el portal redirigió la oferta a la home o a un listado padre.
+
+    Ej: `/ofertas/123-dev` → `/ofertas` o `/`. Es como varios portales
+    "dan de baja" una oferta sin devolver 404. Solo contamos rutas
+    estrictamente más cortas y ancestras de la original — un redirect a
+    una URL canónica más larga (`/jobs/view/123` → `/jobs/view/dev-123`)
+    o a un login wall NO cuenta como muerte.
+    """
+    original_path = urlparse(original_url).path.rstrip("/")
+    final_path = urlparse(final_url).path.rstrip("/")
+    if not original_path or final_path == original_path:
+        return False
+    return final_path == "" or original_path.startswith(final_path + "/")
+
+
+def _dead_reason_from_body(body: str, portal: str) -> str | None:
+    """Busca en el HTML señales de que la oferta está cerrada."""
+    body_lower = body.lower()
+    for marker in _PORTAL_DEAD_MARKERS.get(portal, ()) + _GENERIC_DEAD_MARKERS:
+        if marker in body_lower:
+            return f"dead_marker:{marker[:30]}"
+
+    match = _VALID_THROUGH_RE.search(body)
+    if match:
+        valid_through = parse_iso_datetime(match.group(1))
+        if valid_through and valid_through < timezone.now():
+            return "expired_valid_through"
+    return None
+
+
+def _probe_offer(
+    offer_id: int, url: str, portal: str, timeout: float = _PROBE_TIMEOUT_SECONDS
+) -> tuple[int, bool, str]:
     """Chequea si `url` sigue viva. Devuelve (offer_id, is_dead, reason).
 
     Decisiones:
       - 404 / 410 → muerta ("http_404", "http_410").
-      - 200 + marcador de "no disponible" en el HTML del portal → muerta
+      - Redirect a la home o a un listado padre → muerta ("redirect_to_listing").
+      - 200 + marcador de "no disponible" (del portal o genérico) → muerta
         ("dead_marker:<match>").
-      - 200 sin marcador → viva.
-      - Otros 2xx/3xx (redirect, 429, 5xx) → viva por precaución. Falsos
+      - 200 + JSON-LD con `validThrough` vencido → muerta ("expired_valid_through").
+      - 200 sin señales → viva.
+      - Otros status (403 anti-bot, 429, 5xx) → viva por precaución. Falsos
         positivos son peores que falsos negativos: si marcamos muerta
         una oferta viva, el user pierde la oportunidad; si dejamos viva
-        una muerta, hasta 24h para que el próximo probe la detecte.
+        una muerta, la limpia la fecha de cierre o la limpieza por edad.
       - Timeout / conn error → viva (portal caído no significa oferta muerta).
     """
     try:
-        # Sesión efímera por probe: los portales tratan a los HEAD con
-        # cookies persistentes como sospechosos. Sin sesión reusable no
-        # tenemos rate de conexión compartido — la sobrecarga es minimal
-        # comparada con los 500ms del round trip.
+        # Sesión efímera por probe: los portales tratan a los requests con
+        # cookies persistentes como sospechosos.
         response = requests.get(
             url,
             headers={
@@ -206,10 +263,9 @@ def _probe_offer(offer_id: int, url: str, portal: str) -> tuple[int, bool, str]:
                 "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
             },
             allow_redirects=True,
-            timeout=_PROBE_TIMEOUT_SECONDS,
-            # Stream=True + iter_content: leemos hasta 32 KB solo para
-            # buscar marcadores. Descargar el HTML completo (que puede
-            # ser MB en LinkedIn) sería malgastar ancho de banda.
+            timeout=timeout,
+            # stream=True: leemos solo una muestra del HTML, no la página
+            # entera (que puede ser MB en LinkedIn).
             stream=True,
         )
     except requests.RequestException as exc:
@@ -221,29 +277,33 @@ def _probe_offer(offer_id: int, url: str, portal: str) -> tuple[int, bool, str]:
         response.close()
         return offer_id, True, f"http_{status}"
 
-    if status == 200:
-        markers = _PORTAL_DEAD_MARKERS.get(portal, ())
-        if markers:
-            try:
-                # Leer solo los primeros 64KB — suficiente para el
-                # marcador que suele estar arriba de la página. Portal
-                # que pone el "no disponible" al final del HTML nos
-                # escapa (edge case aceptable).
-                sample = response.raw.read(64 * 1024, decode_content=True)
-                if isinstance(sample, bytes):
-                    sample = sample.decode("utf-8", errors="ignore")
-                sample_lower = sample.lower()
-                for marker in markers:
-                    if marker in sample_lower:
-                        return offer_id, True, f"dead_marker:{marker[:30]}"
-            except Exception as exc:  # noqa: BLE001 — best-effort
-                logger.debug("probe %s: failed to read body: %s", url, exc)
-            finally:
-                response.close()
-        return offer_id, False, "http_200"
+    if status != 200:
+        response.close()
+        return offer_id, False, f"http_{status}"
 
-    response.close()
-    return offer_id, False, f"http_{status}"
+    try:
+        final_url = getattr(response, "url", None) or url
+        if getattr(response, "history", None) and _redirected_to_listing(url, final_url):
+            return offer_id, True, "redirect_to_listing"
+
+        sample = response.raw.read(_PROBE_SAMPLE_BYTES, decode_content=True)
+        if isinstance(sample, bytes):
+            sample = sample.decode("utf-8", errors="ignore")
+        dead_reason = _dead_reason_from_body(sample, portal)
+        if dead_reason:
+            return offer_id, True, dead_reason
+    except Exception as exc:  # noqa: BLE001 — best-effort
+        logger.debug("probe %s: failed to read body: %s", url, exc)
+    finally:
+        response.close()
+    return offer_id, False, "http_200"
+
+
+def _deactivate_expired_offers(now) -> int:
+    """Apaga las ofertas cuya fecha de cierre publicada ya pasó."""
+    return JobOffer.objects.filter(is_active=True, expires_at__lte=now).update(
+        is_active=False, last_checked_at=now
+    )
 
 
 @shared_task(name="jobs.verify_active_offers")
@@ -258,6 +318,10 @@ def verify_active_offers():
     Return: `{"status", "checked", "marked_dead", "reasons"}` con un
     contador por razón (http_404, dead_marker:*, etc) para diagnóstico.
     """
+    now = timezone.now()
+    # Primero las que vencieron por fecha: no hace falta pegarle al portal.
+    expired = _deactivate_expired_offers(now)
+
     qs = (
         JobOffer.objects.filter(is_active=True)
         .only("id", "url", "portal")
@@ -265,11 +329,16 @@ def verify_active_offers():
     )
     total = qs.count()
     if total == 0:
-        return {"status": "success", "checked": 0, "marked_dead": 0, "reasons": {}}
+        return {
+            "status": "success",
+            "checked": 0,
+            "marked_dead": 0,
+            "expired": expired,
+            "reasons": {},
+        }
 
     logger.info("verify_active_offers: probing %d active offers", total)
 
-    now = timezone.now()
     dead_ids: list[int] = []
     alive_ids: list[int] = []
     reasons: dict[str, int] = {}
@@ -311,10 +380,44 @@ def verify_active_offers():
         "status": "success",
         "checked": total,
         "marked_dead": len(dead_ids),
+        "expired": expired,
         "reasons": reasons,
     }
     logger.info("verify_active_offers complete: %s", summary)
     return summary
+
+
+def check_offer_availability(
+    offer: JobOffer, timeout: float = _PROBE_TIMEOUT_SECONDS
+) -> bool:
+    """Verifica UNA oferta ya mismo y persiste el resultado.
+
+    Usado al abrir el detalle (si no se verificó hace rato) y cuando un
+    usuario la reporta como "no disponible". Devuelve True si sigue viva.
+    """
+    now = timezone.now()
+    if offer.expires_at and offer.expires_at <= now:
+        is_dead, reason = True, "expired_at"
+    else:
+        _, is_dead, reason = _probe_offer(offer.id, offer.url, offer.portal, timeout)
+
+    offer.last_checked_at = now
+    update_fields = ["last_checked_at"]
+    if is_dead:
+        offer.is_active = False
+        update_fields.append("is_active")
+        logger.info("offer %s marked dead on demand (%s)", offer.id, reason)
+    offer.save(update_fields=update_fields)
+    return not is_dead
+
+
+@shared_task(name="jobs.verify_single_offer")
+def verify_single_offer(offer_id: int) -> dict:
+    """Versión async de `check_offer_availability` (reportes de usuarios)."""
+    offer = JobOffer.objects.filter(pk=offer_id, is_active=True).first()
+    if offer is None:
+        return {"offer_id": offer_id, "alive": False, "skipped": True}
+    return {"offer_id": offer_id, "alive": check_offer_availability(offer)}
 
 
 @shared_task(name="jobs.clean_old_offers")
@@ -336,7 +439,12 @@ def clean_old_offers(days_old: int = 30):
 
     try:
         cutoff_date = timezone.now() - timedelta(days=days_old)
-        deleted_count, _ = JobOffer.objects.filter(created_at__lt=cutoff_date).delete()
+        # Las ofertas con postulaciones NO se borran: `JobApplication.offer`
+        # es CASCADE y el usuario perdería su historial de postulaciones.
+        # Esas quedan (inactivas si murieron) mientras exista la postulación.
+        deleted_count, _ = JobOffer.objects.filter(
+            created_at__lt=cutoff_date, applications__isnull=True
+        ).delete()
 
         logger.info(f"Cleanup completed. Deleted {deleted_count} old offers")
 

@@ -30,6 +30,9 @@ SESSION_ENGINE = "django.contrib.sessions.backends.db"
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 
+# Sin requests reales a portales al abrir detalles / reportar ofertas.
+JOBS_ONDEMAND_CHECK = False
+
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]

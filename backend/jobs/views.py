@@ -1,8 +1,12 @@
 import logging
+from datetime import timedelta
 
+from django.conf import settings
 from django.core.cache import cache
+from django.db import transaction
 from django.db.models import Count
 from django.db.models.functions import Lower, Trim
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
 from rest_framework import status, viewsets
@@ -14,6 +18,7 @@ from jobs.models import IgnoredOffer, JobOffer
 from jobs.serializers import JobOfferSerializer
 from jobs.services.job_service import JobService
 from jobs.services.matching_service import JobMatchingService
+from jobs.tasks import check_offer_availability, verify_single_offer
 from jobs.utils.offer_attributes import VALID_MODALITIES
 from notifications.models import Notification
 from users.models import UserProfile
@@ -24,6 +29,22 @@ from users.models import UserProfile
 _NOTIF_MATCH_THRESHOLD = 70
 
 logger = logging.getLogger(__name__)
+
+# Disponibilidad on-demand al abrir el detalle: si la oferta no se verificó
+# en las últimas 24h, la probamos antes de mostrarla. Timeout corto porque
+# el usuario está esperando la página.
+_ONDEMAND_RECHECK_AFTER = timedelta(hours=24)
+_ONDEMAND_CHECK_TIMEOUT_SECONDS = 4
+
+
+def _enqueue_verify(offer_id: int) -> None:
+    """Encola la verificación de una oferta. Si el broker está caído, el
+    reporte del usuario igual se guarda — la verifica el cron nocturno."""
+    try:
+        verify_single_offer.delay(offer_id)
+    except Exception:
+        logger.warning("No se pudo encolar verify_single_offer(%s)", offer_id, exc_info=True)
+
 
 # Rate limit del scrape. El scrape es costoso en compute (HTTP paralelo
 # a 7-10 portales + parsing + Playwright para Magneto/Indeed) y nos
@@ -114,7 +135,12 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
         """
         from users.services.profession_classifier import infer_profession_category
 
-        qs = JobOffer.objects.filter(is_active=True).order_by("-created_at")
+        # Activas y no vencidas por fecha de cierre (las sin fecha pasan).
+        qs = (
+            JobOffer.objects.filter(is_active=True)
+            .exclude(expires_at__lte=timezone.now())
+            .order_by("-created_at")
+        )
 
         # Filtro estricto por categoría del user. Sin esto, el feed
         # incluía 'general' como comodín y los users con vertical
@@ -311,9 +337,30 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
+        if self._needs_availability_check(instance) and not check_offer_availability(
+            instance, timeout=_ONDEMAND_CHECK_TIMEOUT_SECONDS
+        ):
+            # El probe la acaba de marcar inactiva: el frontend muestra un
+            # mensaje específico en vez de un "no se pudo cargar" genérico.
+            return Response(
+                {
+                    "detail": "Esta oferta ya no está disponible en el portal de origen.",
+                    "code": "offer_unavailable",
+                },
+                status=status.HTTP_410_GONE,
+            )
         self._enrich_with_user_match([instance])
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+    @staticmethod
+    def _needs_availability_check(offer: JobOffer) -> bool:
+        """True si conviene re-verificar la oferta antes de mostrarla."""
+        if not settings.JOBS_ONDEMAND_CHECK:
+            return False
+        if offer.last_checked_at is None:
+            return True
+        return timezone.now() - offer.last_checked_at > _ONDEMAND_RECHECK_AFTER
 
     @action(detail=True, methods=["post", "delete"], url_path="ignore")
     def ignore(self, request, pk=None):
@@ -392,6 +439,10 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
                 elif reason and obj.reason != reason:
                     obj.reason = reason
                     obj.save(update_fields=["reason"])
+            if reason == "unavailable" and settings.JOBS_ONDEMAND_CHECK:
+                # El usuario reporta que la oferta ya no existe: la
+                # verificamos ya en background para sacarla del feed de todos.
+                transaction.on_commit(lambda: _enqueue_verify(offer.id))
             return Response(
                 {
                     "ignored": True,

@@ -29,6 +29,7 @@ from jobs.adapters.scrapers.base import (
     JobOfferData,
     JobScraper,
     extract_keywords,
+    parse_iso_datetime,
 )
 
 logger = logging.getLogger(__name__)
@@ -199,4 +200,5 @@ class TrabajandoScraper(JobScraper):
             keywords=keywords,
             url=url,
             portal="trabajando",
+            expires_at=parse_iso_datetime(data.get("validThrough")),
         )

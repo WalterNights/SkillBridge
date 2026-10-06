@@ -36,6 +36,7 @@ from jobs.adapters.scrapers.base import (
     JobScraper,
     ScraperError,
     extract_keywords,
+    parse_iso_datetime,
 )
 
 logger = logging.getLogger(__name__)
@@ -223,4 +224,5 @@ class HirelineScraper(JobScraper):
             keywords=keywords,
             url=url,
             portal="hireline",
+            expires_at=parse_iso_datetime(data.get("validThrough")),
         )

@@ -34,6 +34,7 @@ from jobs.adapters.scrapers.base import (
     JobScraper,
     ScraperError,
     extract_keywords,
+    parse_iso_datetime,
 )
 
 logger = logging.getLogger(__name__)
@@ -170,14 +171,10 @@ class TorreScraper(JobScraper):
         if item.get("status") != "open":
             return False
 
-        deadline_raw = item.get("deadline")
-        if isinstance(deadline_raw, str) and deadline_raw.strip():
-            try:
-                deadline = datetime.fromisoformat(deadline_raw.replace("Z", "+00:00"))
-                if deadline < datetime.now(timezone.utc):
-                    return False
-            except ValueError:
-                pass  # deadline malformado, no descartar por eso solo
+        # Deadline malformado → None → no descartamos por eso solo.
+        deadline = parse_iso_datetime(item.get("deadline"))
+        if deadline and deadline < datetime.now(timezone.utc):
+            return False
 
         created_raw = item.get("created")
         if not isinstance(created_raw, str) or not created_raw.strip():
@@ -282,4 +279,5 @@ class TorreScraper(JobScraper):
             keywords=keywords,
             url=url,
             portal="torre",
+            expires_at=parse_iso_datetime(item.get("deadline")),
         )
