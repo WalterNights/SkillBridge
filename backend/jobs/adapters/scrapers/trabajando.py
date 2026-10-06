@@ -67,6 +67,8 @@ class TrabajandoScraper(JobScraper):
         "administrativos, ingeniería, salud, hostelería, retail."
     )
     categories = ("all",)
+    countries = ("CL", "CO")
+    uses_query = False
 
     def search(self, query: str, location: str, pages: int = 2) -> list[JobOfferData]:
         logger.info(

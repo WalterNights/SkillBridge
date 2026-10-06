@@ -46,6 +46,30 @@ def designer_profile(django_user_model):
     )
 
 
+def _profile(django_user_model, username, title, city, country=""):
+    from users.models import UserProfile
+
+    user = django_user_model.objects.create_user(
+        username=username, email=f"{username}@example.com", password="x"
+    )
+    return UserProfile.objects.create(
+        user=user,
+        first_name="Test",
+        last_name="User",
+        phone="+57",
+        city=city,
+        country=country,
+        professional_title=title,
+        skills="python, django",
+    )
+
+
+@pytest.fixture
+def bogota_tech_profile(django_user_model):
+    """Perfil tech en Colombia: cubre todos los portales colombianos."""
+    return _profile(django_user_model, "bogota_dev", "Backend Developer", "Bogotá")
+
+
 # ---- _parse_plans / _strip_markdown_fences --------------------------
 
 
@@ -97,10 +121,10 @@ def test_strip_markdown_fences():
 class TestSuggestPortals:
     """Path crítico — 100% determinístico, sin red, sin AI."""
 
-    def test_tech_profile_includes_hireline_and_generalists(self, user_profile):
-        """user_profile.professional_title = 'Backend Developer' → tech.
-        Esperamos hireline (tech-only) + todos los `all`."""
-        plans = PortalRouterService.suggest_portals(user_profile)
+    def test_tech_profile_includes_hireline_and_generalists(self, bogota_tech_profile):
+        """'Backend Developer' en Bogotá → tech + CO.
+        Esperamos hireline (tech-only) + todos los `all` que cubren CO."""
+        plans = PortalRouterService.suggest_portals(bogota_tech_profile)
         portals = {p.portal for p in plans}
         assert "hireline" in portals  # tech matchea
         assert "computrabajo" in portals  # all matchea
@@ -335,3 +359,64 @@ class TestPreviewWithAI:
 
         plans = PortalRouterService.preview_with_ai(user_profile)
         assert plans == []
+
+
+@pytest.mark.django_db
+class TestCountryRouting:
+    """Solo se corren portales que cubren el país del perfil."""
+
+    def test_spain_profile_skips_colombian_portals(self, django_user_model):
+        profile = _profile(django_user_model, "madrid", "Backend Developer", "Madrid", "Spain")
+        portals = {p.portal for p in PortalRouterService.suggest_portals(profile)}
+        assert "infojobs" in portals
+        assert "linkedin" in portals  # global
+        assert not portals & {"computrabajo", "indeed", "magneto", "trabajos_co", "hireline"}
+
+    def test_colombia_profile_skips_spain_only_portal(self, bogota_tech_profile):
+        portals = {p.portal for p in PortalRouterService.suggest_portals(bogota_tech_profile)}
+        assert "infojobs" not in portals
+        assert "computrabajo" in portals
+
+    def test_unknown_country_does_not_filter(self, django_user_model):
+        profile = _profile(django_user_model, "nowhere", "Backend Developer", "Ciudad X")
+        portals = {p.portal for p in PortalRouterService.suggest_portals(profile)}
+        assert {"infojobs", "computrabajo"} <= portals
+
+    def test_query_independent_portals_run_once(self, bogota_tech_profile):
+        plans = PortalRouterService.suggest_portals(bogota_tech_profile)
+        assert sum(1 for p in plans if p.portal == "hireline") == 1
+        assert sum(1 for p in plans if p.portal == "linkedin") > 1
+
+    def test_expand_false_uses_only_primary_role(self, bogota_tech_profile):
+        plans = PortalRouterService.suggest_portals(bogota_tech_profile, expand=False)
+        assert {p.query for p in plans} == {"Backend Developer"}
+
+
+@pytest.mark.django_db
+def test_scrape_stats_sum_all_queries(bogota_tech_profile):
+    """Antes la última query pisaba el `found` de las anteriores."""
+    from jobs.adapters.scrapers.base import JobOfferData
+    from jobs.services.job_service import JobService
+
+    def fake_scrape(portal, query, location):
+        return [
+            JobOfferData(
+                title=f"{query} {portal}",
+                company="Acme",
+                location=location,
+                summary="x",
+                url=f"https://example.com/{portal}/{query}".replace(" ", "-"),
+                keywords="python",
+                portal=portal,
+            )
+        ]
+
+    with patch("jobs.services.job_service._scrape_one_portal", side_effect=fake_scrape):
+        _, stats = JobService.scrape_for_profile(bogota_tech_profile)
+
+    linkedin_queries = sum(
+        1 for p in PortalRouterService.suggest_portals(bogota_tech_profile) if p.portal == "linkedin"
+    )
+    assert stats["linkedin"]["found"] == linkedin_queries
+    assert stats["hireline"]["found"] == 1
+

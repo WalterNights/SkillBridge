@@ -55,6 +55,7 @@ class InfoJobsScraper(JobScraper):
     )
     # Generalista — cualquier categoría puede tener ofertas en InfoJobs.
     categories = ("all",)
+    countries = ("ES",)
 
     def search(self, query: str, location: str, pages: int = 2) -> list[JobOfferData]:
         if not query:

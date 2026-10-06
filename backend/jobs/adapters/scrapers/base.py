@@ -149,6 +149,13 @@ class JobScraper(ABC):
     #: para cualquier perfil). El router las usa como fallback determinístico
     #: cuando el LLM no está disponible.
     categories: tuple[str, ...] = ("all",)
+    #: Países (ISO-2) cuyas ofertas trae el portal. ("all",) = global o
+    #: remoto. El router no lo corre para perfiles de otro país: InfoJobs
+    #: (solo España) no tiene sentido para alguien en Colombia, y al revés.
+    countries: tuple[str, ...] = ("all",)
+    #: False si el scraper ignora el query (recorre un sitemap): el router
+    #: lo corre una sola vez por scrape en vez de una por query expandida.
+    uses_query: bool = True
 
     @abstractmethod
     def search(self, query: str, location: str, pages: int = 2) -> list[JobOfferData]:

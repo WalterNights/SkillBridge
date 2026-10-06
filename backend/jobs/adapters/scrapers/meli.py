@@ -95,6 +95,7 @@ class MeliScraper(JobScraper):
         "legal",
         "admin",
     )
+    countries = ("AR", "BR", "CL", "CO", "MX", "UY", "PE")
 
     def search(self, query: str, location: str, pages: int = 1) -> list[JobOfferData]:
         """Pagina el endpoint PCS-X con las cookies de la sesión bootstrap.

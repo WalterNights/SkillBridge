@@ -60,6 +60,7 @@ class MagnetoScraper(JobScraper):
         "degradar a [] si no está disponible."
     )
     categories = ("all",)
+    countries = ("CO",)
 
     def search(self, query: str, location: str, pages: int = 1) -> list[JobOfferData]:
         if not query:

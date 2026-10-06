@@ -132,6 +132,7 @@ class JobService:
     def scrape_for_profile(
         profile,
         max_workers: int = 4,
+        expand: bool = True,
     ) -> tuple[list[JobOffer], dict[str, dict]]:
         """Scrapea solo los portales que el `PortalRouterService` sugiere
         para este perfil, cada uno con su query refinado.
@@ -153,7 +154,7 @@ class JobService:
         # de jobs.adapters; jobs.services se importa desde tests).
         from jobs.services.portal_router import PortalRouterService
 
-        plans = PortalRouterService.suggest_portals(profile)
+        plans = PortalRouterService.suggest_portals(profile, expand=expand)
         if not plans:
             logger.warning(
                 "PortalRouter devolvió 0 planes para user=%s — scrape no-op",
@@ -183,12 +184,16 @@ class JobService:
                 try:
                     offers = future.result()
                     logger.info("%s: %d ofertas raw (query=%r)", plan.portal, len(offers), plan.query)
-                    stats[plan.portal]["found"] = len(offers)
-                    portal_offers[plan.portal] = offers
+                    # Un portal corre una vez por query expandida: sumamos
+                    # (antes la última query pisaba a las anteriores).
+                    stats[plan.portal]["found"] += len(offers)
+                    portal_offers[plan.portal].extend(offers)
                     all_offers_data.extend(offers)
                 except Exception as exc:
-                    logger.exception("Portal %s falló", plan.portal)
-                    stats[plan.portal]["error"] = f"{type(exc).__name__}: {exc}"
+                    logger.exception("Portal %s falló (query=%r)", plan.portal, plan.query)
+                    error = f"{type(exc).__name__}: {exc}"
+                    previous = stats[plan.portal]["error"]
+                    stats[plan.portal]["error"] = f"{previous}; {error}" if previous else error
 
         created = JobService.save_new_offers(all_offers_data)
         for plan in plans:

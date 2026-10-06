@@ -94,9 +94,9 @@ def daily_scrape_for_active_users():
 
     for profile in profiles:
         try:
-            new_offers, _stats = JobService.scrape_all_portals_with_stats(
-                profile.professional_title, profile.city
-            )
+            # Mismo router que el scrape manual (respeta país y vertical),
+            # pero solo con el rol principal para no martillar los portales.
+            new_offers, _stats = JobService.scrape_for_profile(profile, expand=False)
             filtered = JobMatchingService.filter_jobs_by_skills(
                 new_offers, profile, min_match_percentage=40
             )

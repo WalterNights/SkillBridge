@@ -39,10 +39,25 @@ from django.conf import settings
 
 from jobs.adapters.scrapers.registry import _REGISTRY, available_portals
 from jobs.services.matching_service import _extract_primary_role
+from jobs.utils.offer_attributes import COUNTRY_UNKNOWN, extract_country
 from users.models import UserProfile
 from users.services.profession_classifier import infer_profession_category
 
 logger = logging.getLogger(__name__)
+
+
+
+def profile_country(profile: UserProfile) -> str:
+    """País (ISO-2) del perfil a partir de `country` + `city`, o
+    COUNTRY_UNKNOWN. La mayoría de perfiles no llena `country`, pero la
+    ciudad ("Medellín", "Madrid") alcanza para deducirlo."""
+    return extract_country(f"{profile.country or ''} {profile.city or ''}")
+
+
+def _covers_country(scraper_cls, country: str) -> bool:
+    if country == COUNTRY_UNKNOWN:
+        return True
+    return "all" in scraper_cls.countries or country in scraper_cls.countries
 
 
 @dataclass(frozen=True)
@@ -62,7 +77,7 @@ class PortalRouterService:
     """Resuelve qué portales scrapear para un perfil dado."""
 
     @classmethod
-    def suggest_portals(cls, profile: UserProfile) -> list[PortalPlan]:
+    def suggest_portals(cls, profile: UserProfile, expand: bool = True) -> list[PortalPlan]:
         """Devuelve la lista de planes de scrape para `profile`.
 
         Path determinístico: `infer_profession_category` + las
@@ -82,6 +97,12 @@ class PortalRouterService:
         Titulos largos multi-rol se manejan por `_extract_primary_role`
         (dentro de `expand_role_queries`) — normaliza al primer rol
         antes de expandir, evitando explotar el volumen.
+
+        País: solo se usan portales que cubren el país del perfil (deducido
+        de `country` + `city`). Si no se puede deducir, no se filtra.
+
+        `expand=False` usa solo el rol principal (el cron diario: N users x
+        4 queries x portales martillaría los portales cada noche).
 
         NUNCA devuelve [] si el perfil tiene título — si no hay match
         por categoría (caso muy raro), cae a "todos los portales".
@@ -106,6 +127,8 @@ class PortalRouterService:
             category=category,
             skills=skills,
         )
+        if queries and not expand:
+            queries = queries[:1]
         if not queries:
             # Sin título → sin queries → sin planes. Antes devolvía 1 plan
             # con query vacío por portal; los scrapers que exigen query
@@ -117,14 +140,18 @@ class PortalRouterService:
             )
             return []
 
+        country = profile_country(profile)
         plans: list[PortalPlan] = []
         for portal_name, scraper_cls in _REGISTRY.items():
             cats = scraper_cls.categories
-            if "all" in cats or category in cats:
-                for query in queries:
-                    plans.append(
-                        PortalPlan(portal=portal_name, query=query, location=location)
-                    )
+            if not ("all" in cats or category in cats):
+                continue
+            if not _covers_country(scraper_cls, country):
+                continue
+            # Los que ignoran el query (sitemaps) corren una sola vez.
+            portal_queries = queries if scraper_cls.uses_query else queries[:1]
+            for query in portal_queries:
+                plans.append(PortalPlan(portal=portal_name, query=query, location=location))
 
         if not plans:
             # Fallback de último recurso: ningún scraper declaró categoría
@@ -142,10 +169,11 @@ class PortalRouterService:
             ]
 
         logger.info(
-            "PortalRouter: %d planes para user=%s (categoría=%s, queries=%d)",
+            "PortalRouter: %d planes para user=%s (categoría=%s, país=%s, queries=%d)",
             len(plans),
             profile.user_id,
             category,
+            country,
             len(queries),
         )
         return plans

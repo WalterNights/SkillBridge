@@ -63,6 +63,7 @@ class ComputrabajoScraper(JobScraper):
         "especializada."
     )
     categories = ("all",)
+    countries = ("CO",)
 
     def search(self, query: str, location: str, pages: int = 2) -> list[JobOfferData]:
         if not query or not location:

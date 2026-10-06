@@ -75,6 +75,8 @@ class HirelineScraper(JobScraper):
         "product/UX, tech lead. NO sirve para perfiles no-tech."
     )
     categories = ("tech",)
+    countries = ("MX", "CO")
+    uses_query = False
 
     def search(self, query: str, location: str, pages: int = 2) -> list[JobOfferData]:
         logger.info(

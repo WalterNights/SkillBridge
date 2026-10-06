@@ -264,6 +264,7 @@ class WebSearchJobsScraper(JobScraper):
     # priorice este scraper en perfiles de esos verticales. 'all' se
     # queda como fallback general.
     categories = ("all", "design", "agro")
+    countries = ("CO",)
 
     def search(self, query: str, location: str, pages: int = 1) -> list[JobOfferData]:
         if not query:
