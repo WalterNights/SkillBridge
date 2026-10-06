@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from .models import JobOffer
 from .services.description_enricher import is_stub_summary
+from .services.feed_preferences import MAX_COUNTRIES, PREFERABLE_MODALITIES
 
 
 class JobOfferSerializer(serializers.ModelSerializer):
@@ -60,3 +61,38 @@ class JobOfferSerializer(serializers.ModelSerializer):
 
     def get_ignore_reason(self, job):
         return getattr(job, "_ignore_reason", "")
+
+
+class FeedPreferencesSerializer(serializers.Serializer):
+    """Valida las preferencias del feed antes de guardarlas en el perfil."""
+
+    modalities_first = serializers.ListField(
+        child=serializers.ChoiceField(choices=PREFERABLE_MODALITIES),
+        required=False,
+        default=list,
+    )
+    countries_first = serializers.ListField(
+        child=serializers.RegexField(r"^[A-Za-z]{2}$"),
+        required=False,
+        default=list,
+        max_length=MAX_COUNTRIES,
+    )
+    countries_last = serializers.ListField(
+        child=serializers.RegexField(r"^[A-Za-z]{2}$"),
+        required=False,
+        default=list,
+        max_length=MAX_COUNTRIES,
+    )
+
+    def validate(self, attrs):
+        # ISO en mayúsculas y sin duplicados, preservando el orden elegido.
+        for key in ("modalities_first", "countries_first", "countries_last"):
+            values = [v.upper() if key.startswith("countries") else v for v in attrs[key]]
+            attrs[key] = list(dict.fromkeys(values))
+        overlap = set(attrs["countries_first"]) & set(attrs["countries_last"])
+        if overlap:
+            raise serializers.ValidationError(
+                {"countries_last": f"Un país no puede ir primero y al final: {', '.join(sorted(overlap))}."}
+            )
+        return attrs
+

@@ -10,6 +10,24 @@ export interface LocalizedCountry extends CountryData {
 }
 
 let cache: LocalizedCountry[] | null = null;
+let displayNames: Intl.DisplayNames | null | undefined;
+
+function spanishRegionNames(): Intl.DisplayNames | null {
+  if (displayNames === undefined) {
+    try {
+      displayNames = new Intl.DisplayNames(['es'], { type: 'region' });
+    } catch {
+      // Navegador sin soporte → caemos al código/nombre en inglés.
+      displayNames = null;
+    }
+  }
+  return displayNames;
+}
+
+/** Nombre en español de un código ISO ("ES" → "España"). */
+export function countryLabel(isoCode: string): string {
+  return spanishRegionNames()?.of(isoCode) ?? isoCode;
+}
 
 /**
  * Países con nombre en español, ordenados alfabéticamente en español.
@@ -23,15 +41,9 @@ let cache: LocalizedCountry[] | null = null;
 export function getLocalizedCountries(): LocalizedCountry[] {
   if (cache) return cache;
 
-  let displayNames: Intl.DisplayNames | null = null;
-  try {
-    displayNames = new Intl.DisplayNames(['es'], { type: 'region' });
-  } catch {
-    // Navegador sin soporte → caemos al nombre en inglés.
-  }
-
+  const names = spanishRegionNames();
   cache = Country.getAllCountries()
-    .map((c) => ({ ...c, label: displayNames?.of(c.isoCode) ?? c.name }))
+    .map((c) => ({ ...c, label: names?.of(c.isoCode) ?? c.name }))
     .sort((a, b) => a.label.localeCompare(b.label, 'es', { sensitivity: 'base' }));
   return cache;
 }

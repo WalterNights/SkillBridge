@@ -1,0 +1,87 @@
+<article class="glass-strong rounded-2xl p-6">
+  <div class="flex items-center gap-3 mb-5">
+    <span
+      class="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center material-symbols-outlined text-primary shrink-0"
+      style="font-size: 20px; font-variation-settings: 'FILL' 1"
+      >tune</span
+    >
+    <div>
+      <h2 class="text-base font-semibold text-bone">Qué ver primero en tus ofertas</h2>
+      <p class="text-xs text-warm-grey">
+        Ordena tu feed a tu gusto. No escondemos ninguna oferta: solo cambia el orden. Se guarda en tu cuenta.
+      </p>
+    </div>
+  </div>
+
+  <p *ngIf="isLoading()" class="text-sm text-warm-grey">Cargando preferencias…</p>
+  <p *ngIf="loadError()" class="text-sm text-danger">No pudimos cargar tus preferencias.</p>
+
+  <ng-container *ngIf="!isLoading() && !loadError()">
+    <!-- Modalidad -->
+    <section class="mb-6">
+      <p class="text-sm text-bone font-semibold">Mostrar primero las ofertas…</p>
+      <div class="flex flex-wrap gap-2 mt-3">
+        <button
+          *ngFor="let m of modalityOptions"
+          type="button"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors"
+          [ngClass]="
+            isModalityFirst(m.value)
+              ? ['border-primary', 'bg-primary/15', 'text-primary']
+              : ['border-white/10', 'bg-white/[0.04]', 'text-warm-grey', 'hover:text-bone']
+          "
+          [attr.aria-pressed]="isModalityFirst(m.value)"
+          (click)="toggleModality(m.value)"
+        >
+          <span class="material-symbols-outlined" style="font-size: 16px">{{ m.icon }}</span>
+          {{ m.label }}
+        </button>
+      </div>
+    </section>
+
+    <!-- Países -->
+    <section>
+      <p class="text-sm text-bone font-semibold">Países</p>
+      <p class="text-xs text-warm-grey mt-0.5">
+        Toca un país para cambiarlo: <span class="text-emerald-400 font-semibold">primero</span> →
+        <span class="text-amber-400 font-semibold">al final</span> → normal.
+      </p>
+      <div class="flex flex-wrap gap-2 mt-3">
+        <button
+          *ngFor="let c of countries()"
+          type="button"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors"
+          [ngClass]="{
+            'border-emerald-500/60 bg-emerald-500/15 text-emerald-400': countryState(c.iso) === 'first',
+            'border-amber-500/60 bg-amber-500/15 text-amber-400': countryState(c.iso) === 'last',
+            'border-white/10 bg-white/[0.04] text-warm-grey hover:text-bone': countryState(c.iso) === 'neutral',
+          }"
+          [attr.aria-label]="countryAriaLabel(c)"
+          (click)="cycleCountry(c.iso)"
+        >
+          <span
+            *ngIf="countryState(c.iso) !== 'neutral'"
+            class="material-symbols-outlined"
+            style="font-size: 16px"
+            aria-hidden="true"
+            >{{ countryState(c.iso) === 'first' ? 'arrow_upward' : 'arrow_downward' }}</span
+          >
+          {{ c.label }}
+          <span *ngIf="c.count" class="opacity-60 font-normal">{{ c.count }}</span>
+        </button>
+      </div>
+    </section>
+
+    <div class="flex items-center justify-end mt-6 pt-5 border-t border-white/[0.06]">
+      <button
+        type="button"
+        (click)="save()"
+        [disabled]="isSaving()"
+        class="btn-primary py-2.5 px-5 rounded-xl text-sm inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        <span class="material-symbols-outlined" style="font-size: 18px">save</span>
+        {{ isSaving() ? 'Guardando…' : 'Guardar preferencias' }}
+      </button>
+    </div>
+  </ng-container>
+</article>

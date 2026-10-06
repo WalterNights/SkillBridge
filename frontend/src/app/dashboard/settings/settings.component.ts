@@ -12,6 +12,7 @@ import { SelectComponent, SelectOption } from '../../shared/select/select.compon
 import { ToastService } from '../../services/toast.service';
 import { TwoFactorService } from '../../services/two-factor.service';
 import { TwoFactorModalComponent } from './two-factor-modal.component';
+import { FeedPreferencesComponent } from './feed-preferences.component';
 
 /**
  * Configuración del usuario. Vive dentro del AppShell así que el
@@ -25,7 +26,7 @@ import { TwoFactorModalComponent } from './two-factor-modal.component';
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, SelectComponent, TwoFactorModalComponent],
+  imports: [CommonModule, FormsModule, SelectComponent, TwoFactorModalComponent, FeedPreferencesComponent],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss'],
 })
@@ -38,7 +39,7 @@ export class SettingsComponent implements OnInit {
 
   /** Tab activa en el layout en pestañas. Cuenta es el default — es lo
    *  más liviano de cargar y lo que el user suele querer ver primero. */
-  activeTab = signal<'cuenta' | 'notificaciones' | 'privacidad' | 'seguridad'>(
+  activeTab = signal<'cuenta' | 'feed' | 'notificaciones' | 'privacidad' | 'seguridad'>(
     'cuenta',
   );
 
@@ -46,6 +47,7 @@ export class SettingsComponent implements OnInit {
    *  cambia el orden, iconos o se agrega una nueva. */
   readonly tabs = [
     { id: 'cuenta' as const, label: 'Cuenta', icon: 'account_circle' },
+    { id: 'feed' as const, label: 'Ofertas', icon: 'tune' },
     { id: 'notificaciones' as const, label: 'Notificaciones', icon: 'notifications' },
     { id: 'privacidad' as const, label: 'Privacidad', icon: 'lock' },
     { id: 'seguridad' as const, label: 'Seguridad', icon: 'shield' },

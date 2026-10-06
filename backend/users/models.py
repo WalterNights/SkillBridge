@@ -414,6 +414,11 @@ class UserProfile(models.Model):
         max_length=2, choices=CV_FONT_SIZE_CHOICES, default="md"
     )
 
+    # Preferencias persistentes del feed (qué ofertas ver primero / al
+    # final). Solo reordenan, no filtran. Forma y lógica en
+    # jobs/services/feed_preferences.py.
+    feed_preferences = models.JSONField(default=dict, blank=True)
+
     # Cover Letter AI usage -------------------------------------------
     # Contador lifetime de generaciones POST /api/cover-letters/. Cada
     # user normal tiene un cupo total (ver settings.COVER_LETTER_FREE_LIMIT).

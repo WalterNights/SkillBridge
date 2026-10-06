@@ -15,8 +15,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from jobs.models import IgnoredOffer, JobOffer
-from jobs.serializers import JobOfferSerializer
+from jobs.serializers import FeedPreferencesSerializer, JobOfferSerializer
 from jobs.services.description_enricher import can_enrich, enrich_offer
+from jobs.services.feed_preferences import apply_feed_preferences, read_preferences
 from jobs.services.job_service import JobService
 from jobs.services.matching_service import JobMatchingService
 from jobs.tasks import check_offer_availability, verify_single_offer
@@ -315,6 +316,9 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
                 key=lambda o: getattr(o, "match_percentage", 0),
                 reverse=(ordering == "match_desc"),
             )
+        # Preferencias persistentes del usuario: reordenan (estable) sobre
+        # el orden elegido, nunca esconden ofertas.
+        offers = apply_feed_preferences(offers, profile.feed_preferences)
 
         page = self.paginate_queryset(offers)
         if page is not None:
@@ -492,6 +496,32 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
         self._enrich_with_user_match(offers)
         serializer = self.get_serializer(offers, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["get", "put"], url_path="preferences")
+    def preferences(self, request):
+        """Preferencias persistentes del feed (qué mostrar primero / al final).
+
+        GET → preferencias guardadas (vacías por default).
+        PUT → reemplaza las preferencias. 400 si el usuario no tiene perfil.
+        """
+        try:
+            profile = request.user.profile
+        except UserProfile.DoesNotExist:
+            profile = None
+
+        if request.method == "GET":
+            return Response(read_preferences(profile.feed_preferences if profile else None))
+
+        if profile is None:
+            return Response(
+                {"detail": "Completa tu perfil para guardar preferencias."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = FeedPreferencesSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        profile.feed_preferences = serializer.validated_data
+        profile.save(update_fields=["feed_preferences"])
+        return Response(read_preferences(profile.feed_preferences))
 
     @action(detail=False, methods=["get"], url_path="filter-options")
     def filter_options(self, request):

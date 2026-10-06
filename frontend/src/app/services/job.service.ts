@@ -27,6 +27,14 @@ export interface FilterOptionsResponse {
   modalities: { value: string; label: string; count: number }[];
 }
 
+/** Preferencias persistentes del feed: reordenan (no filtran) las ofertas.
+ *  Países en ISO 3166-1 alpha-2 (CO, ES…). */
+export interface FeedPreferences {
+  modalities_first: ('remote' | 'hybrid' | 'onsite')[];
+  countries_first: string[];
+  countries_last: string[];
+}
+
 export interface JobFilters {
   /** Lista de ISO codes (MX, CO, AR…). Vacío = sin filtro. */
   countries: string[];
@@ -91,9 +99,15 @@ export class JobService {
    * dropdowns del dashboard. Cacheable en el caller (1 llamada por
    * mount del dashboard). */
   getFilterOptions(): Observable<FilterOptionsResponse> {
-    return this.http.get<FilterOptionsResponse>(
-      `${environment.apiUrl}/jobs/jobs/filter-options/`,
-    );
+    return this.http.get<FilterOptionsResponse>(`${environment.apiUrl}/jobs/jobs/filter-options/`);
+  }
+
+  getFeedPreferences(): Observable<FeedPreferences> {
+    return this.http.get<FeedPreferences>(`${environment.apiUrl}/jobs/jobs/preferences/`);
+  }
+
+  saveFeedPreferences(prefs: FeedPreferences): Observable<FeedPreferences> {
+    return this.http.put<FeedPreferences>(`${environment.apiUrl}/jobs/jobs/preferences/`, prefs);
   }
 
   /**

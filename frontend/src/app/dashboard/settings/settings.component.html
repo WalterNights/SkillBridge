@@ -142,6 +142,11 @@
       </article>
     </div>
 
+    <!-- ───── Tab: Ofertas (preferencias del feed) ───────────────── -->
+    <div *ngIf="activeTab() === 'feed'" class="space-y-5">
+      <app-feed-preferences />
+    </div>
+
     <!-- ───── Tab: Privacidad ─────────────────────────────────────── -->
     <div *ngIf="activeTab() === 'privacidad'" class="space-y-5">
       <article class="glass-strong rounded-2xl p-6">
