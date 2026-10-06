@@ -267,15 +267,15 @@ CELERY_BEAT_SCHEDULE = {
         "task": "jobs.clean_old_offers",
         "schedule": crontab(hour=5, minute=0),
     },
-    # 05:30 UTC, después del scrape y la limpieza: baja la descripción real
-    # de las ofertas nuevas que entraron con un texto de relleno (LinkedIn,
-    # Torre, websearch). Tope de 60 por corrida para no gatillar 429.
     # 06:15 UTC: elimina cuentas que no completaron el perfil en el período
     # de gracia. Solo actúa si INCOMPLETE_ACCOUNT_CLEANUP_ENABLED=True.
     "delete-incomplete-accounts": {
         "task": "users.delete_incomplete_accounts",
         "schedule": crontab(hour=6, minute=15),
     },
+    # 05:30 UTC, después del scrape y la limpieza: baja la descripción real
+    # de las ofertas nuevas que entraron con un texto de relleno (LinkedIn,
+    # Torre, websearch). Tope de 60 por corrida para no gatillar 429.
     "enrich-stub-descriptions": {
         "task": "jobs.enrich_stub_descriptions",
         "schedule": crontab(hour=5, minute=30),

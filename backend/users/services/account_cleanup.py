@@ -21,6 +21,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from users.models import User
@@ -65,9 +66,30 @@ def find_incomplete_accounts(now=None) -> list[User]:
     perfil todavía incompleto."""
     now = now or timezone.now()
     cutoff = now - timedelta(days=settings.INCOMPLETE_ACCOUNT_GRACE_DAYS)
-    candidates = User.objects.filter(
-        is_staff=False, is_superuser=False, date_joined__lt=cutoff
-    ).select_related("profile", "company_profile")
+    # Prefiltro en DB: solo cuentas sin perfil o con algún campo requerido
+    # vacío. `is_profile_complete` confirma después con la regla exacta.
+    missing_profile = (
+        Q(profile__isnull=True)
+        | Q(profile__first_name="")
+        | Q(profile__last_name="")
+        | Q(profile__city="")
+        | Q(profile__phone="")
+        | Q(profile__professional_title="")
+    )
+    missing_company = (
+        Q(company_profile__isnull=True)
+        | Q(company_profile__legal_name="")
+        | Q(company_profile__responsible_name="")
+        | Q(company_profile__responsible_role="")
+    )
+    candidates = (
+        User.objects.filter(is_staff=False, is_superuser=False, date_joined__lt=cutoff)
+        .filter(
+            (Q(account_type=User.ACCOUNT_TYPE_COMPANY) & missing_company)
+            | (~Q(account_type=User.ACCOUNT_TYPE_COMPANY) & missing_profile)
+        )
+        .select_related("profile", "company_profile")
+    )
     return [user for user in candidates if not is_profile_complete(user)]
 
 
