@@ -13,6 +13,7 @@ import {
   ValidatorFn,
 } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { checkPasswordRules, strongPasswordValidator } from '../../shared/auth/password-rules';
 import { environment } from '../../../environment/environment';
 
 /** Step que está mostrando la vista. `select` es la pantalla inicial
@@ -111,14 +112,7 @@ export class RegisterComponent implements OnInit {
       {
         username: ['', Validators.required],
         email: ['', [Validators.required, Validators.email]],
-        password: [
-          '',
-          [
-            Validators.required,
-            Validators.minLength(8),
-            Validators.pattern('^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+{}:"<>?]).+$'),
-          ],
-        ],
+        password: ['', [Validators.required, strongPasswordValidator]],
         confirmPassword: ['', Validators.required],
       },
       { validators: [this.passwordMatchValidator('password', 'confirmPassword')] },
@@ -126,7 +120,14 @@ export class RegisterComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.registerForm.invalid) return;
+    if (this.registerForm.invalid) {
+      // Antes volvía en silencio: el botón "no hacía nada" y el usuario no
+      // sabía qué corregir. Marcamos todo para mostrar los mensajes.
+      this.registerForm.markAllAsTouched();
+      this.errorMessage = 'Revisa los campos marcados antes de continuar.';
+      return;
+    }
+    this.errorMessage = '';
 
     const { username, email, password } = this.registerForm.value;
     if (password === username || password === email) {
@@ -151,7 +152,9 @@ export class RegisterComponent implements OnInit {
           } else if (Array.isArray(err.error.email) && err.error.email.length > 0) {
             this.errorMessage = 'El correo electrónico ya está registrado';
           } else if (Array.isArray(err.error.password) && err.error.password.length > 0) {
-            this.errorMessage = 'La contraseña no cumple con los requisitos';
+            // Mensajes concretos del server (contraseña común, muy parecida
+            // al usuario, etc.) — ya vienen en español.
+            this.errorMessage = err.error.password.join(' ');
           } else {
             this.errorMessage =
               'Error al registrar usuario. Verifique los datos e intente nuevamente';
@@ -170,7 +173,7 @@ export class RegisterComponent implements OnInit {
       {
         // Auth
         email: ['', [Validators.required, Validators.email]],
-        password: ['', [Validators.required, Validators.minLength(8)]],
+        password: ['', [Validators.required, strongPasswordValidator]],
         confirmPassword: ['', Validators.required],
 
         // Empresa
@@ -233,7 +236,7 @@ export class RegisterComponent implements OnInit {
           this.errorMessage =
             'Revisa el email del responsable — el formato no es válido.';
         } else if (body?.password?.length) {
-          this.errorMessage = 'La contraseña debe tener al menos 8 caracteres.';
+          this.errorMessage = body.password.join(' ');
         } else if (body && typeof body === 'object') {
           // dict de field errors → fallback genérico mostrando el primer field
           const firstField = Object.keys(body)[0];
@@ -247,6 +250,11 @@ export class RegisterComponent implements OnInit {
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────
+
+  /** Estado de cada requisito de la contraseña, para la lista en vivo. */
+  passwordChecks(form: FormGroup) {
+    return checkPasswordRules(form.get('password')?.value ?? '');
+  }
 
   passwordMatchValidator(passwordKey: string, confirmKey: string): ValidatorFn {
     return (group: AbstractControl): ValidationErrors | null => {

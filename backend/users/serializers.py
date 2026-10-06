@@ -1,3 +1,6 @@
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils import translation
 from rest_framework import serializers
 
 from users.models import (
@@ -8,6 +11,21 @@ from users.models import (
     UserProfile,
     strip_image_metadata,
 )
+
+
+def validate_new_password(password: str, *, username: str = "", email: str = "") -> None:
+    """Corre AUTH_PASSWORD_VALIDATORS (largo, comunes, solo números, parecido
+    al usuario/correo) con mensajes en español.
+
+    Antes el registro no validaba nada en el server: el único filtro era el
+    patrón del frontend, y cualquiera que llamara a la API podía registrarse
+    con "1". El usuario temporal permite comparar contra username/email.
+    """
+    with translation.override("es"):
+        try:
+            validate_password(password, user=User(username=username, email=email))
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"password": list(exc.messages)}) from exc
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -36,6 +54,15 @@ class UserSerializer(serializers.ModelSerializer):
             "is_superuser",
             "account_type",
         ]
+
+    def validate(self, attrs):
+        if "password" in attrs:
+            validate_new_password(
+                attrs["password"],
+                username=attrs.get("username", ""),
+                email=attrs.get("email", ""),
+            )
+        return attrs
 
     def create(self, validate_data):
         password = validate_data.pop("password")
@@ -329,6 +356,10 @@ class CompanyRegisterSerializer(serializers.Serializer):
                 "Ya existe una cuenta con este correo electrónico."
             )
         return value.lower()
+
+    def validate(self, attrs):
+        validate_new_password(attrs["password"], email=attrs["email"])
+        return attrs
 
 
 class ProfileDetailForCompanySerializer(serializers.ModelSerializer):

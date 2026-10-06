@@ -157,12 +157,24 @@
                   </span>
                 </button>
               </div>
-              <p
-                *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
-                class="text-xs text-danger mt-2"
+              <ul
+                *ngIf="registerForm.get('password')?.value || registerForm.get('password')?.touched"
+                class="mt-2 space-y-1"
+                aria-live="polite"
               >
-                Min 8 caracteres, letras, números y un símbolo.
-              </p>
+                <li
+                  *ngFor="let check of passwordChecks(registerForm)"
+                  class="flex items-center gap-1.5 text-xs"
+                  [class.text-emerald-400]="check.ok"
+                  [class.text-warm-grey]="!check.ok"
+                >
+                  <span class="material-symbols-outlined" style="font-size: 14px" aria-hidden="true">{{
+                    check.ok ? 'check_circle' : 'radio_button_unchecked'
+                  }}</span>
+                  {{ check.rule.label }}
+                  <span class="sr-only">{{ check.ok ? '(cumplido)' : '(falta)' }}</span>
+                </li>
+              </ul>
             </div>
 
             <div>
@@ -292,6 +304,24 @@
                   </span>
                 </button>
               </div>
+              <ul
+                *ngIf="companyForm.get('password')?.value || companyForm.get('password')?.touched"
+                class="mt-2 space-y-1"
+                aria-live="polite"
+              >
+                <li
+                  *ngFor="let check of passwordChecks(companyForm)"
+                  class="flex items-center gap-1.5 text-xs"
+                  [class.text-emerald-400]="check.ok"
+                  [class.text-warm-grey]="!check.ok"
+                >
+                  <span class="material-symbols-outlined" style="font-size: 14px" aria-hidden="true">{{
+                    check.ok ? 'check_circle' : 'radio_button_unchecked'
+                  }}</span>
+                  {{ check.rule.label }}
+                  <span class="sr-only">{{ check.ok ? '(cumplido)' : '(falta)' }}</span>
+                </li>
+              </ul>
             </div>
 
             <div>
