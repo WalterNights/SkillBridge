@@ -228,6 +228,16 @@
         <p class="text-sm text-warm-grey leading-relaxed whitespace-pre-line">
           {{ job.summary || 'Esta oferta no incluye una descripción extendida.' }}
         </p>
+        <a
+          *ngIf="job.summary_is_partial"
+          [href]="job.url"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-4 inline-flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline"
+        >
+          Ver la descripción completa en {{ portalMeta().label }}
+          <span class="material-symbols-outlined" style="font-size: 16px" aria-hidden="true">open_in_new</span>
+        </a>
 
         <!-- Habilidades requeridas (keywords del scraper) -->
         <div *ngIf="keywordChips().length > 0" class="mt-7">

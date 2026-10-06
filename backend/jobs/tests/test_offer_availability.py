@@ -53,6 +53,9 @@ def _make_offer(**overrides) -> JobOffer:
         "keywords": "python",
         "portal": "trabajando",
         "url": "https://example.com/ofertas/123-backend",
+        # Descripción ya intentada: estos tests prueban solo disponibilidad,
+        # sin que el detalle dispare también el enriquecimiento.
+        "description_fetched_at": timezone.now(),
     }
     base.update(overrides)
     return JobOffer.objects.create(**base)
@@ -80,7 +83,10 @@ class TestProbeSignals:
 
     def test_generic_marker_applies_to_any_portal(self):
         html = "<h2>Esta vacante ya no está disponible</h2>"
-        assert self._probe(_FakeResponse(200, html)) == (True, "dead_marker:esta vacante ya no está dispon")
+        assert self._probe(_FakeResponse(200, html)) == (
+            True,
+            "dead_marker:esta vacante ya no está dispon",
+        )
 
     def test_expired_valid_through_marks_dead(self):
         html = '<script type="application/ld+json">{"validThrough": "2020-01-01"}</script>'
@@ -92,7 +98,9 @@ class TestProbeSignals:
         assert self._probe(_FakeResponse(200, html)) == (False, "http_200")
 
     def test_redirect_to_parent_listing_marks_dead(self):
-        response = _FakeResponse(200, "<html>listado</html>", url="https://example.com/ofertas", history=[object()])
+        response = _FakeResponse(
+            200, "<html>listado</html>", url="https://example.com/ofertas", history=[object()]
+        )
         assert self._probe(response) == (True, "redirect_to_listing")
 
     def test_redirect_to_home_marks_dead(self):
@@ -106,7 +114,9 @@ class TestProbeSignals:
         assert self._probe(response) == (False, "http_200")
 
     def test_redirect_to_login_wall_stays_alive(self):
-        response = _FakeResponse(200, "", url="https://example.com/login?next=x", history=[object()])
+        response = _FakeResponse(
+            200, "", url="https://example.com/login?next=x", history=[object()]
+        )
         assert self._probe(response) == (False, "http_200")
 
     def test_403_antibot_stays_alive(self):
@@ -152,7 +162,9 @@ class TestExpiresAt:
 class TestFeedAndDetail:
     def test_feed_hides_expired_offers(self, authed_client):
         alive = _make_offer(url="https://example.com/ofertas/1")
-        _make_offer(url="https://example.com/ofertas/2", expires_at=timezone.now() - timedelta(hours=1))
+        _make_offer(
+            url="https://example.com/ofertas/2", expires_at=timezone.now() - timedelta(hours=1)
+        )
         body = authed_client.get("/api/jobs/jobs/?min_match=0").json()
         results = body["results"] if isinstance(body, dict) else body
         ids = {o["id"] for o in results}

@@ -30,6 +30,9 @@ export interface JobOffer {
    *  "" o undefined. Valores validos: salary | location | stack |
    *  company | already_applied | other | "" (skipped). */
   ignore_reason?: IgnoreReason | '';
+  /** True si `summary` es un relleno del listado y no la descripción real
+   *  (portal sin acceso a la página de detalle). */
+  summary_is_partial?: boolean;
 }
 
 /** Codigos de motivo alineados con IgnoredOffer.REASON_CHOICES del backend. */

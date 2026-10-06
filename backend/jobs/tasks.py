@@ -13,6 +13,11 @@ from django.utils import timezone
 
 from jobs.adapters.scrapers.base import parse_iso_datetime
 from jobs.models import JobOffer
+from jobs.services.description_enricher import (
+    STUB_MAX_LENGTH,
+    UNFETCHABLE_PORTALS,
+    enrich_offer,
+)
 from jobs.services.job_service import JobService
 from jobs.services.matching_service import JobMatchingService
 
@@ -418,6 +423,41 @@ def verify_single_offer(offer_id: int) -> dict:
     if offer is None:
         return {"offer_id": offer_id, "alive": False, "skipped": True}
     return {"offer_id": offer_id, "alive": check_offer_availability(offer)}
+
+
+# Lote nocturno de descripciones: tope por corrida y pausa entre requests
+# para no gatillar el rate-limit de LinkedIn (bloquea con 429/999).
+_ENRICH_BATCH_LIMIT = 60
+_ENRICH_PAUSE_SECONDS = 1.5
+_ENRICH_TIMEOUT_SECONDS = 10
+
+
+@shared_task(name="jobs.enrich_stub_descriptions")
+def enrich_stub_descriptions(limit: int = _ENRICH_BATCH_LIMIT) -> dict:
+    """Cron diario: completa la descripción de ofertas activas guardadas con
+    un relleno, empezando por las más nuevas (las que más se van a ver)."""
+    import time
+
+    from django.db.models.functions import Length
+
+    candidates = (
+        JobOffer.objects.filter(is_active=True, description_fetched_at__isnull=True)
+        .exclude(portal__in=UNFETCHABLE_PORTALS)
+        .annotate(summary_len=Length("summary"))
+        .filter(summary_len__lt=STUB_MAX_LENGTH)
+        .order_by("-created_at")[:limit]
+    )
+    attempted = improved = 0
+    for offer in candidates:
+        if attempted:
+            time.sleep(_ENRICH_PAUSE_SECONDS)
+        attempted += 1
+        if enrich_offer(offer, timeout=_ENRICH_TIMEOUT_SECONDS):
+            improved += 1
+
+    summary = {"status": "success", "attempted": attempted, "improved": improved}
+    logger.info("enrich_stub_descriptions complete: %s", summary)
+    return summary
 
 
 @shared_task(name="jobs.clean_old_offers")

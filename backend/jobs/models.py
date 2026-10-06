@@ -102,6 +102,10 @@ class JobOffer(models.Model):
     # `deadline` de Torre). El feed oculta las vencidas y el probe diario
     # las desactiva. Null = el portal no publica fecha de cierre.
     expires_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    # Cuándo se intentó bajar la descripción real (ver
+    # services/description_enricher.py). Se marca haya salido o no,
+    # para no reintentar en cada visita al detalle.
+    description_fetched_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

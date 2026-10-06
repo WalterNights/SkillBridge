@@ -267,6 +267,13 @@ CELERY_BEAT_SCHEDULE = {
         "task": "jobs.clean_old_offers",
         "schedule": crontab(hour=5, minute=0),
     },
+    # 05:30 UTC, después del scrape y la limpieza: baja la descripción real
+    # de las ofertas nuevas que entraron con un texto de relleno (LinkedIn,
+    # Torre, websearch). Tope de 60 por corrida para no gatillar 429.
+    "enrich-stub-descriptions": {
+        "task": "jobs.enrich_stub_descriptions",
+        "schedule": crontab(hour=5, minute=30),
+    },
     # 12:00 UTC diario — 07:00 COT, 09:00 ART. Horario en que la gente
     # típicamente revisa el inbox de la mañana. Después del scrape y
     # cleanup para que las ofertas del digest sean las más frescas.
@@ -351,9 +358,10 @@ GEMINI_MODEL = config("GEMINI_MODEL", default="gemini-2.5-flash")
 GITHUB_TOKEN = config("GITHUB_TOKEN", default="")
 
 # ----- Disponibilidad de ofertas -----
-# Verificación on-demand: al abrir el detalle de una oferta no verificada en
-# 24h, y cuando un usuario la reporta "no disponible". Los tests lo apagan
-# para no hacer requests reales a los portales.
+# Requests on-demand a los portales: verificar disponibilidad al abrir el
+# detalle de una oferta no verificada en 24h (o reportada "no disponible")
+# y bajar su descripción real si se guardó un relleno. Los tests lo apagan
+# para no hacer requests reales.
 JOBS_ONDEMAND_CHECK = config("JOBS_ONDEMAND_CHECK", default=True, cast=bool)
 
 # ----- Reseñas -----

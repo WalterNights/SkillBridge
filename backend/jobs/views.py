@@ -16,6 +16,7 @@ from rest_framework.response import Response
 
 from jobs.models import IgnoredOffer, JobOffer
 from jobs.serializers import JobOfferSerializer
+from jobs.services.description_enricher import can_enrich, enrich_offer
 from jobs.services.job_service import JobService
 from jobs.services.matching_service import JobMatchingService
 from jobs.tasks import check_offer_availability, verify_single_offer
@@ -35,6 +36,8 @@ logger = logging.getLogger(__name__)
 # el usuario está esperando la página.
 _ONDEMAND_RECHECK_AFTER = timedelta(hours=24)
 _ONDEMAND_CHECK_TIMEOUT_SECONDS = 4
+# Bajar la descripción real al abrir el detalle (una vez por oferta).
+_ONDEMAND_ENRICH_TIMEOUT_SECONDS = 5
 
 
 def _enqueue_verify(offer_id: int) -> None:
@@ -349,6 +352,8 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
                 },
                 status=status.HTTP_410_GONE,
             )
+        if settings.JOBS_ONDEMAND_CHECK and can_enrich(instance):
+            enrich_offer(instance, timeout=_ONDEMAND_ENRICH_TIMEOUT_SECONDS)
         self._enrich_with_user_match([instance])
         serializer = self.get_serializer(instance)
         return Response(serializer.data)

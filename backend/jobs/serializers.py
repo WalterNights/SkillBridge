@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import JobOffer
+from .services.description_enricher import is_stub_summary
 
 
 class JobOfferSerializer(serializers.ModelSerializer):
@@ -10,6 +11,7 @@ class JobOfferSerializer(serializers.ModelSerializer):
     # Solo lo rellena el endpoint /ignored/ via `offer._ignore_reason`.
     # En el feed regular es "" — la UI lo ignora si esta vacio.
     ignore_reason = serializers.SerializerMethodField()
+    summary_is_partial = serializers.SerializerMethodField()
 
     class Meta:
         model = JobOffer
@@ -39,7 +41,13 @@ class JobOfferSerializer(serializers.ModelSerializer):
             "missing_skills",
             "match_percentage",
             "ignore_reason",
+            "summary_is_partial",
         ]
+
+    def get_summary_is_partial(self, job) -> bool:
+        """True si `summary` es un relleno y no la descripción real — el
+        frontend muestra un link al portal para leerla completa."""
+        return is_stub_summary(job)
 
     def get_match_percentage(self, job):
         return getattr(job, "match_percentage", None)

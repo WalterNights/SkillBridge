@@ -198,6 +198,25 @@ class JobService:
         return created, stats
 
     @staticmethod
+    def _refresh_existing_offer(offer: JobOffer, data: JobOfferData) -> None:
+        """Actualiza una oferta ya guardada con lo que el portal trae ahora.
+
+        Solo mejora, nunca empeora: la fecha de cierre si el portal la
+        publicó o movió, y el summary si ahora viene más largo (una oferta
+        guardada con relleno se corrige cuando el scrape trae la
+        descripción completa).
+        """
+        update_fields = []
+        if data.expires_at and offer.expires_at != data.expires_at:
+            offer.expires_at = data.expires_at
+            update_fields.append("expires_at")
+        if len(data.summary or "") > len(offer.summary or ""):
+            offer.summary = data.summary
+            update_fields.append("summary")
+        if update_fields:
+            offer.save(update_fields=update_fields)
+
+    @staticmethod
     def save_new_offers(offers_data: Iterable[JobOfferData]) -> list[JobOffer]:
         """Persiste DTOs en DB devolviendo solo las que se crearon ahora.
 
@@ -269,11 +288,8 @@ class JobService:
                 )
                 if was_created:
                     created.append(obj)
-                elif data.expires_at and obj.expires_at != data.expires_at:
-                    # El portal publicó (o movió) la fecha de cierre desde
-                    # el primer scrape — la mantenemos al día.
-                    obj.expires_at = data.expires_at
-                    obj.save(update_fields=["expires_at"])
+                else:
+                    JobService._refresh_existing_offer(obj, data)
             except Exception:
                 skipped += 1
                 logger.exception("Skipping offer (url=%r)", data.url)
