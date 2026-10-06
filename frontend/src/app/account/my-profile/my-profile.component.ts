@@ -1,4 +1,3 @@
-import { Country } from 'country-state-city';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeHtml, Title } from '@angular/platform-browser';
@@ -8,6 +7,9 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ProfileBuilderComponent } from '../../shared/profile-builder/profile-builder.component';
 import { CountryCode } from '../../models/country-code.model';
 import { CountryCodeService } from '../../services/country-code.service';
+import { CityInputComponent } from '../../shared/location/city-input.component';
+import { getLocalizedCountries } from '../../shared/location/countries';
+import { CityData } from '../../models/country.model';
 import { ProfileService } from '../../services/profile.service';
 import { AuthService } from '../../auth/auth.service';
 import { environment } from '../../../environment/environment';
@@ -62,6 +64,7 @@ interface CvLangSnapshot {
     RouterModule,
     PhotoCropperDialogComponent,
     TextFormatToolbarComponent,
+    CityInputComponent,
   ],
   templateUrl: './my-profile.component.html',
   styleUrl: './my-profile.component.scss',
@@ -88,8 +91,8 @@ export class MyProfileComponent implements OnInit {
   successMessage = '';
   errorMessage = '';
   countryCodes: CountryCode[] = [];
-  countries = Country.getAllCountries();
-  cities: any[] = [];
+  countries = getLocalizedCountries();
+  cities: CityData[] = [];
 
   /** Snapshot del último perfil traído. Fuente del view-mode. */
   profile = signal<any | null>(null);

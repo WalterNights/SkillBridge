@@ -186,16 +186,13 @@
                 >
                   <option value="">Selecciona un país</option>
                   <option *ngFor="let country of countries" [value]="country.isoCode">
-                    {{ country.name }}
+                    {{ country.label }}
                   </option>
                 </select>
               </div>
               <div>
                 <label class="field-label" for="city">Ciudad *</label>
-                <select id="city" formControlName="city" class="field-input">
-                  <option value="">Selecciona una ciudad</option>
-                  <option *ngFor="let city of cities" [value]="city.name">{{ city.name }}</option>
-                </select>
+                <app-city-input inputId="city" formControlName="city" [cities]="cities" />
               </div>
             </div>
 

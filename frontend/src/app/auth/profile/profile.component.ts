@@ -1,4 +1,3 @@
-import { Country } from 'country-state-city';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule, Location } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
@@ -9,11 +8,14 @@ import { CountryCode } from '../../models/country-code.model';
 import { CountryCodeService } from '../../services/country-code.service';
 import { AuthService } from '../auth.service';
 import { UserNavComponent } from '../../shared/user-nav/user-nav.component';
+import { CityInputComponent } from '../../shared/location/city-input.component';
+import { getLocalizedCountries } from '../../shared/location/countries';
+import { CityData } from '../../models/country.model';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, UserNavComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, UserNavComponent, CityInputComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss'],
 })
@@ -24,8 +26,8 @@ export class ProfileComponent implements OnInit {
   isLoading = false;
   successMessage = '';
   countryCodes: CountryCode[] = [];
-  countries = Country.getAllCountries();
-  cities: any[] = [];
+  countries = getLocalizedCountries();
+  cities: CityData[] = [];
 
   constructor(
     private countryCodeService: CountryCodeService,
