@@ -147,8 +147,8 @@ class PortalRouterService:
                 continue
             if not _covers_country(scraper_cls, country):
                 continue
-            # Los que ignoran el query (sitemaps) corren una sola vez.
-            portal_queries = queries if scraper_cls.uses_query else queries[:1]
+            # Sitemaps (ignoran el query) y buscadores con anti-bot: tope.
+            portal_queries = queries[: scraper_cls.max_queries]
             for query in portal_queries:
                 plans.append(PortalPlan(portal=portal_name, query=query, location=location))
 

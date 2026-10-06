@@ -110,15 +110,21 @@ class TestTorreScraperSearch:
         motion = next(o for o in offers if o.title == "Motion Designer")
         assert motion.url == _OPPORTUNITY_URL_TEMPLATE.format(id="AbCd1234")
 
-    def test_body_includes_experience_field(self):
-        """La API rebota con 400 si falta `experience` o `proficiency`
-        dentro de `skill/role`. Caso real verificado contra producción
-        2026-06-27 — sin este campo el scraper devolvia [] silenciosamente."""
-        body = TorreScraper._build_body("designer")
-        skill_role = body.get("skill/role")
-        assert isinstance(skill_role, dict)
-        assert skill_role.get("text") == "designer"
-        assert skill_role.get("experience") == "potential-to-develop"
+    def test_body_follows_current_contract(self):
+        """Contrato 2026-10: sin `bestfor` la API responde 400."""
+        filters = TorreScraper._build_body(" designer ")["and"]
+        assert {"bestfor": {"username": "", "context": {"contextFeature": "generative_job_search"}}} in filters
+        assert {"keywords": {"term": "designer", "locale": "en"}} in filters
+        assert {"status": {"code": "open"}} in filters
+
+    def test_request_sends_context_feature_and_size(self):
+        scraper = TorreScraper()
+        with patch("jobs.adapters.scrapers.torre.requests.post") as mock_post:
+            mock_post.return_value = _fake_response(json_body={"results": []})
+            scraper.search("designer", "Bogotá")
+        params = mock_post.call_args.kwargs["params"]
+        assert params["contextFeature"] == "generative_job_search"
+        assert params["size"] <= 30
 
     def test_url_uses_torre_ai_domain_and_dash_separator(self):
         """Regresion guard: torre.co devuelve 404 (el dominio publico es
@@ -154,12 +160,16 @@ class TestTorreScraperSearch:
         with pytest.raises(ScraperError):
             scraper.search("", "Bogotá")
 
-    def test_500_response_returns_empty(self):
+    def test_http_error_raises_visible_error(self):
+        """Un 4xx/5xx es un cambio de contrato o caída — error en las stats,
+        no un [] silencioso como el que escondió el 400 de 2026-10."""
         scraper = TorreScraper()
-        with patch("jobs.adapters.scrapers.torre.requests.post") as mock_post:
-            mock_post.return_value = _fake_response(status_code=500, text="boom")
-            offers = scraper.search("diseñador", "Bogotá")
-        assert offers == []
+        with (
+            patch("jobs.adapters.scrapers.torre.requests.post") as mock_post,
+            pytest.raises(ScraperError, match="400"),
+        ):
+            mock_post.return_value = _fake_response(status_code=400, text="Invalid request")
+            scraper.search("diseñador", "Bogotá")
 
     def test_non_json_response_returns_empty(self):
         scraper = TorreScraper()

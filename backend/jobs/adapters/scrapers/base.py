@@ -153,9 +153,10 @@ class JobScraper(ABC):
     #: remoto. El router no lo corre para perfiles de otro país: InfoJobs
     #: (solo España) no tiene sentido para alguien en Colombia, y al revés.
     countries: tuple[str, ...] = ("all",)
-    #: False si el scraper ignora el query (recorre un sitemap): el router
-    #: lo corre una sola vez por scrape en vez de una por query expandida.
-    uses_query: bool = True
+    #: Tope de queries expandidas por scrape (None = todas). 1 para los
+    #: que ignoran el query (sitemaps) o tienen un costo/riesgo alto por
+    #: request (buscadores con anti-bot).
+    max_queries: int | None = None
 
     @abstractmethod
     def search(self, query: str, location: str, pages: int = 2) -> list[JobOfferData]:

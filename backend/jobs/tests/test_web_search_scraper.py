@@ -265,18 +265,38 @@ class TestSearch:
             kw in linkedin_offer.keywords for kw in ("react", "node", "postgresql")
         )
 
-    def test_rate_limit_response_returns_empty(self):
+    def test_rate_limit_response_raises_visible_error(self):
+        """Bloqueo del buscador = error visible en las stats, no un [] mudo."""
         scraper = WebSearchJobsScraper()
         captcha = "<html>Our systems detected unusual traffic</html>"
-        with patch("requests.post", return_value=_fake_response(captcha)):
-            offers = scraper.search("Developer", "Bogotá")
-        assert offers == []
+        with (
+            patch("requests.post", return_value=_fake_response(captcha)) as post,
+            pytest.raises(ScraperError),
+        ):
+            scraper.search("Developer", "Bogotá")
+        assert post.call_count == 1  # no sigue martillando las otras pasadas
 
-    def test_http_error_returns_empty(self):
+    def test_ddg_anomaly_page_raises(self):
         scraper = WebSearchJobsScraper()
-        with patch("requests.post", return_value=_fake_response("", status_code=429)):
-            offers = scraper.search("Developer", "Bogotá")
-        assert offers == []
+        anomaly = "<html>Unfortunately, bots use DuckDuckGo too.</html>"
+        with (
+            patch("requests.post", return_value=_fake_response(anomaly, status_code=202)),
+            pytest.raises(ScraperError, match="anti-bot"),
+        ):
+            scraper.search("Developer", "Bogotá")
+
+    def test_http_429_raises(self):
+        scraper = WebSearchJobsScraper()
+        with (
+            patch("requests.post", return_value=_fake_response("", status_code=429)),
+            pytest.raises(ScraperError),
+        ):
+            scraper.search("Developer", "Bogotá")
+
+    def test_http_500_returns_empty(self):
+        scraper = WebSearchJobsScraper()
+        with patch("requests.post", return_value=_fake_response("", status_code=500)):
+            assert scraper.search("Developer", "Bogotá") == []
 
     def test_network_failure_returns_empty(self):
         scraper = WebSearchJobsScraper()

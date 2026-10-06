@@ -76,7 +76,7 @@ class HirelineScraper(JobScraper):
     )
     categories = ("tech",)
     countries = ("MX", "CO")
-    uses_query = False
+    max_queries = 1
 
     def search(self, query: str, location: str, pages: int = 2) -> list[JobOfferData]:
         logger.info(

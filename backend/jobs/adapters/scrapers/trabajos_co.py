@@ -28,6 +28,7 @@ disparar 40 requests extra por scrape.
 from __future__ import annotations
 
 import logging
+from datetime import date, datetime
 from urllib.parse import urlencode
 
 import requests
@@ -43,6 +44,21 @@ from jobs.adapters.scrapers.base import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Texto de la página de "sin resultados" del portal (HTTP 200, sin cards).
+_NO_RESULTS_MARKER = b"no hay ninguna oferta"
+_FECHA_FORMAT = "%d/%m/%Y"
+
+
+def _age_from_fecha(fecha_tag) -> int | None:
+    """Días desde la fecha DD/MM/YYYY de `span.fecha`, o None si no hay."""
+    if fecha_tag is None:
+        return None
+    try:
+        published = datetime.strptime(fecha_tag.get_text(strip=True), _FECHA_FORMAT).date()
+    except ValueError:
+        return None
+    return (date.today() - published).days
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -109,6 +125,11 @@ class TrabajosColombiaScraper(JobScraper):
             logger.error("Error fetching listing %s: %s", url, e)
             return []
 
+        if _NO_RESULTS_MARKER in response.content:
+            # Página válida de "sin resultados" — no es un parser roto.
+            logger.info("trabajos_co sin resultados para %s", url)
+            return []
+
         soup = BeautifulSoup(response.content, "html.parser")
         cards = soup.select("div.listado2014.card.oferta")
         logger.info("Ofertas en %s: %d", url, len(cards))
@@ -149,12 +170,13 @@ class TrabajosColombiaScraper(JobScraper):
         summary_tag = card.select_one("div.doextended")
         summary = summary_tag.get_text(" ", strip=True) if summary_tag else ""
 
-        # Filtro de edad — la fecha viene como DD/MM/YYYY en span.fecha,
-        # pero también puede haber "Hoy" o "Hace N días" en el texto del
-        # card (en algunos layouts premium). Probamos primero con
-        # extract_age_days sobre todo el card; si nada matchea, dejamos
-        # pasar (caller asume reciente).
-        age_days = extract_age_days(card.get_text(" ", strip=True))
+        # Filtro de edad. La fecha real viene como DD/MM/YYYY en span.fecha
+        # (extract_age_days no entiende ese formato y dejaba pasar ofertas
+        # de 2 meses). Solo si falta caemos al texto ("Hoy", "Hace N días")
+        # de algunos layouts premium.
+        age_days = _age_from_fecha(card.select_one("span.fecha"))
+        if age_days is None:
+            age_days = extract_age_days(card.get_text(" ", strip=True))
         if age_days is not None and age_days > MAX_OFFER_AGE_DAYS:
             logger.info(
                 "Skipping old trabajos_co offer (%d days): %s",

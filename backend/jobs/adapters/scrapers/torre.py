@@ -45,11 +45,13 @@ USER_AGENT = (
     "Chrome/126.0.0.0 Safari/537.36"
 )
 
-_SEARCH_URL = "https://search.torre.co/opportunities/_search/"
-# Cap defensivo. Torre tiende a devolver buenas matches en los primeros
-# 30-50 resultados — más allá empieza a meter ofertas con relevancia
-# floja que igual van a quedar bajo el threshold de match% downstream.
-MAX_RESULTS = 50
+_SEARCH_URL = "https://search.torre.co/opportunities/_search"
+# Contrato vigente (2026-10, sacado del bundle de la app Flutter de Torre):
+# sin `contextFeature` en la query y un filtro `bestfor` en el body la API
+# responde 400 "Invalid request". `bestfor` acepta username vacío.
+_CONTEXT_FEATURE = "generative_job_search"
+# Tope por request que acepta la API (50 → 400 "Request size … too large").
+MAX_RESULTS = 30
 
 # Edad máxima aceptable para una oferta de Torre. El user del cliente
 # jorgeluisq07 (2026-06-27) reportó haber visto una oferta de 4 años
@@ -94,6 +96,12 @@ class TorreScraper(JobScraper):
         try:
             response = requests.post(
                 _SEARCH_URL,
+                params={
+                    "lang": "en",
+                    "size": MAX_RESULTS,
+                    "aggregate": "false",
+                    "contextFeature": _CONTEXT_FEATURE,
+                },
                 json=self._build_body(query),
                 headers={
                     "User-Agent": USER_AGENT,
@@ -107,12 +115,11 @@ class TorreScraper(JobScraper):
             return []
 
         if response.status_code != 200:
-            logger.warning(
-                "Torre API devolvió %d (body: %r)",
-                response.status_code,
-                response.text[:200],
+            # Error visible en las stats del portal: un 4xx acá suele ser un
+            # cambio de contrato de la API, no "cero ofertas".
+            raise ScraperError(
+                f"Torre API devolvió {response.status_code}: {response.text[:200]!r}"
             )
-            return []
 
         try:
             payload = response.json()
@@ -137,22 +144,22 @@ class TorreScraper(JobScraper):
 
     @staticmethod
     def _build_body(query: str) -> dict:
-        """Body mínimo para el endpoint `_search`.
+        """Body del endpoint `_search` (contrato 2026-10).
 
-        IMPORTANTE: `experience` o `proficiency` es OBLIGATORIO dentro
-        de `skill/role` — si falta, la API devuelve 400 BAD_REQUEST.
-        Usamos `potential-to-develop` (el más permisivo) para maximizar
-        recall: el matching downstream decide qué ofertas son buenas
-        según el perfil del user, no filtramos en la fuente.
-
-        Verificado contra la API real el 2026-06-27 con curl —
-        responses tipo `{"total": 5282, "results": [...]}`.
+        - `bestfor` es obligatorio: sin él la API responde 400. Con
+          username vacío no personaliza por usuario.
+        - `keywords` en vez de `skill/role`: más recall (84 vs 36 para
+          "backend developer") y resultados más recientes. El matching
+          downstream decide qué sirve para el perfil.
+        - `status=open` filtra en la fuente; `_is_fresh_and_open` igual
+          descarta las viejas que Torre deja "open" para siempre.
         """
         return {
-            "skill/role": {
-                "text": query.strip(),
-                "experience": "potential-to-develop",
-            },
+            "and": [
+                {"bestfor": {"username": "", "context": {"contextFeature": _CONTEXT_FEATURE}}},
+                {"keywords": {"term": query.strip(), "locale": "en"}},
+                {"status": {"code": "open"}},
+            ]
         }
 
     @staticmethod

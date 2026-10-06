@@ -21,7 +21,8 @@ fallan, devuelve [] sin tumbar el scrape general.
 from __future__ import annotations
 
 import logging
-from urllib.parse import quote_plus
+import re
+from urllib.parse import quote_plus, urlparse
 
 from bs4 import BeautifulSoup
 
@@ -35,6 +36,9 @@ from jobs.adapters.scrapers.base import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Path de detalle de una oferta: /co/trabajos/<slug>-<id>[/]
+_OFFER_PATH_RE = re.compile(r"/co/trabajos/[^/]+-\d+/?$")
 
 
 _BASE_URL = "https://www.magneto365.com/co/trabajos/buscar"
@@ -125,16 +129,13 @@ class MagnetoScraper(JobScraper):
     def _parse_listing(self, html: str) -> list[JobOfferData]:
         soup = BeautifulSoup(html, "html.parser")
 
-        # Buscamos los enlaces a ofertas individuales. Magneto las URLs
-        # tienen `/co/trabajos/<slug>-<id>`. Filtramos las que no son
-        # detail (buscar, inicio, etc).
-        cards = soup.select("a[href*='/co/trabajos/']")
+        # Enlaces a ofertas individuales: `/co/trabajos/<slug>-<id numérico>`.
+        # Exigir el id descarta la navegación del sitio (`empleos-por-ciudades`,
+        # `buscar`, `inicio`…) que antes se colaba como si fuera una oferta.
         cards = [
-            c for c in cards
-            if c.get("href")
-            and "/buscar" not in c["href"]
-            and "/inicio" not in c["href"]
-            and c["href"] != "/co/trabajos/"
+            c
+            for c in soup.select("a[href*='/co/trabajos/']")
+            if _OFFER_PATH_RE.search(urlparse(c.get("href", "")).path)
         ]
         logger.info("Magneto raw cards: %d", len(cards))
 

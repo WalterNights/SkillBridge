@@ -44,9 +44,10 @@ USER_AGENT = (
 # (.com.ar, .com.mx, etc) — agregamos solo CL y CO para empezar; el
 # sitemap de los grandes ya trae miles de ofertas, suficiente para que
 # el matcher tenga material.
+# trabajando.com.co quedó aparcado (2026-10: redirige a /lander, 0 URLs),
+# así que solo queda Chile.
 _COUNTRY_SITEMAPS = [
     "https://www.trabajando.cl/sitemap-ofertas.xml",
-    "https://www.trabajando.com.co/sitemap-ofertas.xml",
 ]
 
 # Sitemaps suelen traer >2000 URLs por país. Cap agresivo para no
@@ -67,8 +68,8 @@ class TrabajandoScraper(JobScraper):
         "administrativos, ingeniería, salud, hostelería, retail."
     )
     categories = ("all",)
-    countries = ("CL", "CO")
-    uses_query = False
+    countries = ("CL",)
+    max_queries = 1
 
     def search(self, query: str, location: str, pages: int = 2) -> list[JobOfferData]:
         logger.info(

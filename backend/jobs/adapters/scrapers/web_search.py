@@ -110,7 +110,13 @@ _RATE_LIMIT_MARKERS = (
     "unusual traffic",
     "tráfico inusual",
     "rate limit",
+    # Página "anomaly" de DDG (2026-10): exige un challenge JS. Llega con
+    # HTTP 202 y sin resultados.
+    "bots use duckduckgo",
 )
+
+# Status con el que DDG sirve su página anti-bot.
+_ANTIBOT_STATUS = 202
 
 # Marcadores que sugieren que la oferta ya está cerrada y aparecen en el
 # snippet/título del SERP. Filtro zero-cost — los que están claramente
@@ -265,6 +271,9 @@ class WebSearchJobsScraper(JobScraper):
     # queda como fallback general.
     categories = ("all", "design", "agro")
     countries = ("CO",)
+    # Son 4 pasadas a DDG por query: con las 4 queries expandidas
+    # eran 16 POSTs por scrape y DDG respondía con su anti-bot.
+    max_queries = 1
 
     def search(self, query: str, location: str, pages: int = 1) -> list[JobOfferData]:
         if not query:
@@ -295,7 +304,14 @@ class WebSearchJobsScraper(JobScraper):
             ("agro", self._build_query(query, location, sites=_JOB_SITES_AGRO)),
         ):
             logger.info("WebSearch scrape (%s): query=%r", label, ddg_query)
-            html = self._fetch_serp(ddg_query)
+            try:
+                html = self._fetch_serp(ddg_query)
+            except ScraperError:
+                # Bloqueados: las pasadas siguientes también lo estarían.
+                # Sin nada juntado, el error sube a las stats del portal.
+                if not all_offers:
+                    raise
+                break
             if html is None:
                 continue
             for offer in self._parse_serp(html):
@@ -356,11 +372,14 @@ class WebSearchJobsScraper(JobScraper):
         except requests.RequestException as e:
             logger.error("WebSearch fetch failed: %s", e)
             return None
+        if response.status_code == 429 or (
+            response.status_code == _ANTIBOT_STATUS or self._is_rate_limited(response.text)
+        ):
+            raise ScraperError(
+                f"DuckDuckGo bloqueó la búsqueda (HTTP {response.status_code}, anti-bot)"
+            )
         if response.status_code >= 400:
             logger.warning("WebSearch responded %d", response.status_code)
-            return None
-        if self._is_rate_limited(response.text):
-            logger.warning("WebSearch returned rate-limit page — aborting")
             return None
         return response.text
 

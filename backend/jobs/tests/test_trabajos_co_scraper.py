@@ -8,6 +8,7 @@ Cubre:
   - URL de búsqueda incluye CADENA + IDPAIS=40 + DESDE para paginación
 """
 
+from datetime import date
 from unittest.mock import Mock
 
 import pytest
@@ -93,6 +94,13 @@ LISTING_HTML_BAD_CARD = """
 """
 
 
+# Las ofertas "recientes" de los fixtures usan la fecha de hoy: con fechas
+# fijas, el filtro de edad (span.fecha) las descarta a los 14 días.
+_TODAY = date.today().strftime("%d/%m/%Y")
+LISTING_HTML = LISTING_HTML.replace("22/06/2026", _TODAY).replace("23/06/2026", _TODAY)
+LISTING_HTML_BAD_CARD = LISTING_HTML_BAD_CARD.replace("22/06/2026", _TODAY)
+
+
 def _mock_response(html: str) -> Mock:
     response = Mock()
     response.content = html.encode("utf-8")
@@ -155,6 +163,23 @@ class TestTrabajosColombiaSearch:
         )
         offers = TrabajosColombiaScraper().search("anything", "Cali", pages=1)
         assert offers == []
+
+    def test_old_fecha_alone_is_filtered(self, mocker):
+        """Solo `span.fecha` vieja (sin "Hace N días"): también se filtra."""
+        html = LISTING_HTML.replace(_TODAY, "13/08/2026")
+        mocker.patch(
+            "jobs.adapters.scrapers.trabajos_co.requests.get",
+            return_value=_mock_response(html),
+        )
+        assert TrabajosColombiaScraper().search("anything", "Cali", pages=1) == []
+
+    def test_no_results_page_returns_empty(self, mocker):
+        html = "<html><p>Parece que no hay ninguna oferta relacionada con 'x'</p></html>"
+        mocker.patch(
+            "jobs.adapters.scrapers.trabajos_co.requests.get",
+            return_value=_mock_response(html),
+        )
+        assert TrabajosColombiaScraper().search("x", "Cali", pages=1) == []
 
     def test_broken_cards_do_not_abort_page(self, mocker):
         mocker.patch(
