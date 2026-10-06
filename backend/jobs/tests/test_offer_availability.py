@@ -19,10 +19,23 @@ import pytest
 from django.utils import timezone
 
 from applications.models import JobApplication
-from jobs.adapters.scrapers.base import JobOfferData, parse_iso_datetime
+from jobs.adapters.scrapers.base import (
+    JobOfferData,
+    _host_is_public as _real_host_is_public,
+    parse_iso_datetime,
+    safe_get,
+)
 from jobs.models import JobOffer
 from jobs.services.job_service import JobService
 from jobs.tasks import _probe_offer, clean_old_offers, verify_active_offers
+
+
+@pytest.fixture(autouse=True)
+def _public_dns():
+    """Los tests usan hosts ficticios: simulamos que resuelven a IPs públicas
+    para que el chequeo SSRF de `safe_get` no los descarte."""
+    with patch("jobs.adapters.scrapers.base._host_is_public", return_value=True):
+        yield
 
 
 class _FakeRaw:
@@ -160,6 +173,13 @@ class TestExpiresAt:
 @pytest.mark.integration
 @pytest.mark.django_db
 class TestFeedAndDetail:
+    def test_fresh_offer_is_not_rechecked(self, authed_client, settings):
+        """Recién scrapeada (sin last_checked_at): cuenta como verificada al crearse."""
+        settings.JOBS_ONDEMAND_FETCH = True
+        offer = _make_offer()
+        with patch("jobs.tasks.requests.get", side_effect=AssertionError("no debe probar")):
+            assert authed_client.get(f"/api/jobs/jobs/{offer.id}/").status_code == 200
+
     def test_feed_hides_expired_offers(self, authed_client):
         alive = _make_offer(url="https://example.com/ofertas/1")
         _make_offer(
@@ -172,8 +192,8 @@ class TestFeedAndDetail:
         assert len(ids) == 1
 
     def test_detail_returns_410_when_probe_finds_it_dead(self, authed_client, settings):
-        settings.JOBS_ONDEMAND_CHECK = True
-        offer = _make_offer()
+        settings.JOBS_ONDEMAND_FETCH = True
+        offer = _make_offer(last_checked_at=timezone.now() - timedelta(days=2))
         with patch("jobs.tasks.requests.get", return_value=_FakeResponse(404)):
             r = authed_client.get(f"/api/jobs/jobs/{offer.id}/")
         assert r.status_code == 410
@@ -182,26 +202,27 @@ class TestFeedAndDetail:
         assert offer.is_active is False
 
     def test_detail_skips_probe_when_recently_checked(self, authed_client, settings):
-        settings.JOBS_ONDEMAND_CHECK = True
+        settings.JOBS_ONDEMAND_FETCH = True
         offer = _make_offer(last_checked_at=timezone.now() - timedelta(hours=2))
         with patch("jobs.tasks.requests.get", side_effect=AssertionError("no debe probar")):
             r = authed_client.get(f"/api/jobs/jobs/{offer.id}/")
         assert r.status_code == 200
 
     def test_detail_alive_updates_last_checked_at(self, authed_client, settings):
-        settings.JOBS_ONDEMAND_CHECK = True
-        offer = _make_offer()
+        settings.JOBS_ONDEMAND_FETCH = True
+        stale = timezone.now() - timedelta(days=2)
+        offer = _make_offer(last_checked_at=stale)
         with patch("jobs.tasks.requests.get", return_value=_FakeResponse(200, "<h1>Oferta</h1>")):
             r = authed_client.get(f"/api/jobs/jobs/{offer.id}/")
         assert r.status_code == 200
         offer.refresh_from_db()
-        assert offer.last_checked_at is not None
+        assert offer.last_checked_at > stale
         assert offer.is_active is True
 
     def test_unavailable_report_triggers_verification(
         self, authed_client, settings, django_capture_on_commit_callbacks
     ):
-        settings.JOBS_ONDEMAND_CHECK = True
+        settings.JOBS_ONDEMAND_FETCH = True
         offer = _make_offer()
         with (
             patch("jobs.tasks.requests.get", return_value=_FakeResponse(410)),
@@ -229,3 +250,44 @@ class TestCleanOldOffersKeepsApplications:
         assert JobApplication.objects.filter(offer=applied).exists()
         assert not JobOffer.objects.filter(pk=orphan.pk).exists()
         assert result["offers_deleted"] == 1
+
+
+@pytest.mark.unit
+class TestSafeGetSsrf:
+    """Sin el fixture de DNS: resolución real contra IPs literales."""
+
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "http://127.0.0.1/admin",
+            "http://169.254.169.254/latest/meta-data/",
+            "http://10.0.0.5/",
+            "ftp://example.com/file",
+        ],
+    )
+    def test_blocks_non_public_targets(self, url):
+        with patch("jobs.adapters.scrapers.base._host_is_public", wraps=_real_host_is_public):
+            assert safe_get(url, timeout=1) is None
+
+    def test_blocks_redirect_to_internal_ip(self):
+        redirect = _FakeResponse(302)
+        redirect.headers = {"location": "http://169.254.169.254/latest/meta-data/"}
+        with (
+            patch(
+                "jobs.adapters.scrapers.base._host_is_public",
+                side_effect=lambda host: host == "example.com",
+            ),
+            patch("jobs.adapters.scrapers.base.requests.get", return_value=redirect) as get,
+        ):
+            assert safe_get("https://example.com/oferta/1", timeout=1) is None
+        assert get.call_count == 1  # nunca llegó a pedir la IP interna
+
+    def test_follows_public_redirect_and_keeps_history(self):
+        redirect = _FakeResponse(301)
+        redirect.headers = {"location": "/ofertas"}
+        final = _FakeResponse(200, "listado")
+        final.headers = {}
+        with patch("jobs.adapters.scrapers.base.requests.get", side_effect=[redirect, final]):
+            response = safe_get("https://example.com/ofertas/1", timeout=1)
+        assert response is final
+        assert response.history == [redirect]

@@ -28,6 +28,14 @@ from jobs.tasks import enrich_stub_descriptions
 LONG_TEXT = "Responsabilidades del cargo. " * 30  # ~870 caracteres
 
 
+@pytest.fixture(autouse=True)
+def _public_dns():
+    """Los tests usan hosts ficticios: simulamos que resuelven a IPs públicas
+    para que el chequeo SSRF de `safe_get` no los descarte."""
+    with patch("jobs.adapters.scrapers.base._host_is_public", return_value=True):
+        yield
+
+
 class _Resp:
     def __init__(self, status_code=200, text="", payload=None):
         self.status_code = status_code
@@ -123,7 +131,7 @@ class TestEnrichOffer:
         assert offer.description_fetched_at is not None
 
     def test_detail_enriches_on_demand(self, authed_client, settings):
-        settings.JOBS_ONDEMAND_CHECK = True
+        settings.JOBS_ONDEMAND_FETCH = True
         offer = _offer(last_checked_at="2099-01-01T00:00:00Z")  # sin probe de disponibilidad
         with patch("jobs.views.enrich_offer", wraps=lambda o, timeout: _set_summary(o)) as enrich:
             body = authed_client.get(f"/api/jobs/jobs/{offer.id}/").json()

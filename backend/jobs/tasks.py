@@ -4,14 +4,16 @@ Tareas asíncronas para el módulo de jobs.
 
 import logging
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urlparse
 
 import requests
 from celery import shared_task
+from django.db.models.functions import Length
 from django.utils import timezone
 
-from jobs.adapters.scrapers.base import parse_iso_datetime
+from jobs.adapters.scrapers.base import parse_iso_datetime, safe_get
 from jobs.models import JobOffer
 from jobs.services.description_enricher import (
     STUB_MAX_LENGTH,
@@ -191,9 +193,9 @@ _GENERIC_DEAD_MARKERS: tuple[str, ...] = (
 # la oferta venció, le creemos al portal.
 _VALID_THROUGH_RE = re.compile(r'"validThrough"\s*:\s*"([^"]+)"')
 
-# Cuánto HTML leemos buscando marcadores / JSON-LD. El JSON-LD suele ir en
-# el <head>, pero en portales con mucho inline CSS/JS queda más abajo.
-_PROBE_SAMPLE_BYTES = 256 * 1024
+# Cuánto HTML leemos buscando marcadores / JSON-LD (suelen ir en el <head>).
+# Se lee de TODAS las ofertas cada noche: más grande = mucho más tráfico.
+_PROBE_SAMPLE_BYTES = 64 * 1024
 
 # HTTP timeout corto — el probe no debe colgar el worker si un portal está
 # lento. La respuesta es binaria (viva / muerta), no necesitamos el body
@@ -260,14 +262,14 @@ def _probe_offer(
     try:
         # Sesión efímera por probe: los portales tratan a los requests con
         # cookies persistentes como sospechosos.
-        response = requests.get(
+        # safe_get sigue los redirects validando cada salto (SSRF).
+        response = safe_get(
             url,
             headers={
                 "User-Agent": _PROBE_USER_AGENT,
                 "Accept-Language": "es-CO,es;q=0.9,en;q=0.8",
                 "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
             },
-            allow_redirects=True,
             timeout=timeout,
             # stream=True: leemos solo una muestra del HTML, no la página
             # entera (que puede ser MB en LinkedIn).
@@ -275,6 +277,9 @@ def _probe_offer(
         )
     except requests.RequestException as exc:
         return offer_id, False, f"network_error:{type(exc).__name__}"
+    if response is None:
+        # La URL (o un redirect) apunta a una IP no pública: no la tocamos.
+        return offer_id, False, "unsafe_url"
 
     status = response.status_code
 
@@ -436,10 +441,6 @@ _ENRICH_TIMEOUT_SECONDS = 10
 def enrich_stub_descriptions(limit: int = _ENRICH_BATCH_LIMIT) -> dict:
     """Cron diario: completa la descripción de ofertas activas guardadas con
     un relleno, empezando por las más nuevas (las que más se van a ver)."""
-    import time
-
-    from django.db.models.functions import Length
-
     candidates = (
         JobOffer.objects.filter(is_active=True, description_fetched_at__isnull=True)
         .exclude(portal__in=UNFETCHABLE_PORTALS)

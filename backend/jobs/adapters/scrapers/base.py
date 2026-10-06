@@ -10,10 +10,15 @@ desde tasks de Celery sin tocar el modelo.
 
 from __future__ import annotations
 
+import ipaddress
 import re
+import socket
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from urllib.parse import urljoin, urlparse
+
+import requests
 
 from common.skills_taxonomy import all_recognizable, normalize
 
@@ -52,6 +57,76 @@ def parse_iso_datetime(raw: object) -> datetime | None:
     except ValueError:
         return None
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
+def _host_is_public(host: str) -> bool:
+    """True si TODAS las IPs a las que resuelve `host` son públicas."""
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except OSError:
+        return False
+    for info in infos:
+        try:
+            ip = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            return False
+        if (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_multicast
+            or ip.is_reserved
+            or ip.is_unspecified
+        ):
+            return False
+    return True
+
+
+def is_public_http_url(url: str) -> bool:
+    """SEGURIDAD (SSRF): True si `url` es http(s) y su host resuelve solo a
+    IPs públicas. Bloquea 127.0.0.1, redes privadas y el endpoint de
+    metadata de cloud (169.254.169.254). False ante cualquier duda."""
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return False
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        return False
+    return _host_is_public(parsed.hostname.lower())
+
+
+_REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
+_MAX_REDIRECTS = 5
+
+
+def safe_get(url: str, **kwargs) -> requests.Response | None:
+    """`requests.get` que valida cada salto contra SSRF.
+
+    Sigue las redirecciones a mano (máx. 5) para chequear con
+    `is_public_http_url` cada destino: con `allow_redirects=True`, un
+    portal (o una URL de un resultado de búsqueda) podría redirigir al
+    backend hacia una IP interna. Devuelve None si algún salto no es
+    seguro. La respuesta final trae `history` y `url` como `requests`.
+    """
+    history: list[requests.Response] = []
+    current = url
+    for _ in range(_MAX_REDIRECTS + 1):
+        if not is_public_http_url(current):
+            return None
+        response = requests.get(current, allow_redirects=False, **kwargs)
+        location = (
+            response.headers.get("location")
+            if response.status_code in _REDIRECT_STATUSES
+            else None
+        )
+        if not location:
+            if history:
+                response.history = history
+            return response
+        history.append(response)
+        response.close()
+        current = urljoin(current, location)
+    return None
 
 
 class JobScraper(ABC):

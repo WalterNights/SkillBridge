@@ -21,6 +21,14 @@ from jobs.models import JobOffer
 from jobs.tasks import _probe_offer, verify_active_offers
 
 
+@pytest.fixture(autouse=True)
+def _public_dns():
+    """Los tests usan hosts ficticios: simulamos que resuelven a IPs públicas
+    para que el chequeo SSRF de `safe_get` no los descarte."""
+    with patch("jobs.adapters.scrapers.base._host_is_public", return_value=True):
+        yield
+
+
 class _FakeResponse:
     """Mock chico de requests.Response — solo lo que _probe_offer toca."""
 

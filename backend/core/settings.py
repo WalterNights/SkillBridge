@@ -362,7 +362,7 @@ GITHUB_TOKEN = config("GITHUB_TOKEN", default="")
 # detalle de una oferta no verificada en 24h (o reportada "no disponible")
 # y bajar su descripción real si se guardó un relleno. Los tests lo apagan
 # para no hacer requests reales.
-JOBS_ONDEMAND_CHECK = config("JOBS_ONDEMAND_CHECK", default=True, cast=bool)
+JOBS_ONDEMAND_FETCH = config("JOBS_ONDEMAND_FETCH", default=True, cast=bool)
 
 # ----- Reseñas -----
 # Mínimo de postulaciones reales (confirmadas con "Sí, apliqué")

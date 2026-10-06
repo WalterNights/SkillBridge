@@ -27,10 +27,8 @@ Limitaciones aceptadas (decisiones explícitas, no bugs):
 
 from __future__ import annotations
 
-import ipaddress
 import logging
 import re
-import socket
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 
@@ -45,6 +43,7 @@ from jobs.adapters.scrapers.base import (
     ScraperError,
     extract_age_days,
     extract_keywords,
+    is_public_http_url,
 )
 
 logger = logging.getLogger(__name__)
@@ -242,34 +241,10 @@ def _is_safe_probe_url(url: str) -> bool:
     """Devuelve True si el URL apunta a un host de LinkedIn legítimo Y
     resuelve a una IP pública. False ante cualquier duda."""
     try:
-        parsed = urlparse(url)
+        host = (urlparse(url).hostname or "").lower()
     except ValueError:
         return False
-    if parsed.scheme not in ("http", "https"):
-        return False
-    host = (parsed.hostname or "").lower()
-    if host not in _PROBE_ALLOWED_HOSTS:
-        return False
-    try:
-        infos = socket.getaddrinfo(host, None)
-    except OSError:
-        return False
-    for info in infos:
-        ip_str = info[4][0]
-        try:
-            ip = ipaddress.ip_address(ip_str)
-        except ValueError:
-            return False
-        if (
-            ip.is_private
-            or ip.is_loopback
-            or ip.is_link_local
-            or ip.is_multicast
-            or ip.is_reserved
-            or ip.is_unspecified
-        ):
-            return False
-    return True
+    return host in _PROBE_ALLOWED_HOSTS and is_public_http_url(url)
 
 
 class WebSearchJobsScraper(JobScraper):

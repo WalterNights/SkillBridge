@@ -27,6 +27,7 @@ import requests
 from bs4 import BeautifulSoup
 from django.utils import timezone
 
+from jobs.adapters.scrapers.base import safe_get
 from jobs.models import JobOffer
 
 logger = logging.getLogger(__name__)
@@ -76,7 +77,7 @@ def _fetch_linkedin(url: str, timeout: float) -> str | None:
     match = _LINKEDIN_JOB_ID_RE.search(urlparse(url).path)
     if not match:
         return None
-    response = requests.get(
+    response = safe_get(
         _LINKEDIN_POSTING_URL.format(job_id=match.group(1)), headers=_HEADERS, timeout=timeout
     )
     if response.status_code != 200:
@@ -92,7 +93,7 @@ def _fetch_torre(url: str, timeout: float) -> str | None:
     if len(segments) < 2:
         return None
     opp_id = segments[-1].split("-", 1)[0]
-    response = requests.get(
+    response = safe_get(
         _TORRE_OPPORTUNITY_URL.format(opp_id=opp_id), headers=_HEADERS, timeout=timeout
     )
     if response.status_code != 200:
@@ -115,7 +116,7 @@ def _find_job_posting(data: object) -> dict | None:
 
 
 def _fetch_json_ld(url: str, timeout: float) -> str | None:
-    response = requests.get(url, headers=_HEADERS, timeout=timeout)
+    response = safe_get(url, headers=_HEADERS, timeout=timeout)
     if response.status_code != 200:
         return None
     soup = BeautifulSoup(response.text, "html.parser")

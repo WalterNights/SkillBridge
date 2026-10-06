@@ -352,7 +352,7 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
                 },
                 status=status.HTTP_410_GONE,
             )
-        if settings.JOBS_ONDEMAND_CHECK and can_enrich(instance):
+        if settings.JOBS_ONDEMAND_FETCH and can_enrich(instance):
             enrich_offer(instance, timeout=_ONDEMAND_ENRICH_TIMEOUT_SECONDS)
         self._enrich_with_user_match([instance])
         serializer = self.get_serializer(instance)
@@ -361,11 +361,11 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
     @staticmethod
     def _needs_availability_check(offer: JobOffer) -> bool:
         """True si conviene re-verificar la oferta antes de mostrarla."""
-        if not settings.JOBS_ONDEMAND_CHECK:
+        if not settings.JOBS_ONDEMAND_FETCH:
             return False
-        if offer.last_checked_at is None:
-            return True
-        return timezone.now() - offer.last_checked_at > _ONDEMAND_RECHECK_AFTER
+        # Una oferta recién scrapeada cuenta como verificada al crearse.
+        last_seen = offer.last_checked_at or offer.created_at
+        return timezone.now() - last_seen > _ONDEMAND_RECHECK_AFTER
 
     @action(detail=True, methods=["post", "delete"], url_path="ignore")
     def ignore(self, request, pk=None):
@@ -444,7 +444,7 @@ class JobOfferViewSet(viewsets.ReadOnlyModelViewSet):
                 elif reason and obj.reason != reason:
                     obj.reason = reason
                     obj.save(update_fields=["reason"])
-            if reason == "unavailable" and settings.JOBS_ONDEMAND_CHECK:
+            if reason == "unavailable" and settings.JOBS_ONDEMAND_FETCH:
                 # El usuario reporta que la oferta ya no existe: la
                 # verificamos ya en background para sacarla del feed de todos.
                 transaction.on_commit(lambda: _enqueue_verify(offer.id))
