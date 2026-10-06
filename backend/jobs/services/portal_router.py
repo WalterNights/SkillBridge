@@ -46,7 +46,6 @@ from users.services.profession_classifier import infer_profession_category
 logger = logging.getLogger(__name__)
 
 
-
 def profile_country(profile: UserProfile) -> str:
     """País (ISO-2) del perfil a partir de `country` + `city`, o
     COUNTRY_UNKNOWN. La mayoría de perfiles no llena `country`, pero la
@@ -154,17 +153,19 @@ class PortalRouterService:
                 plans.append(PortalPlan(portal=portal_name, query=query, location=location))
 
         if not plans:
-            # Fallback de último recurso: ningún scraper declaró categoría
-            # 'all' ni la categoría inferida. No debería pasar pero igual
-            # devolvemos algo para no tirar el scrape entero. Un plan por
-            # portal por query.
+            # Fallback de último recurso: ningún scraper matchea la categoría
+            # inferida en el país del perfil. No debería pasar pero igual
+            # devolvemos algo para no tirar el scrape entero: todos los
+            # portales que cubren el país, sin importar la categoría.
             logger.warning(
-                "PortalRouter: ningún scraper matchea categoría %r — usando todos",
+                "PortalRouter: ningún scraper matchea categoría %r en %s — ignorando categoría",
                 category,
+                country,
             )
             plans = [
                 PortalPlan(portal=p, query=q, location=location)
                 for p in available_portals()
+                if _covers_country(_REGISTRY[p], country)
                 for q in queries
             ]
 
