@@ -70,3 +70,18 @@ def analyze_cv_async(cv_file_path: str, user_id: int):
     except Exception as e:
         logger.error(f"CV analysis task failed for user {user_id}: {e!s}", exc_info=True)
         return {"status": "error", "user_id": user_id, "error": str(e)}
+
+
+@shared_task(name="users.delete_incomplete_accounts")
+def delete_incomplete_accounts() -> dict:
+    """Cron diario: elimina cuentas con el perfil incompleto después del
+    período de gracia. No-op mientras `INCOMPLETE_ACCOUNT_CLEANUP_ENABLED`
+    esté apagado (previsualizar con el comando `--dry-run` antes de activar)."""
+    from django.conf import settings
+
+    from users.services import account_cleanup
+
+    if not settings.INCOMPLETE_ACCOUNT_CLEANUP_ENABLED:
+        return {"status": "disabled", "deleted": 0}
+    result = account_cleanup.delete_incomplete_accounts()
+    return {"status": "success", "deleted": result.count}

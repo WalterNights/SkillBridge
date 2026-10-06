@@ -34,6 +34,7 @@ from users.services.achievement_quantifier import QuantifyError, quantify_achiev
 from users.services.cv_analysis_service import get_cv_analyzer
 from users.services.cv_auditor import AuditError, audit_cv, profile_to_audit_payload
 from users.services.cv_improver import ImproveError, improve_cv, profile_to_improve_payload
+from users.services.account_cleanup import is_profile_complete
 from users.services.profile_service import ProfileService
 from users.services import totp_service
 
@@ -825,13 +826,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         """
         profile = ProfileService.get_profile_by_user(user)
         if profile:
-            data["is_profile_complete"] = bool(
-                profile.first_name
-                and profile.last_name
-                and profile.city
-                and profile.phone
-                and profile.professional_title
-            )
+            data["is_profile_complete"] = is_profile_complete(user)
             data["user_name"] = profile.first_name
             data["professional_title"] = profile.professional_title or ""
             request = self.context.get("request")
@@ -860,9 +855,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             data["profile_photo"] = ""
             return
 
-        data["is_profile_complete"] = bool(
-            company.legal_name and company.responsible_name and company.responsible_role
-        )
+        data["is_profile_complete"] = is_profile_complete(user)
         # `user_name` lo usa el topbar / dropdown — para empresa mostramos
         # el nombre comercial, no el del registrante.
         data["user_name"] = company.legal_name

@@ -270,6 +270,12 @@ CELERY_BEAT_SCHEDULE = {
     # 05:30 UTC, después del scrape y la limpieza: baja la descripción real
     # de las ofertas nuevas que entraron con un texto de relleno (LinkedIn,
     # Torre, websearch). Tope de 60 por corrida para no gatillar 429.
+    # 06:15 UTC: elimina cuentas que no completaron el perfil en el período
+    # de gracia. Solo actúa si INCOMPLETE_ACCOUNT_CLEANUP_ENABLED=True.
+    "delete-incomplete-accounts": {
+        "task": "users.delete_incomplete_accounts",
+        "schedule": crontab(hour=6, minute=15),
+    },
     "enrich-stub-descriptions": {
         "task": "jobs.enrich_stub_descriptions",
         "schedule": crontab(hour=5, minute=30),
@@ -363,6 +369,15 @@ GITHUB_TOKEN = config("GITHUB_TOKEN", default="")
 # y bajar su descripción real si se guardó un relleno. Los tests lo apagan
 # para no hacer requests reales.
 JOBS_ONDEMAND_FETCH = config("JOBS_ONDEMAND_FETCH", default=True, cast=bool)
+
+# ----- Cuentas incompletas -----
+# Días que tiene un usuario para completar su perfil antes de que la cuenta
+# se elimine. El borrado es irreversible: arranca apagado; activarlo después
+# de revisar `manage.py delete_incomplete_accounts --dry-run` en el server.
+INCOMPLETE_ACCOUNT_GRACE_DAYS = config("INCOMPLETE_ACCOUNT_GRACE_DAYS", default=5, cast=int)
+INCOMPLETE_ACCOUNT_CLEANUP_ENABLED = config(
+    "INCOMPLETE_ACCOUNT_CLEANUP_ENABLED", default=False, cast=bool
+)
 
 # ----- Reseñas -----
 # Mínimo de postulaciones reales (confirmadas con "Sí, apliqué")
