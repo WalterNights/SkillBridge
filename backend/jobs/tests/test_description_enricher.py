@@ -184,3 +184,41 @@ def test_rescrape_with_longer_summary_replaces_stub():
 
     offer = JobOffer.objects.get(url__contains="/ofertas/777")
     assert offer.summary == LONG_TEXT
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+def test_enrichment_reclassifies_general_offer():
+    offer = _offer(title="Analista", category="general")
+    description = "Backend con Python, frontend en React y prácticas de DevOps. " * 5
+    with patch("jobs.services.description_enricher.fetch_full_description", return_value=description):
+        enrich_offer(offer, timeout=5)
+    offer.refresh_from_db()
+    assert offer.category == "tech"
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+def test_retag_command_dry_run_and_apply():
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    vague = _offer(
+        title="Analista",
+        category="general",
+        url="https://x.com/vague",
+        summary="Backend con Python, frontend en React y DevOps.",
+    )
+    _offer(title="Auxiliar de cocina", category="general", url="https://x.com/cocina", summary="Cocina.")
+
+    out = StringIO()
+    call_command("retag_general_offers", "--dry-run", stdout=out)
+    assert "Cambiarían 1 ofertas" in out.getvalue()
+    vague.refresh_from_db()
+    assert vague.category == "general"
+
+    call_command("retag_general_offers", stdout=StringIO())
+    vague.refresh_from_db()
+    assert vague.category == "tech"
+

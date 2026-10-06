@@ -289,3 +289,65 @@ def infer_profession_category(title: str | None) -> ProfessionCategory:
         if pattern.search(title):
             return category
     return "general"
+
+
+# Clasificación de OFERTAS por descripción — solo cuando el título no alcanza.
+# Historia: la migración 0014 usó título + summary sin más y metió falsos
+# positivos ("Técnico auxiliar de cocina" → agro por una palabra suelta del
+# summary); la 0015 volvió a solo título y dejó ~50% de ofertas en
+# 'general' (ocultas para usuarios con vertical). Acá el summary decide
+# solo con evidencia fuerte, calibrada contra la base (2026-10):
+#   - al menos 3 palabras DISTINTAS de la categoría ("comercial" y
+#     "comerciales" cuentan como una),
+#   - y el doble que la segunda categoría.
+# Con 2 palabras aparecían errores ("Administrativo/a de Obra" → hr).
+_SUMMARY_SCAN_CHARS = 1500  # el rol suele describirse al principio
+_SUMMARY_MIN_DISTINCT_HITS = 3
+_SUMMARY_MIN_MARGIN = 2
+
+
+def _distinct_words(words: set[str]) -> int:
+    """Cuenta palabras distintas tratando singular/plural como una sola:
+    "comercial"/"comerciales", "venta"/"ventas" (una es prefijo de la otra)."""
+    kept: list[str] = []
+    for word in sorted(words, key=len):
+        if not any(word.startswith(base) for base in kept):
+            kept.append(word)
+    return len(kept)
+
+
+def _category_from_summary(summary: str) -> ProfessionCategory:
+    text = summary[:_SUMMARY_SCAN_CHARS]
+    hits: dict[str, set[str]] = {}
+    for category, pattern in _PATTERNS:
+        words = {m.group(0).lower() for m in pattern.finditer(text)}
+        if words:
+            hits.setdefault(category, set()).update(words)
+    if not hits:
+        return "general"
+    ranked = sorted(
+        ((_distinct_words(words), category) for category, words in hits.items()), reverse=True
+    )
+    top_hits, top_category = ranked[0]
+    runner_up = ranked[1][0] if len(ranked) > 1 else 0
+    if top_hits >= _SUMMARY_MIN_DISTINCT_HITS and top_hits >= _SUMMARY_MIN_MARGIN * runner_up:
+        return top_category
+    return "general"
+
+
+def infer_offer_category(title: str | None, summary: str | None = None) -> ProfessionCategory:
+    """Categoría de una OFERTA: por título y, si no alcanza, por descripción
+    con evidencia fuerte (ver arriba).
+
+    >>> infer_offer_category("Backend Developer", "")
+    'tech'
+    >>> infer_offer_category("Analista", "Backend con Python, frontend en React y DevOps.")
+    'tech'
+    >>> infer_offer_category("Técnico auxiliar de cocina", "Trabajo en el campo de la gastronomía.")
+    'general'
+    """
+    category = infer_profession_category(title)
+    if category != "general" or not summary:
+        return category
+    return _category_from_summary(summary)
+

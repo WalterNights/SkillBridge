@@ -239,7 +239,7 @@ class JobService:
             extract_salary,
             normalize_url,
         )
-        from users.services.profession_classifier import infer_profession_category
+        from users.services.profession_classifier import infer_offer_category
 
         created: list[JobOffer] = []
         skipped = 0
@@ -252,23 +252,14 @@ class JobService:
                 country = extract_country(data.location)
                 modality = extract_modality(data.location, data.summary)
                 salary_text = extract_salary(data.summary)
-                # Category: clasificamos SOLO con el title. El summary
-                # introduce falsos positivos porque menciona contexto
-                # del SECTOR (no del rol del candidato).
-                #
-                # Caso real 2026-06-29: oferta "Tecnico auxiliar de cocina"
-                # quedaba como agro porque su summary mencionaba
-                # "zootecnia" y "animales" — el centro era veterinario
-                # pero el rol del candidato es trades, no agro. Para un
-                # Zootecnista esa oferta es ruido y rompe la promesa
-                # "cero ruido" del producto.
-                #
-                # Trade-off: ofertas con title vago ("Oferta urgente")
-                # quedan como 'general' (antes podian ser tageadas via
-                # summary). Eso significa que NO aparecen en el feed
-                # de users con vertical claro — preferible a contaminar
-                # con falsos positivos. Users 'general' las siguen viendo.
-                category = infer_profession_category(data.title)
+                # Category: primero el title. El summary solo decide si el
+                # title no alcanza Y hay evidencia fuerte (3+ palabras
+                # distintas de la categoría, el doble que la segunda) —
+                # una mención suelta del SECTOR no basta. Caso real
+                # 2026-06-29: "Tecnico auxiliar de cocina" quedaba agro por
+                # "zootecnia"/"animales" en el summary; con la regla
+                # estricta sigue 'general'. Ver infer_offer_category.
+                category = infer_offer_category(data.title, data.summary)
                 # URL canónica — misma job = misma URL, aunque Computrabajo
                 # cambie el fragmento `#lc=Score...` según posición en el
                 # listing o el portal agregue tracking params en un scrape

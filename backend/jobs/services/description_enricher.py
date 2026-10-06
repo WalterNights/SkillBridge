@@ -29,6 +29,7 @@ from django.utils import timezone
 
 from jobs.adapters.scrapers.base import safe_get
 from jobs.models import JobOffer
+from users.services.profession_classifier import infer_offer_category
 
 logger = logging.getLogger(__name__)
 
@@ -160,5 +161,9 @@ def enrich_offer(offer: JobOffer, timeout: float) -> bool:
     if improved:
         offer.summary = description
         update_fields.append("summary")
+        # Con la descripción real, una oferta 'general' puede clasificarse.
+        if offer.category == "general":
+            offer.category = infer_offer_category(offer.title, description)
+            update_fields.append("category")
     offer.save(update_fields=update_fields)
     return improved

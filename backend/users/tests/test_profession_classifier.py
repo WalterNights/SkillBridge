@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from users.services.profession_classifier import infer_profession_category
+from users.services.profession_classifier import infer_offer_category, infer_profession_category
 
 
 @pytest.mark.unit
@@ -188,3 +188,37 @@ class TestInferProfessionCategory:
             f"{title!r} cayó a 'general' — el router no le va a sugerir "
             f"portales especializados. Considerar agregar al classifier."
         )
+
+
+@pytest.mark.unit
+class TestInferOfferCategory:
+    """Ofertas: el summary solo decide si el título no alcanza y hay
+    evidencia fuerte (3+ palabras distintas, el doble que la segunda)."""
+
+    def test_title_wins_when_it_classifies(self):
+        summary = "Ventas, comercial, vendedores, asesor comercial"
+        assert infer_offer_category("Backend Developer", summary) == "tech"
+
+    def test_vague_title_with_strong_summary_is_classified(self):
+        summary = "Buscamos perfil con experiencia en backend, frontend y devops."
+        assert infer_offer_category("Analista de Desarrollo Tecnológico", summary) == "tech"
+
+    def test_real_false_positive_case_stays_general(self):
+        """Caso 2026-06-29: el summary menciona el SECTOR (veterinaria), no el rol."""
+        summary = "Centro veterinario busca técnico de cocina. Experiencia con zootecnia y animales."
+        assert infer_offer_category("Tecnico auxiliar de cocina", summary) == "general"
+
+    def test_two_hits_are_not_enough(self):
+        assert infer_offer_category("Coordinador", "Experiencia en ventas y área comercial.") == "general"
+
+    def test_plural_forms_count_once(self):
+        summary = "comercial, comerciales, ventas"
+        assert infer_offer_category("Coordinador", summary) == "general"
+
+    def test_needs_clear_margin_over_runner_up(self):
+        summary = "backend, frontend, devops; ventas, comercial, vendedores"
+        assert infer_offer_category("Coordinador", summary) == "general"
+
+    def test_empty_summary_keeps_general(self):
+        assert infer_offer_category("Oferta urgente", "") == "general"
+
