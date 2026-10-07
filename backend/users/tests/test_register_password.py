@@ -140,3 +140,30 @@ class TestChangeAndResetPassword:
         )
         assert response.status_code == 400
         assert "new_password" not in response.json()
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestRegisterUsernameErrors:
+    """Errores de formato se explican; "ya existe" sigue siendo genérico."""
+
+    def test_username_with_space_explains_the_problem(self, api_client):
+        """Caso real: "Pepe Perez" recibía el mensaje genérico."""
+        response = _register(api_client, "Pepeperez26*", username="Pepe Perez")
+        assert response.status_code == 400
+        assert "sin espacios" in response.json()["username"][0]
+
+    def test_invalid_email_explains_the_problem(self, api_client):
+        response = api_client.post(
+            REGISTER_URL,
+            {"username": "pepe", "email": "no-es-correo", "password": "Pepeperez26*"},
+            format="json",
+        )
+        assert response.status_code == 400
+        assert response.json()["email"] == ["Ingresa un correo electrónico válido."]
+
+    def test_existing_username_stays_generic(self, api_client, user):
+        """Anti user-enumeration: no se dice que el usuario ya existe."""
+        response = _register(api_client, "Pepeperez26*", username=user.username)
+        assert response.status_code == 400
+        assert response.json() == {"error": "No pudimos crear la cuenta con esos datos."}

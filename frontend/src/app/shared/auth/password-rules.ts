@@ -44,3 +44,12 @@ export const strongPasswordValidator: ValidatorFn = (
   const failed = PASSWORD_RULES.filter((rule) => !rule.test(value)).map((rule) => rule.id);
   return failed.length ? { passwordRules: failed } : null;
 };
+
+/**
+ * Misma regla que el `UnicodeUsernameValidator` de Django: letras (con tilde
+ * o ñ), números y `@ . + - _`, sin espacios. Validarla acá evita que el
+ * usuario descubra el problema recién al enviar ("Pepe Perez").
+ */
+export const USERNAME_PATTERN = /^[\p{L}\p{N}_.@+-]+$/u;
+export const USERNAME_MAX_LENGTH = 150;
+export const USERNAME_FORMAT_HINT = 'Solo letras, números y los símbolos @ . + - _ (sin espacios).';

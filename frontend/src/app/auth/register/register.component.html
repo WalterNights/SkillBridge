@@ -110,10 +110,16 @@
                 autocomplete="username"
               />
               <p
-                *ngIf="registerForm.get('username')?.invalid && registerForm.get('username')?.touched"
+                *ngIf="registerForm.get('username')?.hasError('required') && registerForm.get('username')?.touched"
                 class="text-xs text-danger mt-2"
               >
                 El nombre de usuario es obligatorio.
+              </p>
+              <p
+                *ngIf="registerForm.get('username')?.hasError('pattern')"
+                class="text-xs text-danger mt-2"
+              >
+                {{ usernameHint }}
               </p>
             </div>
 

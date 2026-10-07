@@ -13,7 +13,13 @@ import {
   ValidatorFn,
 } from '@angular/forms';
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
-import { checkPasswordRules, strongPasswordValidator } from '../../shared/auth/password-rules';
+import {
+  USERNAME_FORMAT_HINT,
+  USERNAME_MAX_LENGTH,
+  USERNAME_PATTERN,
+  checkPasswordRules,
+  strongPasswordValidator,
+} from '../../shared/auth/password-rules';
 import { environment } from '../../../environment/environment';
 
 /** Step que está mostrando la vista. `select` es la pantalla inicial
@@ -131,7 +137,14 @@ export class RegisterComponent implements OnInit {
   private initializeForm(): void {
     this.registerForm = this.fb.group(
       {
-        username: ['', Validators.required],
+        username: [
+          '',
+          [
+            Validators.required,
+            Validators.pattern(USERNAME_PATTERN),
+            Validators.maxLength(USERNAME_MAX_LENGTH),
+          ],
+        ],
         email: ['', [Validators.required, Validators.email]],
         password: ['', [Validators.required, strongPasswordValidator]],
         confirmPassword: ['', Validators.required],
@@ -171,10 +184,13 @@ export class RegisterComponent implements OnInit {
         const transportError = registrationTransportError(err);
         if (transportError) {
           this.errorMessage = transportError;
+        } else if (typeof body?.error === 'string') {
+          // Genérico a propósito cuando el usuario ya existe (anti enumeration).
+          this.errorMessage = `${body.error} Prueba con otro nombre de usuario o correo.`;
         } else if (Array.isArray(body?.username) && body.username.length > 0) {
-          this.errorMessage = 'El nombre de usuario ya está en uso.';
+          this.errorMessage = body.username.join(' ');
         } else if (Array.isArray(body?.email) && body.email.length > 0) {
-          this.errorMessage = 'El correo electrónico ya está registrado.';
+          this.errorMessage = body.email.join(' ');
         } else if (Array.isArray(body?.password) && body.password.length > 0) {
           // Mensajes concretos del server (contraseña común, muy parecida
           // al usuario, etc.) — ya vienen en español.
@@ -273,6 +289,8 @@ export class RegisterComponent implements OnInit {
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────
+
+  readonly usernameHint = USERNAME_FORMAT_HINT;
 
   /** Estado de cada requisito de la contraseña, para la lista en vivo. */
   passwordChecks(form: FormGroup) {

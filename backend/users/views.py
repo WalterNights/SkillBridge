@@ -39,6 +39,13 @@ from users.services.profile_service import ProfileService
 from users.services import totp_service
 
 
+# Regla de Django para usernames (UnicodeUsernameValidator): sin espacios.
+_USERNAME_FORMAT_ERROR = (
+    "El nombre de usuario solo puede tener letras, números y los símbolos "
+    "@ . + - _ (sin espacios)."
+)
+
+
 @method_decorator(ratelimit(key="ip", rate="5/m", method="POST", block=True), name="post")
 class UserRegisterView(APIView):
     """Vista para registro de nuevos usuarios.
@@ -64,14 +71,33 @@ class UserRegisterView(APIView):
             )
 
         errors = serializer.errors
-        if any(field in errors for field in self._ENUM_FIELDS):
-            # No diferenciar entre "username taken", "email taken", o
-            # "email malformed" — todos son "no pudimos crear la cuenta".
+        if self._reveals_existing_account(errors):
+            # "Ya existe" sí revela cuentas: mensaje genérico.
             return Response(
                 {"error": "No pudimos crear la cuenta con esos datos."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+        # Errores de FORMATO (espacios en el usuario, correo mal escrito) no
+        # revelan nada: se devuelven en español para que el usuario sepa qué
+        # corregir. Antes también caían en el genérico — "Pepe Perez" no
+        # podía registrarse sin saber que el problema era el espacio.
+        return Response(self._localized_errors(errors), status=status.HTTP_400_BAD_REQUEST)
+
+    def _reveals_existing_account(self, errors) -> bool:
+        return any(
+            getattr(error, "code", None) == "unique"
+            for field in self._ENUM_FIELDS
+            for error in errors.get(field, [])
+        )
+
+    @staticmethod
+    def _localized_errors(errors) -> dict:
+        localized = dict(errors)
+        if "username" in localized:
+            localized["username"] = [_USERNAME_FORMAT_ERROR]
+        if "email" in localized:
+            localized["email"] = ["Ingresa un correo electrónico válido."]
+        return localized
 
 
 @method_decorator(ratelimit(key="ip", rate="5/m", method="POST", block=True), name="post")
