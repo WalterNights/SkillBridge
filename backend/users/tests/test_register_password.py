@@ -8,10 +8,12 @@ AUTH_PASSWORD_VALIDATORS de Django con mensajes en español.
 
 import pytest
 
-from users.models import User
+from users.models import PasswordResetToken, User
 
 REGISTER_URL = "/api/users/register/"
 COMPANY_URL = "/api/companies/register/"
+CHANGE_URL = "/api/users/me/change-password/"
+RESET_VERIFY_URL = "/api/users/password-reset/verify/"
 
 
 @pytest.fixture(autouse=True)
@@ -76,3 +78,57 @@ class TestRegisterPassword:
         )
         assert response.status_code == 400
         assert "password" in response.json()
+
+
+@pytest.mark.integration
+@pytest.mark.django_db
+class TestChangeAndResetPassword:
+    """Mismos validadores en cambio y restablecimiento de contraseña."""
+
+    def test_change_password_rejects_weak_password(self, authed_client):
+        response = authed_client.post(
+            CHANGE_URL,
+            {
+                "current_password": "testpass123",
+                "new_password": "12345678",
+                "confirm_password": "12345678",
+            },
+            format="json",
+        )
+        assert response.status_code == 400
+        assert response.json()["new_password"]
+
+    def test_change_password_accepts_dot_symbol(self, authed_client, user):
+        response = authed_client.post(
+            CHANGE_URL,
+            {
+                "current_password": "testpass123",
+                "new_password": "buenas.1234",
+                "confirm_password": "buenas.1234",
+            },
+            format="json",
+        )
+        assert response.status_code == 200
+        user.refresh_from_db()
+        assert user.check_password("buenas.1234")
+
+    def test_reset_rejects_weak_password_with_valid_code(self, api_client, user):
+        token = PasswordResetToken.objects.create(user=user, code="12345678")
+        response = api_client.post(
+            RESET_VERIFY_URL,
+            {"email": user.email, "code": token.code, "new_password": "password"},
+            format="json",
+        )
+        assert response.status_code == 400
+        assert response.json()["new_password"]
+
+    def test_reset_with_wrong_code_keeps_generic_error(self, api_client, user):
+        """El error de código (anti user-enumeration) va antes que el de la
+        contraseña: con código inválido no se dice nada de la contraseña."""
+        response = api_client.post(
+            RESET_VERIFY_URL,
+            {"email": user.email, "code": "00000000", "new_password": "password"},
+            format="json",
+        )
+        assert response.status_code == 400
+        assert "new_password" not in response.json()

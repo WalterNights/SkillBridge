@@ -11,6 +11,13 @@ import {
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { checkPasswordRules, strongPasswordValidator } from '../../shared/auth/password-rules';
+
+/** El backend genera códigos de 8 dígitos y aún acepta los viejos de 6
+ *  (PasswordResetVerifySerializer). El input estaba limitado a 6: los
+ *  códigos nuevos no se podían escribir completos. */
+const RESET_CODE_PATTERN = /^\d{6,8}$/;
+const RESET_CODE_MAX_LENGTH = 8;
 
 @Component({
   selector: 'app-reset-password',
@@ -43,23 +50,8 @@ export class ResetPasswordComponent {
     this.resetPasswordForm = this.fb.group(
       {
         email: [this.email, [Validators.required, Validators.email]],
-        code: [
-          '',
-          [
-            Validators.required,
-            Validators.minLength(6),
-            Validators.maxLength(6),
-            Validators.pattern(/^\d{6}$/),
-          ],
-        ],
-        newPassword: [
-          '',
-          [
-            Validators.required,
-            Validators.minLength(8),
-            Validators.pattern('^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+{}:"<>?]).+$'),
-          ],
-        ],
+        code: ['', [Validators.required, Validators.pattern(RESET_CODE_PATTERN)]],
+        newPassword: ['', [Validators.required, strongPasswordValidator]],
         confirmPassword: ['', Validators.required],
       },
       { validators: this.passwordMatchValidator },
@@ -95,6 +87,10 @@ export class ResetPasswordComponent {
         if (err.error && typeof err.error === 'object') {
           if (err.error.code) {
             this.errorMessage = 'Código inválido o expirado';
+          } else if (Array.isArray(err.error.new_password)) {
+            // Contraseña rechazada por el server (común, muy parecida al
+            // correo…): el mensaje ya viene en español.
+            this.errorMessage = err.error.new_password.join(' ');
           } else if (err.error.non_field_errors) {
             this.errorMessage = err.error.non_field_errors[0] || 'Error al verificar el código';
           } else {
@@ -105,6 +101,13 @@ export class ResetPasswordComponent {
         }
       },
     });
+  }
+
+  readonly codeMaxLength = RESET_CODE_MAX_LENGTH;
+
+  /** Estado de cada requisito de la nueva contraseña, para la lista en vivo. */
+  passwordChecks() {
+    return checkPasswordRules(this.resetPasswordForm.get('newPassword')?.value ?? '');
   }
 
   togglePasswordVisibility(): void {

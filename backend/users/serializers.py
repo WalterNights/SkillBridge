@@ -13,19 +13,28 @@ from users.models import (
 )
 
 
-def validate_new_password(password: str, *, username: str = "", email: str = "") -> None:
+def validate_new_password(
+    password: str,
+    *,
+    user: User | None = None,
+    username: str = "",
+    email: str = "",
+    field: str = "password",
+) -> None:
     """Corre AUTH_PASSWORD_VALIDATORS (largo, comunes, solo números, parecido
-    al usuario/correo) con mensajes en español.
+    al usuario/correo) con mensajes en español. El error sale en `field`.
 
-    Antes el registro no validaba nada en el server: el único filtro era el
-    patrón del frontend, y cualquiera que llamara a la API podía registrarse
-    con "1". El usuario temporal permite comparar contra username/email.
+    Se usa en el registro, el restablecimiento y el cambio de contraseña:
+    antes ninguno validaba en el server (por API se aceptaba "1" o
+    "12345678"). Sin `user` (registro) se arma uno temporal con
+    username/email para la comparación de parecido.
     """
+    candidate = user or User(username=username, email=email)
     with translation.override("es"):
         try:
-            validate_password(password, user=User(username=username, email=email))
+            validate_password(password, user=candidate)
         except DjangoValidationError as exc:
-            raise serializers.ValidationError({"password": list(exc.messages)}) from exc
+            raise serializers.ValidationError({field: list(exc.messages)}) from exc
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -237,6 +246,10 @@ class PasswordResetVerifySerializer(serializers.Serializer):
         if not token or not token.is_valid():
             raise serializers.ValidationError(generic_error)
 
+        # Después del chequeo del código: validar antes no revela nada, pero
+        # así el error genérico anti-enumeration queda siempre primero.
+        validate_new_password(data["new_password"], user=user, field="new_password")
+
         data["user"] = user
         data["token"] = token
         return data
@@ -267,6 +280,12 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {"new_password": "La nueva contraseña debe ser distinta a la actual."}
             )
+        request = self.context.get("request")
+        validate_new_password(
+            data["new_password"],
+            user=getattr(request, "user", None),
+            field="new_password",
+        )
         return data
 
 
