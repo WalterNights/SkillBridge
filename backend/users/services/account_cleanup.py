@@ -93,12 +93,26 @@ def find_incomplete_accounts(now=None) -> list[User]:
     return [user for user in candidates if not is_profile_complete(user)]
 
 
+def delete_user_account(user: User) -> None:
+    """Elimina una cuenta y todo lo que cuelga de ella.
+
+    `UserProfile.user` y `CompanyProfile.user` son PROTECT: se borra el
+    perfil primero y después la cuenta (que arrastra por CASCADE sus
+    postulaciones, reseñas, notificaciones, etc.), en una sola transacción
+    para que una falla no deje a nadie a medio borrar.
+    """
+    with transaction.atomic():
+        for relation in ("profile", "company_profile"):
+            with suppress(ObjectDoesNotExist):
+                getattr(user, relation).delete()
+        user.delete()
+
+
 def delete_incomplete_accounts(dry_run: bool = False, now=None) -> CleanupResult:
     """Elimina (o solo lista, con `dry_run`) las cuentas incompletas vencidas.
 
-    `UserProfile.user` y `CompanyProfile.user` son PROTECT: se borra el
-    perfil parcial primero y después la cuenta, en una transacción por
-    usuario para que una falla no deje a nadie a medio borrar.
+    Una transacción por usuario (ver `delete_user_account`): si una cuenta
+    falla, las demás se siguen borrando.
     """
     accounts = find_incomplete_accounts(now)
     if dry_run:
@@ -108,11 +122,7 @@ def delete_incomplete_accounts(dry_run: bool = False, now=None) -> CleanupResult
     for user in accounts:
         user_id = user.id  # delete() deja el pk en None
         try:
-            with transaction.atomic():
-                for relation in ("profile", "company_profile"):
-                    with suppress(ObjectDoesNotExist):
-                        getattr(user, relation).delete()
-                user.delete()
+            delete_user_account(user)
             deleted_ids.append(user_id)
         except Exception:
             logger.exception("No se pudo eliminar la cuenta incompleta %s", user_id)

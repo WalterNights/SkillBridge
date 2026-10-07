@@ -148,6 +148,17 @@
     }
   }
 
+  // Eliminar cuenta: rojo sólido para que no se confunda con "Degradar".
+  &--danger {
+    color: #ffffff;
+    background: #dc2626;
+    border-color: transparent;
+
+    &:hover:not(:disabled) {
+      background: #b91c1c;
+    }
+  }
+
   &--confirm {
     color: #ffffff;
     background: linear-gradient(135deg, #f97316, #ea580c);
@@ -201,6 +212,11 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+  }
+
+  &__icon--danger {
+    background: rgba(220, 38, 38, 0.15);
+    color: #f87171;
   }
 
   &__actions {

@@ -197,6 +197,16 @@
               <span class="material-symbols-outlined" style="font-size: 16px">arrow_downward</span>
               Quitar super
             </button>
+            <button
+              *ngIf="!isSelf(u) && u.user?.id"
+              type="button"
+              class="role-btn role-btn--danger"
+              (click)="promptDelete(u)"
+              title="Eliminar cuenta"
+            >
+              <span class="material-symbols-outlined" style="font-size: 16px">delete</span>
+              Eliminar
+            </button>
           </div>
         </div>
       </article>
@@ -246,6 +256,47 @@
         >
           <span *ngIf="!isSavingRole()">Confirmar</span>
           <span *ngIf="isSavingRole()">Guardando…</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación de eliminación -->
+  <div *ngIf="pendingDelete() as target" class="role-modal-overlay" (click)="cancelDelete()">
+    <div
+      class="role-modal glass-strong"
+      role="alertdialog"
+      aria-labelledby="delete-modal-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="role-modal__header">
+        <span
+          class="role-modal__icon role-modal__icon--danger material-symbols-outlined"
+          style="font-size: 22px; font-variation-settings: 'FILL' 1"
+          >delete_forever</span
+        >
+        <div class="min-w-0">
+          <p class="text-xs uppercase tracking-[0.15em] text-danger font-semibold">Acción irreversible</p>
+          <h2 id="delete-modal-title" class="text-lg font-semibold text-bone leading-snug">Eliminar cuenta</h2>
+        </div>
+      </header>
+
+      <p class="text-sm text-warm-grey">
+        Vas a eliminar la cuenta de
+        <span class="text-bone font-semibold">{{ emailOf(target) || target.username }}</span>.
+      </p>
+      <p class="text-xs text-dim">
+        Se borran su perfil, CV, postulaciones, reseña y notificaciones. No se puede deshacer. Para eliminar a otro
+        administrador necesitas ser super-admin.
+      </p>
+
+      <div class="role-modal__actions">
+        <button type="button" class="role-btn role-btn--secondary" (click)="cancelDelete()" [disabled]="isDeleting()">
+          Cancelar
+        </button>
+        <button type="button" class="role-btn role-btn--danger" (click)="confirmDelete()" [disabled]="isDeleting()">
+          <span *ngIf="!isDeleting()">Eliminar definitivamente</span>
+          <span *ngIf="isDeleting()">Eliminando…</span>
         </button>
       </div>
     </div>

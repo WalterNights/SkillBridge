@@ -141,6 +141,13 @@ export class AdminService {
     );
   }
 
+  /** Elimina una cuenta y todo lo que cuelga de ella. `userId` es el id
+   *  del modelo User. El backend rechaza eliminarse a sí mismo (400) y
+   *  exige super-admin para eliminar a otro admin (403). */
+  deleteUser(userId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/dashboard/users/${userId}/`);
+  }
+
   /** Detalle profesional ligero — alimenta el modal "Detalles" en
    *  /admin/users. Foco en skills/idiomas/links; NO trae experience
    *  ni education (densos, no aportan a la decisión rápida del admin). */

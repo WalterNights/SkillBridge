@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
@@ -14,8 +15,10 @@ from applications.models import JobApplication
 from jobs.models import IgnoredOffer, JobOffer
 from users.models import UserProfile
 from users.serializers import UserProfileSerializer
+from users.services.account_cleanup import delete_user_account
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class dashboardUserList(ListAPIView):
@@ -122,6 +125,51 @@ class UserRoleUpdateView(APIView):
                 "is_superuser": target.is_superuser,
             }
         )
+
+
+class AdminUserDeleteView(APIView):
+    """DELETE /api/dashboard/users/{id}/ — elimina una cuenta registrada.
+
+    Reglas (mismo criterio que UserRoleUpdateView):
+      - Solo admins (IsAdminUser) llaman al endpoint.
+      - Nadie puede eliminarse a sí mismo (anti-lockout: con un solo admin
+        no habría cómo recuperar el acceso sin SSH al VPS).
+      - Eliminar a otro admin o super-admin requiere ser super-admin.
+      - 404 si el usuario no existe.
+
+    Borra el perfil y la cuenta con todo lo que cuelga de ella
+    (postulaciones, reseñas…). Es irreversible: el frontend pide
+    confirmación explícita.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def delete(self, request, user_id: int):
+        target = get_object_or_404(User, pk=user_id)
+
+        if target.pk == request.user.pk:
+            return Response(
+                {
+                    "error": "self_delete_forbidden",
+                    "detail": "No puedes eliminar tu propia cuenta desde el panel.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if (target.is_staff or target.is_superuser) and not request.user.is_superuser:
+            return Response(
+                {
+                    "error": "superuser_required",
+                    "detail": "Solo un super-admin puede eliminar a otro administrador.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        logger.info(
+            "admin %s eliminó la cuenta #%s (%s)", request.user.pk, target.pk, target.username
+        )
+        delete_user_account(target)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AdminUserProfileDetailView(APIView):

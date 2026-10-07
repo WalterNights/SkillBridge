@@ -66,6 +66,10 @@ export class AdminUsersComponent implements OnInit {
   pendingChange = signal<PendingRoleChange | null>(null);
   isSavingRole = signal(false);
 
+  /** Modal de confirmación de eliminación. Null = cerrado. */
+  pendingDelete = signal<User | null>(null);
+  isDeleting = signal(false);
+
   /** Modal "Detalles" del perfil profesional. Null = cerrado, undefined
    *  no aplica. Cargamos on-demand al hacer click — sin precargar todo
    *  cuando la lista tiene cientos de users. */
@@ -208,6 +212,43 @@ export class AdminUsersComponent implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.isSavingRole.set(false);
         const detail = err.error?.detail ?? 'No pudimos aplicar el cambio.';
+        this.toast.error(detail, `Error ${err.status}`);
+      },
+    });
+  }
+
+  // ─── Eliminar usuario ─────────────────────────────────────────────
+
+  promptDelete(profile: User): void {
+    this.pendingDelete.set(profile);
+  }
+
+  cancelDelete(): void {
+    if (this.isDeleting()) return;
+    this.pendingDelete.set(null);
+  }
+
+  confirmDelete(): void {
+    const profile = this.pendingDelete();
+    const userId = profile?.user?.id;
+    if (!profile || !userId) {
+      this.toast.error('No se encontró el ID del usuario.', 'Error');
+      this.pendingDelete.set(null);
+      return;
+    }
+
+    this.isDeleting.set(true);
+    this.adminService.deleteUser(userId).subscribe({
+      next: () => {
+        this.users.update((rows) => rows.filter((row) => row.id !== profile.id));
+        this.toast.success(`Cuenta de ${this.emailOf(profile) || profile.username} eliminada.`);
+        this.isDeleting.set(false);
+        this.pendingDelete.set(null);
+        this.loadStats();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.isDeleting.set(false);
+        const detail = err.error?.detail ?? 'No pudimos eliminar la cuenta.';
         this.toast.error(detail, `Error ${err.status}`);
       },
     });
