@@ -59,9 +59,17 @@ class TestRegisterPassword:
         response = _register(api_client, "lautaro2026", username="lautaro2026")
         assert response.status_code == 400
 
-    def test_error_messages_are_in_spanish(self, api_client):
-        messages = " ".join(_register(api_client, "1").json()["password"])
-        assert "contraseña" in messages.lower()
+    def test_every_error_message_is_in_spanish(self, api_client):
+        """Cada mensaje, no solo alguno: el de largo mínimo de Django no tiene
+        traducción y salía en inglés en producción."""
+        messages = _register(api_client, "1").json()["password"]
+        assert len(messages) >= 2
+        for message in messages:
+            assert "contraseña" in message.lower(), message
+
+    def test_too_short_message_mentions_min_length(self, api_client):
+        messages = _register(api_client, "ab.1").json()["password"]
+        assert any("al menos 8 caracteres" in m for m in messages)
 
     def test_company_register_also_validates(self, api_client):
         response = api_client.post(
