@@ -162,8 +162,24 @@ class TestRegisterUsernameErrors:
         assert response.status_code == 400
         assert response.json()["email"] == ["Ingresa un correo electrónico válido."]
 
+    def test_blank_username_says_it_is_required(self, api_client):
+        """No debe decir "sin espacios" cuando el problema es que falta."""
+        response = _register(api_client, "Pepeperez26*", username="")
+        assert response.json()["username"] == ["El nombre de usuario es obligatorio."]
+
     def test_existing_username_stays_generic(self, api_client, user):
         """Anti user-enumeration: no se dice que el usuario ya existe."""
         response = _register(api_client, "Pepeperez26*", username=user.username)
         assert response.status_code == 400
         assert response.json() == {"error": "No pudimos crear la cuenta con esos datos."}
+
+    def test_duplicate_email_is_rejected_generically(self, api_client, user):
+        """Un correo por cuenta; la respuesta no revela que ya existe."""
+        response = api_client.post(
+            REGISTER_URL,
+            {"username": "otro_user", "email": user.email.upper(), "password": "Buenas.2026"},
+            format="json",
+        )
+        assert response.status_code == 400
+        assert response.json() == {"error": "No pudimos crear la cuenta con esos datos."}
+        assert not User.objects.filter(username="otro_user").exists()

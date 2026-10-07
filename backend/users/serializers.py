@@ -64,6 +64,17 @@ class UserSerializer(serializers.ModelSerializer):
             "account_type",
         ]
 
+    def validate_email(self, value: str) -> str:
+        """Un correo por cuenta (como en el registro de empresa). Con correos
+        repetidos el restablecimiento de contraseña (`get(email=…)`) falla.
+        code="unique" → la vista responde con el mensaje genérico, igual que
+        con un username existente (anti user-enumeration)."""
+        if self.instance is None and User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError(
+                "Ya existe una cuenta con este correo electrónico.", code="unique"
+            )
+        return value
+
     def validate(self, attrs):
         if "password" in attrs:
             validate_new_password(

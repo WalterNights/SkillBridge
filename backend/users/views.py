@@ -39,11 +39,25 @@ from users.services.profile_service import ProfileService
 from users.services import totp_service
 
 
-# Regla de Django para usernames (UnicodeUsernameValidator): sin espacios.
-_USERNAME_FORMAT_ERROR = (
-    "El nombre de usuario solo puede tener letras, números y los símbolos "
-    "@ . + - _ (sin espacios)."
-)
+# Mensajes en español por código de error de DRF/Django. "unique" no está a
+# propósito: ese caso responde con el mensaje genérico (anti-enumeration).
+_REGISTER_FIELD_MESSAGES = {
+    "username": {
+        # UnicodeUsernameValidator de Django: sin espacios.
+        "invalid": (
+            "El nombre de usuario solo puede tener letras, números y los símbolos "
+            "@ . + - _ (sin espacios)."
+        ),
+        "max_length": "El nombre de usuario puede tener como máximo 150 caracteres.",
+        "required": "El nombre de usuario es obligatorio.",
+        "blank": "El nombre de usuario es obligatorio.",
+    },
+    "email": {
+        "invalid": "Ingresa un correo electrónico válido.",
+        "required": "El correo electrónico es obligatorio.",
+        "blank": "El correo electrónico es obligatorio.",
+    },
+}
 
 
 @method_decorator(ratelimit(key="ip", rate="5/m", method="POST", block=True), name="post")
@@ -92,11 +106,15 @@ class UserRegisterView(APIView):
 
     @staticmethod
     def _localized_errors(errors) -> dict:
+        """Traduce por código los errores de username/email; los códigos sin
+        traducción conocida conservan el mensaje original de Django."""
         localized = dict(errors)
-        if "username" in localized:
-            localized["username"] = [_USERNAME_FORMAT_ERROR]
-        if "email" in localized:
-            localized["email"] = ["Ingresa un correo electrónico válido."]
+        for field, messages in _REGISTER_FIELD_MESSAGES.items():
+            if field in localized:
+                localized[field] = [
+                    messages.get(getattr(error, "code", None), str(error))
+                    for error in localized[field]
+                ]
         return localized
 
 
