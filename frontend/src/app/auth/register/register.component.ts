@@ -12,7 +12,7 @@ import {
   ValidationErrors,
   ValidatorFn,
 } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { checkPasswordRules, strongPasswordValidator } from '../../shared/auth/password-rules';
 import { environment } from '../../../environment/environment';
 
@@ -31,6 +31,27 @@ const COMPANY_SIZE_OPTIONS = [
   { value: '501-1000', label: '501-1000 empleados' },
   { value: '1000+', label: 'Más de 1000 empleados' },
 ];
+
+/**
+ * Mensaje para errores que NO son de los datos del formulario: sin conexión,
+ * demasiados intentos o fallo del servidor. Devuelve null si el error trae
+ * validaciones de campos (las maneja cada formulario). Antes todos estos
+ * casos decían "Verifique los datos" y el usuario reintentaba con otra
+ * contraseña sin que ese fuera el problema.
+ */
+function registrationTransportError(err: HttpErrorResponse): string | null {
+  if (err.status === 0) {
+    return 'No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.';
+  }
+  // django-ratelimit (5 registros/min por IP) responde 403 sin errores de campo.
+  if (err.status === HttpStatusCode.TooManyRequests || err.status === HttpStatusCode.Forbidden) {
+    return 'Hiciste demasiados intentos seguidos. Espera un minuto e inténtalo de nuevo.';
+  }
+  if (err.status >= HttpStatusCode.InternalServerError) {
+    return 'Tuvimos un problema en el servidor. Inténtalo de nuevo en unos minutos.';
+  }
+  return null;
+}
 
 /**
  * Registro con selector inicial: profesional o empresa.
@@ -146,21 +167,20 @@ export class RegisterComponent implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.isLoading = false;
         console.error('Registration error:', err);
-        if (err.error && typeof err.error === 'object') {
-          if (Array.isArray(err.error.username) && err.error.username.length > 0) {
-            this.errorMessage = 'El nombre de usuario ya está en uso';
-          } else if (Array.isArray(err.error.email) && err.error.email.length > 0) {
-            this.errorMessage = 'El correo electrónico ya está registrado';
-          } else if (Array.isArray(err.error.password) && err.error.password.length > 0) {
-            // Mensajes concretos del server (contraseña común, muy parecida
-            // al usuario, etc.) — ya vienen en español.
-            this.errorMessage = err.error.password.join(' ');
-          } else {
-            this.errorMessage =
-              'Error al registrar usuario. Verifique los datos e intente nuevamente';
-          }
+        const body = err.error;
+        const transportError = registrationTransportError(err);
+        if (transportError) {
+          this.errorMessage = transportError;
+        } else if (Array.isArray(body?.username) && body.username.length > 0) {
+          this.errorMessage = 'El nombre de usuario ya está en uso.';
+        } else if (Array.isArray(body?.email) && body.email.length > 0) {
+          this.errorMessage = 'El correo electrónico ya está registrado.';
+        } else if (Array.isArray(body?.password) && body.password.length > 0) {
+          // Mensajes concretos del server (contraseña común, muy parecida
+          // al usuario, etc.) — ya vienen en español.
+          this.errorMessage = body.password.join(' ');
         } else {
-          this.errorMessage = 'Error al registrar usuario. Intentelo nuevamente';
+          this.errorMessage = 'No pudimos crear tu cuenta. Revisa los datos e inténtalo de nuevo.';
         }
       },
     });
@@ -230,7 +250,10 @@ export class RegisterComponent implements OnInit {
         this.isLoading = false;
         console.error('Company registration error:', err);
         const body = err.error;
-        if (body?.error) {
+        const transportError = registrationTransportError(err);
+        if (transportError) {
+          this.errorMessage = transportError;
+        } else if (body?.error) {
           this.errorMessage = body.error;
         } else if (body?.responsible_email?.length) {
           this.errorMessage =
